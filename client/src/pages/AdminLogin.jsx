@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import ReCAPTCHA from 'react-google-recaptcha';
 import './AdminLogin.css';
 
 const AdminLogin = () => {
     const [formData, setFormData] = useState({ email: '', password: '', keepLoggedIn: false });
     const [errors, setErrors] = useState({ email: false, password: false, server: '' });
-    const [captchaToken, setCaptchaToken] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -27,23 +25,9 @@ const AdminLogin = () => {
         }
     };
 
-    const handleCaptchaSuccess = (token) => {
-        setCaptchaToken(token);
-        setErrors(prev => ({ ...prev, captcha: false }));
-    };
-
-    const handleCaptchaExpired = () => {
-        setCaptchaToken(null);
-    };
-
-    const handleCaptchaError = () => {
-        setCaptchaToken(null);
-        setErrors(prev => ({ ...prev, captcha: true }));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrors({ email: false, password: false, server: '', captcha: false });
+        setErrors({ email: false, password: false, server: '' });
 
         const isEmailValid = isValidEmail(formData.email);
         const isPasswordValid = formData.password.trim().length >= 6;
@@ -57,18 +41,12 @@ const AdminLogin = () => {
             return;
         }
 
-        if (!captchaToken) {
-            setErrors(prev => ({ ...prev, captcha: true }));
-            return;
-        }
-
         setIsSubmitting(true);
 
         try {
             const response = await axios.post('http://localhost:5000/api/admin/login', {
                 email: formData.email,
-                password: formData.password,
-                recaptchaToken: captchaToken // Validated serverside normally
+                password: formData.password
             });
 
             // Save token to localStorage conditionally or always if keepLoggedIn (For now standard session)
@@ -166,26 +144,13 @@ const AdminLogin = () => {
                             </label>
                         </div>
 
-                        {/* Google reCAPTCHA v2 */}
-                        <div className="admin-captcha-wrap">
-                            <ReCAPTCHA
-                                sitekey="6LdmUeEZAAAAABk5y8pRpyrBsABe92HP8m3yRTpF"
-                                onChange={handleCaptchaSuccess}
-                                onExpired={handleCaptchaExpired}
-                                onErrored={handleCaptchaError}
-                            />
-                        </div>
-                        {errors.captcha && (
-                            <div className="admin-captcha-error show">Please verify reCAPTCHA.</div>
-                        )}
-
                         {errors.server && (
                             <div className="admin-captcha-error show" style={{ textAlign: "center", marginTop: "10px" }}>
                                 {errors.server}
                             </div>
                         )}
 
-                        <button type="submit" className="admin-btn admin-btn-primary" disabled={!captchaToken || isSubmitting}>
+                        <button type="submit" className="admin-btn admin-btn-primary" disabled={isSubmitting}>
                             {isSubmitting ? 'Authenticating...' : 'Admin Login'}
                         </button>
 
