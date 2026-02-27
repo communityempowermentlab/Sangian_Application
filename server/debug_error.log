@@ -1,0 +1,5 @@
+Unknown column 'status' in 'field list'
+Error: Unknown column 'status' in 'field list'
+    at PromisePool.query (/Users/mohammad/Documents/sangian/server/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.addChild (/Users/mohammad/Documents/sangian/server/src/controllers/adminChildController.js:41:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

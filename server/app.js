@@ -4,6 +4,7 @@ require('dotenv').config();
 const userRoutes = require('./src/routes/userRoutes');
 const childRoutes = require('./src/routes/childRoutes');
 const sessionRoutes = require('./src/routes/sessionRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/children', childRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

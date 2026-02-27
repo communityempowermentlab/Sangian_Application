@@ -56,7 +56,7 @@ const lookupChild = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            'SELECT child_id, name, dob, gender, mobile FROM children WHERE child_id = ?',
+            'SELECT child_id, name, dob, gender, mobile, status FROM children WHERE child_id = ?',
             [childId.toUpperCase()]
         );
 
@@ -64,7 +64,17 @@ const lookupChild = async (req, res) => {
             return res.status(404).json({ message: 'Child ID not found.' });
         }
 
-        res.status(200).json(rows[0]);
+        const child = rows[0];
+
+        // Block lookup if child is deactivated
+        if (child.status === 'inactive') {
+            return res.status(403).json({
+                message: 'Account deactivated. Please contact an administrator.',
+                isInactive: true
+            });
+        }
+
+        res.status(200).json(child);
     } catch (error) {
         console.error('Lookup Error:', error);
         res.status(500).json({ message: 'Server error while looking up child.' });
