@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -16,7 +17,7 @@ const Navbar = () => {
             const sessionId = localStorage.getItem('sessionId');
             if (sessionId) {
                 // Silently execute session dump
-                await axios.post(`http://localhost:5000/api/sessions/end/${sessionId}`);
+                await axios.post(`${API_URL}/sessions/end/${sessionId}`);
             }
         } catch (e) {
             console.error("Logout session error:", e);

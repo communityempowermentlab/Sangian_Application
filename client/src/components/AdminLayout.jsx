@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -33,7 +34,7 @@ const AdminLayout = () => {
         try {
             const sessionId = localStorage.getItem('adminSessionId');
             if (sessionId) {
-                await axios.post(`http://localhost:5000/api/admin/logout/${sessionId}`);
+                await axios.post(`${API_URL}/admin/logout/${sessionId}`);
             }
         } catch (e) {
             console.error("Logout admin session error:", e);

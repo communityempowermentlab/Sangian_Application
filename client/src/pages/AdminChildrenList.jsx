@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -35,7 +36,7 @@ const AdminChildrenList = () => {
 
     const fetchChildren = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/admin/children');
+            const response = await axios.get(API_URL + '/admin/children');
             setChildren(response.data);
         } catch (error) {
             console.error('Failed to fetch children:', error);

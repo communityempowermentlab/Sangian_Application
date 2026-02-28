@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -19,13 +20,13 @@ const Login = () => {
         setChildData(null);
 
         try {
-            const response = await axios.get(`http://localhost:5000/api/children/lookup/${childId.trim()}`);
+            const response = await axios.get(`${API_URL}/children/lookup/${childId.trim()}`);
             setChildData(response.data);
         } catch (err) {
             if (err.response && err.response.status === 404) {
                 setErrorMsg('Child ID not found in database.');
                 // Log failed attempt silently
-                axios.post('http://localhost:5000/api/sessions/fail', { attemptedChildId: childId.trim() }).catch(e => console.error(e));
+                axios.post(API_URL + '/sessions/fail', { attemptedChildId: childId.trim() }).catch(e => console.error(e));
             } else {
                 setErrorMsg('Error connecting to the server.');
             }
@@ -37,7 +38,7 @@ const Login = () => {
     const handleGoToAssessment = async () => {
         if (childData) {
             try {
-                const response = await axios.post('http://localhost:5000/api/sessions/start', { childId: childData.child_id });
+                const response = await axios.post(API_URL + '/sessions/start', { childId: childData.child_id });
                 const sessionId = response.data.sessionId;
 
                 localStorage.setItem('currentChild', JSON.stringify(childData));

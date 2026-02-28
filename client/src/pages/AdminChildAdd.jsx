@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -51,7 +52,7 @@ const AdminChildAdd = () => {
         setSuccessMsg('');
 
         try {
-            const response = await axios.post('http://localhost:5000/api/admin/children', formData);
+            const response = await axios.post(API_URL + '/admin/children', formData);
             setSuccessMsg(`Child registered successfully! Generated ID: ${response.data.child_id}`);
             setTimeout(() => {
                 navigate('/admin/children');

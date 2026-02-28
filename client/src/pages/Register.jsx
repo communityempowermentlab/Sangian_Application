@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -74,7 +75,7 @@ const Register = () => {
         setStatusMsg({ type: '', text: '' });
 
         try {
-            const response = await axios.post('http://localhost:5000/api/children/register', formData);
+            const response = await axios.post(API_URL + '/children/register', formData);
             const generatedId = response.data.childId;
             setStatusMsg({ type: 'success', text: `Child registered successfully! Child ID: ${generatedId}` });
             // Reset form upon success

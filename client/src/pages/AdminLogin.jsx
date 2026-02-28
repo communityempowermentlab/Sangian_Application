@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import axios from 'axios';
 import './AdminLogin.css';
@@ -44,7 +45,7 @@ const AdminLogin = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/admin/login', {
+            const response = await axios.post(API_URL + '/admin/login', {
                 email: formData.email,
                 password: formData.password
             });

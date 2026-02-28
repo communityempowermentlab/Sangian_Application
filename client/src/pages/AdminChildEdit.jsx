@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -30,7 +31,7 @@ const AdminChildEdit = () => {
 
     const fetchChildDetails = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/admin/children/${id}`);
+            const response = await axios.get(`${API_URL}/admin/children/${id}`);
             const data = response.data;
             setFormData({
                 name: data.name || '',
@@ -76,7 +77,7 @@ const AdminChildEdit = () => {
         setSuccessMsg('');
 
         try {
-            await axios.put(`http://localhost:5000/api/admin/children/${id}`, formData);
+            await axios.put(`${API_URL}/admin/children/${id}`, formData);
             setSuccessMsg('Child profile updated successfully!');
             navigate('/admin/children');
         } catch (error) {
