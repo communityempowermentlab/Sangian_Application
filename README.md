@@ -1,4 +1,4 @@
-# Sangian - Cognitive Assessment Platform 123
+# Sangian - Cognitive Assessment Platform
 
 This project is based on the Kaufman Assessment Battery for Children – Second Edition (KABC-II). The goal is to digitally implement assessment components through interactive game-based modules, supported by a structured backend system for administration and reporting.
 
