@@ -1,22 +1,35 @@
 # Dependencies
 node_modules/
+client/node_modules/
+server/node_modules/
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+client/.env
+server/.env
 
-# Production build directories
-/client/build/
-/server/dist/
+# Build directories
+dist/
+client/build/
+client/dist/
+client/dist-ssr/
+server/dist/
+server/dist-ssr/
+.vite/
 
-# Debug logs
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+client/logs/
+server/logs/
+client/*.log
+server/*.log
 
 # OS Files
 .DS_Store
@@ -26,9 +39,21 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+client/.DS_Store
+server/.DS_Store
 
 # IDE / Editor
 .idea/
 .vscode/
+client/.vscode/
+server/.vscode/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Uploads
+server/uploads/
