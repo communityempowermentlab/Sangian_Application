@@ -5,9 +5,12 @@ const { pool } = require('../config/db');
 // @access  Private (Admin)
 exports.getAllChildren = async (req, res) => {
     try {
-        const [children] = await pool.query(
-            'SELECT child_id, name, dob, gender, mobile, status, created_at FROM children ORDER BY created_at DESC'
-        );
+        const [children] = await pool.query(`
+            SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.status, c.created_at,
+                   (SELECT login_time FROM login_sessions ls WHERE ls.child_id = c.child_id AND ls.status = 'success' ORDER BY login_time DESC LIMIT 1) as last_login
+            FROM children c
+            ORDER BY c.created_at DESC
+        `);
         res.status(200).json(children);
     } catch (error) {
         console.error('Error fetching children for admin:', error);
@@ -121,5 +124,22 @@ exports.toggleStatus = async (req, res) => {
     } catch (error) {
         console.error('Error updating child status:', error);
         res.status(500).json({ message: 'Server error while updating status.' });
+    }
+};
+
+// @route   GET /api/admin/children/:childId/sessions
+// @desc    Get session history for a specific child
+// @access  Private (Admin)
+exports.getChildSessions = async (req, res) => {
+    try {
+        const { childId } = req.params;
+        const [sessions] = await pool.query(
+            'SELECT id, status, login_time, logout_time, session_duration, ip_address, device_type, browser, os, location FROM login_sessions WHERE child_id = ? ORDER BY login_time DESC',
+            [childId]
+        );
+        res.status(200).json(sessions);
+    } catch (error) {
+        console.error('Error fetching child sessions:', error);
+        res.status(500).json({ message: 'Server error while fetching child sessions.' });
     }
 };

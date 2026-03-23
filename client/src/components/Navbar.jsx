@@ -32,12 +32,8 @@ const Navbar = () => {
     return (
         <header className="top-nav">
             <div className="nav-left">
-                <a href="/" className="nav-left-link">
-                    <div className="nav-logo-circle">S</div>
-                    <div className="nav-brand-text">
-                        <div className="nav-title">Sangian</div>
-                        <div className="nav-subtitle">Child Cognitive Test Suite</div>
-                    </div>
+                <a href="/" className="nav-left-link" style={{ textDecoration: 'none' }}>
+                    <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '48px', objectFit: 'contain' }} />
                 </a>
             </div>
 

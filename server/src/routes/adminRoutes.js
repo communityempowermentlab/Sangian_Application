@@ -9,6 +9,7 @@ router.post('/logout/:sessionId', adminController.logoutAdmin);
 // Admin Children Management Routes
 router.get('/children', adminChildController.getAllChildren);
 router.post('/children', adminChildController.addChild);
+router.get('/children/:childId/sessions', adminChildController.getChildSessions);
 router.get('/children/:childId', adminChildController.getChildById);
 router.put('/children/:childId', adminChildController.updateChild);
 router.put('/children/:childId/status', adminChildController.toggleStatus);

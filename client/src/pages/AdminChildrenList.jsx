@@ -2,6 +2,7 @@ import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
 
 const calculateAge = (dob) => {
     if (!dob) return 'N/A';
@@ -22,6 +23,30 @@ const calculateAge = (dob) => {
     return `${years} Yrs ${months} Mos`;
 };
 
+const formatRelativeTime = (dateString) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths} month${diffInMonths !== 1 ? 's' : ''} ago`;
+    
+    const diffInYears = Math.floor(diffInDays / 365);
+    return `${diffInYears} year${diffInYears !== 1 ? 's' : ''} ago`;
+};
+
 const AdminChildrenList = () => {
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +54,7 @@ const AdminChildrenList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [goToPageInput, setGoToPageInput] = useState('');
     const [loading, setLoading] = useState(true);
+    const [selectedChildForSessions, setSelectedChildForSessions] = useState(null);
 
     useEffect(() => {
         fetchChildren();
@@ -68,6 +94,34 @@ const AdminChildrenList = () => {
         setGoToPageInput('');
     };
 
+    const handleExportCSV = () => {
+        if (children.length === 0) return;
+        
+        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Status', 'Last Login'];
+        
+        const rows = children.map(child => [
+            child.child_id || '',
+            `"${child.name || ''}"`,
+            child.dob ? new Date(child.dob).toISOString().split('T')[0] : '',
+            calculateAge(child.dob),
+            child.gender || '',
+            child.mobile || '',
+            child.status || '',
+            child.last_login ? new Date(child.last_login).toLocaleString() : 'Never'
+        ]);
+        
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'children_data_export.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <main className="admin-content" aria-label="Children List">
             <div className="admin-card w12">
@@ -76,9 +130,20 @@ const AdminChildrenList = () => {
                         <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>Registered Children (Total: {children.length})</h3>
                         <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>List of all registered children. Search and pagination work on UI data for now.</p>
                     </div>
-                    <div className="admin-actions">
-                        <Link to="/admin/children/add" className="admin-btn admin-btn-primary" style={{ padding: '8px 16px' }}>
-                            ➕ Add New Child
+                    <div className="admin-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <button 
+                            onClick={handleExportCSV}
+                            style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#ffffff', color: '#374151', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', fontSize: '14px', transition: 'all 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f9fafb'}
+                            onMouseOut={e => e.currentTarget.style.background = '#ffffff'}
+                        >
+                            <span>📥</span> Export CSV
+                        </button>
+                        <Link to="/admin/children/add" style={{ padding: '11px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#ffffff', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', border: 'none', fontSize: '14px', transition: 'all 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                        >
+                            <span style={{ fontSize: '16px' }}>➕</span> Add New Child
                         </Link>
                     </div>
                 </div>
@@ -128,6 +193,7 @@ const AdminChildrenList = () => {
                                         <th>Age</th>
                                         <th>Gender</th>
                                         <th>Mobile</th>
+                                        <th>Last Login</th>
                                         <th>Status</th>
                                         <th style={{ minWidth: '180px' }}>Action</th>
                                     </tr>
@@ -149,6 +215,14 @@ const AdminChildrenList = () => {
                                                 <td style={{ textTransform: 'capitalize' }}>{child.gender}</td>
                                                 <td>{child.mobile}</td>
                                                 <td>
+                                                    <button 
+                                                        onClick={() => setSelectedChildForSessions(child.child_id)}
+                                                        style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '13px', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer' }}
+                                                    >
+                                                        {formatRelativeTime(child.last_login)}
+                                                    </button>
+                                                </td>
+                                                <td>
                                                     {child.status === 'active' ? (
                                                         <span className="admin-tag good">Active</span>
                                                     ) : (
@@ -156,11 +230,11 @@ const AdminChildrenList = () => {
                                                     )}
                                                 </td>
                                                 <td style={{ whiteSpace: 'nowrap' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                        <Link to={`/admin/children/edit/${child.child_id}`} className="admin-btn admin-btn-ghost" style={{ padding: '6px 12px', fontSize: '12px' }}>
+                                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                                        <Link to={`/admin/children/edit/${child.child_id}`} style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}>
                                                             ✏️ Edit
                                                         </Link>
-                                                        <button className="admin-btn admin-btn-ghost" style={{ padding: '6px 12px', fontSize: '12px' }}>
+                                                        <button style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                                                             🏆 Scoreboard
                                                         </button>
                                                     </div>
@@ -209,6 +283,12 @@ const AdminChildrenList = () => {
                     </div>
                 </div>
             </div>
+            {selectedChildForSessions && (
+                <ChildSessionHistoryModal 
+                    childId={selectedChildForSessions} 
+                    onClose={() => setSelectedChildForSessions(null)} 
+                />
+            )}
         </main>
     );
 };
