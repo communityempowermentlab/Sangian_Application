@@ -5,6 +5,7 @@ const userRoutes = require('./src/routes/userRoutes');
 const childRoutes = require('./src/routes/childRoutes');
 const sessionRoutes = require('./src/routes/sessionRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const gameRoutes = require('./src/routes/gameRoutes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/children', childRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/games', gameRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

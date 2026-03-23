@@ -60,6 +60,42 @@ const initDb = async () => {
       )
     `);
 
+    // Create game_sessions table for tracking numeracy/other game progress
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS game_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        child_id VARCHAR(20) NOT NULL,
+        game_name VARCHAR(50) NOT NULL,
+        start_time DATETIME,
+        end_time DATETIME,
+        score INT DEFAULT 0,
+        total_questions INT DEFAULT 0,
+        progress_level INT DEFAULT 1,
+        status ENUM('in_progress', 'completed', 'quit', 'paused') DEFAULT 'in_progress',
+        quit_reason VARCHAR(255),
+        saved_state JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create game_assessments table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS game_assessments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        session_id INT NOT NULL,
+        child_id VARCHAR(20) NOT NULL,
+        q1_enjoyment VARCHAR(50),
+        q2_feeling VARCHAR(50),
+        q3_tiredness VARCHAR(50),
+        q4_play_again VARCHAR(50),
+        q5_behaviors JSON,
+        additional_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES game_sessions(id) ON DELETE CASCADE
+      )
+    `);
+
     // Create admin_login_sessions table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS admin_login_sessions (

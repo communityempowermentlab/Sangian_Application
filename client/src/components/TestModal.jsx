@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) => {
+    const { t } = useLanguage();
     // Handle escape key to close
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -38,12 +40,12 @@ const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) 
                 </div>
                 <div className="modal-footer">
                     <p>
-                        This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.
+                        {t('modal.disclaimer')}
                     </p>
                     <br />
                     <div className="modal-actions">
                         <button type="button" className="btn modal-btn-secondary" onClick={onClose}>
-                            Close
+                            {t('modal.close')}
                         </button>
                         <button
                             type="button"
@@ -52,11 +54,11 @@ const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) 
                                 if (startUrl) {
                                     window.location.href = startUrl;
                                 } else {
-                                    alert("Start URL is not configured for this test yet.");
+                                    alert(t('modal.noUrl'));
                                 }
                             }}
                         >
-                            Start Game
+                            {t('modal.startGame')}
                         </button>
                     </div>
                 </div>

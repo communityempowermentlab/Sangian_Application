@@ -1,118 +1,121 @@
 import React, { useState } from 'react';
 import TestModal from '../components/TestModal';
 
-const testModules = [
-    {
-        id: 1,
-        title: "Atlantis Game (BAGIYA)",
-        subtitle: "Visual associative learning",
-        desc: "Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed. Supports visual learning and associative memory.",
-        startUrl: "/games/bagiya",
-        image: "/assets/images/bagiya.jpg",
-        shortTitle: "Atlantis Game",
-        local: "(BAGIYA)",
-        tag: "Core visual memory",
-        tagClass: "test-tag"
-    },
-    {
-        id: 2,
-        title: "Number Recall (LOTTERY KA TICKET)",
-        subtitle: "Auditory short-term memory",
-        desc: "Child listens to a series of numbers and repeats them in the same order. Supports attention, sequencing, and auditory memory.",
-        startUrl: "/games/lottery_ka_ticket",
-        image: "/assets/images/lottery_ka_ticket.jpg",
-        shortTitle: "Number Recall",
-        local: "(LOTTERY KA TICKET)",
-        tag: "Core auditory span",
-        tagClass: "test-tag"
-    },
-    {
-        id: 3,
-        title: "Rover Game (CHALO MELA CHALE)",
-        subtitle: "Planning & spatial reasoning",
-        desc: "Child plans a path through simple visual mazes, like walking through a fairground map. Supports planning, problem-solving, and spatial skills.",
-        startUrl: "/games/chalo_mela_chale",
-        image: "/assets/images/chalo_mela_chale.jpg",
-        shortTitle: "Rover Game",
-        local: "(CHALO MELA CHALE)",
-        tag: "Spatial planning",
-        tagClass: "test-tag"
-    },
-    {
-        id: 4,
-        title: "Triangle (RACHNA)",
-        subtitle: "Visual construction",
-        desc: "Child builds shapes and patterns using pieces – similar to tangram-style puzzles. Supports visual-spatial organisation and construction ability.",
-        startUrl: "/games/rachna",
-        image: "/assets/images/rachna.jpg",
-        shortTitle: "Triangle",
-        local: "(RACHNA)",
-        tag: "Construction skills",
-        tagClass: "test-tag"
-    },
-    {
-        id: 5,
-        title: "Auditory Attention (DHYAN KAHAN HAI)",
-        subtitle: "Selective listening & focus",
-        desc: "Child responds only when they hear specific target words or sounds in a sequence. Supports selective attention and impulse control.",
-        startUrl: "/games/dhyan_kahan_hai",
-        image: "/assets/images/dhyan_kahan_hai.jpg",
-        shortTitle: "Auditory Attention",
-        local: "(DHYAN KAHAN HAI)",
-        tag: "Listening focus",
-        tagClass: "test-tag"
-    },
-    {
-        id: 6,
-        title: "Working Memory (HER PHER)",
-        subtitle: "Holding & using information",
-        desc: "Child keeps rules or information in mind while answering, sometimes updating them mid-task. Supports mental flexibility and organisation.",
-        startUrl: "/games/her_pher",
-        image: "/assets/images/her_pher.jpg",
-        shortTitle: "Working Memory",
-        local: "(HER PHER)",
-        tag: "Dynamic memory",
-        tagClass: "test-tag"
-    },
-    {
-        id: 7,
-        title: "Cognitive Flexibility (CHOR MACHAYE SHOR)",
-        subtitle: "Rule switching & inhibition",
-        desc: "Child shifts between changing rules (for example responding to colour first, then shape). Supports cognitive flexibility and self-control.",
-        startUrl: "/games/chor_machaye_shor",
-        image: "/assets/images/chor_machaye_shor.jpg",
-        shortTitle: "Cognitive Flexibility",
-        local: "(CHOR MACHAYE SHOR)",
-        tag: "Rule switching",
-        tagClass: "test-tag"
-    },
-    {
-        id: 8,
-        title: "Numeracy Test",
-        subtitle: "Early maths readiness",
-        desc: "Age-appropriate tasks on counting, comparison, and basic operations to understand number sense and school readiness.",
-        startUrl: "/games/number_skill",
-        image: "/assets/images/number_skill.jpg",
-        shortTitle: "Numeracy Test",
-        local: "(Number Skills)",
-        tag: "Academic – Maths",
-        tagClass: "test-tag test-tag-academic"
-    },
-    {
-        id: 9,
-        title: "Literacy Test",
-        subtitle: "Reading & language",
-        desc: "Tasks around letters, simple words, and short passages to gauge basic reading comfort and early literacy.",
-        startUrl: "/games/reading_skill",
-        image: "/assets/images/reading_skill.jpg",
-        shortTitle: "Literacy Test",
-        local: "(Reading Skills)",
-        tag: "Academic – Language",
-        tagClass: "test-tag test-tag-academic"
-    }
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Home = () => {
+    const { t } = useLanguage();
+
+    const testModules = [
+        {
+            id: 1,
+            title: t('home.games.bagiya.title') + " " + t('home.games.bagiya.local'),
+            subtitle: t('home.games.bagiya.sub'),
+            desc: t('home.games.bagiya.desc'),
+            startUrl: "/games/bagiya",
+            image: "/assets/images/bagiya.jpg",
+            shortTitle: t('home.games.bagiya.title'),
+            local: t('home.games.bagiya.local'),
+            tag: t('home.games.bagiya.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 2,
+            title: t('home.games.lottery.title') + " " + t('home.games.lottery.local'),
+            subtitle: t('home.games.lottery.sub'),
+            desc: t('home.games.lottery.desc'),
+            startUrl: "/games/lottery_ka_ticket",
+            image: "/assets/images/lottery_ka_ticket.jpg",
+            shortTitle: t('home.games.lottery.title'),
+            local: t('home.games.lottery.local'),
+            tag: t('home.games.lottery.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 3,
+            title: t('home.games.mela.title') + " " + t('home.games.mela.local'),
+            subtitle: t('home.games.mela.sub'),
+            desc: t('home.games.mela.desc'),
+            startUrl: "/games/chalo_mela_chale",
+            image: "/assets/images/chalo_mela_chale.jpg",
+            shortTitle: t('home.games.mela.title'),
+            local: t('home.games.mela.local'),
+            tag: t('home.games.mela.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 4,
+            title: t('home.games.rachna.title') + " " + t('home.games.rachna.local'),
+            subtitle: t('home.games.rachna.sub'),
+            desc: t('home.games.rachna.desc'),
+            startUrl: "/games/rachna",
+            image: "/assets/images/rachna.jpg",
+            shortTitle: t('home.games.rachna.title'),
+            local: t('home.games.rachna.local'),
+            tag: t('home.games.rachna.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 5,
+            title: t('home.games.dhyan.title') + " " + t('home.games.dhyan.local'),
+            subtitle: t('home.games.dhyan.sub'),
+            desc: t('home.games.dhyan.desc'),
+            startUrl: "/games/dhyan_kahan_hai",
+            image: "/assets/images/dhyan_kahan_hai.jpg",
+            shortTitle: t('home.games.dhyan.title'),
+            local: t('home.games.dhyan.local'),
+            tag: t('home.games.dhyan.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 6,
+            title: t('home.games.herpher.title') + " " + t('home.games.herpher.local'),
+            subtitle: t('home.games.herpher.sub'),
+            desc: t('home.games.herpher.desc'),
+            startUrl: "/games/her_pher",
+            image: "/assets/images/her_pher.jpg",
+            shortTitle: t('home.games.herpher.title'),
+            local: t('home.games.herpher.local'),
+            tag: t('home.games.herpher.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 7,
+            title: t('home.games.chor.title') + " " + t('home.games.chor.local'),
+            subtitle: t('home.games.chor.sub'),
+            desc: t('home.games.chor.desc'),
+            startUrl: "/games/chor_machaye_shor",
+            image: "/assets/images/chor_machaye_shor.jpg",
+            shortTitle: t('home.games.chor.title'),
+            local: t('home.games.chor.local'),
+            tag: t('home.games.chor.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 8,
+            title: t('home.games.numeracy.title'),
+            subtitle: t('home.games.numeracy.sub'),
+            desc: t('home.games.numeracy.desc'),
+            startUrl: "/games/number_skill",
+            image: "/assets/images/number_skill.jpg",
+            shortTitle: t('home.games.numeracy.title'),
+            local: t('home.games.numeracy.local'),
+            tag: t('home.games.numeracy.tag'),
+            tagClass: "test-tag test-tag-academic"
+        },
+        {
+            id: 9,
+            title: t('home.games.literacy.title'),
+            subtitle: t('home.games.literacy.sub'),
+            desc: t('home.games.literacy.desc'),
+            startUrl: "/games/reading_skill",
+            image: "/assets/images/reading_skill.jpg",
+            shortTitle: t('home.games.literacy.title'),
+            local: t('home.games.literacy.local'),
+            tag: t('home.games.literacy.tag'),
+            tagClass: "test-tag test-tag-academic"
+        }
+    ];
     const [modalData, setModalData] = useState({
         isOpen: false,
         title: '',
@@ -139,31 +142,30 @@ const Home = () => {
         <main className="main-shell">
             <section className="hero-shell">
                 <div className="hero-left">
-                    <div className="hero-pill">🧠 Kauffman-inspired assessment • For supervised use only</div>
+                    <div className="hero-pill">{t('home.heroPill')}</div>
 
                     <h1 className="hero-heading">
-                        Welcome to the<br />
-                        <span>Sangian Test Hub</span>
+                        {t('home.welcome')}<br />
+                        <span>{t('home.title')}</span>
                     </h1>
 
                     <p className="hero-text">
-                        A guided, play-based interface for administering seven Kauffman-style cognitive tests,
-                        plus Numeracy and Literacy modules – all on one simple, child-friendly screen.
+                        {t('home.desc')}
                     </p>
 
                     <ul className="hero-bullets">
-                        <li>✔ Seven core games mapped to culturally adapted names</li>
-                        <li>✔ Quick access to Numeracy &amp; Literacy readiness checks</li>
-                        <li>✔ Designed for psychologists, teachers &amp; researchers</li>
+                        <li>{t('home.bullet1')}</li>
+                        <li>{t('home.bullet2')}</li>
+                        <li>{t('home.bullet3')}</li>
                     </ul>
 
                     <div className="hero-actions">
-                        <a href="/login" className="btn hero-btn-primary">Start Assessment</a>
-                        <a href="/register" className="btn hero-btn-ghost">Register a Child</a>
+                        <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
+                        <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
                     </div>
 
                     <p className="hero-note">
-                        This digital interface supports structured KABC-style assessments. Always follow your institutional protocol and training.
+                        {t('home.warningNote')}
                     </p>
                 </div>
 
@@ -171,10 +173,10 @@ const Home = () => {
                     <div className="tests-card">
                         <div className="tests-card-header">
                             <div>
-                                <h2>Test Modules</h2>
-                                <p>Tap a card to see what the test measures.</p>
+                                <h2>{t('home.modulesHeader')}</h2>
+                                <p>{t('home.modulesSub')}</p>
                             </div>
-                            <span className="tests-badge">{testModules.length} modules</span>
+                            <span className="tests-badge">{testModules.length} {t('home.modulesBadge')}</span>
                         </div>
 
                         <div className="tests-grid">
