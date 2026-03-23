@@ -1,0 +1,12 @@
+---
+deployment:
+  tasks:
+    # Install backend dependencies
+    - cd server && npm install --production
+
+    # Copy React build to public_html (adjust path if needed)
+    - /bin/cp -Rf client/build/. ~/public_html/
+
+    # Restart Node.js application via PM2 (if PM2 available via SSH terminal)
+    # Note: cPanel Passenger apps restart automatically when tmp/restart.txt is touched
+    - touch ~/public_html/tmp/restart.txt
