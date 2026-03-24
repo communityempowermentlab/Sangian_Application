@@ -196,6 +196,12 @@ exports.getReportDetail = async (req, res) => {
                 questionScores[`q${s.qId}_time`] = s.timeTaken ?? null;
             });
 
+            let actualGameTime = parsedState?.timerSeconds ?? null;
+            let totalSessionTime = null;
+            if (row.start_time && row.end_time) {
+                totalSessionTime = Math.floor((new Date(row.end_time) - new Date(row.start_time)) / 1000);
+            }
+
             // Parse behaviors JSON array if stored as string
             let behaviors = row.q5_behaviors;
             try {
@@ -213,6 +219,8 @@ exports.getReportDetail = async (req, res) => {
                 quit_reason: row.quit_reason,
                 start_time: row.start_time,
                 end_time: row.end_time,
+                total_session_time: totalSessionTime,
+                actual_game_time: actualGameTime,
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,

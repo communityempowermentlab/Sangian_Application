@@ -115,16 +115,34 @@ const AdminReports = () => {
         if (!detail) return;
         const assessmentKeys = ['q1_enjoyment','q2_feeling','q3_tiredness','q4_play_again','q5_behaviors','additional_notes'];
         const assessmentLabels = ['Enjoyed?','Feeling?','Tired?','Play Again?','Behaviours','Notes'];
-        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Time', 'End Time', 'Status',
-            ...detail.columns.map(c => c.toUpperCase()), 'Total Score', 'Total Questions',
+        
+        const qHeaders = [];
+        detail.columns.forEach(c => {
+            qHeaders.push(c.toUpperCase());
+            qHeaders.push(`${c.toUpperCase()} Time(s)`);
+        });
+
+        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start DateTime', 'End DateTime', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status',
+            ...qHeaders, 'Total Score', 'Total Questions',
             ...assessmentLabels];
-        const rows = sortedRows.map(r => [
-            r.session_id, r.child_id, r.child_name,
-            fmtDate(r.start_time), fmtDate(r.end_time), r.status,
-            ...detail.columns.map(c => r.question_scores[c] ?? ''),
-            r.score, r.total_questions,
-            ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`)
-        ]);
+            
+        const rows = sortedRows.map(r => {
+            const rowArr = [
+                r.session_id, r.child_id, r.child_name,
+                fmtDate(r.start_time), fmtDate(r.end_time),
+                r.total_session_time ?? '', r.actual_game_time ?? '',
+                r.status
+            ];
+            
+            detail.columns.forEach(c => {
+                rowArr.push(r.question_scores[c] ?? '');
+                rowArr.push(r.question_scores[`${c}_time`] ?? '');
+            });
+            
+            rowArr.push(r.score, r.total_questions, ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`));
+            return rowArr;
+        });
+        
         const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
@@ -157,7 +175,7 @@ const AdminReports = () => {
         tableWrap: { overflowX: 'auto', background: '#fff', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginTop: 16 },
         table:     { width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', minWidth: 900 },
         th:        { background: '#f1f5f9', padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', userSelect: 'none' },
-        td:        { padding: '9px 12px', borderBottom: '1px solid #f1f5f9', color: '#334155', verticalAlign: 'middle' },
+        td:        { padding: '9px 12px', borderBottom: '1px solid #f1f5f9', color: '#334155', verticalAlign: 'middle', whiteSpace: 'nowrap' },
         tdCenter:  { padding: '9px 12px', borderBottom: '1px solid #f1f5f9', color: '#334155', textAlign: 'center', verticalAlign: 'middle' },
         scoreCell: (v) => ({
             padding: '9px 12px', borderBottom: '1px solid #f1f5f9',
@@ -216,7 +234,8 @@ const AdminReports = () => {
                                     <th style={S.th}>#</th>
                                     <th style={S.th} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
-                                    <th style={S.th} onClick={() => toggleSort('start_time')}>Date & Time <SortIcon field="start_time"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('start_time')}>Start DateTime <SortIcon field="start_time"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('end_time')}>End DateTime <SortIcon field="end_time"/></th>
                                     {/* Per-question score columns */}
                                     {detail.columns.map(c => (
                                         <th key={c} style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{c.toUpperCase()}</th>
@@ -236,6 +255,7 @@ const AdminReports = () => {
                                         <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
                                         <td style={S.td}>{row.child_name}</td>
                                         <td style={S.td}>{fmtDate(row.start_time)}</td>
+                                        <td style={S.td}>{fmtDate(row.end_time)}</td>
                                         {detail.columns.map(c => {
                                             const v = row.question_scores[c];
                                             return (
