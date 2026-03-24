@@ -137,6 +137,30 @@ const initDb = async () => {
       // Ignore error if column already exists
     }
 
+    // Create game_documents table for wiki-style per-game documentation
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS game_documents (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        game_key VARCHAR(80) NOT NULL,
+        content LONGTEXT NOT NULL,
+        updated_by VARCHAR(100) DEFAULT 'admin',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_game_key (game_key)
+      )
+    `);
+
+    // Create game_document_versions table for version history
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS game_document_versions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        game_key VARCHAR(80) NOT NULL,
+        content LONGTEXT NOT NULL,
+        saved_by VARCHAR(100) DEFAULT 'admin',
+        saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_game_key (game_key)
+      )
+    `);
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {

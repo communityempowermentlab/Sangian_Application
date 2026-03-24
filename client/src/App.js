@@ -13,6 +13,7 @@ import AdminChildAdd from './pages/AdminChildAdd';
 import AdminChildEdit from './pages/AdminChildEdit';
 import NumberSkillGame from './pages/NumberSkillGame';
 import AdminReports from './pages/AdminReports';
+import AdminDocs from './pages/AdminDocs';
 import { LanguageProvider } from './contexts/LanguageContext';
 import './index.css';
 
@@ -53,6 +54,7 @@ function App() {
                             <Route path="children/add" element={<AdminChildAdd />} />
                             <Route path="children/edit/:id" element={<AdminChildEdit />} />
                             <Route path="reports" element={<AdminReports />} />
+                            <Route path="docs" element={<AdminDocs />} />
                         </Route>
                     </Routes>
                 </div>
