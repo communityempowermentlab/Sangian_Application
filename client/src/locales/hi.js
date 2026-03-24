@@ -42,7 +42,7 @@ export const hi = {
     }
   },
   game: {
-    numeracyLabel: "संख्यात्मक परीक्षण - संख्या कौशल",
+    numeracyLabel: "संख्यात्मक परीक्षण",
     childId: "बच्चे की आईडी",
     score: "स्कोर",
     pauseQuit: "रोकें/छोड़ें",

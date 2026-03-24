@@ -42,7 +42,7 @@ export const en = {
     }
   },
   game: {
-    numeracyLabel: "Numeracy Test - Number Skill",
+    numeracyLabel: "Numeracy Test",
     childId: "Child ID",
     score: "Score",
     pauseQuit: "Pause/Quit",

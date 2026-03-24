@@ -419,9 +419,6 @@ const NumberSkillGame = () => {
             <div className="ns-screen-header">
               <div>
                 <div className="ns-screen-title" style={{fontSize: '1.4rem'}}>{t('game.question')} {questionIndex + 1} {t('game.of')} {QUESTIONS.length}</div>
-                <div className="ns-screen-subtitle">
-                  {t('game.category')}: {currentQuestion.questionCategory === 10 ? t('game.catSingle') : currentQuestion.questionCategory === 11 ? t('game.catDouble') : currentQuestion.questionCategory === 12 ? t('game.catSub') : t('game.catDiv')}
-                </div>
               </div>
               <div className="ns-chips">
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Q{questionIndex + 1}</span>
