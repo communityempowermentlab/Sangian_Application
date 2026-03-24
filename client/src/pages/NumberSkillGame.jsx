@@ -61,6 +61,7 @@ const NumberSkillGame = () => {
   
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
+  const [audioFinished, setAudioFinished] = useState(false);
   
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   
@@ -411,9 +412,11 @@ const NumberSkillGame = () => {
               </p>
               
               <div className="ns-btn-row">
-                <button className="ns-btn ns-btn-primary" onClick={() => {
-                   startNewGame();
-                }}>{t('game.startNow')}</button>
+                {audioFinished && (
+                  <button className="ns-btn ns-btn-primary" onClick={() => {
+                     startNewGame();
+                  }}>{t('game.startNow')}</button>
+                )}
                 <button className="ns-btn ns-btn-secondary" onClick={() => {
                    if (audioRef.current) {
                      audioRef.current.currentTime = 0;
@@ -659,7 +662,14 @@ const NumberSkillGame = () => {
       </main>
 
       {!isCheckingSession && (
-        <audio ref={audioRef} src="/assets/audios/number_skill_splash.wav" preload="auto" autoPlay={!showResumeModal && screen === 'splash'} />
+        <audio 
+          ref={audioRef} 
+          src="/assets/audios/number_skill_splash.wav" 
+          preload="auto" 
+          autoPlay={!showResumeModal && screen === 'splash'} 
+          onEnded={() => setAudioFinished(true)}
+          onError={() => setAudioFinished(true)}
+        />
       )}
 
       {/* Modals */}
