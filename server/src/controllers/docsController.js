@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 
 // ─── Get current document for a game key ─────────────────────────────────────
 exports.getDoc = async (req, res) => {
