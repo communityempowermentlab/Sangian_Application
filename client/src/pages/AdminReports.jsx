@@ -234,8 +234,10 @@ const AdminReports = () => {
                                     <th style={S.th}>#</th>
                                     <th style={S.th} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
-                                    <th style={S.th} onClick={() => toggleSort('start_time')}>Start DateTime <SortIcon field="start_time"/></th>
-                                    <th style={S.th} onClick={() => toggleSort('end_time')}>End DateTime <SortIcon field="end_time"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('start_time')}>Start Date <SortIcon field="start_time"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('start_time')}>Start Time</th>
+                                    <th style={S.th} onClick={() => toggleSort('end_time')}>End Date <SortIcon field="end_time"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('end_time')}>End Time</th>
                                     {/* Per-question score columns */}
                                     {detail.columns.map(c => (
                                         <th key={c} style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{c.toUpperCase()}</th>
@@ -254,8 +256,10 @@ const AdminReports = () => {
                                         <td style={S.td}>{i + 1}</td>
                                         <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
                                         <td style={S.td}>{row.child_name}</td>
-                                        <td style={S.td}>{fmtDate(row.start_time)}</td>
-                                        <td style={S.td}>{fmtDate(row.end_time)}</td>
+                                        <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.start_time)}</td>
+                                        <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
+                                        <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
+                                        <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.end_time)}</td>
                                         {detail.columns.map(c => {
                                             const v = row.question_scores[c];
                                             return (
