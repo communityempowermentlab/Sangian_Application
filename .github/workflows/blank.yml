@@ -1,0 +1,7 @@
+name: Placeholder Workflow
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This is a placeholder workflow so CodeQL Security Analysis doesn't crash when it finds zero workflow files to scan."
