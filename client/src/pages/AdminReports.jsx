@@ -124,7 +124,7 @@ const AdminReports = () => {
             qHeaders.push(`${c.toUpperCase()} Time(s)`);
         });
 
-        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start DateTime', 'End DateTime', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status',
+        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status',
             ...qHeaders, 'Total Score', 'Total Questions',
             ...assessmentLabels];
             
