@@ -5,6 +5,9 @@ const authMiddleware = require('../middleware/auth');
 
 router.use(authMiddleware);
 
+// Get a specific historical version (must come BEFORE /:gameKey to avoid param conflict)
+router.get('/version/:versionId', docsController.getVersion);
+
 // Get current document for a game
 router.get('/:gameKey', docsController.getDoc);
 
@@ -14,7 +17,5 @@ router.put('/:gameKey', docsController.saveDoc);
 // Get version history list for a game
 router.get('/:gameKey/versions', docsController.getVersions);
 
-// Get a specific historical version
-router.get('/version/:versionId', docsController.getVersion);
-
 module.exports = router;
+
