@@ -102,6 +102,18 @@ const NumberSkillGame = () => {
   }, [navigate]);
 
   useEffect(() => {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current) {
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn("Autoplay blocked by browser policy:", err);
+          setAudioFinished(true);
+        });
+      }
+    }
+  }, [isCheckingSession, screen, showResumeModal]);
+
+  useEffect(() => {
     if (screen === 'game' && !showQuitModal) {
       timerRef.current = setInterval(() => {
         setTimerSeconds(s => s + 1);
@@ -671,7 +683,6 @@ const NumberSkillGame = () => {
           ref={audioRef} 
           src="/assets/audios/number_skill_splash.wav" 
           preload="auto" 
-          autoPlay={!showResumeModal && screen === 'splash'} 
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
         />
