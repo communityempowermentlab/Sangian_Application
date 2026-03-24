@@ -109,6 +109,90 @@ Q1–Q10: 8 correct → Q11–Q20: 7 correct → Q21–Q24: 3 correct → Q25–
 *Last updated by system on first load.*
 `;
 
+const LITERACY_DEFAULT = `# 📖 Literacy Test – Documentation
+
+## Overview
+The Literacy Test is an academic assessment module evaluating a child's reading and language skills across progressive categories including letter recognition, sentence comprehension, short stories, and paragraph reading.
+
+---
+
+## Categories & Questions
+
+| # | Category | Questions | Scoring | Min Correct |
+|---|---|---|---|---|
+| 1 | Single Letter | Q1–Q10 | Manual (oral) | 4 |
+| 2 | Double Letter | Q11–Q18 | Manual (oral) | 4 |
+| 3 | Sentence      | Q19–Q20 | Manual (oral) | - |
+| 4 | Story         | Q21     | Assessor Modal | - |
+| 5 | Paragraph     | Q22     | Assessor Modal | - |
+
+**Total Questions: 22**
+
+---
+
+## Stop Rules
+1. **Category 1 Minimum Not Met** → If a child scores less than 4 correct answers on the Single Letter questions (Q1–Q10), the test drops immediately.
+2. **Category 2 Minimum Not Met** → If a child scores less than 4 correct answers on the Double Letter questions (Q11–Q18), the test drops.
+3. **Assessment Drop** → If the child scores 0 on the mid-test Story/Paragraph reading assessment (due to skipped words, pronunciation errors, or needing help), the test stops.
+
+---
+
+## Game Flow
+1. **Splash Screen** – Background audio plays; Start Now button activates after audio ends.
+2. **Game Screen** – Questions presented one at a time. Timer tracks each response.
+3. **Manual Questions (Cat 1, 2, 3)** – Assessor marks Correct / Incorrect based on verbal response.
+4. **Mid-Test Assessment (Cat 4, 5)**  – Assessor evaluates the child's reading based on 3 criteria immediately after the reading finishes.
+5. **Score Screen** – Final results, performance grid, and the Final Dashboard Assessment Form.
+
+---
+
+## Pause & Resume (Pause and Quit Functionality)
+- **Pause** – If the game is paused, it should resume from the same point when the child returns. The progress must be preserved.
+- **Quit** – If the game is quit, the session ends completely. The next time the game starts, it should begin from the beginning and should not resume the previous session.
+
+---
+
+## Scoring Logic
+
+### Manual Scoring (Letters / Sentences)
+\`\`\`
+Assessor clicks [✓ Correct] → score = 1
+Assessor clicks [✗ Incorrect] → score = 0
+\`\`\`
+
+### Mid-Test Assessment (Story / Paragraph)
+\`\`\`
+If ANY of the 3 assessment criteria (e.g. skipped words) is "Yes" → score = 0
+If ALL 3 criteria are "No" → score = 1
+\`\`\`
+
+---
+
+## Assessment Questions on Final Dashboard
+On the final dashboard, the following assessment questions will be filled in by the assessor after the game is completed:
+
+- **Q1.** Did you enjoy playing the game? *(Yes, a lot / A little / Not much)*
+- **Q2.** How did the game feel for you? *(Yes, a lot / A little / Not much)*
+- **Q3.** Did you feel tired while playing the game? *(Yes, a lot / A little / Not much)*
+- **Q4.** Would you like to play the game again? *(Yes, a lot / A little / Not much)*
+- **Q5.** Observed behaviours during the session:
+  - Difficulty sustaining attention
+  - Impulsive or random responding
+  - Negative reaction to correction
+  - Hesitation in responding
+  - High focus or persistence
+  - Verbalisation of a memory strategy (e.g., naming aloud, grouping)
+  - Needed frequent reassurance
+  - Calm and engaged throughout
+- **Additional Notes:** ___________________________
+
+These responses are recorded by the assessor and persisted along with the session.
+
+---
+
+*Last updated by system on first load.*
+`;
+
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
 
 const AdminDocs = () => {
@@ -137,8 +221,8 @@ const AdminDocs = () => {
                 setUpdatedAt(res.data.doc.updated_at);
                 setUpdatedBy(res.data.doc.updated_by);
             } else {
-                // Seed default content for Numeracy
-                const defaultText = game.key === 'numeracy_number_skill' ? NUMERACY_DEFAULT : `# ${game.title}\n\nDocumentation for **${game.title}** (${game.local}) has not been added yet.\n\nClick **Edit** to start writing.`;
+                // Seed default content
+                const defaultText = game.key === 'numeracy_number_skill' ? NUMERACY_DEFAULT : (game.key === 'literacy_reading_skill' ? LITERACY_DEFAULT : `# ${game.title}\n\nDocumentation for **${game.title}** (${game.local}) has not been added yet.\n\nClick **Edit** to start writing.`);
                 setContent(defaultText);
                 setUpdatedAt(null);
                 setUpdatedBy(null);
