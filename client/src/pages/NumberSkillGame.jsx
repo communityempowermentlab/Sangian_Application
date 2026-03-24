@@ -412,11 +412,16 @@ const NumberSkillGame = () => {
               </p>
               
               <div className="ns-btn-row">
-                {audioFinished && (
-                  <button className="ns-btn ns-btn-primary" onClick={() => {
+                <button 
+                  className="ns-btn ns-btn-primary" 
+                  disabled={!audioFinished} 
+                  style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
                      startNewGame();
-                  }}>{t('game.startNow')}</button>
-                )}
+                  }}
+                >
+                  {t('game.startNow')}
+                </button>
                 <button className="ns-btn ns-btn-secondary" onClick={() => {
                    if (audioRef.current) {
                      audioRef.current.currentTime = 0;
