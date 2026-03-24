@@ -368,7 +368,7 @@ const AdminDocs = () => {
                         </div>
                     ) : (
                         <div
-                            style={{ maxWidth: '860px', background: '#fff', borderRadius: '12px', padding: '32px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', lineHeight: '1.75', color: '#374151', fontSize: '0.92rem' }}
+                            style={{ maxWidth: '100%', background: '#fff', borderRadius: '12px', padding: '32px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', lineHeight: '1.75', color: '#374151', fontSize: '0.92rem' }}
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(viewingVersion ? viewingVersion.content : content) }}
                         />
                     )}
