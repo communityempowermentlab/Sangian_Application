@@ -80,8 +80,8 @@ exports.getResumeSession = async (req, res) => {
             [childId, gameName]
         );
 
-        // Only offer resume if the very last recorded session was not completed
-        if (rows.length > 0 && ['in_progress', 'paused', 'quit'].includes(rows[0].status)) {
+        // Only offer resume if the very last recorded session was not completed or quit
+        if (rows.length > 0 && ['in_progress', 'paused'].includes(rows[0].status)) {
             // Parse saved state
             let savedState = rows[0].saved_state;
             if (typeof savedState === 'string') {
