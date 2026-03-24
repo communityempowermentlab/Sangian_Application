@@ -496,13 +496,13 @@ const NumberSkillGame = () => {
               <div className="ns-score-top">
                 <div className="ns-score-dial-container">
                   <div className="ns-score-dial-big">{getTotalScore()}</div>
-                  <div className="ns-score-dial-small">/ {QUESTIONS.length}</div>
+                  <div className="ns-score-dial-small">/ {Math.max(1, allScores.length)}</div>
                 </div>
 
                 <div className="ns-metric-grid">
                   <div className="ns-metric-box">
                     <label>{t('game.totalScore')}</label>
-                    <div className="metric-val">{getTotalScore()} / {QUESTIONS.length}</div>
+                    <div className="metric-val">{getTotalScore()} / {Math.max(1, allScores.length)}</div>
                   </div>
                   <div className="ns-metric-box">
                     <label>{t('game.correct')}</label>
@@ -510,11 +510,11 @@ const NumberSkillGame = () => {
                   </div>
                   <div className="ns-metric-box">
                     <label>{t('game.incorrect')}</label>
-                    <div className="metric-val red">{QUESTIONS.length - getTotalScore()}</div>
+                    <div className="metric-val red">{allScores.length - getTotalScore()}</div>
                   </div>
                   <div className="ns-metric-box">
                     <label>{t('game.percentage')}</label>
-                    <div className="metric-val">{((getTotalScore() / QUESTIONS.length) * 100).toFixed(1)}%</div>
+                    <div className="metric-val">{((getTotalScore() / Math.max(1, allScores.length)) * 100).toFixed(1)}%</div>
                   </div>
                   <div className="ns-metric-box">
                     <label>{t('game.totalTime')}</label>
