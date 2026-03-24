@@ -144,6 +144,7 @@ const NumberSkillGame = () => {
     setQuestionIndex(saved.questionIndex || 0);
     setAllScores(saved.allScores || []);
     setTimerSeconds(saved.timerSeconds || 0);
+    setQTimer(saved.qTimer || 0);
     setScreen('game');
     setShowResumeModal(false);
   };
@@ -152,6 +153,7 @@ const NumberSkillGame = () => {
     setQuestionIndex(0);
     setAllScores([]);
     setTimerSeconds(0);
+    setQTimer(0);
     setAnswerVal('');
     setQuotientVal('');
     setRemainderVal('');
@@ -162,13 +164,12 @@ const NumberSkillGame = () => {
   // Question Timer Effect
   useEffect(() => {
     if (screen === 'game') {
-      setQTimer(0);
       const interval = setInterval(() => {
         setQTimer(prev => prev + 1);
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [questionIndex, screen]);
+  }, [screen]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
@@ -238,7 +239,7 @@ const NumberSkillGame = () => {
         progress_level: questionIndex + 1,
         status: statusOverride || 'in_progress',
         quit_reason: reason || null,
-        saved_state: { questionIndex, allScores, timerSeconds }
+        saved_state: { questionIndex, allScores, timerSeconds, qTimer }
       });
     } catch (e) { console.error('Failed to sync progress to server:', e); }
   };
@@ -291,11 +292,12 @@ const NumberSkillGame = () => {
           score: upScores.filter(s => s.score === 1).length,
           progress_level: questionIndex + 1,
           status: 'completed',
-          saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds }
+          saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer }
         }).catch(e=>console.log(e));
       }
     } else {
       setQuestionIndex(i => i + 1);
+      setQTimer(0);
     }
   };
 
