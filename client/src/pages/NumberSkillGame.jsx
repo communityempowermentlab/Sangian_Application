@@ -100,7 +100,7 @@ const NumberSkillGame = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (screen === 'game') {
+    if (screen === 'game' && !showQuitModal) {
       timerRef.current = setInterval(() => {
         setTimerSeconds(s => s + 1);
       }, 1000);
@@ -108,7 +108,7 @@ const NumberSkillGame = () => {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen]);
+  }, [screen, showQuitModal]);
 
   const checkResume = async (childId) => {
     setIsCheckingSession(true);
@@ -163,13 +163,13 @@ const NumberSkillGame = () => {
 
   // Question Timer Effect
   useEffect(() => {
-    if (screen === 'game') {
+    if (screen === 'game' && !showQuitModal) {
       const interval = setInterval(() => {
         setQTimer(prev => prev + 1);
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [screen]);
+  }, [screen, showQuitModal]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
