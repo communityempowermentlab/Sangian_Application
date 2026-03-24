@@ -245,7 +245,8 @@ const AdminDocs = () => {
             .replace(/^\d+\. (.+)$/gm, '<li style="margin:4px 0;padding-left:4px;">$1</li>')
             // Line breaks → paragraph spacing
             .replace(/\n\n/g, '</p><p style="margin:8px 0;">')
-            .replace(/\n/g, '<br/>');
+            .replace(/>\n/g, '>') // Remove newlines right after HTML closing/opening brackets (like </li>\n, </ul>\n) so they don't become extra <br/>
+            .replace(/\n/g, '<br/>'); // Convert remaining inner newlines to visible line breaks
     };
 
     const fmtDt = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
