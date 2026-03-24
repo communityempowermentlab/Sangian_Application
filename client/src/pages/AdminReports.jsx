@@ -125,7 +125,7 @@ const AdminReports = () => {
         });
 
         const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status',
-            ...qHeaders, 'Total Score', 'Total Questions',
+            ...qHeaders, 'Attempted Questions', 'Total Questions',
             ...assessmentLabels];
             
         const rows = sortedRows.map(r => {
@@ -142,7 +142,7 @@ const AdminReports = () => {
                 rowArr.push(r.question_scores[`${c}_time`] ?? '');
             });
             
-            rowArr.push(r.score, r.total_questions, ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`));
+            rowArr.push(r.attempted_questions ?? '', r.total_questions, ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`));
             return rowArr;
         });
         
@@ -272,7 +272,7 @@ const AdminReports = () => {
                                             );
                                         })}
                                         <td style={{ ...S.tdCenter, fontWeight: 700 }}>
-                                            {row.score ?? '—'} / {row.total_questions ?? '—'}
+                                            {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}
                                         </td>
                                         <td style={S.tdCenter}>{statusBadge(row.status)}</td>
                                         {/* Assessment answer cells */}

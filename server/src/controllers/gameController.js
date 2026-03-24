@@ -196,7 +196,10 @@ exports.getReportDetail = async (req, res) => {
                 questionScores[`q${s.qId}_time`] = s.timeTaken ?? null;
             });
 
-            let actualGameTime = parsedState?.timerSeconds ?? null;
+            // Calculate Actual Game Time as sum of individual timeTaken values
+            let actualGameTime = scores.reduce((sum, s) => sum + (s.timeTaken || 0), 0);
+            if (actualGameTime === 0 && scores.length === 0) actualGameTime = null; // Blank if no questions played
+
             let totalSessionTime = null;
             if (row.start_time && row.end_time) {
                 totalSessionTime = Math.floor((new Date(row.end_time) - new Date(row.start_time)) / 1000);
@@ -214,6 +217,7 @@ exports.getReportDetail = async (req, res) => {
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
                 score: row.score,
+                attempted_questions: scores.length,
                 total_questions: row.total_questions,
                 status: row.status,
                 quit_reason: row.quit_reason,
