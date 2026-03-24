@@ -34,6 +34,8 @@ const statusBadge = (status) => {
 };
 
 const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtOnlyDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtOnlyTime = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '—';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AdminReports = () => {
@@ -129,7 +131,8 @@ const AdminReports = () => {
         const rows = sortedRows.map(r => {
             const rowArr = [
                 r.session_id, r.child_id, r.child_name,
-                fmtDate(r.start_time), fmtDate(r.end_time),
+                fmtOnlyDate(r.start_time), fmtOnlyTime(r.start_time),
+                fmtOnlyDate(r.end_time), fmtOnlyTime(r.end_time),
                 r.total_session_time ?? '', r.actual_game_time ?? '',
                 r.status
             ];
