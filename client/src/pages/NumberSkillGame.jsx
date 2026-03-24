@@ -57,6 +57,7 @@ const NumberSkillGame = () => {
   
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [resumeData, setResumeData] = useState(null);
+  const [pauses, setPauses] = useState([]);
   
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
@@ -145,6 +146,7 @@ const NumberSkillGame = () => {
     setAllScores(saved.allScores || []);
     setTimerSeconds(saved.timerSeconds || 0);
     setQTimer(saved.qTimer || 0);
+    setPauses(saved.pauses || []);
     setScreen('game');
     setShowResumeModal(false);
   };
@@ -154,6 +156,7 @@ const NumberSkillGame = () => {
     setAllScores([]);
     setTimerSeconds(0);
     setQTimer(0);
+    setPauses([]);
     setAnswerVal('');
     setQuotientVal('');
     setRemainderVal('');
@@ -234,12 +237,22 @@ const NumberSkillGame = () => {
   const saveToServer = async (statusOverride, reason) => {
     if (!gameSessionId) return;
     try {
+      let updatedPauses = [...pauses];
+      if (reason && (statusOverride === 'paused' || statusOverride === 'quit')) {
+         updatedPauses.push({
+             questionNumber: questionIndex + 1,
+             reason: reason,
+             timestamp: new Date().toISOString()
+         });
+         setPauses(updatedPauses);
+      }
+
       await axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
         score: allScores.filter(s => s.score === 1).length,
         progress_level: questionIndex + 1,
         status: statusOverride || 'in_progress',
         quit_reason: reason || null,
-        saved_state: { questionIndex, allScores, timerSeconds, qTimer }
+        saved_state: { questionIndex, allScores, timerSeconds, qTimer, pauses: updatedPauses }
       });
     } catch (e) { console.error('Failed to sync progress to server:', e); }
   };
@@ -292,7 +305,7 @@ const NumberSkillGame = () => {
           score: upScores.filter(s => s.score === 1).length,
           progress_level: questionIndex + 1,
           status: 'completed',
-          saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer }
+          saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
         }).catch(e=>console.log(e));
       }
     } else {

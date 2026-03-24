@@ -124,7 +124,7 @@ const AdminReports = () => {
             qHeaders.push(`${c.toUpperCase()} Time(s)`);
         });
 
-        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status',
+        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status', 'Paused Questions', 'Pause Reasons',
             ...qHeaders, 'Attempted Questions', 'Total Questions',
             ...assessmentLabels];
             
@@ -134,7 +134,9 @@ const AdminReports = () => {
                 fmtOnlyDate(r.start_time), fmtOnlyTime(r.start_time),
                 fmtOnlyDate(r.end_time), fmtOnlyTime(r.end_time),
                 r.total_session_time ?? '', r.actual_game_time ?? '',
-                r.status
+                r.status,
+                `"${(r.pauses||[]).map(p=>'Q'+p.questionNumber).join('\n')}"`,
+                `"${(r.pauses||[]).map(p=>(p.reason||'').replace(/"/g, '""')).join('\n')}"`
             ];
             
             detail.columns.forEach(c => {

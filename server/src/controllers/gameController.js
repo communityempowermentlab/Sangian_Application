@@ -221,6 +221,7 @@ exports.getReportDetail = async (req, res) => {
                 total_questions: row.total_questions,
                 status: row.status,
                 quit_reason: row.quit_reason,
+                pauses: parsedState?.pauses || [],
                 start_time: row.start_time,
                 end_time: row.end_time,
                 total_session_time: totalSessionTime,
