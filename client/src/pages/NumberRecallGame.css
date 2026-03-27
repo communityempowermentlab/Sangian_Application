@@ -1,0 +1,646 @@
+/* ============================================
+   NumberRecallGame.css — nr- prefix
+   Adapted from lottery_ka_ticket.css
+   ============================================ */
+
+:root {
+  --nr-bg: #f4f7ff;
+  --nr-card-bg: #ffffff;
+  --nr-primary: #2563eb;
+  --nr-primary-soft: #e0edff;
+  --nr-accent: #10b981;
+  --nr-danger: #ef4444;
+  --nr-text: #0f172a;
+  --nr-muted: #6b7280;
+  --nr-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --nr-radius-xl: 22px;
+}
+
+/* ─── App Shell ───────────────────────────────────────── */
+.nr-app {
+  width: min(1100px, 100%);
+  margin: 20px auto;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: var(--nr-shadow-soft);
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  min-height: calc(100vh - 40px);
+}
+
+/* ─── Topbar ──────────────────────────────────────────── */
+.nr-topbar {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(120deg, rgba(37, 99, 235, 0.07), rgba(56, 189, 248, 0.05));
+  flex-shrink: 0;
+}
+
+.nr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  color: var(--nr-text);
+}
+
+.nr-brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #38bdf8, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.4);
+  flex-shrink: 0;
+}
+
+.nr-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.nr-stat-pill {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+}
+
+.nr-stat-label {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: var(--nr-muted);
+  text-transform: uppercase;
+}
+
+.nr-stat-value {
+  font-weight: 700;
+  color: var(--nr-text);
+  font-size: 0.9rem;
+}
+
+/* ─── Main ────────────────────────────────────────────── */
+.nr-main {
+  padding: 22px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+}
+
+/* ─── Screen ──────────────────────────────────────────── */
+.nr-screen {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.97));
+  border-radius: var(--nr-radius-xl);
+  padding: 22px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #e5e7eb;
+  flex: 1;
+}
+
+.nr-screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.nr-screen-title { font-size: 1.25rem; font-weight: 700; color: var(--nr-text); }
+.nr-screen-subtitle { font-size: 0.88rem; color: var(--nr-muted); margin-top: 2px; }
+
+.nr-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.nr-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+/* ─── Buttons ─────────────────────────────────────────── */
+.nr-btn {
+  border: none;
+  outline: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.nr-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.45);
+}
+
+.nr-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(37, 99, 235, 0.5); }
+.nr-btn-primary:active { transform: translateY(1px); box-shadow: none; }
+
+.nr-btn-secondary {
+  background: #e5edff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.nr-btn-secondary:hover { background: #dbeafe; }
+
+.nr-btn-warning {
+  background: #fef08a;
+  color: #854d0e;
+  border: 1px solid #fde68a;
+}
+
+.nr-btn[disabled], .nr-btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.nr-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+/* ─── Splash Card ─────────────────────────────────────── */
+.nr-splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: white;
+  border-radius: 20px;
+  padding: 20px 16px 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.nr-splash-image-wrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  background: linear-gradient(135deg, #1e3a5f, #0f2c4a);
+}
+
+.nr-splash-image {
+  width: 100%;
+  display: block;
+}
+
+.nr-splash-image-fallback {
+  font-size: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 200px;
+}
+
+.nr-splash-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--nr-text);
+  margin-top: 4px;
+}
+
+.nr-splash-subtitle {
+  font-size: 0.9rem;
+  color: var(--nr-muted);
+  margin-top: 6px;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.nr-splash-note {
+  font-size: 0.82rem;
+  color: var(--nr-muted);
+  margin-top: 12px;
+  max-width: 420px;
+  line-height: 1.4;
+}
+
+.nr-accent { color: var(--nr-primary); font-weight: 600; }
+
+/* ─── Numpad Panel (Black Screen) ────────────────────── */
+.nr-numpad-wrap {
+  background: #000;
+  border-radius: 22px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.nr-numpad-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nr-numpad-title { color: #fff; font-weight: 700; font-size: 1.05rem; }
+.nr-numpad-sub { color: rgba(255,255,255,0.6); font-size: 0.82rem; }
+
+.nr-numpad-display {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px 16px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nr-numpad-entered {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.nr-numpad-hint {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.8rem;
+  user-select: none;
+  text-align: right;
+}
+
+.nr-numpad-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─── Numpad Keys ─────────────────────────────────────── */
+.nr-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nr-key {
+  color: #fff;
+  border-radius: 18px;
+  padding: 20px 10px;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 900;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, rgba(56,189,248,0.3), rgba(37,99,235,0.3));
+  border: 2px solid rgba(255,255,255,0.15);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.28);
+  transition: transform 0.1s ease, background 0.15s ease;
+  font-family: inherit;
+}
+
+.nr-key:hover {
+  background: linear-gradient(135deg, rgba(16,185,129,0.33), rgba(56,189,248,0.33));
+}
+
+.nr-key:active { transform: translateY(1px) scale(0.99); box-shadow: none; }
+
+.nr-key-danger {
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, rgba(239,68,68,0.4), rgba(251,113,133,0.28));
+  border-color: rgba(239,68,68,0.4);
+}
+
+/* ─── Replay Button (inside numpad) ──────────────────── */
+.nr-replay-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  transition: background 0.15s ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nr-replay-btn:hover { background: rgba(255,255,255,0.2); }
+.nr-replay-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Action buttons inside numpad ───────────────────── */
+.nr-action-msg {
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 0;
+}
+
+.nr-btn-next {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.nr-btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(59,130,246,0.45); }
+
+/* ─── Score / Result Screen ───────────────────────────── */
+.nr-result-card {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(15,23,42,0.06);
+}
+
+.nr-score-top {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.nr-score-dial-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle at 30% 30%, #38bdf8, #2563eb);
+  border-radius: 999px;
+  width: 130px;
+  height: 130px;
+  justify-content: center;
+  box-shadow: 0 16px 32px rgba(37,99,235,0.3);
+  flex-shrink: 0;
+}
+
+.nr-score-dial-big { font-size: 3rem; font-weight: 900; color: #fff; line-height: 1; }
+.nr-score-dial-small { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.85); }
+.nr-score-accuracy { font-size: 0.82rem; color: var(--nr-muted); margin-top: 8px; }
+
+.nr-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  flex: 1;
+}
+
+.nr-metric-box {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.nr-metric-box label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--nr-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.nr-metric-val { font-size: 1.4rem; font-weight: 800; color: var(--nr-text); }
+.nr-metric-val.green { color: #059669; }
+.nr-metric-val.red { color: #dc2626; }
+
+.nr-banner {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-radius: 14px;
+  padding: 12px 16px;
+  color: #065f46;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  margin: 12px 0;
+}
+
+.nr-accordion-toggle {
+  cursor: pointer;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 10px 0;
+  user-select: none;
+}
+
+/* ─── Question Results Table ──────────────────────────── */
+.nr-q-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-top: 4px;
+}
+
+.nr-q-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 560px;
+}
+
+.nr-q-table thead { background: #f7fafc; border-bottom: 2px solid #e2e8f0; }
+.nr-q-table th { padding: 11px 12px; text-align: left; font-weight: 700; color: #4a5568; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; }
+.nr-q-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.12s; }
+.nr-q-table tbody tr:hover { background: #f7fafc; }
+.nr-q-table td { padding: 10px 12px; color: #2d3748; }
+
+.nr-row-correct { background: rgba(16,185,129,0.05); }
+.nr-row-incorrect { background: rgba(239,68,68,0.05); }
+
+.nr-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.nr-badge-correct { background: #d1fae5; color: #065f46; }
+.nr-badge-incorrect { background: #fee2e2; color: #991b1b; }
+.nr-badge-skipped { background: #fed7aa; color: #92400e; }
+
+/* ─── Assessment Section ──────────────────────────────── */
+.nr-assessment-section {
+  margin-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 18px;
+}
+
+.nr-form-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--nr-text);
+  margin: 0 0 16px;
+}
+
+.nr-q-group { margin-bottom: 16px; }
+
+.nr-q-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.nr-radio-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.nr-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.nr-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.nr-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.nr-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  color: var(--nr-text);
+  box-sizing: border-box;
+}
+
+.nr-textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+.nr-final-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* ─── Modals ──────────────────────────────────────────── */
+.nr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.nr-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+
+.nr-modal h2 { font-size: 1.2rem; font-weight: 800; margin: 0 0 8px; color: var(--nr-text); }
+.nr-modal p { color: var(--nr-muted); font-size: 0.9rem; margin: 0 0 16px; }
+.nr-modal textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.nr-modal textarea:focus { outline: none; border-color: #2563eb; }
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media (max-width: 680px) {
+  .nr-app { margin: 10px; border-radius: 20px; }
+  .nr-main { padding: 14px 14px 20px; }
+  .nr-screen { padding: 14px 12px 18px; }
+  .nr-numpad-wrap { padding: 14px; }
+  .nr-key { padding: 16px 8px; font-size: 1.4rem; }
+  .nr-score-top { flex-direction: column; align-items: center; }
+  .nr-score-dial-container { width: 110px; height: 110px; }
+  .nr-score-dial-big { font-size: 2.5rem; }
+}
