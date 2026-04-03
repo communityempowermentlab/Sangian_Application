@@ -1028,7 +1028,14 @@ const NumberRecallGame = () => {
             <h2>Saved Progress Found</h2>
             <p>You have a previously paused session for this game.</p>
             <div className="nr-btn-row" style={{ marginTop: 20 }}>
-              <button className="nr-btn nr-btn-secondary" onClick={() => { setShowResumeModal(false); startNewGame(); }}>
+              <button className="nr-btn nr-btn-secondary" onClick={() => { 
+                setShowResumeModal(false); 
+                setAudioFinished(false);
+                setScreen('splash');
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                }
+              }}>
                 Restart Fresh
               </button>
               <button className="nr-btn nr-btn-primary" onClick={resumeGame}>

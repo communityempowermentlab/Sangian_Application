@@ -14,6 +14,7 @@ import AdminChildEdit from './pages/AdminChildEdit';
 import NumberSkillGame from './pages/NumberSkillGame';
 import ReadingSkillGame from './pages/ReadingSkillGame';
 import NumberRecallGame from './pages/NumberRecallGame';
+import HerPherGame from './pages/HerPherGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -47,6 +48,7 @@ function App() {
                         <Route path="/games/number_skill" element={<NumberSkillGame />} />
                         <Route path="/games/reading_skill" element={<ReadingSkillGame />} />
                         <Route path="/games/number_recall" element={<NumberRecallGame />} />
+                        <Route path="/games/her_pher" element={<HerPherGame />} />
 
                         {/* Isolated Admin Navigation Routes */}
                         <Route path="/admin/login" element={<AdminLogin />} />
