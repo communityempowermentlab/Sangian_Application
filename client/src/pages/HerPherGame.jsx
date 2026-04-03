@@ -176,7 +176,7 @@ const HerPherGame = () => {
     const child = JSON.parse(raw);
     setChildData(child);
     checkResume(child.child_id);
-  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [navigate]); // eslint-disable-line
 
   // ──── Splash audio autoplay ──────────────────────────────────────────────────
   useEffect(() => {
@@ -216,7 +216,7 @@ const HerPherGame = () => {
     setQuestionTime(0);
     setShowControls(false);
     setButtonsDisabled(false);
-  }, [screen, currentQuestion, currentAttempt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [screen, currentQuestion, currentAttempt]); // eslint-disable-line
 
   // ──── API: Check Resume ──────────────────────────────────────────────────────
   const checkResume = async (childId) => {
@@ -304,7 +304,7 @@ const HerPherGame = () => {
         },
       });
     } catch (e) { console.error('Save to server error', e); }
-  }, [currentQuestion, currentAttempt, scoreHistory, totalScore, totalTime]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentQuestion, currentAttempt, scoreHistory, totalScore, totalTime]); // eslint-disable-line
 
   // ──── Image click handler ────────────────────────────────────────────────────
   const handleImageClick = useCallback((imageId) => {
@@ -340,7 +340,7 @@ const HerPherGame = () => {
         });
       }, 300);
     }
-  }, [buttonsDisabled, clickedImages, selectedOrder, responses, currentQuestion, GAME_DATA]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buttonsDisabled, clickedImages, selectedOrder, responses, currentQuestion, GAME_DATA]); // eslint-disable-line
 
   // ──── Finish question attempt ────────────────────────────────────────────────
   const finishQuestion = useCallback((resp, sel, qData) => {
@@ -378,7 +378,7 @@ const HerPherGame = () => {
       // Auto-advance after 1.5s
       setTimeout(() => moveNext(qData), 1500);
     }
-  }, [currentQuestion, currentAttempt, questionTime]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentQuestion, currentAttempt, questionTime]); // eslint-disable-line
 
   // ──── Advance to next attempt or question ────────────────────────────────────
   const moveNext = useCallback((qData) => {
@@ -398,7 +398,7 @@ const HerPherGame = () => {
         setCurrentQuestion(next);
       }
     }
-  }, [currentAttempt, currentQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentAttempt, currentQuestion]); // eslint-disable-line
 
   // ──── Sample question controls ───────────────────────────────────────────────
   const handleSampleRetake = () => {
@@ -451,7 +451,7 @@ const HerPherGame = () => {
         return hist;
       });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
   // ──── Quit/Pause ─────────────────────────────────────────────────────────────
   const handleQuit = async (status) => {
