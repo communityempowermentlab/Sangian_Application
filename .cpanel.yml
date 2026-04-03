@@ -5,7 +5,7 @@ deployment:
     - cd server && npm install --production
     
     # 2. Frontend: Install dependencies and build React app
-    - cd client && npm install
+    - cd client && npm install --omit=dev
     - cd client && npm run build
     
     # 3. Frontend: Copy new React build to public_html document root

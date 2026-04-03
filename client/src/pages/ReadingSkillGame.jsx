@@ -718,15 +718,7 @@ const ReadingSkillGame = () => {
             <h2>Saved Progress Found</h2>
             <p>You have a previously paused game session.</p>
             <div className="rs-btn-row" style={{marginTop:'20px'}}>
-              <button className="rs-btn rs-btn-secondary" onClick={() => { 
-                setShowResumeModal(false); 
-                setAudioFinished(false);
-                setScreen('splash');
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                  audioRef.current.play().catch(() => setAudioFinished(true));
-                }
-              }}>Restart Fresh</button>
+              <button className="rs-btn rs-btn-secondary" onClick={() => { setShowResumeModal(false); startNewGame(); }}>Restart Fresh</button>
               <button className="rs-btn rs-btn-primary" onClick={resumeGame}>Resume Game</button>
             </div>
           </div>
