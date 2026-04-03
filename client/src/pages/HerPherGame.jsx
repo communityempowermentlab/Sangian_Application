@@ -994,7 +994,15 @@ const HerPherGame = () => {
             <div className="hp-btn-row" style={{ marginTop: 0 }}>
               <button
                 className="hp-btn hp-btn-secondary"
-                onClick={() => { setShowResumeModal(false); startNewGame(); }}
+                onClick={() => { 
+                  setShowResumeModal(false); 
+                  setAudioFinished(false);
+                  setScreen('splash');
+                  if (audioSplashRef.current) {
+                    audioSplashRef.current.currentTime = 0;
+                    audioSplashRef.current.play().catch(() => setAudioFinished(true));
+                  }
+                }}
               >
                 Restart Fresh
               </button>
