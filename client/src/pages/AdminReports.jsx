@@ -119,6 +119,7 @@ const AdminReports = () => {
         const assessmentLabels = ['Enjoyed?','Feeling?','Tired?','Play Again?','Behaviours','Notes'];
         
         const isAuditory = activeGame?.key === 'auditory_dhyan';
+        const isHerPher  = activeGame?.key === 'working_memory_herpher';
         const qHeaders = [];
         
         if (isAuditory) {
@@ -131,6 +132,12 @@ const AdminReports = () => {
                     `Q${q}_Total EOC`,
                     `Q${q}_Total Playtime(s)`
                 );
+            });
+        } else if (isHerPher) {
+            // Q1–Q8 = internal qIds 2–9 (qId 1 is sample, excluded)
+            [2,3,4,5,6,7,8,9].forEach((qId, i) => {
+                const label = `Q${i+1}`;
+                qHeaders.push(`${label} Correct Responses`, `${label} Score`, `${label} Time(s)`);
             });
         } else {
             detail.columns.forEach(c => {
@@ -165,6 +172,15 @@ const AdminReports = () => {
                         qs[`q${q}_eoo`] ?? '',
                         qs[`q${q}_eoc`] ?? '',
                         qs[`q${q}_time`] ?? ''
+                    );
+                });
+            } else if (isHerPher) {
+                [2,3,4,5,6,7,8,9].forEach(qId => {
+                    const qs = r.question_scores;
+                    rowArr.push(
+                        qs[`q${qId}_correct`] ?? '',
+                        qs[`q${qId}`] ?? '',
+                        qs[`q${qId}_time`] ?? ''
                     );
                 });
             } else {
@@ -285,6 +301,14 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>Q{q} Playtime(s)</th>
                                             </React.Fragment>
                                         ))
+                                    ) : activeGame?.key === 'working_memory_herpher' ? (
+                                        [1,2,3,4,5,6,7,8].map(q => (
+                                            <React.Fragment key={`hph-${q}`}>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#dbeafe', minWidth: 60 }}>Q{q} Correct</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>Q{q} Score</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Q{q} Time(s)</th>
+                                            </React.Fragment>
+                                        ))
                                     ) : (
                                         detail.columns.map(c => (
                                             <React.Fragment key={c}>
@@ -295,7 +319,9 @@ const AdminReports = () => {
                                     )}
                                     
                                     {activeGame?.key !== 'auditory_dhyan' && (
-                                        <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>Score <SortIcon field="score"/></th>
+                                        <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
+                                            {activeGame?.key === 'working_memory_herpher' ? 'Total Score' : 'Score'} <SortIcon field="score"/>
+                                        </th>
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
                                     {/* Assessment columns — visually separated */}
@@ -330,6 +356,21 @@ const AdminReports = () => {
                                                     </React.Fragment>
                                                 );
                                             })
+                                        ) : activeGame?.key === 'working_memory_herpher' ? (
+                                            // Q1–Q8 = internal qIds 2–9 (qId 1 = sample, excluded)
+                                            [2,3,4,5,6,7,8,9].map((qId, i) => {
+                                                const qs = row.question_scores;
+                                                const correct = qs[`q${qId}_correct`];
+                                                const score = qs[`q${qId}`];
+                                                const time = qs[`q${qId}_time`];
+                                                return (
+                                                    <React.Fragment key={`hp-${qId}`}>
+                                                        <td style={{ ...S.tdCenter, color: '#0369a1', fontWeight: 600 }}>{correct ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: score > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>{score ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#64748b' }}>{time != null ? `${time}s` : '—'}</td>
+                                                    </React.Fragment>
+                                                );
+                                            })
                                         ) : (
                                             detail.columns.map(c => {
                                                 const v = row.question_scores[c];
@@ -346,7 +387,10 @@ const AdminReports = () => {
                                         
                                         {activeGame?.key !== 'auditory_dhyan' && (
                                             <td style={{ ...S.tdCenter, fontWeight: 700 }}>
-                                                {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}
+                                                {activeGame?.key === 'working_memory_herpher'
+                                                    ? (row.score ?? '—')
+                                                    : `${row.attempted_questions ?? '—'} / ${row.total_questions ?? '—'}`
+                                                }
                                             </td>
                                         )}
                                         <td style={S.tdCenter}>{statusBadge(row.status)}</td>
