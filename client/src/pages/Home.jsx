@@ -61,7 +61,7 @@ const Home = () => {
             subtitle: t('home.games.dhyan.sub'),
             desc: t('home.games.dhyan.desc'),
             startUrl: "/games/dhyan_kahan_hai",
-            image: "/assets/images/dhyan_kahan_hai.jpg",
+            image: "/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg",
             shortTitle: t('home.games.dhyan.title'),
             local: t('home.games.dhyan.local'),
             tag: t('home.games.dhyan.tag'),

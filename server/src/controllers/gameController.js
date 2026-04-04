@@ -193,6 +193,9 @@ exports.getReportDetail = async (req, res) => {
             const questionScores = {};
             scores.forEach(s => {
                 questionScores[`q${s.qId}`] = s.score;
+                if (s.eoi !== undefined) questionScores[`q${s.qId}_eoi`] = s.eoi;
+                if (s.eoo !== undefined) questionScores[`q${s.qId}_eoo`] = s.eoo;
+                if (s.eoc !== undefined) questionScores[`q${s.qId}_eoc`] = s.eoc;
                 questionScores[`q${s.qId}_time`] = s.timeTaken ?? null;
             });
 

@@ -118,11 +118,26 @@ const AdminReports = () => {
         const assessmentKeys = ['q1_enjoyment','q2_feeling','q3_tiredness','q4_play_again','q5_behaviors','additional_notes'];
         const assessmentLabels = ['Enjoyed?','Feeling?','Tired?','Play Again?','Behaviours','Notes'];
         
+        const isAuditory = activeGame?.key === 'auditory_dhyan';
         const qHeaders = [];
-        detail.columns.forEach(c => {
-            qHeaders.push(c.toUpperCase());
-            qHeaders.push(`${c.toUpperCase()} Time(s)`);
-        });
+        
+        if (isAuditory) {
+            [1, 2, 3, 4].forEach(q => {
+                qHeaders.push(
+                    `Q${q}_Correct Response`,
+                    `Q${q}_Total Correct Responses`,
+                    `Q${q}_Total EOI`,
+                    `Q${q}_Total EOO`,
+                    `Q${q}_Total EOC`,
+                    `Q${q}_Total Playtime(s)`
+                );
+            });
+        } else {
+            detail.columns.forEach(c => {
+                qHeaders.push(c.toUpperCase());
+                qHeaders.push(`${c.toUpperCase()} Time(s)`);
+            });
+        }
 
         const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status', 'Paused Questions', 'Pause Reasons',
             ...qHeaders, 'Attempted Questions', 'Total Questions',
@@ -139,10 +154,25 @@ const AdminReports = () => {
                 `"${(r.pauses||[]).map(p=>(p.reason||'').replace(/"/g, '""')).join('\n')}"`
             ];
             
-            detail.columns.forEach(c => {
-                rowArr.push(r.question_scores[c] ?? '');
-                rowArr.push(r.question_scores[`${c}_time`] ?? '');
-            });
+            if (isAuditory) {
+                const totalCorrectMap = { 1: 4, 2: 5, 3: 9, 4: 15 };
+                [1, 2, 3, 4].forEach(q => {
+                    const qs = r.question_scores;
+                    rowArr.push(
+                        qs[`q${q}`] ?? '',
+                        totalCorrectMap[q],
+                        qs[`q${q}_eoi`] ?? '',
+                        qs[`q${q}_eoo`] ?? '',
+                        qs[`q${q}_eoc`] ?? '',
+                        qs[`q${q}_time`] ?? ''
+                    );
+                });
+            } else {
+                detail.columns.forEach(c => {
+                    rowArr.push(r.question_scores[c] ?? '');
+                    rowArr.push(r.question_scores[`${c}_time`] ?? '');
+                });
+            }
             
             rowArr.push(r.attempted_questions ?? '', r.total_questions, ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`));
             return rowArr;
@@ -244,10 +274,29 @@ const AdminReports = () => {
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Date <SortIcon field="end_time"/></th>
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Time</th>
                                     {/* Per-question score columns */}
-                                    {detail.columns.map(c => (
-                                        <th key={c} style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{c.toUpperCase()}</th>
-                                    ))}
-                                    <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>Score <SortIcon field="score"/></th>
+                                    {activeGame?.key === 'auditory_dhyan' ? (
+                                        [1, 2, 3, 4].map(q => (
+                                            <React.Fragment key={`qh-${q}`}>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Q{q} Correct</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Q{q} Max Score</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fee2e2' }}>Q{q} EOI</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fee2e2' }}>Q{q} EOO</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fee2e2' }}>Q{q} EOC</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>Q{q} Playtime(s)</th>
+                                            </React.Fragment>
+                                        ))
+                                    ) : (
+                                        detail.columns.map(c => (
+                                            <React.Fragment key={c}>
+                                                <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{c.toUpperCase()}</th>
+                                                <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
+                                            </React.Fragment>
+                                        ))
+                                    )}
+                                    
+                                    {activeGame?.key !== 'auditory_dhyan' && (
+                                        <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>Score <SortIcon field="score"/></th>
+                                    )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
                                     {/* Assessment columns — visually separated */}
                                     {ASSESSMENT_COLS.map(ac => (
@@ -265,17 +314,41 @@ const AdminReports = () => {
                                         <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
                                         <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
                                         <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.end_time)}</td>
-                                        {detail.columns.map(c => {
-                                            const v = row.question_scores[c];
-                                            return (
-                                                <td key={c} style={S.scoreCell(v)}>
-                                                    {v === 1 ? '✔' : v === 0 ? '✖' : '—'}
-                                                </td>
-                                            );
-                                        })}
-                                        <td style={{ ...S.tdCenter, fontWeight: 700 }}>
-                                            {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}
-                                        </td>
+                                        
+                                        {activeGame?.key === 'auditory_dhyan' ? (
+                                            [1, 2, 3, 4].map(q => {
+                                                const totalCorrectMap = { 1: 4, 2: 5, 3: 9, 4: 15 };
+                                                const qs = row.question_scores;
+                                                return (
+                                                    <React.Fragment key={`qd-${q}`}>
+                                                        <td style={{ ...S.tdCenter, fontWeight: 700, color: '#0369a1' }}>{qs[`q${q}`] ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#64748b' }}>{totalCorrectMap[q]}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoi`] ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoo`] ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoc`] ?? '—'}</td>
+                                                        <td style={{ ...S.tdCenter, color: '#854d0e' }}>{qs[`q${q}_time`] ?? '—'}</td>
+                                                    </React.Fragment>
+                                                );
+                                            })
+                                        ) : (
+                                            detail.columns.map(c => {
+                                                const v = row.question_scores[c];
+                                                return (
+                                                    <React.Fragment key={c}>
+                                                        <td style={S.scoreCell(v)}>
+                                                            {v === 1 ? '✔' : v === 0 ? '✖' : '—'}
+                                                        </td>
+                                                        <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${row.question_scores[`${c}_time`]}s` : '—'}</td>
+                                                    </React.Fragment>
+                                                );
+                                            })
+                                        )}
+                                        
+                                        {activeGame?.key !== 'auditory_dhyan' && (
+                                            <td style={{ ...S.tdCenter, fontWeight: 700 }}>
+                                                {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}
+                                            </td>
+                                        )}
                                         <td style={S.tdCenter}>{statusBadge(row.status)}</td>
                                         {/* Assessment answer cells */}
                                         {ASSESSMENT_COLS.map(ac => (
