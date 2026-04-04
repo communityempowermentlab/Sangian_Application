@@ -810,8 +810,16 @@ const HerPherGame = () => {
                         </div>
                         <div className="hp-q-bottom">
                           <span className="hp-q-time">{formatTime(h.time)}</span>
-                          <span className={`hp-q-icon ${h.score > 0 ? 'green' : 'red'}`}>
-                            {h.score > 0 ? '✔' : '✖'}
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            {h.correctCount ?? 0} correct
+                          </span>
+                          <span style={{
+                            fontSize: '0.82rem', fontWeight: 700,
+                            color: h.score > 0 ? '#059669' : '#94a3b8',
+                            background: h.score > 0 ? '#d1fae5' : '#f1f5f9',
+                            borderRadius: '999px', padding: '2px 8px'
+                          }}>
+                            {h.score > 0 ? `+${h.score}` : '0'}
                           </span>
                         </div>
                       </div>
