@@ -85,26 +85,33 @@ function buildGameData() {
     2: { questionOrder: 2, isSample: false, imageCount: 7,  category: 'birds',     imageIds: r(range(10), 7)  },
     3: { questionOrder: 3, isSample: false, imageCount: 8,  category: 'vegetables',imageIds: r(range(10), 8)  },
     4: { questionOrder: 4, isSample: false, imageCount: 9,  category: 'sports',    imageIds: r(range(14), 9)  },
-    5: { questionOrder: 5, isSample: false, imageCount: 10, category: 'flowers',   imageIds: range(10)         },
-    6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'insects',   imageIds: range(11)         },
+    5: { questionOrder: 5, isSample: false, imageCount: 10, category: 'flowers',   imageIds: range(10)        },
+    6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'insects',   imageIds: range(11)        },
     7: { questionOrder: 7, isSample: false, imageCount: 12, category: 'household', imageIds: r(range(14), 12) },
     8: { questionOrder: 8, isSample: false, imageCount: 13, category: 'animals',   imageIds: r(range(14), 13) },
-    9: { questionOrder: 9, isSample: false, imageCount: 14, category: 'transport', imageIds: r(range(16), 14) },
+    9: { questionOrder: 9, isSample: false, imageCount: 13, category: 'transport', imageIds: r(range(16), 13) },
   };
 }
 
 // Scoring rules: for each scored question (key = question slot 2–9)
 // value = { maxCorrect: pts, maxCorrect-1: pts }
 const SCORING_RULES = {
-  2: { 7: 2, 6: 1 },
-  3: { 8: 2, 7: 1 },
-  4: { 9: 2, 8: 1 },
-  5: { 10: 2, 9: 1 },
-  6: { 11: 2, 10: 1 },
-  7: { 12: 2, 11: 1 },
-  8: { 13: 2, 12: 1 },
-  9: { 14: 2, 13: 1 },
+  2: { 7: 2, 6: 1 },                 // Q1 (7 img)
+  3: { 8: 2, 7: 1 },                 // Q2 (8 img)
+  4: { 9: 3, 8: 2, 7: 1 },           // Q3 (9 img)
+  5: { 10: 3, 9: 2, 8: 1 },          // Q4 (10 img)
+  6: { 11: 3, 10: 2, 9: 1 },         // Q5 (11 img)
+  7: { 12: 4, 11: 3, 10: 2, 9: 1 },  // Q6 (12 img)
+  8: { 13: 4, 12: 3, 11: 2, 10: 1 }, // Q7 (13 img)
+  9: { 13: 4, 12: 3, 11: 2, 10: 1 }, // Q8 (13 img)
 };
+
+function getPerformanceInterpretation(s) {
+  if (s >= 20) return 'Excellent';
+  if (s >= 15) return 'Good';
+  if (s >= 10) return 'Average';
+  return 'Needs Improvement';
+}
 
 function calcScore(questionNum, correctCount) {
   if (questionNum === 1) return 0; // sample
@@ -138,6 +145,7 @@ const HerPherGame = () => {
   const [questionTime, setQuestionTime]         = useState(0);      // seconds this attempt
   const [showControls, setShowControls]         = useState(false);  // sample retake/next
   const [buttonsDisabled, setButtonsDisabled]   = useState(false);
+  const [shuffleInProgress, setShuffleInProgress] = useState(false);
 
   // Splash audio
   const [audioFinished, setAudioFinished]       = useState(false);
@@ -310,6 +318,9 @@ const HerPherGame = () => {
   const handleImageClick = useCallback((imageId) => {
     if (buttonsDisabled) return;
 
+    // Lock interactions immediately
+    setButtonsDisabled(true);
+
     const isNew = !clickedImages.has(imageId);
     const newClicked = new Set(clickedImages);
     newClicked.add(imageId);
@@ -328,17 +339,31 @@ const HerPherGame = () => {
 
     if (newSelected.length >= qData.imageCount) {
       // All clicked — complete question
-      setButtonsDisabled(true);
       clearInterval(timerRef.current);
       finishQuestion(newResponses, newSelected, qData);
     } else {
-      // Shuffle after 300ms
+      // 1. Pause briefly then trigger visual scale-down "shuffle mode" state
       setTimeout(() => {
-        setImageLayout(prev => {
-          const positions = shuffle(getPositionsForCount(qData.imageCount));
-          return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y }));
-        });
-      }, 300);
+        setShuffleInProgress(true);
+        
+        // 2. Wait for scale-down animation to near completion before shuffling
+        setTimeout(() => {
+          setImageLayout(prev => {
+            const positions = shuffle(getPositionsForCount(qData.imageCount));
+            return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y }));
+          });
+          
+          // 3. Wait for layout movement to bounce/settle
+          setTimeout(() => {
+            setShuffleInProgress(false);
+            
+            // 4. Finally release locks after scale-up concludes
+            setTimeout(() => {
+              setButtonsDisabled(false);
+            }, 300);
+          }, 600);
+        }, 200);
+      }, 150);
     }
   }, [buttonsDisabled, clickedImages, selectedOrder, responses, currentQuestion, GAME_DATA]); // eslint-disable-line
 
@@ -541,28 +566,15 @@ const HerPherGame = () => {
           <div className="hp-stats">
             {childData?.child_id && (
               <div className="hp-stat-pill">
-                <span className="hp-stat-label">ID:</span>
+                <span className="hp-stat-label" style={{ textTransform: 'uppercase' }}>CHILD ID</span>
                 <span className="hp-stat-value">{childData.child_id}</span>
               </div>
             )}
-            {childData?.name && (
-              <div className="hp-stat-pill">
-                <span className="hp-stat-label">Name:</span>
-                <span className="hp-stat-value">{childData.name}</span>
-              </div>
-            )}
             <div className="hp-stat-pill">
-              <span className="hp-stat-label">Age:</span>
-              <span className="hp-stat-value">{childData?.age ?? '—'}</span>
-            </div>
-            <div className="hp-stat-pill">
-              <span className="hp-stat-label">SP:</span>
-              <span className="hp-stat-value">{sp}</span>
-            </div>
-            <div className="hp-stat-pill">
-              <span className="hp-stat-label">Score:</span>
+              <span className="hp-stat-label" style={{ textTransform: 'uppercase' }}>SCORE</span>
               <span className="hp-stat-value">{totalScore}</span>
             </div>
+
             {screen === 'game' && (
               <button
                 className="hp-btn hp-btn-warning"
@@ -584,10 +596,6 @@ const HerPherGame = () => {
                 <div>
                   <div className="hp-screen-title">Working Memory — Her Pher</div>
                   <div className="hp-screen-subtitle">Listen to the instructions, then start.</div>
-                </div>
-                <div className="hp-chips">
-                  <span className="hp-chip">Splash</span>
-                  <span className="hp-chip">Audio + Image</span>
                 </div>
               </div>
 
@@ -645,13 +653,11 @@ const HerPherGame = () => {
               <div className="hp-screen-header">
                 <div>
                   <div className="hp-screen-title">Working Memory — Her Pher</div>
-                  <div className="hp-screen-subtitle">{questionLabel} · {attemptLabel}</div>
+                  <div className="hp-screen-subtitle">
+                    {questionLabel}
+                  </div>
                 </div>
                 <div className="hp-chips">
-                  <span className={`hp-chip ${qData.isSample ? 'hp-chip-sample' : 'hp-chip-q'}`}>
-                    {qData.isSample ? 'Sample' : `Q${currentQuestion - 1}`}
-                  </span>
-                  <span className="hp-chip hp-chip-set">Attempt {currentAttempt}/2</span>
                   {currentAttempt === 1 && !qData.isSample && (
                     <span className="hp-chip" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
                       Practice (not scored)
@@ -681,10 +687,6 @@ const HerPherGame = () => {
                     {qData.category}
                   </span>
                 </div>
-                <div className="hp-info-item">
-                  <span className="hp-info-label">⭐ Score:</span>
-                  <span className="hp-info-value">{totalScore}</span>
-                </div>
               </div>
 
               {/* Image Grid */}
@@ -697,11 +699,10 @@ const HerPherGame = () => {
                   return (
                     <button
                       key={`${imageId}-${x}-${y}`}
-                      className={`hp-img-btn ${wasCorrect ? 'hp-clicked-correct' : ''} ${wasWrong ? 'hp-clicked-incorrect' : ''}`}
+                      className={`hp-img-btn ${shuffleInProgress ? 'hp-shuffling' : ''} ${wasCorrect ? 'hp-clicked-correct' : ''} ${wasWrong ? 'hp-clicked-incorrect' : ''}`}
                       style={{
                         left: `${x}px`,
                         top: `${y}px`,
-                        transition: 'left 0.4s ease, top 0.4s ease',
                       }}
                       disabled={buttonsDisabled}
                       onClick={() => handleImageClick(imageId)}
@@ -732,92 +733,67 @@ const HerPherGame = () => {
             </div>
           )}
 
-          {/* ══════════════ SCORE ══════════════ */}
+          {/* ══════════════ SCORE (End of Game) ══════════════ */}
           {screen === 'score' && (
             <div className="hp-screen">
               <div className="hp-screen-header">
                 <div>
-                  <div className="hp-screen-title">Working Memory — Her Pher</div>
-                  <div className="hp-screen-subtitle">Assessment Complete!</div>
+                  <div className="hp-screen-title">Assessment Complete</div>
+                  <div className="hp-screen-subtitle">All questions completed</div>
                 </div>
                 <div className="hp-chips">
-                  <span className="hp-chip hp-chip-success">✓ Finished</span>
+                  <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
+                  <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
+                    Time: {Math.floor(totalTime / 60)}m {totalTime % 60}s
+                  </span>
                 </div>
               </div>
 
-              <div className="hp-card hp-score-card">
-                <div className="hp-score-header">
-                  <h2>🎉 Great Job!</h2>
-                  <p>You've completed the Working Memory assessment</p>
+              <div className="hp-card hp-result-card" style={{ padding: 30 }}>
+                <div className="hp-result-header" style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>Working Memory Performance</h2>
+                  <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Assessment Completed</p>
                 </div>
 
-                {/* KPI summary */}
-                <div className="hp-score-summary">
-                  <div className="hp-score-item hp-score-item-large">
-                    <div className="hp-score-label">Total Score</div>
-                    <div className="hp-score-value hp-score-value-large">{totalScore}</div>
-                    <div className="hp-score-sublabel">out of 16 points</div>
+                <div className="hp-score-top">
+                  <div className="hp-score-dial-container">
+                    <div className="hp-score-dial-big">{totalScore}</div>
+                    <div className="hp-score-dial-small">/ 25</div>
                   </div>
 
-                  <div className="hp-score-grid">
-                    <div className="hp-score-item">
-                      <div className="hp-score-label">✓ Correct Clicks</div>
-                      <div className="hp-score-value">{totalCorrectAll}</div>
+                  <div className="hp-metric-grid">
+                    <div className="hp-metric-box">
+                      <label>Total Score</label>
+                      <div className="metric-val">{totalScore} / 25</div>
                     </div>
-                    <div className="hp-score-item">
-                      <div className="hp-score-label">✗ Incorrect</div>
-                      <div className="hp-score-value">{totalIncorrectAll}</div>
+                    <div className="hp-metric-box">
+                      <label>Correct</label>
+                      <div className="metric-val green">{totalCorrectAll}</div>
                     </div>
-                    <div className="hp-score-item">
-                      <div className="hp-score-label">⏱ Total Time</div>
-                      <div className="hp-score-value">{formatTime(totalTime)}</div>
+                    <div className="hp-metric-box">
+                      <label>Incorrect</label>
+                      <div className="metric-val red">{totalIncorrectAll}</div>
                     </div>
-                    <div className="hp-score-item">
-                      <div className="hp-score-label">📝 Questions</div>
-                      <div className="hp-score-value">{scoredHistory.length}/8</div>
+                    <div className="hp-metric-box">
+                      <label>Percentage</label>
+                      <div className="metric-val">{((totalScore / 25) * 100).toFixed(1)}%</div>
+                    </div>
+                    <div className="hp-metric-box">
+                      <label>Total Time</label>
+                      <div className="metric-val">
+                         {Math.floor(totalTime / 60)}m {totalTime % 60}s
+                      </div>
+                    </div>
+                    <div className="hp-metric-box">
+                      <label>Avg Time/Q</label>
+                      <div className="metric-val">{scoredHistory.length ? Math.round(totalTime / scoredHistory.length) : 0}s</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Per-question table */}
-                <div className="hp-score-details">
-                  <h3>Question-by-Question Results (Attempt 2 — Scored)</h3>
-                  <div className="hp-score-table">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Question</th>
-                          <th>Category</th>
-                          <th>Correct</th>
-                          <th>Score</th>
-                          <th>Time</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scoredHistory.map((h, i) => {
-                          const cat = GAME_DATA[h.question]?.category || '';
-                          const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
-                          return (
-                            <tr key={i}>
-                              <td>Question {h.question - 1}</td>
-                              <td>{catLabel}</td>
-                              <td>{h.correctCount}/{h.responses.length}</td>
-                              <td style={{ fontWeight: 700, color: h.score > 0 ? '#059669' : '#6b7280' }}>
-                                {h.score} pts
-                              </td>
-                              <td>{formatTime(h.time)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="hp-score-note">
-                    <strong>Note:</strong> Total time includes all attempts. Only Attempt 2 scores count
-                    toward your total of <strong>{totalScore}/16 points</strong>.
-                  </div>
-                </div>
+                {((totalScore / 25) * 100) > 80 && (
+                   <div className="hp-banner">Outstanding performance! You're a memory star! ⭐</div>
+                )}
 
                 {/* Toggle detail grid */}
                 <div className="hp-accordion-toggle" onClick={() => setShowGrid(g => !g)}>
@@ -873,7 +849,7 @@ const HerPherGame = () => {
                   ))}
 
                   <div className="hp-q-group">
-                    <label className="hp-q-label">Q5. Observed Behaviours (Multiple selection)</label>
+                    <label className="hp-q-label">Q5. Observed Behaviours during the session (Multiple selection allowed)</label>
                     <div className="hp-checkbox-grid">
                       {[
                         'Difficulty sustaining attention',
@@ -934,16 +910,21 @@ const HerPherGame = () => {
                 </div>
 
                 {/* Final Actions */}
-                <div className="hp-final-actions">
+                <div className="hp-final-actions" style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '24px', paddingBottom: '24px' }}>
                   {assessmentSubmitted ? (
                     <>
                       <button
                         className="hp-btn hp-btn-primary"
                         onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
+                        style={{ minWidth: '160px' }}
                       >
-                        ↻ New Assessment
+                        ↻ Retest
                       </button>
-                      <button className="hp-btn hp-btn-secondary" onClick={() => navigate('/')}>
+                      <button 
+                        className="hp-btn hp-btn-secondary" 
+                        onClick={() => navigate('/')}
+                        style={{ minWidth: '160px' }}
+                      >
                         🏠 Home
                       </button>
                     </>
@@ -957,15 +938,6 @@ const HerPherGame = () => {
                       {assessmentSubmitting ? 'Saving…' : 'Submit Assessment'}
                     </button>
                   )}
-                </div>
-
-                <div className="hp-score-actions">
-                  <button
-                    className="hp-btn hp-btn-secondary"
-                    onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
-                  >
-                    🔄 Start New Assessment
-                  </button>
                 </div>
               </div>
             </div>
@@ -994,7 +966,7 @@ const HerPherGame = () => {
             <div className="hp-btn-row" style={{ marginTop: 0 }}>
               <button
                 className="hp-btn hp-btn-secondary"
-                onClick={() => { setShowResumeModal(false); startNewGame(); }}
+                onClick={() => { setShowResumeModal(false); resetGameState(); }}
               >
                 Restart Fresh
               </button>
