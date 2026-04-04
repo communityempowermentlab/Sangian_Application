@@ -602,7 +602,7 @@ const HerPherGame = () => {
               <div className="hp-card hp-splash-card">
                 <div className="hp-splash-img-wrapper">
                   <img
-                    src="/assets/images/her_pher/her_pher.jpg"
+                    src="/assets/images/her_pher.jpg"
                     alt="Her Pher"
                     className="hp-splash-img"
                     onError={(e) => {

@@ -73,7 +73,7 @@ const Home = () => {
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
             startUrl: "/games/her_pher",
-            image: "/assets/images/her_pher/her_pher.jpg",
+            image: "/assets/images/her_pher.jpg",
             shortTitle: t('home.games.herpher.title'),
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
