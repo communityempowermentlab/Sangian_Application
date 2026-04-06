@@ -16,6 +16,7 @@ import ReadingSkillGame from './pages/ReadingSkillGame';
 import NumberRecallGame from './pages/NumberRecallGame';
 import HerPherGame from './pages/HerPherGame';
 import AuditoryAttentionGame from './pages/AuditoryAttentionGame';
+import TriangleRachnaGame from './pages/TriangleRachnaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -51,6 +52,7 @@ function App() {
                         <Route path="/games/number_recall" element={<NumberRecallGame />} />
                         <Route path="/games/her_pher" element={<HerPherGame />} />
                         <Route path="/games/dhyan_kahan_hai" element={<AuditoryAttentionGame />} />
+                        <Route path="/games/rachna" element={<TriangleRachnaGame />} />
 
                         {/* Isolated Admin Navigation Routes */}
                         <Route path="/admin/login" element={<AdminLogin />} />

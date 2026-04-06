@@ -49,7 +49,7 @@ const Home = () => {
             subtitle: t('home.games.rachna.sub'),
             desc: t('home.games.rachna.desc'),
             startUrl: "/games/rachna",
-            image: "/assets/images/rachna.jpg",
+            image: "/assets/images/rachna/rachna.jpg",
             shortTitle: t('home.games.rachna.title'),
             local: t('home.games.rachna.local'),
             tag: t('home.games.rachna.tag'),

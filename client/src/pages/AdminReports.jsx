@@ -228,10 +228,10 @@ const AdminReports = () => {
         th:        { background: '#f1f5f9', padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', userSelect: 'none' },
         td:        { padding: '9px 12px', borderBottom: '1px solid #f1f5f9', color: '#334155', verticalAlign: 'middle', whiteSpace: 'nowrap' },
         tdCenter:  { padding: '9px 12px', borderBottom: '1px solid #f1f5f9', color: '#334155', textAlign: 'center', verticalAlign: 'middle' },
-        scoreCell: (v) => ({
+        scoreCell: (v, isTriangle) => ({
             padding: '9px 12px', borderBottom: '1px solid #f1f5f9',
             textAlign: 'center', verticalAlign: 'middle',
-            color: v === 1 ? '#059669' : v === 0 ? '#dc2626' : '#94a3b8',
+            color: v > 0 ? '#059669' : v === 0 ? '#dc2626' : '#94a3b8',
             fontWeight: v !== null && v !== undefined ? 700 : 400,
         }),
         topBar:    { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 4 },
@@ -320,7 +320,7 @@ const AdminReports = () => {
                                     
                                     {activeGame?.key !== 'auditory_dhyan' && (
                                         <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
-                                            {activeGame?.key === 'working_memory_herpher' ? 'Total Score' : 'Score'} <SortIcon field="score"/>
+                                            {activeGame?.key === 'working_memory_herpher' ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
                                         </th>
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
@@ -374,10 +374,13 @@ const AdminReports = () => {
                                         ) : (
                                             detail.columns.map(c => {
                                                 const v = row.question_scores[c];
+                                                const isTriangle = activeGame?.key === 'triangle_rachna';
                                                 return (
                                                     <React.Fragment key={c}>
-                                                        <td style={S.scoreCell(v)}>
-                                                            {v === 1 ? '✔' : v === 0 ? '✖' : '—'}
+                                                        <td style={S.scoreCell(v, isTriangle)}>
+                                                            {isTriangle 
+                                                                ? (v != null ? `${v}/2` : '—')
+                                                                : (v > 0 ? '✔' : v === 0 ? '✖' : '—')}
                                                         </td>
                                                         <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${row.question_scores[`${c}_time`]}s` : '—'}</td>
                                                     </React.Fragment>
@@ -386,10 +389,15 @@ const AdminReports = () => {
                                         )}
                                         
                                         {activeGame?.key !== 'auditory_dhyan' && (
-                                            <td style={{ ...S.tdCenter, fontWeight: 700 }}>
+                                            <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
                                                 {activeGame?.key === 'working_memory_herpher'
                                                     ? (row.score ?? '—')
-                                                    : `${row.attempted_questions ?? '—'} / ${row.total_questions ?? '—'}`
+                                                    : (
+                                                        <>
+                                                           <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {detail.columns.filter(c => row.question_scores[c] > 0).length} / {row.total_questions ?? '—'}</div>
+                                                           <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
+                                                        </>
+                                                    )
                                                 }
                                             </td>
                                         )}
