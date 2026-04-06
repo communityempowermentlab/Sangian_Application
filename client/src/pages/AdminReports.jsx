@@ -140,9 +140,11 @@ const AdminReports = () => {
                 qHeaders.push(`${label} Correct Responses`, `${label} Score`, `${label} Time(s)`);
             });
         } else {
-            detail.columns.forEach(c => {
-                qHeaders.push(c.toUpperCase());
-                qHeaders.push(`${c.toUpperCase()} Time(s)`);
+            detail.columns.forEach((c, idx) => {
+                const isTriangle = activeGame?.key === 'triangle_rachna';
+                const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
+                qHeaders.push(colLabel);
+                qHeaders.push(`${colLabel} Time(s)`);
             });
         }
 
@@ -310,12 +312,16 @@ const AdminReports = () => {
                                             </React.Fragment>
                                         ))
                                     ) : (
-                                        detail.columns.map(c => (
-                                            <React.Fragment key={c}>
-                                                <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{c.toUpperCase()}</th>
-                                                <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
-                                            </React.Fragment>
-                                        ))
+                                        detail.columns.map((c, idx) => {
+                                            const isTriangle = activeGame?.key === 'triangle_rachna';
+                                            const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
+                                            return (
+                                                <React.Fragment key={c}>
+                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{colLabel}</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
+                                                </React.Fragment>
+                                            );
+                                        })
                                     )}
                                     
                                     {activeGame?.key !== 'auditory_dhyan' && (
@@ -324,6 +330,9 @@ const AdminReports = () => {
                                         </th>
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
+                                    
+                                    <th style={{ ...S.th, textAlign: 'center' }}>Pauses</th>
+
                                     {/* Assessment columns — visually separated */}
                                     {ASSESSMENT_COLS.map(ac => (
                                         <th key={ac.key} style={{ ...S.th, background: '#ede9fe', color: '#6d28d9', minWidth: 120 }}>{ac.label}</th>
@@ -401,7 +410,23 @@ const AdminReports = () => {
                                                 }
                                             </td>
                                         )}
-                                        <td style={S.tdCenter}>{statusBadge(row.status)}</td>
+                                        <td style={S.tdCenter}>
+                                            {statusBadge(row.status)}
+                                            {row.status !== 'completed' && row.quit_reason && (
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontWeight: 'normal', maxWidth: '120px', whiteSpace: 'normal', margin: '4px auto 0' }}>
+                                                    "{row.quit_reason}"
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td style={S.tdCenter}>
+                                            <div title={(row.pauses||[]).map(p => `Q/Sec: ${p.questionNumber||p.questionKey||'—'} - "${p.reason||'No reason'}"`).join('\n')}>
+                                                {row.pauses && row.pauses.length > 0 ? (
+                                                    <span style={{ background:'#fef08a', color:'#854d0e', padding:'2px 8px', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'help' }}>
+                                                        {row.pauses.length}
+                                                    </span>
+                                                ) : <span style={{ color: '#cbd5e1' }}>0</span>}
+                                            </div>
+                                        </td>
                                         {/* Assessment answer cells */}
                                         {ASSESSMENT_COLS.map(ac => (
                                             <td key={ac.key} style={{ ...S.td, background: '#faf5ff', fontSize: '0.8rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}

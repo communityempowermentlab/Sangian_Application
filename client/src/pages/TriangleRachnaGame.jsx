@@ -322,6 +322,8 @@ const TriangleRachnaGame = () => {
   const [timeElapsed, setTimeElapsed]       = useState(0);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
   const [qAnswers, setQAnswers] = useState({ q1: null, q2: null, q3: null });
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [resumeState, setResumeState] = useState(null);
 
   const [totalScore, setTotalScore]         = useState(0);
   const [questionScores, setQuestionScores] = useState({});
@@ -386,23 +388,39 @@ const TriangleRachnaGame = () => {
     setRecordingTarget(target);
   };
 
-  // ── Auth ──────────────────────────────────────────────────────
+  // ── Auth & Resume ──────────────────────────────────────────────
   useEffect(() => {
     const raw = localStorage.getItem('currentChild');
     if (!raw) { navigate('/login'); return; }
-    setChildData(JSON.parse(raw));
+    const cd = JSON.parse(raw);
+    setChildData(cd);
     setIsCheck(false);
-    setScreen('splash');
+
+    axios.get(`${API_URL}/games/sessions/resume/${cd.child_id}/${GAME_NAME}`)
+      .then(res => {
+        if (res.data.success && res.data.sessionInfo) {
+          sessionIdRef.current = res.data.sessionInfo.id;
+          setResumeState(res.data.sessionInfo);
+          setShowResumeModal(true);
+          setScreen('splash');
+        } else {
+          setScreen('splash');
+        }
+      }).catch(e => {
+        console.error(e);
+        setScreen('splash');
+      });
   }, [navigate]);
 
   // ── Splash audio ──────────────────────────────────────────────
   useEffect(() => {
-    if (screen === 'splash' && audioRef.current) {
+    if (screen === 'splash' && audioRef.current && !showResumeModal) {
+      audioRef.current.currentTime = 0;
       audioRef.current.play().catch((e) => {
         if (e.name !== 'NotAllowedError') setAudioFinished(true);
       });
     }
-  }, [screen]);
+  }, [screen, showResumeModal]);
 
   // ── Timer ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -648,11 +666,58 @@ const TriangleRachnaGame = () => {
     dragItemRef.current = null;
   };
 
-  // ── Quit / Pause ──────────────────────────────────────────────
-  const submitQuit = () => {
+  // ── Quit / Pause / Resume ─────────────────────────────────────
+  const restartFresh = () => {
+    setShowResumeModal(false);
+    sessionIdRef.current = null;
+    pausesRef.current = [];
+    setPauses([]);
+    setScreen('splash');
+  };
+
+  const resumeGame = () => {
+    const s = resumeState;
+    if (!s || !s.saved_state) return restartFresh();
+    const st = s.saved_state;
+    
+    const scDict = {};
+    const tDict = {};
+    (st.allScores || []).forEach(item => {
+      scDict[item.qId] = item.score;
+      tDict[item.qId] = item.timeTaken || 0;
+    });
+
+    setQuestionScores(scDict);
+    setQuestionTimes(tDict);
+    setTotalScore(st.totalScore || 0);
+
+    const loadedPauses = st.pauses || [];
+    setPauses(loadedPauses);
+    pausesRef.current = loadedPauses;
+
+    let nextUnanswered = SCORED_QUESTIONS[0];
+    for (let i = 0; i < SCORED_QUESTIONS.length; i++) {
+        const k = SCORED_QUESTIONS[i];
+        if (scDict[k] === undefined) {
+            nextUnanswered = k;
+            break;
+        }
+    }
+    
+    if (Object.keys(scDict).length === SCORED_QUESTIONS.length) {
+        setScreen('score');
+    } else {
+        setCurrentKey(nextUnanswered);
+        setScreen('game');
+    }
+    setShowResumeModal(false);
+  };
+
+  const submitQuit = (statusType = 'paused') => {
     const p = [...pausesRef.current, { questionKey: currentKey, reason: quitReason }];
     setPauses(p);
-    saveProgress(questionScores, questionTimes, totalScore, 'paused');
+    pausesRef.current = p; // Apply exact state before saving
+    saveProgress(questionScores, questionTimes, totalScore, statusType);
     setShowQuitModal(false);
     setQuitReason('');
     navigate('/');
@@ -1019,10 +1084,10 @@ const TriangleRachnaGame = () => {
     <div className="rg-modal-overlay">
       <div className="rg-modal">
         <h2>Pause or Quit</h2>
-        <p>Why are you stopping? Your progress will be saved.</p>
+        <p>Why are you stopping the game?</p>
         <div style={{ position: 'relative' }}>
           <textarea value={quitReason} onChange={e => setQuitReason(e.target.value)}
-            placeholder="E.g. child is tired, disconnected…" style={{ width: '100%' }} />
+            placeholder="E.g., Child is tired, disconnected, etc." style={{ width: '100%' }} />
           <button 
             onClick={() => toggleRecording('quitReason')} 
             style={{
@@ -1038,9 +1103,24 @@ const TriangleRachnaGame = () => {
             🎙
           </button>
         </div>
-        <div className="rg-modal-btns">
-          <button className="rg-btn rg-btn-secondary" onClick={() => setShowQuitModal(false)}>↩ Continue</button>
-          <button className="rg-btn rg-btn-danger" onClick={submitQuit}>⏹ Save & Exit</button>
+        <div className="rg-modal-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+          <button className="rg-btn rg-btn-secondary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={() => setShowQuitModal(false)}>Cancel</button>
+          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', background:'#fef08a', color:'#854d0e', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={() => submitQuit('paused')}>Pause & Save</button>
+          <button className="rg-btn rg-btn-danger" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={() => submitQuit('quit')}>Quit & End</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Resume modal ──────────────────────────────────────────────
+  const renderResumeModal = () => (
+    <div className="rg-modal-overlay">
+      <div className="rg-modal">
+        <h2>Saved Progress Found</h2>
+        <p>You have a previously paused game session.</p>
+        <div className="rg-modal-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', color:'#4b5563', background:'#f3f4f6', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={restartFresh}>Restart Fresh</button>
+          <button className="rg-btn rg-btn-primary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={resumeGame}>Resume Game</button>
         </div>
       </div>
     </div>
@@ -1146,6 +1226,7 @@ const TriangleRachnaGame = () => {
 
       {showQuitModal && renderQuitModal()}
       {showAssessmentModal && renderAssessmentModal()}
+      {showResumeModal && renderResumeModal()}
     </div>
   );
 };
