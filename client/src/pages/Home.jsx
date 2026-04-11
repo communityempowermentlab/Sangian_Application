@@ -13,7 +13,7 @@ const Home = () => {
             subtitle: t('home.games.bagiya.sub'),
             desc: t('home.games.bagiya.desc'),
             startUrl: "/games/bagiya",
-            image: "/assets/images/bagiya.jpg",
+            image: "/assets/images/bagiya/bagiya.jpg",
             shortTitle: t('home.games.bagiya.title'),
             local: t('home.games.bagiya.local'),
             tag: t('home.games.bagiya.tag'),
