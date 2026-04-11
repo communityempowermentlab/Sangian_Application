@@ -199,6 +199,7 @@ const AtlanticBagiyaGame = () => {
   const [gridFeedback, setGridFeedback] = useState({});  // {itemId: 'correct'|'wrong'}
   const [subQAudioDone, setSubQAudioDone] = useState(false);
   const [questionAudioDone, setQuestionAudioDone] = useState(false);
+  const [feedbackAudioPlaying, setFeedbackAudioPlaying] = useState(false);
 
   // ── Practice state ──────────────────────────────────────
   const [practiceItem, setPracticeItem] = useState(null);
@@ -353,6 +354,7 @@ const AtlanticBagiyaGame = () => {
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
+    setFeedbackAudioPlaying(false);
     setAssessmentSubmitted(false);
   };
 
@@ -484,10 +486,21 @@ const AtlanticBagiyaGame = () => {
   const playAudio = (src) => {
     if (!src) return;
     if (activeAudioRef.current) {
-      try { activeAudioRef.current.pause(); } catch (_) {}
+      try { 
+        activeAudioRef.current.pause();
+        // Force resolve any ongoing audio states since it was interrupted by selection
+        setPracticeResponseAudioDone(true);
+        setSubQAudioDone(true);
+        setQuestionAudioDone(true);
+        setPracticeAudioDone(true);
+      } catch (_) {}
     }
-    activeAudioRef.current = new Audio(src);
-    activeAudioRef.current.play().catch(() => {});
+    setFeedbackAudioPlaying(true);
+    const audio = new Audio(src);
+    activeAudioRef.current = audio;
+    audio.play().catch(() => setFeedbackAudioPlaying(false));
+    audio.addEventListener('ended', () => setFeedbackAudioPlaying(false));
+    audio.addEventListener('error', () => setFeedbackAudioPlaying(false));
   };
 
   // ─── Main game answer handler ─────────────────────────────
@@ -564,6 +577,7 @@ const AtlanticBagiyaGame = () => {
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
+    setFeedbackAudioPlaying(false);
     setQTimer(0); qTimerRef.current = 0;
     saveToServer('in_progress');
   }, [completeGame, saveToServer]);
@@ -809,8 +823,8 @@ const AtlanticBagiyaGame = () => {
                   Try Again
                 </button>
                 <button
-                  className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered) ? ' ab-btn-disabled' : ''}`}
-                  disabled={!(practiceResponseAudioDone && practiceAnswered)}
+                  className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
+                  disabled={!(practiceResponseAudioDone && practiceAnswered && !feedbackAudioPlaying)}
                   onClick={() => {
                     const sets = generateAllResponseSets();
                     setResponseSets(sets);
@@ -946,8 +960,8 @@ const AtlanticBagiyaGame = () => {
                     {/* Next question button */}
                     <div className="ab-btn-row" style={{ marginTop: 24, justifyContent: 'flex-end' }}>
                       <button 
-                        className={`ab-btn ab-btn-primary${!(subQAudioDone && subQAnswered[subQIndex]) ? ' ab-btn-disabled' : ''}`}
-                        disabled={!(subQAudioDone && subQAnswered[subQIndex])}
+                        className={`ab-btn ab-btn-primary${!(subQAudioDone && subQAnswered[subQIndex] && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
+                        disabled={!(subQAudioDone && subQAnswered[subQIndex] && !feedbackAudioPlaying)}
                         onClick={() => {
                           if (subQIndex < currentConfig.subQStems.length - 1) {
                             const nextIdx = subQIndex + 1;
