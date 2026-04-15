@@ -808,7 +808,7 @@ const AtlantisBagiyaGame = () => {
                 {practiceResponseSet.map(item => (
                   <div
                     key={item.id}
-                    className={`ab-grid-item${practiceFeedback[item.id] ? ' ' + practiceFeedback[item.id] : ''}`}
+                    className="ab-grid-item"
                     onClick={() => handlePracticeAnswer(item)}
                   >
                     <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
@@ -945,7 +945,7 @@ const AtlantisBagiyaGame = () => {
                       {responseItems.map(item => (
                         <div
                           key={item.id}
-                          className={`ab-grid-item${gridFeedback[item.id] ? ' ' + gridFeedback[item.id] : ''}`}
+                          className="ab-grid-item"
                           onClick={() => handleMainAnswer(item)}
                         >
                           <img src={item.img} alt={item.name} className="ab-grid-item-img" />
@@ -1042,7 +1042,7 @@ const AtlantisBagiyaGame = () => {
                     </thead>
                     <tbody>
                       {allScores.map((s, i) => (
-                        <tr key={i} className={s.score === 2 ? 'ab-row-correct' : s.score === 1 ? '' : 'ab-row-wrong'}>
+                        <tr key={i}>
                           <td>S{s.screen}</td>
                           <td>Q{s.subQ}</td>
                           <td>
@@ -1052,7 +1052,7 @@ const AtlantisBagiyaGame = () => {
                             <img src={itemByStem[s.chosenStem]?.img} alt={s.chosenName} className="ab-q-img" />
                           </td>
                           <td>
-                            <span className={`ab-badge ${s.score === 2 ? 'ab-badge-correct' : s.score === 1 ? 'ab-badge-partial' : 'ab-badge-wrong'}`}>
+                            <span className="ab-badge">
                               {s.score === 2 ? 'Correct' : s.score === 1 ? 'Partial' : 'Wrong'}
                             </span>
                           </td>
