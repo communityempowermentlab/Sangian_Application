@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 
 const GAME_CATALOG = [
-    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantic Game',        local: 'BAGIYA',            color: '#6366f1' },
+    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Game',        local: 'BAGIYA',            color: '#6366f1' },
     { key: 'number_recall_lottery',     icon: '🎟️', title: 'Number Recall',        local: 'LOTTERY KA TICKET', color: '#f59e0b' },
     { key: 'rover_mela',                icon: '🗺️', title: 'Rover Game',           local: 'CHALO MELA CHALE',  color: '#10b981' },
     { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle',             local: 'RACHNA',            color: '#ef4444' },

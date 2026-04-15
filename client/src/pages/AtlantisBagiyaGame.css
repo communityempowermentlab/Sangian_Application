@@ -1,6 +1,6 @@
 /* ============================================
-   AtlanticBagiyaGame.css — ab- prefix
-   Atlantic Game (Bagiya)
+   AtlantisBagiyaGame.css — ab- prefix
+   Atlantis Game (Bagiya)
    ============================================ */
 
 :root {
@@ -517,6 +517,16 @@
   padding: 7px 10px;
   border-bottom: 1px solid #f1f5f9;
   color: var(--ab-text);
+  vertical-align: middle;
+}
+
+.ab-q-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f8fafc;
+  display: block;
 }
 
 .ab-row-correct td { background: #f0fdf4; }

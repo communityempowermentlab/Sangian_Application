@@ -55,7 +55,7 @@ An interactive game-based assessment platform where:
 
 ### Planned Game Modules
 
-*   Atlantic
+*   Atlantis
 *   Number Recall
 *   Rovers
 *   Triangle

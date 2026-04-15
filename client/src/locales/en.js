@@ -30,7 +30,7 @@ export const en = {
     modulesSub: "Tap a card to see what the test measures.",
     modulesBadge: "modules",
     games: {
-      bagiya: { title: "Atlantic Game", local: "(BAGIYA)", tag: "Core visual memory", desc: "Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed.", sub: "Visual associative learning" },
+      bagiya: { title: "Atlantis Game", local: "(BAGIYA)", tag: "Core visual memory", desc: "Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed.", sub: "Visual associative learning" },
       lottery: { title: "Number Recall", local: "(LOTTERY KA TICKET)", tag: "Core auditory span", desc: "Child listens to a series of numbers and repeats them in the same order.", sub: "Auditory short-term memory" },
       mela: { title: "Rover Game", local: "(CHALO MELA CHALE)", tag: "Spatial planning", desc: "Child plans a path through simple visual mazes.", sub: "Planning & spatial reasoning" },
       rachna: { title: "Triangle", local: "(RACHNA)", tag: "Construction skills", desc: "Child builds shapes and patterns using pieces.", sub: "Visual construction" },

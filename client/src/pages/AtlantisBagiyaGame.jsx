@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
-import './AtlanticBagiyaGame.css';
+import './AtlantisBagiyaGame.css';
 
 // ─── Constants ───────────────────────────────────────────
 const GAME_NAME = 'atlantis_bagiya';
@@ -178,7 +178,7 @@ const formatTime = (sec) => {
 };
 
 // ─── Main Component ───────────────────────────────────────
-const AtlanticBagiyaGame = () => {
+const AtlantisBagiyaGame = () => {
   const navigate = useNavigate();
 
   // ── Core session state ──────────────────────────────────
@@ -659,7 +659,7 @@ const AtlanticBagiyaGame = () => {
       <header className="ab-topbar">
         <div className="ab-brand">
           <div className="ab-brand-icon">A</div>
-          <div>Atlantic Game</div>
+          <div>Atlantis Game</div>
         </div>
         <div className="ab-stats">
           {childData?.child_id && (
@@ -688,7 +688,7 @@ const AtlanticBagiyaGame = () => {
           <div className="ab-screen">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">Atlantic Game</div>
+                <div className="ab-screen-title">Atlantis Game</div>
                 <div className="ab-screen-subtitle"></div>
               </div>
               <div className="ab-chips">
@@ -699,11 +699,11 @@ const AtlanticBagiyaGame = () => {
 
             <div className="ab-splash-centered">
               <div className="ab-splash-img-box">
-                <img src={`${IMG}/bagiya.jpg`} alt="Atlantic Game" className="ab-splash-img-full"
+                <img src={`${IMG}/bagiya.jpg`} alt="Atlantis Game" className="ab-splash-img-full"
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               </div>
-              <div className="ab-splash-title-center">Welcome to Atlantic Game</div>
+              <div className="ab-splash-title-center">Welcome to Atlantis Game</div>
               <p className="ab-splash-subtitle-center">
                 Please listen to the instructions. When the audio finishes, you can start the subtest.
               </p>
@@ -750,7 +750,6 @@ const AtlanticBagiyaGame = () => {
               <div className="ab-splash-img-box">
                 <img src={practiceItem.img} alt={practiceItem.name} style={{ width: '100%', display: 'block' }} />
               </div>
-              <div className="ab-splash-title-center">{practiceItem.name}</div>
               <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                 <button
                   className="ab-btn ab-btn-secondary"
@@ -813,7 +812,6 @@ const AtlanticBagiyaGame = () => {
                     onClick={() => handlePracticeAnswer(item)}
                   >
                     <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
-                    <div className="ab-grid-item-label">{item.name}</div>
                   </div>
                 ))}
               </div>
@@ -869,7 +867,6 @@ const AtlanticBagiyaGame = () => {
                       <div className="ab-splash-img-box">
                         <img src={qi.img} alt={qi.name} style={{ width: '100%', display: 'block' }} />
                       </div>
-                      <div className="ab-splash-title-center">{qi.name}</div>
                       <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                         <button className="ab-btn ab-btn-secondary" style={{ minWidth: 150, padding: '13px 28px', fontSize: '1rem' }}
                           onClick={() => {
@@ -952,7 +949,6 @@ const AtlanticBagiyaGame = () => {
                           onClick={() => handleMainAnswer(item)}
                         >
                           <img src={item.img} alt={item.name} className="ab-grid-item-img" />
-                          <div className="ab-grid-item-label">{item.name}</div>
                         </div>
                       ))}
                     </div>
@@ -989,7 +985,7 @@ const AtlanticBagiyaGame = () => {
             <div className="ab-screen-header">
               <div>
                 <div className="ab-screen-title">Assessment Complete</div>
-                <div className="ab-screen-subtitle">Atlantic Game · Final Results</div>
+                <div className="ab-screen-subtitle">Atlantis Game · Final Results</div>
               </div>
               <div className="ab-chips">
                 <span className="ab-chip">Final Results</span>
@@ -1049,8 +1045,12 @@ const AtlanticBagiyaGame = () => {
                         <tr key={i} className={s.score === 2 ? 'ab-row-correct' : s.score === 1 ? '' : 'ab-row-wrong'}>
                           <td>S{s.screen}</td>
                           <td>Q{s.subQ}</td>
-                          <td style={{ fontWeight: 700 }}>{s.targetName}</td>
-                          <td>{s.chosenName}</td>
+                          <td>
+                            <img src={itemByStem[s.targetStem]?.img} alt={s.targetName} className="ab-q-img" />
+                          </td>
+                          <td>
+                            <img src={itemByStem[s.chosenStem]?.img} alt={s.chosenName} className="ab-q-img" />
+                          </td>
                           <td>
                             <span className={`ab-badge ${s.score === 2 ? 'ab-badge-correct' : s.score === 1 ? 'ab-badge-partial' : 'ab-badge-wrong'}`}>
                               {s.score === 2 ? 'Correct' : s.score === 1 ? 'Partial' : 'Wrong'}
@@ -1227,4 +1227,4 @@ const AtlanticBagiyaGame = () => {
   );
 };
 
-export default AtlanticBagiyaGame;
+export default AtlantisBagiyaGame;
