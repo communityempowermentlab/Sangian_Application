@@ -309,12 +309,12 @@ exports.getGameSummaries = async (req, res) => {
         const { childId } = req.params;
         const [rows] = await pool.query(
             `SELECT 
-                LOWER(TRIM(game_name)) as game_name, 
+                REPLACE(LOWER(TRIM(game_name)), 'atlantic', 'atlantis') as game_name, 
                 MAX(start_time) as last_played_at, 
                 COUNT(*) as total_attempts 
             FROM game_sessions 
             WHERE child_id = ? 
-            GROUP BY game_name`,
+            GROUP BY REPLACE(LOWER(TRIM(game_name)), 'atlantic', 'atlantis')`,
             [childId]
         );
 
