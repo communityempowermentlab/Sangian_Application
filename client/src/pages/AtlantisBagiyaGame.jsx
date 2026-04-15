@@ -256,13 +256,46 @@ const AtlantisBagiyaGame = () => {
   useEffect(() => { subQAnsweredRef.current = subQAnswered; }, [subQAnswered]);
 
   // ── Login check + resume check ──────────────────────────
+  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
+
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) { navigate('/login'); return; }
     const parsed = JSON.parse(dataStr);
     setChildData(parsed);
     checkResume(parsed.child_id);
+    fetchActivitySummary(parsed.child_id);
   }, [navigate]);
+
+  const fetchActivitySummary = async (childId) => {
+    try {
+      const config = {};
+      const token = localStorage.getItem('token');
+      if (token) config.headers = { Authorization: `Bearer ${token}` };
+
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      if (res.data.success) {
+        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
+        if (gameSum) {
+          setActivitySummary({
+            lastPlayed: formatDate(gameSum.last_played_at),
+            attempts: gameSum.total_attempts
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching activity summary:', e);
+    }
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
 
   // ── Splash audio autoplay ───────────────────────────────
   useEffect(() => {
@@ -707,6 +740,19 @@ const AtlantisBagiyaGame = () => {
               <p className="ab-splash-subtitle-center">
                 Please listen to the instructions. When the audio finishes, you can start the subtest.
               </p>
+
+              <div className="ab-activity-summary" style={{
+                marginTop: '15px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
+                border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left'
+              }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
+                </div>
+              </div>
+
               <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                 <button
                   className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ''}`}

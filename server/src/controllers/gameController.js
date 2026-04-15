@@ -309,7 +309,7 @@ exports.getGameSummaries = async (req, res) => {
         const { childId } = req.params;
         const [rows] = await pool.query(
             `SELECT 
-                game_name, 
+                LOWER(TRIM(game_name)) as game_name, 
                 MAX(start_time) as last_played_at, 
                 COUNT(*) as total_attempts 
             FROM game_sessions 

@@ -217,6 +217,8 @@ const AuditoryAttentionGame = () => {
     }
   };
 
+  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
+
   useEffect(() => {
     const raw = localStorage.getItem('currentChild');
     if (!raw) {
@@ -227,11 +229,41 @@ const AuditoryAttentionGame = () => {
       const c = JSON.parse(raw);
       setChildId(c.child_id);
       handleProceedClick(c.child_id);
+      fetchActivitySummary(c.child_id);
     } catch(e) {
       navigate('/login');
     }
-  // eslint-disable-next-line
   }, []);
+
+  const fetchActivitySummary = async (childId) => {
+    try {
+      const config = {};
+      const token = localStorage.getItem('token');
+      if (token) config.headers = { Authorization: `Bearer ${token}` };
+
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      if (res.data.success) {
+        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
+        if (gameSum) {
+          setActivitySummary({
+            lastPlayed: formatDateDisp(gameSum.last_played_at),
+            attempts: gameSum.total_attempts
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching activity summary:', e);
+    }
+  };
+
+  const formatDateDisp = (iso) => {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
 
   const startNewGameSession = async () => {
     try {
@@ -692,7 +724,20 @@ const AuditoryAttentionGame = () => {
                     <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-image" />
                  </div>
                  <h2 className="aa-title" style={{ fontSize: '1.5rem' }}>Welcome to Dhyan Kahan Hai</h2>
-                 <p className="aa-subtitle" style={{ marginBottom: 24, maxWidth: 400 }}>Auditory Attention Assessment</p>
+                 <p className="aa-subtitle" style={{ marginBottom: 12, maxWidth: 400 }}>Auditory Attention Assessment</p>
+
+                 <div className="aa-activity-summary" style={{
+                    marginBottom: '24px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
+                    border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left', width: '100%', maxWidth: '360px'
+                  }}>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
+                    </div>
+                  </div>
+
                  <button className="aa-btn aa-btn-primary aa-btn-highlight" onClick={startNewGameSession}>Start Now</button>
                </div>
             </div>

@@ -90,6 +90,8 @@ const NumberSkillGame = () => {
   const timerRef = useRef(null);
   const audioRef = useRef(null);
 
+  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
+
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) {
@@ -98,8 +100,39 @@ const NumberSkillGame = () => {
       const parsedData = JSON.parse(dataStr);
       setChildData(parsedData);
       checkResume(parsedData.child_id);
+      fetchActivitySummary(parsedData.child_id);
     }
   }, [navigate]);
+
+  const fetchActivitySummary = async (childId) => {
+    try {
+      const config = {};
+      const token = localStorage.getItem('token');
+      if (token) config.headers = { Authorization: `Bearer ${token}` };
+
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      if (res.data.success) {
+        const gameSum = res.data.summaries.find(s => s.game_name === 'numeracy_number_skill');
+        if (gameSum) {
+          setActivitySummary({
+            lastPlayed: formatDateDisp(gameSum.last_played_at),
+            attempts: gameSum.total_attempts
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching activity summary:', e);
+    }
+  };
+
+  const formatDateDisp = (iso) => {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
 
   useEffect(() => {
     if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current) {
@@ -419,10 +452,22 @@ const NumberSkillGame = () => {
                 <img src="/assets/images/number_skill.jpg" alt="Number Skill" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>{t('game.welcome')}</h2>
-              <p style={{ color: '#4b5563', fontSize: '1rem', marginBottom: '24px', maxWidth: '400px', lineHeight: '1.5' }}>
+              <p style={{ color: '#4b5563', fontSize: '1rem', marginBottom: '16px', maxWidth: '400px', lineHeight: '1.5' }}>
                 {t('game.splashDesc')}
               </p>
-              
+
+              <div className="ns-activity-summary" style={{
+                marginBottom: '24px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
+                border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left', width: '100%', maxWidth: '400px'
+              }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
+                </div>
+              </div>
+
               <div className="ns-btn-row">
                 <button 
                   className="ns-btn ns-btn-primary" 

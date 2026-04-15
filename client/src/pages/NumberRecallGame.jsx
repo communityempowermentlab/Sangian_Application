@@ -401,13 +401,46 @@ const NumberRecallGame = () => {
   const totalScore = allScores.filter(s => s.score === 1).length;
 
   // ── Child data + resume check ──────────────────────────────
+  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
+
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) { navigate('/login'); return; }
     const parsed = JSON.parse(dataStr);
     setChildData(parsed);
     checkResume(parsed.child_id);
+    fetchActivitySummary(parsed.child_id);
   }, [navigate]);
+
+  const fetchActivitySummary = async (childId) => {
+    try {
+      const config = {};
+      const token = localStorage.getItem('token');
+      if (token) config.headers = { Authorization: `Bearer ${token}` };
+
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      if (res.data.success) {
+        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
+        if (gameSum) {
+          setActivitySummary({
+            lastPlayed: formatDateDisp(gameSum.last_played_at),
+            attempts: gameSum.total_attempts
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching activity summary:', e);
+    }
+  };
+
+  const formatDateDisp = (iso) => {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
 
   // ── Splash audio autoplay ──────────────────────────────────
   useEffect(() => {
@@ -722,6 +755,18 @@ const NumberRecallGame = () => {
               <p className="nr-splash-subtitle">
                 Please listen to the instructions. When the audio finishes, you can start the practice.
               </p>
+
+              <div className="nr-activity-summary" style={{
+                marginBottom: '24px', padding: '12px 0px', background: 'transparent', borderRadius: '12px',
+                borderTop: '1px dashed #e2e8f0', borderBottom: '1px dashed #e2e8f0', display: 'block', textAlign: 'center', width: '100%', maxWidth: '400px', margin: '0 auto 24px'
+              }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
+                </div>
+              </div>
 
               <div className="nr-btn-row">
                 <button
