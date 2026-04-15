@@ -135,6 +135,7 @@ const Home = () => {
     });
 
     const [summaries, setSummaries] = useState({});
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -142,6 +143,7 @@ const Home = () => {
             try {
                 const child = JSON.parse(childStr);
                 if (child.child_id) {
+                    setIsLoggedIn(true);
                     fetchSummaries(child.child_id);
                 }
             } catch (e) {}
@@ -150,9 +152,13 @@ const Home = () => {
 
     const fetchSummaries = async (childId) => {
         try {
-            const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const config = {};
+            const token = localStorage.getItem('token');
+            if (token) {
+                config.headers = { Authorization: `Bearer ${token}` };
+            }
+
+            const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
             if (res.data.success) {
                 const map = {};
                 res.data.summaries.forEach(s => {
@@ -244,14 +250,16 @@ const Home = () => {
                                         <h3>{test.shortTitle}</h3>
                                         <p className="test-local">{test.local}</p>
                                         
-                                        <div className="test-activity">
-                                            <div className="activity-item">
-                                                <span>Last Played:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                        {isLoggedIn && (
+                                            <div className="test-activity">
+                                                <div className="activity-item">
+                                                    <span>Last Played:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                                </div>
+                                                <div className="activity-item">
+                                                    <span>Attempts:</span> {summaries[test.gameKey]?.total_attempts || 0} times
+                                                </div>
                                             </div>
-                                            <div className="activity-item">
-                                                <span>Attempts:</span> {summaries[test.gameKey]?.total_attempts || 0} times
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </article>
                             ))}
