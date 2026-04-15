@@ -393,6 +393,25 @@ body {
   color: #1d4ed8;
 }
 
+.test-activity {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.activity-item {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.activity-item span {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-right: 2px;
+}
+
 /* MODAL */
 
 .modal-backdrop {

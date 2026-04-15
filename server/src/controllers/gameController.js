@@ -302,3 +302,28 @@ exports.submitAssessment = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error submitting assessment' });
     }
 };
+
+// GET /sessions/summaries/:childId
+exports.getGameSummaries = async (req, res) => {
+    try {
+        const { childId } = req.params;
+        const [rows] = await pool.query(
+            `SELECT 
+                game_name, 
+                MAX(start_time) as last_played_at, 
+                COUNT(*) as total_attempts 
+            FROM game_sessions 
+            WHERE child_id = ? 
+            GROUP BY game_name`,
+            [childId]
+        );
+
+        res.status(200).json({
+            success: true,
+            summaries: rows
+        });
+    } catch (error) {
+        console.error('Error fetching game summaries:', error);
+        res.status(500).json({ success: false, message: 'Server error fetching summaries' });
+    }
+};

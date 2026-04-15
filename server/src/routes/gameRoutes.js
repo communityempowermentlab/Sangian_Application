@@ -18,6 +18,9 @@ router.get('/sessions/resume/:childId/:gameName', gameController.getResumeSessio
 // Get game history for a child
 router.get('/sessions/history/:childId', gameController.getGameHistory);
 
+// Get game summaries (last played, attempts count) for a child
+router.get('/sessions/summaries/:childId', gameController.getGameSummaries);
+
 // Submit assessment data mapped internally to a session
 router.post('/assessments', gameController.submitAssessment);
 

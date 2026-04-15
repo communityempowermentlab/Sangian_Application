@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TestModal from '../components/TestModal';
-
+import axios from 'axios';
+import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Home = () => {
@@ -9,6 +10,7 @@ const Home = () => {
     const testModules = [
         {
             id: 1,
+            gameKey: 'atlantis_bagiya',
             title: t('home.games.bagiya.title') + " " + t('home.games.bagiya.local'),
             subtitle: t('home.games.bagiya.sub'),
             desc: t('home.games.bagiya.desc'),
@@ -21,6 +23,7 @@ const Home = () => {
         },
         {
             id: 2,
+            gameKey: 'number_recall_lottery',
             title: t('home.games.lottery.title') + " " + t('home.games.lottery.local'),
             subtitle: t('home.games.lottery.sub'),
             desc: t('home.games.lottery.desc'),
@@ -33,6 +36,7 @@ const Home = () => {
         },
         {
             id: 3,
+            gameKey: 'rover_mela',
             title: t('home.games.mela.title') + " " + t('home.games.mela.local'),
             subtitle: t('home.games.mela.sub'),
             desc: t('home.games.mela.desc'),
@@ -45,6 +49,7 @@ const Home = () => {
         },
         {
             id: 4,
+            gameKey: 'triangle_rachna',
             title: t('home.games.rachna.title') + " " + t('home.games.rachna.local'),
             subtitle: t('home.games.rachna.sub'),
             desc: t('home.games.rachna.desc'),
@@ -57,6 +62,7 @@ const Home = () => {
         },
         {
             id: 5,
+            gameKey: 'auditory_dhyan',
             title: t('home.games.dhyan.title') + " " + t('home.games.dhyan.local'),
             subtitle: t('home.games.dhyan.sub'),
             desc: t('home.games.dhyan.desc'),
@@ -69,6 +75,7 @@ const Home = () => {
         },
         {
             id: 6,
+            gameKey: 'working_memory_herpher',
             title: t('home.games.herpher.title') + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
@@ -81,6 +88,7 @@ const Home = () => {
         },
         {
             id: 7,
+            gameKey: 'cognitive_flex_chor',
             title: t('home.games.chor.title') + " " + t('home.games.chor.local'),
             subtitle: t('home.games.chor.sub'),
             desc: t('home.games.chor.desc'),
@@ -93,6 +101,7 @@ const Home = () => {
         },
         {
             id: 8,
+            gameKey: 'numeracy_number_skill',
             title: t('home.games.numeracy.title'),
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
@@ -105,6 +114,7 @@ const Home = () => {
         },
         {
             id: 9,
+            gameKey: 'literacy_reading_skill',
             title: t('home.games.literacy.title'),
             subtitle: t('home.games.literacy.sub'),
             desc: t('home.games.literacy.desc'),
@@ -123,6 +133,46 @@ const Home = () => {
         description: '',
         startUrl: ''
     });
+
+    const [summaries, setSummaries] = useState({});
+
+    useEffect(() => {
+        const childStr = localStorage.getItem('currentChild');
+        if (childStr) {
+            try {
+                const child = JSON.parse(childStr);
+                if (child.child_id) {
+                    fetchSummaries(child.child_id);
+                }
+            } catch (e) {}
+        }
+    }, []);
+
+    const fetchSummaries = async (childId) => {
+        try {
+            const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (res.data.success) {
+                const map = {};
+                res.data.summaries.forEach(s => {
+                    map[s.game_name] = s;
+                });
+                setSummaries(map);
+            }
+        } catch (e) {
+            console.error('Fetcher summary error', e);
+        }
+    };
+
+    const formatDate = (iso) => {
+        if (!iso) return 'Never';
+        const d = new Date(iso);
+        return d.toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+    };
 
     const openModal = (test) => {
         setModalData({
@@ -193,7 +243,15 @@ const Home = () => {
                                     <div className="test-info">
                                         <h3>{test.shortTitle}</h3>
                                         <p className="test-local">{test.local}</p>
-                                        <p className={test.tagClass}>{test.tag}</p>
+                                        
+                                        <div className="test-activity">
+                                            <div className="activity-item">
+                                                <span>Last Played:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                            </div>
+                                            <div className="activity-item">
+                                                <span>Attempts:</span> {summaries[test.gameKey]?.total_attempts || 0} times
+                                            </div>
+                                        </div>
                                     </div>
                                 </article>
                             ))}
