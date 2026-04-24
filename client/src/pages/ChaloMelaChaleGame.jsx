@@ -250,6 +250,7 @@ const ChaloMelaChaleGame = () => {
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
+  const [isDropped, setIsDropped] = useState(false);
   
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
@@ -348,6 +349,7 @@ const ChaloMelaChaleGame = () => {
     if (ss.completedPaths) setCompletedPaths(ss.completedPaths);
     if (ss.screen) setScreen(ss.screen);
     if (ss.questionState) setQuestionState(ss.questionState);
+    if (ss.isDropped) setIsDropped(true);
     
     setStartTime(Date.now()); // Reset session timer start to now (cumulative time is handled by progress)
     setQStartTime(Date.now());
@@ -401,7 +403,7 @@ const ChaloMelaChaleGame = () => {
           completedPaths,
           screen,
           questionState,
-          isDropped: isDroppedOverride
+          isDropped: isDroppedOverride || isDropped
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -675,7 +677,7 @@ const ChaloMelaChaleGame = () => {
     setIsAssessmentSubmitting(true);
     try {
       // Mark session status appropriately
-      const finalStatus = quitReason ? 'quit' : 'completed';
+      const finalStatus = isDropped ? 'dropped' : (quitReason ? 'quit' : 'completed');
       await saveToServer(finalStatus);
 
       const config = {};
@@ -768,8 +770,8 @@ const ChaloMelaChaleGame = () => {
       <div className="results-screen">
         <div className="screen-header">
           <div>
-            <div className="screen-title">{quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete'}</div>
-            <div className="screen-subtitle">{quitReason ? 'Assessor requested early exit' : 'Test finished successfully'}</div>
+            <div className="screen-title">{isDropped ? 'Session Dropped (Clinical Rule)' : (quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete')}</div>
+            <div className="screen-subtitle">{isDropped ? 'Q1-Q3 score < 2: System-enforced drop' : (quitReason ? 'Assessor requested early exit' : 'Test finished successfully')}</div>
           </div>
           <div className="chips">
             <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>Final Results</span>
@@ -987,9 +989,9 @@ const ChaloMelaChaleGame = () => {
               const q3s = allScores.find(s => s.id === 'q3')?.score || 0;
               if (q1s < 2 && q2s < 2 && q3s < 2) {
                 // Drop Out - Only after first 3 main questions (q1, q2, q3)
-                // We add an explicit flag in saved_state as requested
-                await saveToServer('dropped', null, null, null, true);
-                navigate('/');
+                setIsDropped(true);
+                await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
+                setScreen('results');
               } else {
                 initQuestion('q4', MATRIX_Q4);
               }

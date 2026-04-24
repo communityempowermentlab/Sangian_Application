@@ -145,7 +145,7 @@ const AdminReports = () => {
         } else {
             detail.columns.forEach((c, idx) => {
                 const isTriangle = activeGame?.key === 'triangle_rachna';
-                const isRover = activeGame?.key === 'rover_mela';
+                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
                 const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
                 qHeaders.push(colLabel);
                 if (isRover) qHeaders.push(`${colLabel} Moves`);
@@ -197,7 +197,7 @@ const AdminReports = () => {
                     );
                 });
             } else {
-                const isRover = activeGame?.key === 'rover_mela';
+                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
                 detail.columns.forEach(c => {
                     rowArr.push(r.question_scores[c] ?? '');
                     if (isRover) rowArr.push(r.question_scores[`${c}_moves`] ?? '');
@@ -361,7 +361,7 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Q{q} Time(s)</th>
                                             </React.Fragment>
                                         ))
-                                    ) : activeGame?.key === 'rover_mela' ? (
+                                    ) : (activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover')) ? (
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
@@ -403,7 +403,7 @@ const AdminReports = () => {
                             </thead>
                             <tbody>
                                 {sortedRows.map((row, i) => {
-                                    const isRover = activeGame?.key === 'rover_mela';
+                                    const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
                                     
                                     return (
                                         <tr key={row.session_id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>

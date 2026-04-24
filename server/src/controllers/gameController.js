@@ -165,8 +165,8 @@ exports.getReportDetail = async (req, res) => {
         const { gameName } = req.params;
 
         let gameFilter = [gameName];
-        if (gameName === 'rover_mela') {
-            gameFilter = ['rover_mela', 'Chalo Mela Chale', 'chalo_mela_chale'];
+        if (gameName === 'rover_mela' || gameName === 'Rover Game' || gameName === 'chalo_mela_chale') {
+            gameFilter = ['rover_mela', 'Chalo Mela Chale', 'chalo_mela_chale', 'Rover Test', 'Rover Game'];
         }
 
         const [rows] = await pool.query(`
@@ -287,7 +287,7 @@ exports.getReportDetail = async (req, res) => {
             return na - nb;
         });
 
-        if (gameName === 'rover_mela') {
+        if (gameName === 'rover_mela' || gameName === 'Rover Game' || gameName === 'chalo_mela_chale') {
             sortedQIds = [
                 'tq1', 'tq2', 'tq3', 'tq4',
                 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10',
