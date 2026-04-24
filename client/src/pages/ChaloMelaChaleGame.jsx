@@ -990,8 +990,8 @@ const ChaloMelaChaleGame = () => {
               if (q1s < 2 && q2s < 2 && q3s < 2) {
                 // Drop Out - Only after first 3 main questions (q1, q2, q3)
                 setIsDropped(true);
-                await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
                 setScreen('results');
+                await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
               } else {
                 initQuestion('q4', MATRIX_Q4);
               }

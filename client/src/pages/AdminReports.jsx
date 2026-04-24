@@ -198,10 +198,10 @@ const AdminReports = () => {
                 });
             } else {
                 const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
-                detail.columns.forEach(c => {
-                    rowArr.push(r.question_scores[c] ?? '');
-                    if (isRover) rowArr.push(r.question_scores[`${c}_moves`] ?? '');
-                    rowArr.push(r.question_scores[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
+                detail?.columns?.forEach(c => {
+                    rowArr.push(r.question_scores?.[c] ?? '');
+                    if (isRover) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
+                    rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
                 });
             }
             
@@ -365,7 +365,7 @@ const AdminReports = () => {
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
-                                            {detail.columns.map(c => (
+                                            {detail?.columns?.map(c => (
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>{c.toUpperCase()} Score</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
@@ -448,7 +448,7 @@ const AdminReports = () => {
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
                                                     <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
-                                                    {detail.columns.map(c => {
+                                                    {detail?.columns?.map(c => {
                                                         const qs = row.question_scores;
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
