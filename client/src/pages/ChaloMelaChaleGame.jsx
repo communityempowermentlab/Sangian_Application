@@ -674,8 +674,9 @@ const ChaloMelaChaleGame = () => {
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
     try {
-      // Mark session as completed (even if partial due to quit)
-      await saveToServer('completed');
+      // Mark session status appropriately
+      const finalStatus = quitReason ? 'quit' : 'completed';
+      await saveToServer(finalStatus);
 
       const config = {};
       const token = localStorage.getItem('token');

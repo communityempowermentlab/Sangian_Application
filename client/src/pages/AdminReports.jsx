@@ -21,6 +21,7 @@ const statusBadge = (status) => {
         completed: { label: 'Completed', bg: '#d1fae5', color: '#065f46' },
         paused:    { label: 'Paused',    bg: '#fef9c3', color: '#854d0e' },
         quit:      { label: 'Quit',      bg: '#fee2e2', color: '#991b1b' },
+        dropped:   { label: 'Dropped',   bg: '#ffedd5', color: '#9a3412' },
         in_progress:{ label: 'In Progress', bg: '#dbeafe', color: '#1e40af' },
     };
     const s = map[status] || { label: status, bg: '#f3f4f6', color: '#374151' };

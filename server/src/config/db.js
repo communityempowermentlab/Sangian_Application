@@ -71,7 +71,7 @@ const initDb = async () => {
         score INT DEFAULT 0,
         total_questions INT DEFAULT 0,
         progress_level INT DEFAULT 1,
-        status ENUM('in_progress', 'completed', 'quit', 'paused') DEFAULT 'in_progress',
+        status ENUM('in_progress', 'completed', 'quit', 'paused', 'dropped') DEFAULT 'in_progress',
         quit_reason VARCHAR(255),
         saved_state JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -135,6 +135,13 @@ const initDb = async () => {
       await connection.query('ALTER TABLE children ADD COLUMN status ENUM(\'active\', \'inactive\') DEFAULT \'active\' AFTER mobile');
     } catch (e) {
       // Ignore error if column already exists
+    }
+
+    // Safely update game_sessions status enum to include 'dropped'
+    try {
+      await connection.query("ALTER TABLE game_sessions MODIFY COLUMN status ENUM('in_progress', 'completed', 'quit', 'paused', 'dropped') DEFAULT 'in_progress'");
+    } catch (e) {
+      // Ignore error if already modified or fails for other reasons
     }
 
     // Create game_documents table for wiki-style per-game documentation
