@@ -127,21 +127,21 @@ const initDb = async () => {
     try {
       await connection.query('ALTER TABLE children ADD COLUMN child_id VARCHAR(20) UNIQUE AFTER id');
     } catch (e) {
-      // Ignore error if column already exists
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (child_id):', e.message);
     }
 
     // Safely add status to an existing table if it was created previously
     try {
       await connection.query('ALTER TABLE children ADD COLUMN status ENUM(\'active\', \'inactive\') DEFAULT \'active\' AFTER mobile');
     } catch (e) {
-      // Ignore error if column already exists
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (children.status):', e.message);
     }
 
     // Safely update game_sessions status enum to include 'dropped'
     try {
       await connection.query("ALTER TABLE game_sessions MODIFY COLUMN status ENUM('in_progress', 'completed', 'quit', 'paused', 'dropped') DEFAULT 'in_progress'");
     } catch (e) {
-      // Ignore error if already modified or fails for other reasons
+      console.warn('Migration warning (game_sessions.status):', e.message);
     }
 
     // Create game_documents table for wiki-style per-game documentation
