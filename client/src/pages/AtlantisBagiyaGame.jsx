@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import './AtlantisBagiyaGame.css';
@@ -180,9 +180,11 @@ const formatTime = (sec) => {
 // ─── Main Component ───────────────────────────────────────
 const AtlantisBagiyaGame = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ── Core session state ──────────────────────────────────
   const [childData, setChildData] = useState(null);
+  const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [screen, setScreen] = useState('splash'); // splash|practice_q|practice_r|game|score
   const [gameSessionId, setGameSessionId] = useState(null);
   const [allScores, setAllScores] = useState([]);
@@ -256,35 +258,29 @@ const AtlantisBagiyaGame = () => {
   useEffect(() => { subQAnsweredRef.current = subQAnswered; }, [subQAnswered]);
 
   // ── Login check + resume check ──────────────────────────
-  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
-
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
-    if (!dataStr) { navigate('/login'); return; }
+    if (!dataStr) { navigate('/login', { state: { from: location } }); return; }
     const parsed = JSON.parse(dataStr);
     setChildData(parsed);
     checkResume(parsed.child_id);
-    fetchActivitySummary(parsed.child_id);
+    fetchActivity(parsed.child_id);
   }, [navigate]);
 
-  const fetchActivitySummary = async (childId) => {
+  const fetchActivity = async (childId) => {
     try {
-      const config = {};
-      const token = localStorage.getItem('token');
-      if (token) config.headers = { Authorization: `Bearer ${token}` };
-
-      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`);
       if (res.data.success) {
-        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
-        if (gameSum) {
-          setActivitySummary({
-            lastPlayed: formatDate(gameSum.last_played_at),
-            attempts: gameSum.total_attempts
+        const summary = res.data.summaries.find(s => s.game_name === GAME_NAME);
+        if (summary) {
+          setActivityData({
+            lastPlayed: formatDate(summary.last_played_at),
+            attempts: summary.total_attempts
           });
         }
       }
     } catch (e) {
-      console.error('Error fetching activity summary:', e);
+      console.error('Activity fetch error', e);
     }
   };
 
@@ -294,7 +290,7 @@ const AtlantisBagiyaGame = () => {
     return d.toLocaleString('en-GB', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
-    });
+    }).replace(/am|pm/g, match => match.toUpperCase());
   };
 
   // ── Splash audio autoplay ───────────────────────────────
@@ -737,22 +733,19 @@ const AtlantisBagiyaGame = () => {
                 />
               </div>
               <div className="ab-splash-title-center">Welcome to Atlantis Game</div>
+              
+              <div className="ab-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
+                 <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
+                   <strong>Last Played:</strong> {activityData.lastPlayed}
+                 </div>
+                 <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                   <strong>Attempts:</strong> {activityData.attempts} times
+                 </div>
+              </div>
+
               <p className="ab-splash-subtitle-center">
                 Please listen to the instructions. When the audio finishes, you can start the subtest.
               </p>
-
-              <div className="ab-activity-summary" style={{
-                marginTop: '15px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
-                border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left'
-              }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                  <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
-                </div>
-              </div>
-
               <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                 <button
                   className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ''}`}

@@ -313,6 +313,7 @@ const TriangleRachnaGame = () => {
   const navigate = useNavigate();
 
   const [childData, setChildData]           = useState(null);
+  const [activityData, setActivityData]     = useState({ lastPlayed: 'Never', attempts: 0 });
   const [screen, setScreen]                 = useState('loading');
   const [audioFinished, setAudioFinished]   = useState(false);
   const [isCheckingSession, setIsCheck]     = useState(true);
@@ -389,15 +390,13 @@ const TriangleRachnaGame = () => {
   };
 
   // ── Auth & Resume ──────────────────────────────────────────────
-  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
-
   useEffect(() => {
     const raw = localStorage.getItem('currentChild');
     if (!raw) { navigate('/login'); return; }
     const cd = JSON.parse(raw);
     setChildData(cd);
     setIsCheck(false);
-    fetchActivitySummary(cd.child_id);
+    fetchActivity(cd.child_id);
 
     axios.get(`${API_URL}/games/sessions/resume/${cd.child_id}/${GAME_NAME}`)
       .then(res => {
@@ -415,34 +414,30 @@ const TriangleRachnaGame = () => {
       });
   }, [navigate]);
 
-  const fetchActivitySummary = async (childId) => {
+  const fetchActivity = async (cid) => {
     try {
-      const config = {};
-      const token = localStorage.getItem('token');
-      if (token) config.headers = { Authorization: `Bearer ${token}` };
-
-      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${cid}`);
       if (res.data.success) {
-        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
-        if (gameSum) {
-          setActivitySummary({
-            lastPlayed: formatDateDisp(gameSum.last_played_at),
-            attempts: gameSum.total_attempts
+        const summary = res.data.summaries.find(s => s.game_name === 'triangle_rachna');
+        if (summary) {
+          setActivityData({
+            lastPlayed: formatDate(summary.last_played_at),
+            attempts: summary.total_attempts
           });
         }
       }
     } catch (e) {
-      console.error('Error fetching activity summary:', e);
+      console.error('Activity fetch error', e);
     }
   };
 
-  const formatDateDisp = (iso) => {
+  const formatDate = (iso) => {
     if (!iso) return 'Never';
     const d = new Date(iso);
     return d.toLocaleString('en-GB', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
-    });
+    }).replace(/am|pm/g, match => match.toUpperCase());
   };
 
   // ── Splash audio ──────────────────────────────────────────────
@@ -798,19 +793,16 @@ const TriangleRachnaGame = () => {
           <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
         </div>
         <div className="rg-splash-title">Triangle Game — Rachna</div>
-        <div className="rg-splash-sub" style={{ marginBottom: 12 }}>Please listen to the instructions. The game will begin when the audio finishes.</div>
-
-        <div className="rg-activity-summary" style={{
-          marginBottom: '20px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
-          border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left', width: '100%', maxWidth: '360px', margin: '0 auto'
-        }}>
-          <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
-            <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
-          </div>
-          <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-            <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
-          </div>
+        
+        <div className="rg-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
+           <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
+             <strong>Last Played:</strong> {activityData.lastPlayed}
+           </div>
+           <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+             <strong>Attempts:</strong> {activityData.attempts} times
+           </div>
         </div>
+        <div className="rg-splash-sub">Please listen to the instructions. The game will begin when the audio finishes.</div>
         <div className="rg-splash-footer">
           <div className="rg-btn-row" style={{ marginTop: 18 }}>
             <button

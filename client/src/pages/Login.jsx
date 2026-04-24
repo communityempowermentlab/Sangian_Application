@@ -1,12 +1,18 @@
 import { API_URL } from '../services/api';
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const Login = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [childId, setChildId] = useState('');
     const [childData, setChildData] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    
+    // Check if there's a redirect path in location state
+    const from = location.state?.from?.pathname || '/';
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -43,9 +49,9 @@ const Login = () => {
 
                 localStorage.setItem('currentChild', JSON.stringify(childData));
                 localStorage.setItem('sessionId', sessionId);
-
-                // Force whole application reload to update Navbar state cleanly
-                window.location.href = '/';
+                
+                // Redirect back to where they came from or home
+                window.location.href = from;
             } catch (err) {
                 console.error('Could not start session:', err);
                 setErrorMsg('Could not establish a secure session. Please try again.');

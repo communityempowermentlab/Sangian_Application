@@ -20,6 +20,7 @@ import TriangleRachnaGame from './pages/TriangleRachnaGame';
 import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
+import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import { LanguageProvider } from './contexts/LanguageContext';
 import './index.css';
 
@@ -34,6 +35,7 @@ const ROUTE_TITLES = {
     '/games/dhyan_kahan_hai':   'Auditory Attention | Game | Community Empowerment Lab',
     '/games/rachna':            'Triangle | Game | Community Empowerment Lab',
     '/games/bagiya':            'Atlantis Game | Game | Community Empowerment Lab',
+    '/games/chalo_mela_chale':  'Rover Game | Game | Community Empowerment Lab',
     '/admin/login':             'Admin Login | Community Empowerment Lab',
     '/admin/dashboard':         'Dashboard | Admin Panel | Community Empowerment Lab',
     '/admin/children':          'Children | Admin Panel | Community Empowerment Lab',
@@ -87,6 +89,7 @@ function App() {
                         <Route path="/games/dhyan_kahan_hai" element={<AuditoryAttentionGame />} />
                         <Route path="/games/rachna" element={<TriangleRachnaGame />} />
                         <Route path="/games/bagiya" element={<AtlantisBagiyaGame />} />
+                        <Route path="/games/chalo_mela_chale" element={<ChaloMelaChaleGame />} />
 
                         {/* Isolated Admin Navigation Routes */}
                         <Route path="/admin/login" element={<AdminLogin />} />

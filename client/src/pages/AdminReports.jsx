@@ -52,6 +52,8 @@ const AdminReports = () => {
     const [sortField, setSortField]     = useState('start_time');
     const [sortDir, setSortDir]         = useState('desc');
 
+    const closeDetail = () => { setActiveGame(null); setDetail(null); };
+
     // ── Fetch overview on mount ────────────────────────────────────────────────
     const fetchOverview = useCallback(async () => {
         setLoadingOv(true);
@@ -88,7 +90,7 @@ const AdminReports = () => {
         }
     };
 
-    const closeDetail = () => { setActiveGame(null); setDetail(null); };
+
 
     // ── Merge overview DB data with catalog ───────────────────────────────────
     const getStats = (key) => overview.find(r => r.game_name === key) || {};
@@ -142,25 +144,33 @@ const AdminReports = () => {
         } else {
             detail.columns.forEach((c, idx) => {
                 const isTriangle = activeGame?.key === 'triangle_rachna';
+                const isRover = activeGame?.key === 'rover_mela';
                 const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
                 qHeaders.push(colLabel);
+                if (isRover) qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
             });
         }
 
-        const headers = ['Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 'Total Session Time(s)', 'Actual Game Time(s)', 'Status', 'Paused Questions', 'Pause Reasons',
-            ...qHeaders, 'Attempted Questions', 'Total Questions',
-            ...assessmentLabels];
+        const headers = [
+            'Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 
+            'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Moves', 'Total Time(s)', 
+            ...qHeaders, 
+            'Attempted Questions', 'Actual Game Time(s)', 'Total Session Time(s)', 'Paused Questions', 'Pause Reasons',
+            ...assessmentLabels
+        ];
             
         const rows = sortedRows.map(r => {
             const rowArr = [
                 r.session_id, r.child_id, r.child_name,
                 fmtOnlyDate(r.start_time), fmtOnlyTime(r.start_time),
                 fmtOnlyDate(r.end_time), fmtOnlyTime(r.end_time),
-                r.total_session_time ?? '', r.actual_game_time ?? '',
                 r.status,
-                `"${(r.pauses||[]).map(p=>'Q'+p.questionNumber).join('\n')}"`,
-                `"${(r.pauses||[]).map(p=>(p.reason||'').replace(/"/g, '""')).join('\n')}"`
+                r.correct_count ?? 0,
+                r.total_questions ?? 0,
+                `${r.correct_count ?? 0} / ${r.total_questions ?? 0}`,
+                r.total_moves ?? '—',
+                r.actual_game_time ? Math.round(r.actual_game_time) : '—'
             ];
             
             if (isAuditory) {
@@ -173,7 +183,7 @@ const AdminReports = () => {
                         qs[`q${q}_eoi`] ?? '',
                         qs[`q${q}_eoo`] ?? '',
                         qs[`q${q}_eoc`] ?? '',
-                        qs[`q${q}_time`] ?? ''
+                        qs[`q${q}_time`] ? Math.round(qs[`q${q}_time`]) : ''
                     );
                 });
             } else if (isHerPher) {
@@ -182,17 +192,26 @@ const AdminReports = () => {
                     rowArr.push(
                         qs[`q${qId}_correct`] ?? '',
                         qs[`q${qId}`] ?? '',
-                        qs[`q${qId}_time`] ?? ''
+                        qs[`q${qId}_time`] ? Math.round(qs[`q${qId}_time`]) : ''
                     );
                 });
             } else {
+                const isRover = activeGame?.key === 'rover_mela';
                 detail.columns.forEach(c => {
                     rowArr.push(r.question_scores[c] ?? '');
-                    rowArr.push(r.question_scores[`${c}_time`] ?? '');
+                    if (isRover) rowArr.push(r.question_scores[`${c}_moves`] ?? '');
+                    rowArr.push(r.question_scores[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
                 });
             }
             
-            rowArr.push(r.attempted_questions ?? '', r.total_questions, ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`));
+            rowArr.push(
+                r.attempted_questions ?? '', 
+                r.actual_game_time ? Math.round(r.actual_game_time) : '',
+                r.total_session_time ? Math.round(r.total_session_time) : '',
+                `"${(r.pauses||[]).map(p=>'Q'+(p.questionNumber||p.questionKey)).join('\n')}"`,
+                `"${(r.pauses||[]).map(p=>(p.reason||'').replace(/"/g, '""')).join('\n')}"`,
+                ...assessmentKeys.map(k => `"${(r.assessment?.[k] || '').toString().replace(/"/g, '""')}"`)
+            );
             return rowArr;
         });
         
@@ -266,10 +285,40 @@ const AdminReports = () => {
                 </div>
 
                 <div style={S.topBar}>
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <div style={S.pageTitle}>{activeGame.title} — Attempt Log</div>
                         <div style={S.pageSub}>One row per attempt · Latest first · {detail?.data.length ?? '…'} records</div>
                     </div>
+                    
+                    {/* Real-time Summary Header */}
+                    {(() => {
+                        const s = getStats(activeGame.key);
+                        return (
+                            <div style={{ display: 'flex', gap: '24px', marginRight: '32px', background: '#fff', padding: '8px 20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Attempts</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{s.total_attempts ?? 0}</div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.65rem', color: '#2563eb', fontWeight: 700, textTransform: 'uppercase' }}>In Progress</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2563eb' }}>{s.in_progress ?? 0}</div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.65rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>Completed</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669' }}>{s.completed ?? 0}</div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.65rem', color: '#854d0e', fontWeight: 700, textTransform: 'uppercase' }}>Paused</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#854d0e' }}>{s.paused ?? 0}</div>
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     <button style={S.exportBtn} onClick={exportCSV}>⬇ Export CSV</button>
                 </div>
 
@@ -311,6 +360,18 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Q{q} Time(s)</th>
                                             </React.Fragment>
                                         ))
+                                    ) : activeGame?.key === 'rover_mela' ? (
+                                        <>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
+                                            {detail.columns.map(c => (
+                                                <React.Fragment key={c}>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>{c.toUpperCase()} Score</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                </React.Fragment>
+                                            ))}
+                                        </>
                                     ) : (
                                         detail.columns.map((c, idx) => {
                                             const isTriangle = activeGame?.key === 'triangle_rachna';
@@ -340,102 +401,119 @@ const AdminReports = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedRows.map((row, i) => (
-                                    <tr key={row.session_id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                                        <td style={S.td}>{i + 1}</td>
-                                        <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
-                                        <td style={S.td}>{row.child_name}</td>
-                                        <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.start_time)}</td>
-                                        <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
-                                        <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
-                                        <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.end_time)}</td>
-                                        
-                                        {activeGame?.key === 'auditory_dhyan' ? (
-                                            [1, 2, 3, 4].map(q => {
-                                                const totalCorrectMap = { 1: 4, 2: 5, 3: 9, 4: 15 };
-                                                const qs = row.question_scores;
-                                                return (
-                                                    <React.Fragment key={`qd-${q}`}>
-                                                        <td style={{ ...S.tdCenter, fontWeight: 700, color: '#0369a1' }}>{qs[`q${q}`] ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#64748b' }}>{totalCorrectMap[q]}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoi`] ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoo`] ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoc`] ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#854d0e' }}>{qs[`q${q}_time`] ?? '—'}</td>
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        ) : activeGame?.key === 'working_memory_herpher' ? (
-                                            // Q1–Q8 = internal qIds 2–9 (qId 1 = sample, excluded)
-                                            [2,3,4,5,6,7,8,9].map((qId, i) => {
-                                                const qs = row.question_scores;
-                                                const correct = qs[`q${qId}_correct`];
-                                                const score = qs[`q${qId}`];
-                                                const time = qs[`q${qId}_time`];
-                                                return (
-                                                    <React.Fragment key={`hp-${qId}`}>
-                                                        <td style={{ ...S.tdCenter, color: '#0369a1', fontWeight: 600 }}>{correct ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: score > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>{score ?? '—'}</td>
-                                                        <td style={{ ...S.tdCenter, color: '#64748b' }}>{time != null ? `${time}s` : '—'}</td>
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        ) : (
-                                            detail.columns.map(c => {
-                                                const v = row.question_scores[c];
-                                                const isTriangle = activeGame?.key === 'triangle_rachna';
-                                                return (
-                                                    <React.Fragment key={c}>
-                                                        <td style={S.scoreCell(v, isTriangle)}>
-                                                            {isTriangle 
-                                                                ? (v != null ? `${v}/2` : '—')
-                                                                : (v > 0 ? '✔' : v === 0 ? '✖' : '—')}
-                                                        </td>
-                                                        <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${row.question_scores[`${c}_time`]}s` : '—'}</td>
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        )}
-                                        
-                                        {activeGame?.key !== 'auditory_dhyan' && (
-                                            <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
-                                                {activeGame?.key === 'working_memory_herpher'
-                                                    ? (row.score ?? '—')
-                                                    : (
-                                                        <>
-                                                           <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {detail.columns.filter(c => row.question_scores[c] > 0).length} / {row.total_questions ?? '—'}</div>
-                                                           <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
-                                                        </>
-                                                    )
-                                                }
-                                            </td>
-                                        )}
-                                        <td style={S.tdCenter}>
-                                            {statusBadge(row.status)}
-                                            {row.status !== 'completed' && row.quit_reason && (
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontWeight: 'normal', maxWidth: '120px', whiteSpace: 'normal', margin: '4px auto 0' }}>
-                                                    "{row.quit_reason}"
-                                                </div>
+                                {sortedRows.map((row, i) => {
+                                    const isRover = activeGame?.key === 'rover_mela';
+                                    
+                                    return (
+                                        <tr key={row.session_id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                            <td style={S.td}>{i + 1}</td>
+                                            <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
+                                            <td style={S.td}>{row.child_name}</td>
+                                            <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.start_time)}</td>
+                                            <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
+                                            <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
+                                            <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.end_time)}</td>
+                                            
+                                            {activeGame?.key === 'auditory_dhyan' ? (
+                                                [1, 2, 3, 4].map(q => {
+                                                    const totalCorrectMap = { 1: 4, 2: 5, 3: 9, 4: 15 };
+                                                    const qs = row.question_scores;
+                                                    return (
+                                                        <React.Fragment key={`qd-${q}`}>
+                                                            <td style={{ ...S.tdCenter, fontWeight: 700, color: '#0369a1' }}>{qs[`q${q}`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{totalCorrectMap[q]}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoi`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoo`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoc`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#854d0e' }}>{qs[`q${q}_time`] ?? '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
+                                            ) : activeGame?.key === 'working_memory_herpher' ? (
+                                                [2,3,4,5,6,7,8,9].map((qId, i) => {
+                                                    const qs = row.question_scores;
+                                                    const correct = qs[`q${qId}_correct`];
+                                                    const score = qs[`q${qId}`];
+                                                    const time = qs[`q${qId}_time`];
+                                                    return (
+                                                        <React.Fragment key={`hp-${qId}`}>
+                                                            <td style={{ ...S.tdCenter, color: '#0369a1', fontWeight: 600 }}>{correct ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: score > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>{score ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{time != null ? `${Math.round(time)}s` : '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
+                                            ) : isRover ? (
+                                                <>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    {detail.columns.map(c => {
+                                                        const qs = row.question_scores;
+                                                        return (
+                                                            <React.Fragment key={`rm-${c}`}>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: '#059669' }}>{qs[c] ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </>
+                                            ) : (
+                                                detail.columns.map(c => {
+                                                    const v = row.question_scores[c];
+                                                    const isTriangle = activeGame?.key === 'triangle_rachna';
+                                                    return (
+                                                        <React.Fragment key={c}>
+                                                            <td style={S.scoreCell(v, isTriangle)}>
+                                                                {isTriangle 
+                                                                    ? (v != null ? `${v}/2` : '—')
+                                                                    : (v > 0 ? '✔' : v === 0 ? '✖' : '—')}
+                                                            </td>
+                                                            <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
                                             )}
-                                        </td>
-                                        <td style={S.tdCenter}>
-                                            <div title={(row.pauses||[]).map(p => `Q/Sec: ${p.questionNumber||p.questionKey||'—'} - "${p.reason||'No reason'}"`).join('\n')}>
-                                                {row.pauses && row.pauses.length > 0 ? (
-                                                    <span style={{ background:'#fef08a', color:'#854d0e', padding:'2px 8px', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'help' }}>
-                                                        {row.pauses.length}
-                                                    </span>
-                                                ) : <span style={{ color: '#cbd5e1' }}>0</span>}
-                                            </div>
-                                        </td>
-                                        {/* Assessment answer cells */}
-                                        {ASSESSMENT_COLS.map(ac => (
-                                            <td key={ac.key} style={{ ...S.td, background: '#faf5ff', fontSize: '0.8rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                title={row.assessment?.[ac.key] || ''}>
-                                                {row.assessment?.[ac.key] || <span style={{ color: '#d1d5db' }}>—</span>}
+                                            
+                                            {activeGame?.key !== 'auditory_dhyan' && (
+                                                <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
+                                                    {activeGame?.key === 'working_memory_herpher'
+                                                        ? (row.score ?? '—')
+                                                        : (
+                                                            <>
+                                                               <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
+                                                               <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
+                                                            </>
+                                                        )
+                                                    }
+                                                </td>
+                                            )}
+                                            <td style={S.tdCenter}>
+                                                {statusBadge(row.status)}
+                                                {row.status !== 'completed' && row.quit_reason && (
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontWeight: 'normal', maxWidth: '120px', whiteSpace: 'normal', margin: '4px auto 0' }}>
+                                                        "{row.quit_reason}"
+                                                    </div>
+                                                )}
                                             </td>
-                                        ))}
-                                    </tr>
-                                ))}
+                                            <td style={S.tdCenter}>
+                                                <div title={(row.pauses||[]).map(p => `Q/Sec: ${p.questionNumber||p.questionKey||'—'} - "${p.reason||'No reason'}"`).join('\n')}>
+                                                    {row.pauses && row.pauses.length > 0 ? (
+                                                        <span style={{ background:'#fef08a', color:'#854d0e', padding:'2px 8px', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'help' }}>
+                                                            {row.pauses.length}
+                                                        </span>
+                                                    ) : <span style={{ color: '#cbd5e1' }}>0</span>}
+                                                </div>
+                                            </td>
+                                            {ASSESSMENT_COLS.map(ac => (
+                                                <td key={ac.key} style={{ ...S.td, background: '#faf5ff', fontSize: '0.8rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                                    title={row.assessment?.[ac.key] || ''}>
+                                                    {row.assessment?.[ac.key] || <span style={{ color: '#d1d5db' }}>—</span>}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -481,8 +559,16 @@ const AdminReports = () => {
                                         <div style={S.kpiLbl}>Attempts</div>
                                     </div>
                                     <div style={S.kpi}>
+                                        <div style={{ ...S.kpiVal, color: '#2563eb' }}>{s.in_progress ?? 0}</div>
+                                        <div style={S.kpiLbl}>In Progress</div>
+                                    </div>
+                                    <div style={S.kpi}>
                                         <div style={{ ...S.kpiVal, color: '#059669' }}>{s.completed ?? 0}</div>
                                         <div style={S.kpiLbl}>Completed</div>
+                                    </div>
+                                    <div style={S.kpi}>
+                                        <div style={{ ...S.kpiVal, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
+                                        <div style={S.kpiLbl}>Dropped</div>
                                     </div>
                                     <div style={S.kpi}>
                                         <div style={S.kpiVal}>{s.avg_score ?? '—'}</div>

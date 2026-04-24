@@ -41,7 +41,7 @@ const Home = () => {
             subtitle: t('home.games.mela.sub'),
             desc: t('home.games.mela.desc'),
             startUrl: "/games/chalo_mela_chale",
-            image: "/assets/images/chalo_mela_chale.jpg",
+            image: "/assets/images/chalo_mela_chale/chalo_mela_chale.jpg",
             shortTitle: t('home.games.mela.title'),
             local: t('home.games.mela.local'),
             tag: t('home.games.mela.tag'),
@@ -136,35 +136,6 @@ const Home = () => {
 
     const [summaries, setSummaries] = useState({});
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loadingActivities, setLoadingActivities] = useState(false);
-
-    const fetchSummaries = async (childId) => {
-        setLoadingActivities(true);
-        try {
-            const config = {};
-            const token = localStorage.getItem('token');
-            if (token) {
-                config.headers = { Authorization: `Bearer ${token}` };
-            }
-
-            const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
-            if (res.data.success) {
-                const map = {};
-                res.data.summaries.forEach(s => {
-                    // Casing might be inconsistent in DB records
-                    if (s.game_name) {
-                        map[s.game_name.toLowerCase().trim()] = s;
-                    }
-                });
-                console.log('App: Game Activities Mapped:', map);
-                setSummaries(map);
-            }
-        } catch (e) {
-            console.error('App: Error fetching summaries:', e);
-        } finally {
-            setLoadingActivities(false);
-        }
-    };
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -179,7 +150,26 @@ const Home = () => {
         }
     }, []);
 
+    const fetchSummaries = async (childId) => {
+        try {
+            const config = {};
+            const token = localStorage.getItem('token');
+            if (token) {
+                config.headers = { Authorization: `Bearer ${token}` };
+            }
 
+            const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+            if (res.data.success) {
+                const map = {};
+                res.data.summaries.forEach(s => {
+                    map[s.game_name] = s;
+                });
+                setSummaries(map);
+            }
+        } catch (e) {
+            console.error('Fetcher summary error', e);
+        }
+    };
 
     const formatDate = (iso) => {
         if (!iso) return 'Never';
@@ -262,18 +252,12 @@ const Home = () => {
                                         
                                         {isLoggedIn && (
                                             <div className="test-activity">
-                                                {loadingActivities ? (
-                                                    <div className="activity-item" style={{ color: '#94a3b8', fontSize: '11px' }}>Updating stats...</div>
-                                                ) : (
-                                                    <>
-                                                        <div className="activity-item">
-                                                            <span>Last Played:</span> {summaries[test.gameKey.toLowerCase()] ? formatDate(summaries[test.gameKey.toLowerCase()].last_played_at) : 'Never'}
-                                                        </div>
-                                                        <div className="activity-item">
-                                                            <span>Attempts:</span> {summaries[test.gameKey.toLowerCase()]?.total_attempts || 0} times
-                                                        </div>
-                                                    </>
-                                                )}
+                                                <div className="activity-item">
+                                                    <span>Last Played:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                                </div>
+                                                <div className="activity-item">
+                                                    <span>Attempts:</span> {summaries[test.gameKey]?.total_attempts || 0} times
+                                                </div>
                                             </div>
                                         )}
                                     </div>

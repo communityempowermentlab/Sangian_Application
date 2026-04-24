@@ -122,6 +122,7 @@ function calcScore(questionNum, correctCount) {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const HerPherGame = () => {
   const navigate    = useNavigate();
+  const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [GAME_DATA] = useState(() => buildGameData()); // stable per session
 
   // Child data
@@ -178,45 +179,39 @@ const HerPherGame = () => {
   const audioSplashRef = useRef(null);
 
   // ──── Init: load child from localStorage ────────────────────────────────────
-  const [activitySummary, setActivitySummary] = useState({ lastPlayed: 'Never', attempts: 0 });
-
   useEffect(() => {
     const raw = localStorage.getItem('currentChild');
     if (!raw) { navigate('/login'); return; }
     const child = JSON.parse(raw);
     setChildData(child);
     checkResume(child.child_id);
-    fetchActivitySummary(child.child_id);
-  }, [navigate]);
+    fetchActivity(child.child_id);
+  }, [navigate]); // eslint-disable-line
 
-  const fetchActivitySummary = async (childId) => {
+  const fetchActivity = async (cid) => {
     try {
-      const config = {};
-      const token = localStorage.getItem('token');
-      if (token) config.headers = { Authorization: `Bearer ${token}` };
-
-      const res = await axios.get(`${API_URL}/games/sessions/summaries/${childId}`, config);
+      const res = await axios.get(`${API_URL}/games/sessions/summaries/${cid}`);
       if (res.data.success) {
-        const gameSum = res.data.summaries.find(s => s.game_name === GAME_NAME);
-        if (gameSum) {
-          setActivitySummary({
-            lastPlayed: formatDateDisp(gameSum.last_played_at),
-            attempts: gameSum.total_attempts
+        const summary = res.data.summaries.find(s => s.game_name === GAME_NAME);
+        if (summary) {
+          setActivityData({
+            lastPlayed: formatDate(summary.last_played_at),
+            attempts: summary.total_attempts
           });
         }
       }
     } catch (e) {
-      console.error('Error fetching activity summary:', e);
+      console.error('Activity fetch error', e);
     }
   };
 
-  const formatDateDisp = (iso) => {
+  const formatDate = (iso) => {
     if (!iso) return 'Never';
     const d = new Date(iso);
     return d.toLocaleString('en-GB', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
-    });
+    }).replace(/am|pm/g, match => match.toUpperCase());
   };
 
   // ──── Splash audio autoplay ──────────────────────────────────────────────────
@@ -646,21 +641,19 @@ const HerPherGame = () => {
                 </div>
 
                 <div className="hp-splash-title">Welcome to Her Pher</div>
-                <p className="hp-splash-subtitle" style={{ marginBottom: 12 }}>
+                
+                <div className="hp-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
+                   <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
+                     <strong>Last Played:</strong> {activityData.lastPlayed}
+                   </div>
+                   <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                     <strong>Attempts:</strong> {activityData.attempts} times
+                   </div>
+                </div>
+
+                <p className="hp-splash-subtitle">
                   Please listen to the instructions. When the audio finishes, you can start the game.
                 </p>
-
-                <div className="hp-activity-summary" style={{
-                  marginBottom: '20px', padding: '12px 20px', background: '#f8fafc', borderRadius: '12px',
-                  border: '1px dashed #e2e8f0', display: 'inline-block', textAlign: 'left', width: '100%', maxWidth: '360px', margin: '0 auto'
-                }}>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Last Played:</span> {activitySummary.lastPlayed}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                    <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '6px' }}>Attempts:</span> {activitySummary.attempts} times
-                  </div>
-                </div>
 
                 <div className="hp-btn-row">
                   <button

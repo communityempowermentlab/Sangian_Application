@@ -9,11 +9,16 @@ exports.startGameSession = async (req, res) => {
             return res.status(400).json({ success: false, message: 'child_id and game_name are required' });
         }
 
+        let normalizedName = game_name;
+        if (['Chalo Mela Chale', 'chalo_mela_chale'].includes(game_name)) {
+            normalizedName = 'rover_mela';
+        }
+
         const [result] = await pool.query(
             `INSERT INTO game_sessions 
             (child_id, game_name, start_time, total_questions, status, progress_level, score) 
             VALUES (?, ?, NOW(), ?, 'in_progress', 1, 0)`,
-            [child_id, game_name, total_questions || 0]
+            [child_id, normalizedName, total_questions || 0]
         );
 
         res.status(201).json({
@@ -132,15 +137,20 @@ exports.getReportOverview = async (req, res) => {
     try {
         const [rows] = await pool.query(`
             SELECT
-                game_name,
+                CASE 
+                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
+                    ELSE game_name 
+                END AS game_name,
                 COUNT(DISTINCT child_id)                        AS total_children,
                 COUNT(*)                                        AS total_attempts,
                 SUM(status = 'completed')                       AS completed,
                 SUM(status = 'paused')                          AS paused,
+                SUM(status = 'in_progress')                     AS in_progress,
+                SUM(status = 'dropped')                         AS dropped_count,
                 SUM(status = 'quit')                            AS quit_count,
                 ROUND(AVG(CASE WHEN status='completed' THEN score END), 1) AS avg_score
             FROM game_sessions
-            GROUP BY game_name
+            GROUP BY 1
         `);
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
@@ -153,6 +163,11 @@ exports.getReportOverview = async (req, res) => {
 exports.getReportDetail = async (req, res) => {
     try {
         const { gameName } = req.params;
+
+        let gameFilter = [gameName];
+        if (gameName === 'rover_mela') {
+            gameFilter = ['rover_mela', 'Chalo Mela Chale', 'chalo_mela_chale'];
+        }
 
         const [rows] = await pool.query(`
             SELECT
@@ -176,10 +191,11 @@ exports.getReportDetail = async (req, res) => {
             FROM game_sessions gs
             LEFT JOIN children c ON gs.child_id = c.child_id
             LEFT JOIN game_assessments ga ON ga.session_id = gs.id
-            WHERE gs.game_name = ?
+            WHERE gs.game_name IN (?)
             ORDER BY gs.start_time DESC
-        `, [gameName]);
+        `, [gameFilter]);
 
+        const allUniqueKeys = new Set();
         // Parse saved_state JSON and flatten per-question scores
         const enriched = rows.map((row, idx) => {
             let parsedState = null;
@@ -191,18 +207,34 @@ exports.getReportDetail = async (req, res) => {
 
             const scores = parsedState?.allScores || [];
             const questionScores = {};
+            let maxQIds = 0;
             scores.forEach(s => {
-                questionScores[`q${s.qId}`] = s.score;
-                if (s.correctCount !== undefined) questionScores[`q${s.qId}_correct`] = s.correctCount;
-                if (s.eoi !== undefined) questionScores[`q${s.qId}_eoi`] = s.eoi;
-                if (s.eoo !== undefined) questionScores[`q${s.qId}_eoo`] = s.eoo;
-                if (s.eoc !== undefined) questionScores[`q${s.qId}_eoc`] = s.eoc;
-                questionScores[`q${s.qId}_time`] = s.timeTaken ?? null;
+                const qid = s.qId || s.id;
+                if (qid !== undefined) {
+                    const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq'))) 
+                        ? qid 
+                        : `q${qid}`;
+                    questionScores[key] = s.score;
+                    allUniqueKeys.add(key);
+                    if (s.correctCount !== undefined) questionScores[`${key}_correct`] = s.correctCount;
+                    if (s.eoi !== undefined) questionScores[`${key}_eoi`] = s.eoi;
+                    if (s.eoo !== undefined) questionScores[`${key}_eoo`] = s.eoo;
+                    if (s.eoc !== undefined) questionScores[`${key}_eoc`] = s.eoc;
+                    questionScores[`${key}_time`] = s.timeTaken ?? null;
+                    questionScores[`${key}_moves`] = s.moves ?? null;
+                    
+                    if (!isNaN(qid)) {
+                        maxQIds = Math.max(maxQIds, parseInt(qid));
+                    }
+                }
             });
 
-            // Calculate Actual Game Time as sum of individual timeTaken values
-            let actualGameTime = scores.reduce((sum, s) => sum + (s.timeTaken || 0), 0);
-            if (actualGameTime === 0 && scores.length === 0) actualGameTime = null; // Blank if no questions played
+            // Calculate Total Moves and Actual Game Time as sum of individual values
+            let totalMoves = scores.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
+            let actualGameTime = scores.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
+            actualGameTime = Math.round(actualGameTime);
+            if (actualGameTime === 0 && scores.length === 0) actualGameTime = null; 
+            if (totalMoves === 0 && scores.length === 0) totalMoves = null;
 
             let totalSessionTime = null;
             if (row.start_time && row.end_time) {
@@ -221,6 +253,7 @@ exports.getReportDetail = async (req, res) => {
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
                 score: row.score,
+                correct_count: scores.filter(s => s.score > 0).length,
                 attempted_questions: scores.length,
                 total_questions: row.total_questions,
                 status: row.status,
@@ -230,6 +263,7 @@ exports.getReportDetail = async (req, res) => {
                 end_time: row.end_time,
                 total_session_time: totalSessionTime,
                 actual_game_time: actualGameTime,
+                total_moves: totalMoves,
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
@@ -242,17 +276,24 @@ exports.getReportDetail = async (req, res) => {
             };
         });
 
-        // Determine column set: find max qId across all rows
-        const allQIds = new Set();
-        enriched.forEach(r => {
-            Object.keys(r.question_scores).forEach(k => {
-                if (!k.endsWith('_time')) allQIds.add(k);
-            });
-        });
-        const sortedQIds = [...allQIds].sort((a, b) => {
-            const na = parseInt(a.slice(1)); const nb = parseInt(b.slice(1));
+        // Determine column set: sort logically (TQs first, then numeric Qs)
+        let sortedQIds = Array.from(allUniqueKeys).sort((a, b) => {
+            const isTQa = a.startsWith('tq');
+            const isTQb = b.startsWith('tq');
+            if (isTQa && !isTQb) return -1;
+            if (!isTQa && isTQb) return 1;
+            const na = parseInt(a.replace(/\D/g, '')) || 0;
+            const nb = parseInt(b.replace(/\D/g, '')) || 0;
             return na - nb;
         });
+
+        if (gameName === 'rover_mela') {
+            sortedQIds = [
+                'tq1', 'tq2', 'tq3', 'tq4',
+                'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10',
+                'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'
+            ];
+        }
 
         res.status(200).json({
             success: true,
@@ -307,16 +348,28 @@ exports.submitAssessment = async (req, res) => {
 exports.getGameSummaries = async (req, res) => {
     try {
         const { childId } = req.params;
+        if (!childId) {
+            console.error('getGameSummaries: Missing childId');
+            return res.status(400).json({ success: false, message: 'childId is required' });
+        }
+
+        console.log(`Fetching game summaries for childId: ${childId}`);
+
         const [rows] = await pool.query(
             `SELECT 
-                REPLACE(LOWER(TRIM(game_name)), 'atlantic', 'atlantis') as game_name, 
+                CASE 
+                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
+                    ELSE game_name 
+                END AS game_name, 
                 MAX(start_time) as last_played_at, 
                 COUNT(*) as total_attempts 
             FROM game_sessions 
             WHERE child_id = ? 
-            GROUP BY REPLACE(LOWER(TRIM(game_name)), 'atlantic', 'atlantis')`,
+            GROUP BY 1`,
             [childId]
         );
+
+        console.log(`Summaries found for ${childId}: ${rows.length} games`);
 
         res.status(200).json({
             success: true,
