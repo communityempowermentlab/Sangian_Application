@@ -137,9 +137,10 @@ exports.getReportOverview = async (req, res) => {
     try {
         const [rows] = await pool.query(`
             SELECT
-                CASE 
+                CASE
                     WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
-                    ELSE game_name 
+                    WHEN game_name = 'chor_machaye_shor' THEN 'cognitive_flex_chor'
+                    ELSE game_name
                 END AS game_name,
                 COUNT(DISTINCT child_id)                        AS total_children,
                 COUNT(*)                                        AS total_attempts,
@@ -167,6 +168,9 @@ exports.getReportDetail = async (req, res) => {
         let gameFilter = [gameName];
         if (gameName === 'rover_mela' || gameName === 'Rover Game' || gameName === 'chalo_mela_chale') {
             gameFilter = ['rover_mela', 'Chalo Mela Chale', 'chalo_mela_chale', 'Rover Test', 'Rover Game'];
+        }
+        if (gameName === 'cognitive_flex_chor') {
+            gameFilter = ['cognitive_flex_chor', 'chor_machaye_shor'];
         }
 
         const [rows] = await pool.query(`
@@ -206,13 +210,16 @@ exports.getReportDetail = async (req, res) => {
             } catch (_) {}
 
             const scores = parsedState?.allScores || [];
+            const chorItems = parsedState?.itemResults || [];
             const questionScores = {};
             let maxQIds = 0;
+
+            // Standard format (allScores) used by most games
             scores.forEach(s => {
                 const qid = s.qId || s.id;
                 if (qid !== undefined) {
-                    const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq'))) 
-                        ? qid 
+                    const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq')))
+                        ? qid
                         : `q${qid}`;
                     questionScores[key] = s.score;
                     allUniqueKeys.add(key);
@@ -222,19 +229,29 @@ exports.getReportDetail = async (req, res) => {
                     if (s.eoc !== undefined) questionScores[`${key}_eoc`] = s.eoc;
                     questionScores[`${key}_time`] = s.timeTaken ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
-                    
-                    if (!isNaN(qid)) {
-                        maxQIds = Math.max(maxQIds, parseInt(qid));
-                    }
+                    if (!isNaN(qid)) maxQIds = Math.max(maxQIds, parseInt(qid));
                 }
             });
 
+            // ChorMachayeShor format (itemResults)
+            chorItems.forEach(item => {
+                let key;
+                if (item.itemId === 1 && item.trial === 2) key = 'q1t2';
+                else if (item.itemId === 1) key = 'q1t1';
+                else key = `q${item.itemId}`;
+                questionScores[key] = item.score ?? null;
+                questionScores[`${key}_moves`] = item.moves ?? null;
+                questionScores[`${key}_time`] = item.timeTaken ?? null;
+                allUniqueKeys.add(key);
+            });
+
             // Calculate Total Moves and Actual Game Time as sum of individual values
-            let totalMoves = scores.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
-            let actualGameTime = scores.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
+            const allItems = chorItems.length > 0 ? chorItems : scores;
+            let totalMoves = allItems.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
+            let actualGameTime = allItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
             actualGameTime = Math.round(actualGameTime);
-            if (actualGameTime === 0 && scores.length === 0) actualGameTime = null; 
-            if (totalMoves === 0 && scores.length === 0) totalMoves = null;
+            if (actualGameTime === 0 && allItems.length === 0) actualGameTime = null;
+            if (totalMoves === 0 && allItems.length === 0) totalMoves = null;
 
             let totalSessionTime = null;
             if (row.start_time && row.end_time) {
@@ -253,8 +270,10 @@ exports.getReportDetail = async (req, res) => {
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
                 score: row.score,
-                correct_count: scores.filter(s => s.score > 0).length,
-                attempted_questions: scores.length,
+                correct_count: chorItems.length > 0
+                    ? chorItems.filter(r => r.completed).length
+                    : scores.filter(s => s.score > 0).length,
+                attempted_questions: chorItems.length > 0 ? chorItems.length : scores.length,
                 total_questions: row.total_questions,
                 status: row.status,
                 quit_reason: row.quit_reason,
@@ -293,6 +312,9 @@ exports.getReportDetail = async (req, res) => {
                 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10',
                 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'
             ];
+        }
+        if (gameName === 'cognitive_flex_chor') {
+            sortedQIds = ['q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11'];
         }
 
         res.status(200).json({
@@ -356,15 +378,16 @@ exports.getGameSummaries = async (req, res) => {
         console.log(`Fetching game summaries for childId: ${childId}`);
 
         const [rows] = await pool.query(
-            `SELECT 
-                CASE 
+            `SELECT
+                CASE
                     WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
-                    ELSE game_name 
-                END AS game_name, 
-                MAX(start_time) as last_played_at, 
-                COUNT(*) as total_attempts 
-            FROM game_sessions 
-            WHERE child_id = ? 
+                    WHEN game_name = 'chor_machaye_shor' THEN 'cognitive_flex_chor'
+                    ELSE game_name
+                END AS game_name,
+                MAX(start_time) as last_played_at,
+                COUNT(*) as total_attempts
+            FROM game_sessions
+            WHERE child_id = ?
             GROUP BY 1`,
             [childId]
         );

@@ -38,6 +38,15 @@ const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit',
 const fmtOnlyDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtOnlyTime = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '—';
 
+// ─── ChorMachayeShor column label helper ──────────────────────────────────────
+const chorColLabel = (c) => {
+    if (c === 'q1t1') return 'Item 1 (T1)';
+    if (c === 'q1t2') return 'Item 1 (T2)';
+    const m = c.match(/^q(\d+)$/);
+    if (m) return `Item ${m[1]}`;
+    return c.toUpperCase();
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AdminReports = () => {
     const navigate = useNavigate();
@@ -123,6 +132,7 @@ const AdminReports = () => {
         
         const isAuditory = activeGame?.key === 'auditory_dhyan';
         const isHerPher  = activeGame?.key === 'working_memory_herpher';
+        const isChorCSV  = activeGame?.key === 'cognitive_flex_chor';
         const qHeaders = [];
         
         if (isAuditory) {
@@ -146,9 +156,9 @@ const AdminReports = () => {
             detail.columns.forEach((c, idx) => {
                 const isTriangle = activeGame?.key === 'triangle_rachna';
                 const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
-                const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
+                const colLabel = isTriangle ? `Q${idx + 1}` : isChorCSV ? chorColLabel(c) : c.toUpperCase();
                 qHeaders.push(colLabel);
-                if (isRover) qHeaders.push(`${colLabel} Moves`);
+                if (isRover || isChorCSV) qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
             });
         }
@@ -197,10 +207,10 @@ const AdminReports = () => {
                     );
                 });
             } else {
-                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
+                const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
                 detail?.columns?.forEach(c => {
                     rowArr.push(r.question_scores?.[c] ?? '');
-                    if (isRover) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
+                    if (isRoverCSV || isChorCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
                 });
             }
@@ -361,6 +371,18 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Q{q} Time(s)</th>
                                             </React.Fragment>
                                         ))
+                                    ) : activeGame?.key === 'cognitive_flex_chor' ? (
+                                        <>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
+                                            {detail?.columns?.map(c => (
+                                                <React.Fragment key={c}>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 80 }}>{chorColLabel(c)} Score</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                </React.Fragment>
+                                            ))}
+                                        </>
                                     ) : (activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover')) ? (
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
@@ -404,6 +426,7 @@ const AdminReports = () => {
                             <tbody>
                                 {sortedRows.map((row, i) => {
                                     const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
+                                    const isChor = activeGame?.key === 'cognitive_flex_chor';
                                     
                                     return (
                                         <tr key={row.session_id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
@@ -444,15 +467,16 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : isRover ? (
+                                            ) : (isRover || isChor) ? (
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
                                                     <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
                                                     {detail?.columns?.map(c => {
                                                         const qs = row.question_scores;
+                                                        const score = qs[c];
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
-                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: '#059669' }}>{qs[c] ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
                                                             </React.Fragment>

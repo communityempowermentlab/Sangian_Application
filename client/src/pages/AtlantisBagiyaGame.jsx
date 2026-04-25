@@ -693,16 +693,16 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-stats">
           {childData?.child_id && (
             <div className="ab-stat-pill">
-              <span className="ab-stat-label">Child ID</span>
+              <span className="ab-stat-label">CHILD ID</span>
               <span className="ab-stat-value">{childData.child_id}</span>
             </div>
           )}
           <div className="ab-stat-pill">
-            <span className="ab-stat-label">Score</span>
+            <span className="ab-stat-label">SCORE</span>
             <span className="ab-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
-            <button className="ab-btn ab-btn-warning" style={{ padding: '4px 12px', minWidth: 0, fontSize: '0.8rem' }}
+            <button className="ab-btn ab-btn-warning" style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
               onClick={() => setShowQuitModal(true)}>
               Pause/Quit
             </button>

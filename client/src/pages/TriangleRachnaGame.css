@@ -73,7 +73,7 @@
   box-shadow: 0 6px 16px rgba(239,68,68,0.35);
 }
 
-.rg-topbar-right {
+.rg-stats {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -81,18 +81,35 @@
 }
 
 .rg-stat-pill {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.9);
-  border: 1px solid var(--rg-border);
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.8rem;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0 16px;
+  height: 34px;
+  border-radius: 30px;
+  color: #64748b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.rg-stat-label { font-weight: 500; color: var(--rg-muted); }
-.rg-stat-value { font-weight: 700; color: var(--rg-text); }
+.rg-stat-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  opacity: 0.8;
+  line-height: 34px;
+  display: inline-block;
+}
+
+.rg-stat-value {
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 34px;
+  display: inline-block;
+}
 
 .rg-top-quit-btn {
   padding: 6px 18px;

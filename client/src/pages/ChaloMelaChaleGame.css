@@ -81,9 +81,9 @@
   gap: 8px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  padding: 6px 16px;
+  padding: 0 16px;
+  height: 34px;
   border-radius: 30px;
-  font-size: 12px;
   color: #64748b;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
@@ -94,12 +94,16 @@
   letter-spacing: 0.05em;
   font-size: 10px;
   opacity: 0.8;
+  line-height: 34px;
+  display: inline-block;
 }
 
 .stat-value {
   font-weight: 800;
   color: #1e293b;
   font-size: 14px;
+  line-height: 34px;
+  display: inline-block;
 }
 
 
@@ -827,13 +831,16 @@
   background: white;
   color: #1e293b;
   border: 1px solid #e2e8f0;
-  padding: 6px 16px;
+  padding: 0 16px;
+  height: 34px;
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  display: inline-flex;
+  align-items: center;
 }
 
 .pause-btn-top:hover {

@@ -698,18 +698,18 @@ const NumberRecallGame = () => {
         <div className="nr-stats">
           {childData?.child_id && (
             <div className="nr-stat-pill">
-              <span className="nr-stat-label">Child ID</span>
+              <span className="nr-stat-label">CHILD ID</span>
               <span className="nr-stat-value">{childData.child_id}</span>
             </div>
           )}
           <div className="nr-stat-pill">
-            <span className="nr-stat-label">Score</span>
+            <span className="nr-stat-label">SCORE</span>
             <span className="nr-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
             <button
               className="nr-btn nr-btn-warning"
-              style={{ padding: '4px 12px', minWidth: 0, fontSize: '0.8rem' }}
+              style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
               onClick={() => setShowQuitModal(true)}
             >
               Pause/Quit

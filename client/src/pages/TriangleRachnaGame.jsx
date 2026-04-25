@@ -1240,16 +1240,24 @@ const TriangleRachnaGame = () => {
         <header className="rg-topbar">
           <div className="rg-brand">
             <div className="rg-brand-icon">△</div>
-            <span>Triangle Game — Rachna</span>
+            <div>Triangle Rachna</div>
           </div>
-          <div className="rg-topbar-right">
-            {childData && (
-              <>
-                <div className="rg-stat-pill"><span className="rg-stat-label">Child:</span><span className="rg-stat-value">{childData.child_id}</span></div>
-                <div className="rg-stat-pill"><span className="rg-stat-label">Score:</span><span className="rg-stat-value">{totalScore}</span></div>
-              </>
+          <div className="rg-stats">
+            {childData?.child_id && (
+              <div className="rg-stat-pill">
+                <span className="rg-stat-label">CHILD ID</span>
+                <span className="rg-stat-value">{childData.child_id}</span>
+              </div>
             )}
-            {screen === 'game' && <button className="rg-top-quit-btn" onClick={() => setShowQuitModal(true)}>Pause/Quit</button>}
+            <div className="rg-stat-pill">
+              <span className="rg-stat-label">SCORE</span>
+              <span className="rg-stat-value">{totalScore}</span>
+            </div>
+            {screen === 'game' && (
+              <button className="rg-btn rg-btn-warning" style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }} onClick={() => setShowQuitModal(true)}>
+                Pause / Quit
+              </button>
+            )}
           </div>
         </header>
 

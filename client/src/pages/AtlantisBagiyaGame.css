@@ -75,18 +75,35 @@
 }
 
 .ab-stat-pill {
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e5e7eb;
   display: flex;
-  gap: 6px;
   align-items: center;
-  font-size: 0.82rem;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0 16px;
+  height: 34px;
+  border-radius: 30px;
+  color: #64748b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.ab-stat-label { font-weight: 600; font-size: 0.7rem; color: var(--ab-muted); text-transform: uppercase; }
-.ab-stat-value { font-weight: 700; color: var(--ab-text); font-size: 0.9rem; }
+.ab-stat-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  opacity: 0.8;
+  line-height: 34px;
+  display: inline-block;
+}
+
+.ab-stat-value {
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 34px;
+  display: inline-block;
+}
 
 /* ─── Main ────────────────────────────────────────────── */
 .ab-main {

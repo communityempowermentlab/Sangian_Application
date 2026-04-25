@@ -80,17 +80,35 @@
 }
 
 .aa-stat-pill {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0 16px;
+  height: 34px;
+  border-radius: 30px;
+  color: #64748b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.aa-stat-label { font-weight: 500; color: var(--muted); }
-.aa-stat-value { font-weight: 700; color: var(--text); }
+.aa-stat-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  opacity: 0.8;
+  line-height: 34px;
+  display: inline-block;
+}
+
+.aa-stat-value {
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 34px;
+  display: inline-block;
+}
 
 .aa-main {
   padding: 24px;

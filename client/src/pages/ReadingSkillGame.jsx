@@ -425,10 +425,10 @@ const ReadingSkillGame = () => {
         </div>
         <div className="rs-stats">
           {childData?.child_id && (
-            <div className="rs-stat-pill"><span className="rs-stat-label">ID:</span> <span className="rs-stat-value">{childData.child_id}</span></div>
+            <div className="rs-stat-pill"><span className="rs-stat-label">CHILD ID</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="rs-stat-pill"><span className="rs-stat-label">Score:</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
-          {screen === 'game' && <button className="rs-btn rs-btn-warning" style={{padding:'4px 12px', minWidth:0, fontSize:'0.8rem'}} onClick={() => setShowQuitModal(true)}>Pause/Quit</button>}
+          <div className="rs-stat-pill"><span className="rs-stat-label">SCORE</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
+          {screen === 'game' && <button className="rs-btn rs-btn-warning" style={{padding:'0 12px', height:'34px', minWidth:0, fontSize:'0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center'}} onClick={() => setShowQuitModal(true)}>Pause/Quit</button>}
         </div>
       </header>
 

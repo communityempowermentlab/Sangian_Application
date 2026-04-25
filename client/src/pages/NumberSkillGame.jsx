@@ -425,10 +425,10 @@ const NumberSkillGame = () => {
         </div>
         <div className="ns-stats">
           {childData?.child_id && (
-            <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.childId')}:</span> <span className="ns-stat-value">{childData.child_id}</span></div>
+            <div className="ns-stat-pill"><span className="ns-stat-label">CHILD ID</span> <span className="ns-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.score')}:</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
-          {screen === 'game' && <button className="ns-btn ns-btn-warning" style={{padding:'4px 12px', minWidth:0, fontSize:'0.8rem'}} onClick={() => setShowQuitModal(true)}>{t('game.pauseQuit')}</button>}
+          <div className="ns-stat-pill"><span className="ns-stat-label">SCORE</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
+          {screen === 'game' && <button className="ns-btn ns-btn-warning" style={{padding:'0 12px', height:'34px', minWidth:0, fontSize:'0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center'}} onClick={() => setShowQuitModal(true)}>{t('game.pauseQuit')}</button>}
         </div>
       </header>
 

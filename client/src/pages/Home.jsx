@@ -93,7 +93,7 @@ const Home = () => {
             subtitle: t('home.games.chor.sub'),
             desc: t('home.games.chor.desc'),
             startUrl: "/games/chor_machaye_shor",
-            image: "/assets/images/chor_machaye_shor.jpg",
+            image: "/assets/images/chor_machaye_shor/chor_machaye_shor.jpg",
             shortTitle: t('home.games.chor.title'),
             local: t('home.games.chor.local'),
             tag: t('home.games.chor.tag'),

@@ -244,6 +244,10 @@ const ChaloMelaChaleGame = () => {
   const [gameSessionId, setGameSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [qStartTime, setQStartTime] = useState(null);
+  const qStartTimeRef = useRef(null);
+  
+  // Keep ref in sync for event handlers
+  useEffect(() => { qStartTimeRef.current = qStartTime; }, [qStartTime]);
   const [showResultsGrid, setShowResultsGrid] = useState(false);
   const [assessment, setAssessment] = useState({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   const [isAssessmentSubmitting, setIsAssessmentSubmitting] = useState(false);
@@ -370,7 +374,7 @@ const ChaloMelaChaleGame = () => {
       const newSessionId = res.data.sessionId;
       setGameSessionId(newSessionId);
       setStartTime(Date.now());
-      setQStartTime(Date.now());
+      setQStartTime(null);
       
       // Initialize saved_state immediately so it's visible as In Progress
       setTimeout(() => {
@@ -464,6 +468,9 @@ const ChaloMelaChaleGame = () => {
       timeRemaining: timeLimit,
       isComplete: false
     }));
+    const now = Date.now();
+    setQStartTime(now);
+    qStartTimeRef.current = now;
     playSoundEffect('start_trial.wav');
     timerRef.current = setInterval(() => {
       setQuestionState(prev => {
@@ -496,6 +503,8 @@ const ChaloMelaChaleGame = () => {
     };
     setQuestionState(newState);
     setScreen(id);
+    setQStartTime(null);
+    qStartTimeRef.current = null;
     if (!id.startsWith('tq')) {
       setTimeout(() => startTrial(1), 500);
     }
@@ -632,7 +641,9 @@ const ChaloMelaChaleGame = () => {
     
     const resultMsg = isSuccess ? `✅ Reached End | Score: ${score}` : `❌ ${reason} | Score: 0`;
     const now = Date.now();
-    const timeTaken = qStartTime ? ((now - qStartTime) / 1000).toFixed(1) : "0.0";
+    // Use Ref for logic to avoid stale closure issues
+    const startTimeToUse = qStartTimeRef.current;
+    const timeTaken = startTimeToUse ? ((now - startTimeToUse) / 1000).toFixed(1) : "0.0";
     const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken };
     
     setAllScores(prev => {

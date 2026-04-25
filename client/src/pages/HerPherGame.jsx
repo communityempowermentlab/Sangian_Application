@@ -592,21 +592,19 @@ const HerPherGame = () => {
             <div>Working Memory — Her Pher</div>
           </div>
           <div className="hp-stats">
-            {childData?.child_id && (
-              <div className="hp-stat-pill">
-                <span className="hp-stat-label" style={{ textTransform: 'uppercase' }}>CHILD ID</span>
-                <span className="hp-stat-value">{childData.child_id}</span>
-              </div>
-            )}
             <div className="hp-stat-pill">
-              <span className="hp-stat-label" style={{ textTransform: 'uppercase' }}>SCORE</span>
+              <span className="hp-stat-label">CHILD ID</span>
+              <span className="hp-stat-value">{childData?.child_id || '—'}</span>
+            </div>
+            <div className="hp-stat-pill">
+              <span className="hp-stat-label">SCORE</span>
               <span className="hp-stat-value">{totalScore}</span>
             </div>
 
             {screen === 'game' && (
               <button
                 className="hp-btn hp-btn-warning"
-                style={{ padding: '4px 12px', minWidth: 0, fontSize: '0.8rem' }}
+                style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
                 onClick={() => setShowQuitModal(true)}
               >
                 Pause / Quit
