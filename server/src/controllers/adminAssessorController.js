@@ -35,37 +35,54 @@ exports.getAssessorById = async (req, res) => {
 exports.addAssessor = async (req, res) => {
     try {
         const { name, email, mobile_number } = req.body;
-        console.log('--- ADD ASSESSOR DEBUG ---');
-        console.log('Payload:', { name, email, mobile_number });
+        
+        // Normalize input
+        const normalizedEmail = email ? email.toLowerCase().trim() : '';
+        const trimmedName = name ? name.trim() : '';
+        const trimmedMobile = mobile_number ? mobile_number.trim() : '';
 
-        if (!name || !email || !mobile_number) {
+        console.log('--- ADD ASSESSOR DEBUG ---');
+        console.log('Normalized Payload:', { name: trimmedName, email: normalizedEmail, mobile_number: trimmedMobile });
+
+        if (!trimmedName || !normalizedEmail || !trimmedMobile) {
             return res.status(400).json({ message: 'All fields are mandatory' });
         }
 
-        // Check if email already exists
-        const [existing] = await pool.query('SELECT id FROM assessors WHERE email = ?', [email]);
-        console.log('Query result for email:', email, 'Count:', existing.length);
+        // 1. Explicit Check for Email Uniqueness
+        // We use binary comparison if needed, but standard SQL match should be sufficient
+        const [existing] = await pool.query('SELECT id FROM assessors WHERE email = ?', [normalizedEmail]);
+        console.log('Uniqueness check result:', existing);
 
-        if (existing.length > 0) {
-            console.warn('Conflict detected: Email already exists');
+        if (existing && existing.length > 0) {
+            console.warn('Conflict: Email already exists in DB');
             return res.status(400).json({ 
-                message: 'Email ID already exists. This email is already registered. (Code: 0950)' 
+                message: 'Email ID already exists. This email is already registered in the system.' 
             });
         }
 
+        // 2. Perform Insert
         const [result] = await pool.query(
             'INSERT INTO assessors (name, email, mobile_number, status) VALUES (?, ?, ?, ?)',
-            [name, email, mobile_number, 'active']
+            [trimmedName, normalizedEmail, trimmedMobile, 'active']
         );
-        console.log('Insert success. ID:', result.insertId);
+        
+        console.log('Insert success. New ID:', result.insertId);
 
         res.status(201).json({
             message: 'Assessor added successfully',
             assessorId: result.insertId
         });
     } catch (error) {
-        console.error('Error adding assessor:', error);
-        res.status(500).json({ message: 'Server error adding assessor (Code: 0950)' });
+        console.error('Error in addAssessor:', error);
+        
+        // Handle database-level unique constraint failure just in case the check above missed it
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Email ID already exists. (DB Constraint)' });
+        }
+        
+        res.status(500).json({ 
+            message: `Server error adding assessor: ${error.message || 'Unknown error'}` 
+        });
     }
 };
 
@@ -75,21 +92,27 @@ exports.updateAssessor = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, email, mobile_number, status } = req.body;
-        console.log('--- UPDATE ASSESSOR DEBUG ---', id);
+        
+        // Normalize input
+        const normalizedEmail = email ? email.toLowerCase().trim() : '';
+        const trimmedName = name ? name.trim() : '';
+        const trimmedMobile = mobile_number ? mobile_number.trim() : '';
 
-        if (!name || !email || !mobile_number || !status) {
+        console.log('--- UPDATE ASSESSOR DEBUG --- ID:', id);
+
+        if (!trimmedName || !normalizedEmail || !trimmedMobile || !status) {
             return res.status(400).json({ message: 'All fields are mandatory' });
         }
 
         // Check if email belongs to someone else
-        const [existing] = await pool.query('SELECT id FROM assessors WHERE email = ? AND id != ?', [email, id]);
-        if (existing.length > 0) {
-            return res.status(400).json({ message: 'Email ID already exists. (Code: 0950)' });
+        const [existing] = await pool.query('SELECT id FROM assessors WHERE email = ? AND id != ?', [normalizedEmail, id]);
+        if (existing && existing.length > 0) {
+            return res.status(400).json({ message: 'Email ID already exists. Please use a unique email.' });
         }
 
         const [result] = await pool.query(
             'UPDATE assessors SET name = ?, email = ?, mobile_number = ?, status = ? WHERE id = ?',
-            [name, email, mobile_number, status, id]
+            [trimmedName, normalizedEmail, trimmedMobile, status, id]
         );
 
         if (result.affectedRows === 0) {
@@ -98,7 +121,12 @@ exports.updateAssessor = async (req, res) => {
 
         res.status(200).json({ message: 'Assessor updated successfully' });
     } catch (error) {
-        console.error('Error updating assessor:', error);
+        console.error('Error in updateAssessor:', error);
+        
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Email ID already exists. (DB Constraint)' });
+        }
+
         res.status(500).json({ message: 'Server error updating assessor' });
     }
 };
