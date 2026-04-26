@@ -130,7 +130,8 @@ const NumberSkillGame = () => {
   };
 
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+      audioRef.current.currentTime = 0;
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch(err => {
@@ -139,7 +140,7 @@ const NumberSkillGame = () => {
         });
       }
     }
-  }, [isCheckingSession, screen, showResumeModal]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   useEffect(() => {
     if (screen === 'game' && !showQuitModal) {
@@ -203,6 +204,8 @@ const NumberSkillGame = () => {
     setRemainderVal('');
     setAssessmentSubmitted(false);
     setActiveInput('answer');
+    setAudioFinished(false);
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
   // Question Timer Effect
@@ -386,7 +389,12 @@ const NumberSkillGame = () => {
   const handleQuit = async (status) => {
     if (!quitReason.trim()) return alert('Please enter a reason');
     await saveToServer(status, quitReason);
-    navigate('/');
+    if (status === 'quit') {
+      setShowQuitModal(false);
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   const getTotalScore = () => allScores.filter(s => s.score === 1).length;
@@ -420,15 +428,14 @@ const NumberSkillGame = () => {
     <div className="ns-app">
       <header className="ns-topbar">
         <div className="ns-brand">
-          <div className="ns-brand-icon">धं</div>
-          <div>{t('game.numeracyLabel')}</div>
+          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
         </div>
         <div className="ns-stats">
           {childData?.child_id && (
             <div className="ns-stat-pill"><span className="ns-stat-label">CHILD ID</span> <span className="ns-stat-value">{childData.child_id}</span></div>
           )}
           <div className="ns-stat-pill"><span className="ns-stat-label">SCORE</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
-          {screen === 'game' && <button className="ns-btn ns-btn-warning" style={{padding:'0 12px', height:'34px', minWidth:0, fontSize:'0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center'}} onClick={() => setShowQuitModal(true)}>{t('game.pauseQuit')}</button>}
+          {screen === 'game' && <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
 
@@ -436,9 +443,8 @@ const NumberSkillGame = () => {
         {screen === 'splash' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-screen-header">
-              <div>
-                <div className="ns-screen-title">{t('game.numeracyLabel')}</div>
-                <div className="ns-screen-subtitle">{t('game.splashSubtitle')}</div>
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                {/* Header text removed as requested */}
               </div>
             </div>
             
@@ -448,21 +454,11 @@ const NumberSkillGame = () => {
               </div>
               <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>{t('game.welcome')}</h2>
               
-              <div className="ns-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                   <strong>Last Played:</strong> {activityData.lastPlayed}
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                   <strong>Attempts:</strong> {activityData.attempts} times
-                 </div>
-              </div>
-              <p style={{ color: '#4b5563', fontSize: '1rem', marginBottom: '24px', maxWidth: '400px', lineHeight: '1.5' }}>
-                {t('game.splashDesc')}
-              </p>
+
               
               <div className="ns-btn-row">
                 <button 
-                  className="ns-btn ns-btn-primary" 
+                  className={`ns-btn ns-btn-primary ${audioFinished ? 'ns-btn-highlight' : ''}`} 
                   disabled={!audioFinished} 
                   style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                   onClick={() => {
@@ -471,17 +467,16 @@ const NumberSkillGame = () => {
                 >
                   {t('game.startNow')}
                 </button>
-                <button className="ns-btn ns-btn-secondary" onClick={() => {
+                 <button className="ns-btn ns-btn-secondary" onClick={() => {
                    if (audioRef.current) {
+                     setAudioFinished(false);
                      audioRef.current.currentTime = 0;
                      audioRef.current.play();
                    }
                 }}>{t('game.replayAudio')}</button>
               </div>
 
-              <p style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '24px', maxWidth: '450px', lineHeight: '1.4' }}>
-                {t('game.audioNote')}
-              </p>
+
             </div>
           </div>
         )}
@@ -493,7 +488,7 @@ const NumberSkillGame = () => {
                 <div className="ns-screen-title" style={{fontSize: '1.4rem'}}>{t('game.question')} {questionIndex + 1} {t('game.of')} {QUESTIONS.length}</div>
               </div>
               <div className="ns-chips">
-                <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Q{questionIndex + 1}</span>
+
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
                   ⏱ {t('game.timer')}: {formatTime(qTimer)}
                 </span>
@@ -545,8 +540,8 @@ const NumberSkillGame = () => {
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-screen-header">
               <div>
-                <div className="ns-screen-title">{t('game.assessmentComplete')}</div>
-                <div className="ns-screen-subtitle">{t('game.allQuestionsCompleted')}</div>
+                <div className="ns-screen-title">{quitReason ? 'Assessment Terminated' : t('game.assessmentComplete')}</div>
+                <div className="ns-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : t('game.allQuestionsCompleted')}</div>
               </div>
               <div className="ns-chips">
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
@@ -701,7 +696,7 @@ const NumberSkillGame = () => {
               <div className="ns-final-actions">
                 {assessmentSubmitted ? (
                   <>
-                    <button onClick={() => { setScreen('splash'); resetInternalState(); }} className="ns-btn ns-btn-primary">{t('game.retest')}</button>
+                    <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="ns-btn ns-btn-primary">{t('game.retest')}</button>
                     <button onClick={() => navigate('/')} className="ns-btn ns-btn-secondary">{t('game.home')}</button>
                   </>
                 ) : (
@@ -732,7 +727,7 @@ const NumberSkillGame = () => {
             <h2>{t('game.progressFound')}</h2>
             <p>{t('game.progressDesc')}</p>
             <div className="ns-btn-row" style={{marginTop:'20px'}}>
-              <button className="ns-btn ns-btn-secondary" onClick={() => { setShowResumeModal(false); startNewGame(); }}>{t('game.restartFresh')}</button>
+              <button className="ns-btn ns-btn-secondary" onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
               <button className="ns-btn ns-btn-primary" onClick={resumeGame}>{t('game.resumeGame')}</button>
             </div>
           </div>

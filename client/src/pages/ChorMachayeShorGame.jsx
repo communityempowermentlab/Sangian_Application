@@ -341,9 +341,24 @@ const ChorMachayeShorGame = () => {
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
+  const [audioFinished, setAudioFinished] = useState(false);
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+
+  // Splash Audio Logic
+  useEffect(() => {
+    if (screen === 'splash' && audioRef.current && !showResumeModal && !audioFinished) {
+      audioRef.current.currentTime = 0;
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn("Autoplay blocked:", err);
+          setAudioFinished(true);
+        });
+      }
+    }
+  }, [screen, showResumeModal, audioFinished]);
   
   // Load User
   useEffect(() => {
@@ -994,10 +1009,10 @@ const ChorMachayeShorGame = () => {
   };
 
   const handlePauseAction = async (actionStatus) => {
-    if (!quitReason.trim()) { alert('Please provide a reason.'); return; }
+    if (!quitReason.trim()) { alert('Please provide a reason'); return; }
     if (actionStatus === 'quit') {
-      await saveToServer('in_progress');
-      setShowPauseModal(false); setIsPaused(false);
+      await saveToServer('quit', quitReason);
+      setShowPauseModal(false);
       setScreen('results');
     } else {
       await saveToServer(actionStatus);
@@ -1024,6 +1039,8 @@ const ChorMachayeShorGame = () => {
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
       setAssessmentSubmitted(true);
+      alert('Assessment successfully saved!');
+      navigate('/');
     } catch (e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
@@ -1059,13 +1076,15 @@ const ChorMachayeShorGame = () => {
     setIsRecording(true); setRecordingTarget(target);
   };
 
-  // --- Renders ---
+  // SPLASH SCREEN
   if (screen === 'splash') {
     return (
       <div className="chor-body-shell">
         <div className="chor-app">
           <header className="chor-topbar">
-            <div className="chor-brand"><div className="chor-brand-icon">ध</div><div>Chor Machaye Shor</div></div>
+            <div className="chor-brand">
+              <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            </div>
             <div className="chor-stats">
               <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
             </div>
@@ -1076,14 +1095,34 @@ const ChorMachayeShorGame = () => {
                 <div className="chor-splash-image-wrapper">
                   <img src={`${IMG_DIR}/chor_machaye_shor.jpg`} alt="Chor Machaye Shor" className="chor-splash-image" />
                 </div>
-                <div className="chor-splash-title">Welcome to Chor Machaye Shor</div>
-                <div className="chor-splash-subtitle">A thief has hidden treasure in houses. Help the police by finding the treasure!<br/>The thief leaves a clue... can you discover it?</div>
+                <div className="chor-screen-header">
+                  <div style={{ textAlign: 'center', width: '100%' }}>
+                  </div>
+                </div>
+                
                 <div className="chor-splash-footer">
                   <div className="chor-btn-row">
-                    <button className="chor-btn chor-btn-primary chor-btn-highlight" onClick={startGame}>Start Assessment</button>
+                    <button 
+                      className={`chor-btn chor-btn-primary ${!audioFinished ? 'disabled' : 'chor-btn-highlight'}`} 
+                      onClick={startGame} 
+                      disabled={!audioFinished}
+                    >Start Now</button>
+                    <button className="chor-btn chor-btn-secondary" onClick={() => {
+                      if (audioRef.current) {
+                        setAudioFinished(false);
+                        audioRef.current.currentTime = 0;
+                        audioRef.current.play().catch(() => {});
+                      }
+                    }}>Replay Audio</button>
                   </div>
-                  <p className="chor-splash-hint">Find the treasure 3 times in a row to catch the thief!</p>
+                  <p className="chor-splash-hint">The button will activate after the audio instructions finish.</p>
                 </div>
+                <audio 
+                  ref={audioRef} 
+                  src={`${AUDIO_DIR}/cm_splash.wav`} 
+                  onEnded={() => setAudioFinished(true)}
+                  onError={() => setAudioFinished(true)}
+                />
               </div>
             </div>
           </main>
@@ -1095,7 +1134,12 @@ const ChorMachayeShorGame = () => {
               <h2>Saved Progress Found</h2>
               <p>You have a previously paused game session. Would you like to resume?</p>
               <div className="modal-actions-row">
-                <button className="modal-btn modal-btn-cancel" onClick={handleRestart}>Restart Game</button>
+                <button className="modal-btn modal-btn-cancel" onClick={() => {
+                  setShowResumeModal(false);
+                  resetGameState();
+                  setAudioFinished(false);
+                  setScreen('splash');
+                }}>Restart Fresh</button>
                 <button className="modal-btn modal-btn-primary" onClick={resumeGame}>Resume Game</button>
               </div>
             </div>
@@ -1117,7 +1161,9 @@ const ChorMachayeShorGame = () => {
       <div className="chor-body-shell">
         <div className="chor-app">
           <header className="chor-topbar">
-            <div className="chor-brand"><div className="chor-brand-icon">ध</div><div>Chor Machaye Shor</div></div>
+            <div className="chor-brand">
+              <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            </div>
             <div className="chor-stats">
               <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
               <div className="chor-stat-pill"><span className="chor-stat-label">SP</span><span className="chor-stat-value">{correctCount}</span></div>
@@ -1289,7 +1335,11 @@ const ChorMachayeShorGame = () => {
                   {assessmentSubmitted ? (
                     <>
                       <button className="chor-btn chor-btn-primary" onClick={() => navigate('/')}>🏠 Go to Home</button>
-                      <button className="chor-btn chor-btn-success" onClick={handleRestart}>↻ Restart Game</button>
+                      <button className="chor-btn chor-btn-success" onClick={() => {
+                        resetGameState();
+                        setAudioFinished(false);
+                        setScreen('splash');
+                      }}>↻ Restart Game</button>
                     </>
                   ) : (
                     <button className="chor-btn chor-btn-primary" onClick={submitAssessment} disabled={isAssessmentSubmitting}>
@@ -1316,12 +1366,14 @@ const ChorMachayeShorGame = () => {
     <div className="chor-body-shell">
       <div className="chor-app">
         <header className="chor-topbar">
-          <div className="chor-brand"><div className="chor-brand-icon">ध</div><div>Chor Machaye Shor</div></div>
+          <div className="chor-brand">
+            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+          </div>
           <div className="chor-stats">
             <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
             <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
             <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
-            <button className="chor-btn chor-btn-secondary" style={{padding: '0 12px', height: '34px', fontSize: '0.8rem', minWidth: 'auto', borderRadius: '30px'}} onClick={handlePauseClick}>Pause / Quit</button>
+            <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
           </div>
         </header>
 
@@ -1385,8 +1437,8 @@ const ChorMachayeShorGame = () => {
             </div>
             <div className="modal-actions-row">
               <button className="modal-btn modal-btn-cancel" onClick={() => { setShowPauseModal(false); setIsPaused(false); startTimer(); }}>Cancel</button>
-              <button className="modal-btn modal-btn-pause" onClick={() => handlePauseAction('paused')}>Pause Session</button>
-              <button className="modal-btn modal-btn-quit" onClick={() => handlePauseAction('quit')}>Quit Game</button>
+              <button className="modal-btn modal-btn-pause" onClick={() => handlePauseAction('paused')}>Pause & Save</button>
+              <button className="modal-btn modal-btn-quit" onClick={() => handlePauseAction('quit')}>Quit & End</button>
             </div>
           </div>
         </div>

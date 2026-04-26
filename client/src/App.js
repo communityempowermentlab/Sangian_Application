@@ -22,6 +22,9 @@ import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
+import AdminAssessorsList from './pages/AdminAssessorsList';
+import AdminAssessorAdd from './pages/AdminAssessorAdd';
+import AdminAssessorEdit from './pages/AdminAssessorEdit';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 
@@ -45,6 +48,8 @@ const ROUTE_TITLES = {
     '/admin/dashboard':         'Dashboard | Admin Panel | Community Empowerment Lab',
     '/admin/children':          'Children | Admin Panel | Community Empowerment Lab',
     '/admin/children/add':      'Add Child | Admin Panel | Community Empowerment Lab',
+    '/admin/assessors':         'Assessors | Admin Panel | Community Empowerment Lab',
+    '/admin/assessors/add':     'Add Assessor | Admin Panel | Community Empowerment Lab',
     '/admin/reports':           'Reports | Admin Panel | Community Empowerment Lab',
     '/admin/docs':              'Documentation | Admin Panel | Community Empowerment Lab',
 };
@@ -109,6 +114,9 @@ function App() {
                                 <Route path="children"               element={<AdminChildrenList />} />
                                 <Route path="children/add"           element={<AdminChildAdd />} />
                                 <Route path="children/edit/:id"      element={<AdminChildEdit />} />
+                                <Route path="assessors"              element={<AdminAssessorsList />} />
+                                <Route path="assessors/add"          element={<AdminAssessorAdd />} />
+                                <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />
                             </Route>

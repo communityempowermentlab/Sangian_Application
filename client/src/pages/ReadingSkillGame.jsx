@@ -139,7 +139,8 @@ const ReadingSkillGame = () => {
   };
 
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+      audioRef.current.currentTime = 0;
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch(err => {
@@ -148,7 +149,7 @@ const ReadingSkillGame = () => {
         });
       }
     }
-  }, [isCheckingSession, screen, showResumeModal]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   useEffect(() => {
     if (screen === 'game' && !showQuitModal && !showMidTestModal) {
@@ -208,6 +209,8 @@ const ReadingSkillGame = () => {
     setQTimer(0);
     setPauses([]);
     setAssessmentSubmitted(false);
+    setAudioFinished(false);
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
   // Question Timer Effect
@@ -378,7 +381,12 @@ const ReadingSkillGame = () => {
   const handleQuit = async (status) => {
     if (!quitReason.trim()) return alert('Please enter a reason');
     await saveToServer(status, quitReason);
-    navigate('/');
+    if (status === 'quit') {
+      setShowQuitModal(false);
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   const submitAssessmentForm = async () => {
@@ -418,17 +426,16 @@ const ReadingSkillGame = () => {
 
   return (
     <div className="rs-app">
-      <header className="rs-topbar">
+      <header className="rs-topbar" style={{ borderBottom: '1px solid #f1f5f9' }}>
         <div className="rs-brand">
-          <div className="rs-brand-icon">📚</div>
-          <div>Literacy Test</div>
+          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
         </div>
         <div className="rs-stats">
           {childData?.child_id && (
             <div className="rs-stat-pill"><span className="rs-stat-label">CHILD ID</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
           <div className="rs-stat-pill"><span className="rs-stat-label">SCORE</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
-          {screen === 'game' && <button className="rs-btn rs-btn-warning" style={{padding:'0 12px', height:'34px', minWidth:0, fontSize:'0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center'}} onClick={() => setShowQuitModal(true)}>Pause/Quit</button>}
+          {screen === 'game' && <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
 
@@ -436,33 +443,21 @@ const ReadingSkillGame = () => {
         {screen === 'splash' && (
           <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
             <div className="rs-screen-header">
-              <div>
-                <div className="rs-screen-title">Literacy Test</div>
-                <div className="rs-screen-subtitle">Screen 0 · Listen to the instructions, then start the assessment.</div>
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                {/* Header text removed as requested */}
               </div>
             </div>
             
             <div className="rs-card rs-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
               <div className="rs-splash-image-wrapper">
-                <img src="/assets/images/reading_skill.jpg" alt="Reading Skill" className="rs-splash-image" onError={e => e.target.style.display='none'} />
+                <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-splash-image" onError={e => e.target.style.display='none'} />
               </div>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>Welcome</h2>
-              
-              <div className="rs-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                   <strong>Last Played:</strong> {activityData.lastPlayed}
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                   <strong>Attempts:</strong> {activityData.attempts} times
-                 </div>
-              </div>
-              <p style={{ color: '#4b5563', fontSize: '1rem', marginBottom: '24px', maxWidth: '400px', lineHeight: '1.5' }}>
-                Please listen to the instructions. When the audio finishes, you can start the assessment.
-              </p>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>Welcome to Literacy Test</h2>
+
               
               <div className="rs-btn-row">
                 <button 
-                  className="rs-btn rs-btn-primary" 
+                  className={`rs-btn rs-btn-primary ${audioFinished ? 'rs-btn-highlight' : ''}`} 
                   disabled={!audioFinished} 
                   style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                   onClick={() => startNewGame()}
@@ -471,15 +466,12 @@ const ReadingSkillGame = () => {
                 </button>
                 <button className="rs-btn rs-btn-secondary" onClick={() => {
                    if (audioRef.current) {
+                     setAudioFinished(false);
                      audioRef.current.currentTime = 0;
                      audioRef.current.play();
                    }
                 }}>Replay Audio</button>
               </div>
-
-              <p style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '24px', maxWidth: '450px', lineHeight: '1.4' }}>
-                The audio will play automatically. Once it ends, the Start Now button will become active.
-              </p>
             </div>
           </div>
         )}
@@ -491,7 +483,7 @@ const ReadingSkillGame = () => {
                 <div className="rs-screen-title" style={{fontSize: '1.4rem'}}>{currentQuestion.categoryName} ({questionIndex + 1} of {QUESTIONS.length})</div>
               </div>
               <div className="rs-chips">
-                <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Q{questionIndex + 1}</span>
+
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
                   ⏱ Timer: {formatTime(qTimer)}
                 </span>
@@ -538,8 +530,8 @@ const ReadingSkillGame = () => {
             
             <div className="rs-card rs-result-card">
               <div className="rs-result-header">
-                <h2>Performance</h2>
-                <p>Assessment Completed</p>
+                <h2>{quitReason ? 'Assessment Terminated' : 'Performance'}</h2>
+                <p>{quitReason ? `Reason: ${quitReason}` : 'Assessment Completed'}</p>
               </div>
 
               <div className="rs-score-top">
@@ -680,7 +672,7 @@ const ReadingSkillGame = () => {
               <div className="rs-final-actions">
                 {assessmentSubmitted ? (
                   <>
-                    <button onClick={() => { setScreen('splash'); resetInternalState(); }} className="rs-btn rs-btn-primary">↻ Retest</button>
+                    <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="rs-btn rs-btn-primary">↻ Retest</button>
                     <button onClick={() => navigate('/')} className="rs-btn rs-btn-secondary">🏠 Home</button>
                   </>
                 ) : (
@@ -697,7 +689,7 @@ const ReadingSkillGame = () => {
       {!isCheckingSession && (
         <audio 
           ref={audioRef} 
-          src="/assets/audios/reading_skill_splash.wav" 
+          src="/assets/audios/reading_skill/splash.wav" 
           preload="auto" 
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
@@ -755,7 +747,7 @@ const ReadingSkillGame = () => {
             <h2>Saved Progress Found</h2>
             <p>You have a previously paused game session.</p>
             <div className="rs-btn-row" style={{marginTop:'20px'}}>
-              <button className="rs-btn rs-btn-secondary" onClick={() => { setShowResumeModal(false); startNewGame(); }}>Restart Fresh</button>
+              <button className="rs-btn rs-btn-secondary" onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>Restart Fresh</button>
               <button className="rs-btn rs-btn-primary" onClick={resumeGame}>Resume Game</button>
             </div>
           </div>

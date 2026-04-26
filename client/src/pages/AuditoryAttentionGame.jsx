@@ -314,6 +314,15 @@ const AuditoryAttentionGame = () => {
     setShowResumeModal(false);
     setScreen('splash');
     cleanupAudio();
+    // Reset all game state
+    setQuestionScores({ 1: null, 2: null, 3: null, 4: null });
+    setQuestionTimes({ 1: null, 2: null, 3: null, 4: null });
+    setCurrentQIndex(0);
+    setAssessment({ behaviors: [], notes: '', q1: '', q2: '', q3: '', q4: '' });
+    setAssessmentSubmitted(false);
+    setCanStartQ(false);
+    setLandingAudioPlaying(false);
+    setSampleClicked([]);
   };
 
   const getMappedSavedState = (qs, qt) => {
@@ -359,7 +368,11 @@ const AuditoryAttentionGame = () => {
     }
     syncSessionProgress(actionType, quitReason).then(() => {
       setShowQuitModal(false);
-      navigate('/');
+      if (actionType === 'quit') {
+        setScreen('score');
+      } else {
+        navigate('/');
+      }
     });
   };
 
@@ -397,6 +410,15 @@ const AuditoryAttentionGame = () => {
   };
 
   useEffect(() => {
+    if (screen === 'splash' && audioRef.current && !canStartQ) {
+      setLandingAudioPlaying(true);
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        setCanStartQ(true);
+        setLandingAudioPlaying(false);
+      });
+    }
+
     if (screen === 'sampleA') {
       playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
     } else if (screen === 'question1-landing') {
@@ -408,7 +430,7 @@ const AuditoryAttentionGame = () => {
     } else if (screen === 'question4-landing') {
       playInstructionAudio(CONFIG.QUESTION4.INSTRUCTION_AUDIO);
     }
-  }, [screen]);
+  }, [screen, canStartQ]);
 
   // -- Word playing loop --
   const getQConfig = () => {
@@ -639,6 +661,7 @@ const AuditoryAttentionGame = () => {
       });
       await syncSessionProgress('completed');
       setAssessmentSubmitted(true);
+      alert('Assessment successfully saved!');
     } catch (e) {
       alert('Failed to save assessment');
     } finally {
@@ -671,8 +694,7 @@ const AuditoryAttentionGame = () => {
         {/* TOPBAR */}
         <header className="aa-topbar">
           <div className="aa-brand">
-            <div className="aa-brand-icon">ध</div>
-            <div>Auditory Attention - Dhyan Kahan Hai</div>
+            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
           </div>
           <div className="aa-stats">
             {childId && (
@@ -687,10 +709,9 @@ const AuditoryAttentionGame = () => {
             </div>
             {screen !== 'checking' && screen !== 'splash' && (
               <button 
-                className="aa-btn aa-btn-secondary" 
-                style={{ padding: '4px 12px', minWidth: 0, fontSize: '0.8rem', marginLeft: '10px' }} 
+                className="btn-pause-quit" 
                 onClick={() => setShowQuitModal(true)}>
-                ⏸ Pause / Quit
+                <span>⏸</span> Pause/Quit
               </button>
             )}
           </div>
@@ -709,11 +730,9 @@ const AuditoryAttentionGame = () => {
           {screen === 'splash' && (
             <div className="aa-screen">
                <div className="aa-header">
-                 <div>
-                   <h2 className="aa-title">Auditory Attention - Dhyan Kahan Hai</h2>
-                   <p className="aa-subtitle">Splash Screen</p>
+                 <div style={{ textAlign: 'center', width: '100%' }}>
+                   {/* Header text removed as requested */}
                  </div>
-                 <div className="aa-chips"><span className="aa-chip aa-chip-splash">Splash</span></div>
                </div>
                <div className="aa-card aa-splash-card">
                  <div className="aa-splash-image-wrapper">
@@ -721,17 +740,25 @@ const AuditoryAttentionGame = () => {
                  </div>
                  <h2 className="aa-title" style={{ fontSize: '1.5rem' }}>Welcome to Dhyan Kahan Hai</h2>
                  
-                 <div className="aa-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                      <strong>Last Played:</strong> {activityData.lastPlayed}
-                    </div>
-                    <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                      <strong>Attempts:</strong> {activityData.attempts} times
-                    </div>
-                 </div>
+
 
                  <p className="aa-subtitle" style={{ marginBottom: 24, maxWidth: 400 }}>Auditory Attention Assessment</p>
-                 <button className="aa-btn aa-btn-primary aa-btn-highlight" onClick={startNewGameSession}>Start Now</button>
+                  <button 
+                    className={`aa-btn aa-btn-primary ${canStartQ ? 'aa-btn-highlight' : ''}`} 
+                    disabled={!canStartQ}
+                    style={{ opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
+                    onClick={startNewGameSession}
+                  >
+                    Start Now
+                  </button>
+                  <button className="aa-btn aa-btn-secondary" onClick={() => {
+                    if (audioRef.current) {
+                      setCanStartQ(false);
+                      setLandingAudioPlaying(true);
+                      audioRef.current.currentTime = 0;
+                      audioRef.current.play();
+                    }
+                  }}>Replay Audio</button>
                </div>
             </div>
           )}
@@ -889,8 +916,8 @@ const AuditoryAttentionGame = () => {
             <div className="aa-screen" style={{ overflowY: 'auto' }}>
                <div className="aa-header">
                  <div>
-                   <h2 className="aa-title">🏆 Assessment Complete</h2>
-                   <p className="aa-subtitle">Final Results</p>
+                   <h2 className="aa-title">{quitReason ? '🏆 Assessment Terminated' : '🏆 Assessment Complete'}</h2>
+                   <p className="aa-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Final Results'}</p>
                  </div>
                </div>
 
@@ -987,7 +1014,7 @@ const AuditoryAttentionGame = () => {
                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
                    {assessmentSubmitted ? (
                      <div style={{ display: 'flex', gap: 16 }}>
-                       <button onClick={() => window.location.reload()} style={{ padding: '12px 32px', borderRadius: 999, background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>↻ Retest</button>
+                        <button onClick={() => handleRestartFresh()} style={{ padding: '12px 32px', borderRadius: 999, background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>↻ Retest</button>
                        <button onClick={() => navigate('/')} style={{ padding: '12px 32px', borderRadius: 999, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>🏠 Home</button>
                      </div>
                    ) : (
@@ -1011,7 +1038,7 @@ const AuditoryAttentionGame = () => {
             <p>You have a previously paused session for this game.</p>
             <div className="aa-btn-row">
               <button className="aa-btn aa-btn-secondary" onClick={handleRestartFresh}>Restart Fresh</button>
-              <button className="aa-btn aa-btn-primary" onClick={resumeSessionData}>Resume</button>
+              <button className="aa-btn aa-btn-primary" onClick={resumeSessionData}>Resume Game</button>
             </div>
           </div>
         </div>
@@ -1039,13 +1066,18 @@ const AuditoryAttentionGame = () => {
             <div className="aa-btn-row">
               <button className="aa-btn aa-btn-secondary" onClick={() => setShowQuitModal(false)}>Cancel</button>
               <button className="aa-btn" style={{ background: '#fef08a' }} onClick={() => handleQuitRequest('paused')}>Pause & Save</button>
-              <button className="aa-btn" style={{ background: '#fee2e2', color: 'red' }} onClick={() => handleQuitRequest('quit')}>Quit</button>
+              <button className="aa-btn" style={{ background: '#fee2e2', color: 'red' }} onClick={() => handleQuitRequest('quit')}>Quit & End</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* TOAST */}
+      <audio 
+        ref={audioRef} 
+        src={screen === 'splash' ? `${CONFIG.IMAGE_PATH}/aa_instruction.wav` : undefined} // Using sample instruction as splash audio if needed, or specific splash audio
+        onEnded={() => { setCanStartQ(true); setLandingAudioPlaying(false); }}
+        onError={() => { setCanStartQ(true); setLandingAudioPlaying(false); }}
+      />
       <div className={`aa-toast ${toast.show ? 'show':''} ${toast.type}`}>{toast.message}</div>
     </div>
   );

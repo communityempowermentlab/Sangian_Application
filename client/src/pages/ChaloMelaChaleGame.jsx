@@ -576,6 +576,11 @@ const ChaloMelaChaleGame = () => {
 
   // Handle auto-start on screen change
   useEffect(() => {
+    if (screen === 'splash' && audioRef.current && !audioFinished) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => setAudioFinished(true));
+    }
+    
     if (screen === 'splash') {
       hasAutoStarted.current = { sampleA: false, sampleB: false };
     } else if (screen === 'sampleA' && !hasAutoStarted.current.sampleA) {
@@ -585,7 +590,7 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [screen, startAutoDemoA, startAutoDemoSB]);
+  }, [screen, startAutoDemoA, startAutoDemoSB, audioFinished]);
 
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
@@ -715,10 +720,37 @@ const ChaloMelaChaleGame = () => {
     }
   };
 
-  const handlePauseClick = () => {
-    setIsPaused(true);
-    setShowPauseModal(true);
+  const handleRestartFresh = () => {
+    setGameSessionId(null);
+    setShowResumeModal(false);
+    setScreen('splash');
     stopAll();
+    // Reset all game state
+    setAllScores([]);
+    setUnlockedPaths({ p2: false, p3: false, tq1: false, sbP2: false, tq3: false });
+    setCompletedPaths({ p1: false, p2: false, p3: false, sbP1: false, sbP2: false });
+    setIsDropped(false);
+    setAudioFinished(false);
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setAssessmentSubmitted(false);
+    hasAutoStarted.current = { sampleA: false, sampleB: false };
+    setQuestionState({
+      id: '',
+      matrix: [],
+      currentTrial: 1,
+      gameStarted: false,
+      path: [],
+      moveCount: 0,
+      timeRemaining: 10,
+      trial1Result: "Not Started",
+      trial2Result: "Not Started",
+      trial1Score: 0,
+      trial2Score: 0,
+      trial2Unlocked: false,
+      trial2Hidden: false,
+      isComplete: false,
+      nextUnlocked: false
+    });
   };
 
   const handlePauseAction = async (actionStatus) => {
@@ -728,14 +760,11 @@ const ChaloMelaChaleGame = () => {
     }
     
     if (actionStatus === 'quit') {
-      // Save as in_progress first to capture current state, then move to results for assessment
-      await saveToServer('in_progress'); 
+      await saveToServer('quit', quitReason); 
       setShowPauseModal(false);
-      setIsPaused(false);
       setScreen('results');
     } else {
       await saveToServer(actionStatus);
-      // For 'paused', go to dashboard
       navigate('/');
     }
   };
@@ -937,8 +966,11 @@ const ChaloMelaChaleGame = () => {
         <div className="final-actions">
           {assessmentSubmitted ? (
             <>
-              <button className="btn btn-primary" onClick={() => window.location.reload()}>Restart</button>
-              <button className="btn btn-secondary" onClick={() => navigate('/')}>Back to Home</button>
+              <button 
+                  className="btn btn-primary" 
+                  onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); }}
+                >↻ Retest</button>
+              <button className="btn btn-secondary" onClick={() => navigate('/')}>🏠 Home</button>
             </>
           ) : (
             <button
@@ -1069,28 +1101,32 @@ const ChaloMelaChaleGame = () => {
     <div className="rover-body-shell">
       <div className="app">
         <header className="topbar">
-          <div className="brand"><div className="brand-icon">R</div><span>Rover Game - Chalo Mela Chale</span></div>
+          <div className="brand">
+            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+          </div>
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
-            <button className="pause-btn-top" onClick={handlePauseClick} style={{ marginLeft: '8px' }}>Pause/Quit</button>
+            <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
           </div>
         </header>
         <main className="main">
           {screen === 'splash' && (
             <div className="screen">
-              <div className="screen-header"><div><div className="screen-title">Rover Game - Chalo Mela Chale</div></div></div>
+              <div className="screen-header">
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  {/* Header text removed as requested */}
+                </div>
+              </div>
               <div className="card splash-card">
                 <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Rover" className="splash-image" /></div>
                 <div className="splash-title">Welcome to Rover</div>
-                <div className="splash-subtitle">Please listen to the instructions. When the audio finishes, you can start the practice.</div>
+
                 <div className="btn-row">
-                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : ''}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')}>Start Now</button>
+                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')}>Start Now</button>
                   <button className="btn btn-secondary" onClick={() => playAudio('SB_splash.wav', () => setAudioFinished(true))}>Replay Audio</button>
                 </div>
-                <p className="instructions" style={{marginTop: '10px'}}>
-                  The audio will play automatically. Once it ends, the <span className="accent-text">Start Now</span> button will become active.
-                </p>
+
               </div>
             </div>
           )}
@@ -1235,7 +1271,7 @@ const ChaloMelaChaleGame = () => {
             <h2>Saved Progress Found</h2>
             <p>You have a previously paused game session for this child. Would you like to resume?</p>
             <div className="modal-actions-row" style={{ marginTop: '20px' }}>
-              <button className="modal-btn modal-btn-cancel" onClick={() => { setShowResumeModal(false); startNewGame(childData?.child_id); }}>Start Fresh</button>
+              <button className="modal-btn modal-btn-cancel" onClick={handleRestartFresh}>Restart Fresh</button>
               <button className="modal-btn modal-btn-pause" style={{ background: '#2563eb', color: 'white', border: 'none' }} onClick={resumeGame}>Resume Game</button>
             </div>
           </div>
@@ -1243,6 +1279,12 @@ const ChaloMelaChaleGame = () => {
       )}
 
       {isPaused && <div style={{ position: 'fixed', inset: 0, zIndex: 999, cursor: 'not-allowed' }} />}
+      <audio 
+        ref={audioRef} 
+        src={screen === 'splash' ? `${AUDIO_DIR}/splash.wav` : undefined}
+        onEnded={() => setAudioFinished(true)}
+        onError={() => setAudioFinished(true)}
+      />
     </div>
   );
 };

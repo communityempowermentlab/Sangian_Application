@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
+import '../pages/ReadingSkillGame.css'; // Re-use modal styles
 
 const Home = () => {
     const { t } = useLanguage();
@@ -120,7 +121,7 @@ const Home = () => {
             subtitle: t('home.games.literacy.sub'),
             desc: t('home.games.literacy.desc'),
             startUrl: "/games/reading_skill",
-            image: "/assets/images/reading_skill.jpg",
+            image: "/assets/images/reading_skill/reading_skill.jpg",
             shortTitle: t('home.games.literacy.title'),
             local: t('home.games.literacy.local'),
             tag: t('home.games.literacy.tag'),
@@ -152,6 +153,7 @@ const Home = () => {
             } catch (e) {}
         }
     }, []);
+
 
     const fetchSummaries = async (childId) => {
         try {
@@ -300,6 +302,7 @@ const Home = () => {
                 {...modalData}
                 onClose={closeModal}
             />
+
         </main>
     );
 };

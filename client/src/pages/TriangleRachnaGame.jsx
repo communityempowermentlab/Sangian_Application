@@ -442,13 +442,13 @@ const TriangleRachnaGame = () => {
 
   // ── Splash audio ──────────────────────────────────────────────
   useEffect(() => {
-    if (screen === 'splash' && audioRef.current && !showResumeModal) {
+    if (screen === 'splash' && audioRef.current && !showResumeModal && !audioFinished) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch((e) => {
         if (e.name !== 'NotAllowedError') setAudioFinished(true);
       });
     }
-  }, [screen, showResumeModal]);
+  }, [screen, showResumeModal, audioFinished]);
 
   // ── Timer ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -700,6 +700,10 @@ const TriangleRachnaGame = () => {
     sessionIdRef.current = null;
     pausesRef.current = [];
     setPauses([]);
+    setQuestionScores({});
+    setQuestionTimes({});
+    setTotalScore(0);
+    setAudioFinished(false);
     setScreen('splash');
   };
 
@@ -748,7 +752,12 @@ const TriangleRachnaGame = () => {
     saveProgress(questionScores, questionTimes, totalScore, statusType);
     setShowQuitModal(false);
     setQuitReason('');
-    navigate('/');
+    
+    if (statusType === 'quit') {
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   // ── Assessment submit ─────────────────────────────────────────
@@ -765,6 +774,7 @@ const TriangleRachnaGame = () => {
         additional_notes: assessment.notes,
       });
       setAssDone(true);
+      alert('Assessment successfully saved!');
     } catch (e) { console.error(e); } finally { setAssSub(false); }
   };
 
@@ -794,15 +804,7 @@ const TriangleRachnaGame = () => {
         </div>
         <div className="rg-splash-title">Triangle Game — Rachna</div>
         
-        <div className="rg-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-           <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-             <strong>Last Played:</strong> {activityData.lastPlayed}
-           </div>
-           <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-             <strong>Attempts:</strong> {activityData.attempts} times
-           </div>
-        </div>
-        <div className="rg-splash-sub">Please listen to the instructions. The game will begin when the audio finishes.</div>
+
         <div className="rg-splash-footer">
           <div className="rg-btn-row" style={{ marginTop: 18 }}>
             <button
@@ -847,7 +849,7 @@ const TriangleRachnaGame = () => {
               <span className={`rg-chip rg-chip-${q.type}`}>
                 {q.type.toUpperCase()}
               </span>
-              <span className="rg-chip">{getQuestionCounter(currentKey)}</span>
+
               <div className="rg-timer blue-timer">
                 <span className="timer-icon">⏱</span> Timer: 
                 <span className={`rg-timer-val ${timerCls()}`}>
@@ -948,7 +950,16 @@ const TriangleRachnaGame = () => {
           </div>
 
           <div className="rg-btn-panel">
-            <button className="rg-btn rg-btn-primary" onClick={() => handleDone(false)}>✔ Done</button>
+            <button 
+              className="rg-btn rg-btn-primary" 
+              onClick={() => {
+                setQuestionScores({});
+                setQuestionTimes({});
+                setTotalScore(0);
+                setAudioFinished(false);
+                setScreen('splash');
+              }}
+            >↻ Retest</button>
             {q.type === 'sample' && (
               <button className="rg-btn rg-btn-secondary" onClick={handleRetake}>↺ Retake</button>
             )}
@@ -979,8 +990,8 @@ const TriangleRachnaGame = () => {
       <div className="rg-screen">
         <div className="rg-screen-header">
           <div>
-            <div className="rg-screen-title">Assessment Complete</div>
-            <div className="rg-screen-subtitle">Triangle Rachna — Final Results</div>
+            <div className="rg-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
+            <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Triangle Rachna — Final Results'}</div>
           </div>
           <div className="rg-chips">
             <span className="rg-chip rg-chip-complete">COMPLETE</span>
@@ -1239,8 +1250,7 @@ const TriangleRachnaGame = () => {
         {/* Topbar */}
         <header className="rg-topbar">
           <div className="rg-brand">
-            <div className="rg-brand-icon">△</div>
-            <div>Triangle Rachna</div>
+            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
           </div>
           <div className="rg-stats">
             {childData?.child_id && (
@@ -1254,8 +1264,8 @@ const TriangleRachnaGame = () => {
               <span className="rg-stat-value">{totalScore}</span>
             </div>
             {screen === 'game' && (
-              <button className="rg-btn rg-btn-warning" style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }} onClick={() => setShowQuitModal(true)}>
-                Pause / Quit
+              <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}>
+                <span>⏸</span> Pause/Quit
               </button>
             )}
           </div>

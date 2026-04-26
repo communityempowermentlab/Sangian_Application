@@ -395,3 +395,29 @@ exports.getGameSummaries = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching summaries' });
     }
 };
+// Check if there is a recently finished session that lacks an assessment
+exports.getPendingAssessment = async (req, res) => {
+    try {
+        const { childId } = req.params;
+        // Find the latest session that was finished but has no assessment record
+        const [rows] = await pool.query(`
+            SELECT gs.* 
+            FROM game_sessions gs
+            LEFT JOIN game_assessments ga ON gs.id = ga.session_id
+            WHERE gs.child_id = ? 
+              AND gs.status IN ('completed', 'quit', 'dropped')
+              AND ga.id IS NULL
+            ORDER BY gs.end_time DESC
+            LIMIT 1
+        `, [childId]);
+
+        if (rows.length > 0) {
+            res.status(200).json({ success: true, pendingSession: rows[0] });
+        } else {
+            res.status(200).json({ success: true, pendingSession: null });
+        }
+    } catch (error) {
+        console.error('Error checking pending assessments:', error);
+        res.status(500).json({ success: false, message: 'Server error checking pending assessments' });
+    }
+};

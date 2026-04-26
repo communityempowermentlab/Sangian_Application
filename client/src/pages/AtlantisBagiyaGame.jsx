@@ -295,10 +295,11 @@ const AtlantisBagiyaGame = () => {
 
   // ── Splash audio autoplay ───────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && splashAudioRef.current) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && splashAudioRef.current && !audioFinished) {
+      splashAudioRef.current.currentTime = 0;
       splashAudioRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Session timer (runs during game response phase) ─────
   useEffect(() => {
@@ -614,7 +615,12 @@ const AtlantisBagiyaGame = () => {
   const handleQuit = async (status) => {
     if (!quitReason.trim()) { alert('Please enter a reason'); return; }
     await saveToServer(status, quitReason);
-    navigate('/');
+    if (status === 'quit') {
+      setShowQuitModal(false);
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   // ─── STT ─────────────────────────────────────────────────
@@ -687,8 +693,7 @@ const AtlantisBagiyaGame = () => {
       {/* ── Topbar ── */}
       <header className="ab-topbar">
         <div className="ab-brand">
-          <div className="ab-brand-icon">A</div>
-          <div>Atlantis Game</div>
+          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
         </div>
         <div className="ab-stats">
           {childData?.child_id && (
@@ -702,9 +707,8 @@ const AtlantisBagiyaGame = () => {
             <span className="ab-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
-            <button className="ab-btn ab-btn-warning" style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
-              onClick={() => setShowQuitModal(true)}>
-              Pause/Quit
+            <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}>
+              <span>⏸</span> Pause/Quit
             </button>
           )}
         </div>
@@ -716,13 +720,8 @@ const AtlantisBagiyaGame = () => {
         {!isCheckingSession && screen === 'splash' && !showResumeModal && (
           <div className="ab-screen">
             <div className="ab-screen-header">
-              <div>
-                <div className="ab-screen-title">Atlantis Game</div>
-                <div className="ab-screen-subtitle"></div>
-              </div>
-              <div className="ab-chips">
-                <span className="ab-chip">Screen 0 · Splash</span>
-                <span className="ab-chip">Audio + Image</span>
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                {/* Header text removed as requested */}
               </div>
             </div>
 
@@ -734,21 +733,10 @@ const AtlantisBagiyaGame = () => {
               </div>
               <div className="ab-splash-title-center">Welcome to Atlantis Game</div>
               
-              <div className="ab-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                   <strong>Last Played:</strong> {activityData.lastPlayed}
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                   <strong>Attempts:</strong> {activityData.attempts} times
-                 </div>
-              </div>
 
-              <p className="ab-splash-subtitle-center">
-                Please listen to the instructions. When the audio finishes, you can start the subtest.
-              </p>
               <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                 <button
-                  className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ''}`}
+                  className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ' ab-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
                   style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
@@ -1023,8 +1011,8 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">Assessment Complete</div>
-                <div className="ab-screen-subtitle">Atlantis Game · Final Results</div>
+                <div className="ab-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
+                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Atlantis Game · Final Results'}</div>
               </div>
               <div className="ab-chips">
                 <span className="ab-chip">Final Results</span>
@@ -1179,7 +1167,7 @@ const AtlantisBagiyaGame = () => {
               <div className="ab-final-actions">
                 {assessmentSubmitted ? (
                   <>
-                    <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="ab-btn ab-btn-primary">↻ Retest</button>
+                    <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="ab-btn ab-btn-primary">↻ Retest</button>
                     <button onClick={() => navigate('/')} className="ab-btn ab-btn-secondary">Home</button>
                   </>
                 ) : (
@@ -1214,6 +1202,7 @@ const AtlantisBagiyaGame = () => {
             <div className="ab-btn-row" style={{ marginTop: 20 }}>
               <button className="ab-btn ab-btn-secondary" onClick={() => {
                 setShowResumeModal(false);
+                resetInternalState();
                 setAudioFinished(false);
                 setScreen('splash');
               }}>

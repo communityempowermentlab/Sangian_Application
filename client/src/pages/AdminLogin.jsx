@@ -12,7 +12,7 @@ const GAMES = [
     { icon: '🔄', title: 'Working Memory',       tag: 'Dynamic Memory',   color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
     { icon: '⚡', title: 'Cognitive Flex',       tag: 'Rule Switching',   color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
     { icon: '🔢', title: 'Numeracy Test',        tag: 'Maths Skills',     color: '#7c3aed', img: '/assets/images/number_skill.jpg' },
-    { icon: '📖', title: 'Literacy Test',        tag: 'Language Skills',  color: '#059669', img: '/assets/images/reading_skill.jpg' },
+    { icon: '📖', title: 'Literacy Test',        tag: 'Language Skills',  color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
 ];
 
 const AdminLogin = () => {

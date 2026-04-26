@@ -216,10 +216,11 @@ const HerPherGame = () => {
 
   // ──── Splash audio autoplay ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished) {
+      audioSplashRef.current.currentTime = 0;
       audioSplashRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ──── Question timer ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -510,7 +511,12 @@ const HerPherGame = () => {
   const handleQuit = async (status) => {
     if (!quitReason.trim()) { alert('Please enter a reason'); return; }
     await saveToServer(status, quitReason);
-    navigate('/');
+    if (status === 'quit') {
+      setShowQuitModal(false);
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   // ──── Assessment submit ──────────────────────────────────────────────────────
@@ -588,8 +594,7 @@ const HerPherGame = () => {
         {/* ── Top Bar ── */}
         <header className="hp-topbar">
           <div className="hp-brand">
-            <div className="hp-brand-icon">ध</div>
-            <div>Working Memory — Her Pher</div>
+            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
           </div>
           <div className="hp-stats">
             <div className="hp-stat-pill">
@@ -603,11 +608,10 @@ const HerPherGame = () => {
 
             {screen === 'game' && (
               <button
-                className="hp-btn hp-btn-warning"
-                style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
+                className="btn-pause-quit"
                 onClick={() => setShowQuitModal(true)}
               >
-                Pause / Quit
+                <span>⏸</span> Pause/Quit
               </button>
             )}
           </div>
@@ -619,9 +623,8 @@ const HerPherGame = () => {
           {screen === 'splash' && (
             <div className="hp-screen">
               <div className="hp-screen-header">
-                <div>
-                  <div className="hp-screen-title">Working Memory — Her Pher</div>
-                  <div className="hp-screen-subtitle">Listen to the instructions, then start.</div>
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  {/* Header text removed as requested */}
                 </div>
               </div>
 
@@ -640,22 +643,11 @@ const HerPherGame = () => {
 
                 <div className="hp-splash-title">Welcome to Her Pher</div>
                 
-                <div className="hp-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                   <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                     <strong>Last Played:</strong> {activityData.lastPlayed}
-                   </div>
-                   <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                     <strong>Attempts:</strong> {activityData.attempts} times
-                   </div>
-                </div>
 
-                <p className="hp-splash-subtitle">
-                  Please listen to the instructions. When the audio finishes, you can start the game.
-                </p>
 
                 <div className="hp-btn-row">
                   <button
-                    className={`hp-btn hp-btn-primary ${!audioFinished ? 'hp-btn-highlight' : ''}`}
+                    className={`hp-btn hp-btn-primary ${audioFinished ? 'hp-btn-highlight' : ''}`}
                     style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                     disabled={!audioFinished}
                     onClick={startNewGame}
@@ -774,8 +766,8 @@ const HerPherGame = () => {
             <div className="hp-screen">
               <div className="hp-screen-header">
                 <div>
-                  <div className="hp-screen-title">Assessment Complete</div>
-                  <div className="hp-screen-subtitle">All questions completed</div>
+                  <div className="hp-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
+                  <div className="hp-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'All questions completed'}</div>
                 </div>
                 <div className="hp-chips">
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
@@ -1010,7 +1002,7 @@ const HerPherGame = () => {
             <div className="hp-btn-row" style={{ marginTop: 0 }}>
               <button
                 className="hp-btn hp-btn-secondary"
-                onClick={() => { setShowResumeModal(false); resetGameState(); }}
+                onClick={() => { setShowResumeModal(false); resetGameState(); setScreen('splash'); setAudioFinished(false); }}
               >
                 Restart Fresh
               </button>

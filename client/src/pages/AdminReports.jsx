@@ -61,7 +61,13 @@ const AdminReports = () => {
     const [sortField, setSortField]     = useState('start_time');
     const [sortDir, setSortDir]         = useState('desc');
 
-    const closeDetail = () => { setActiveGame(null); setDetail(null); };
+    // Filter state
+    const [filterStatus, setFilterStatus] = useState(null);
+
+    // Pause/Quit Details Modal state
+    const [pqModal, setPqModal] = useState({ show: false, pauses: [], childName: '' });
+
+    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); };
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
     const fetchOverview = useCallback(async () => {
@@ -82,6 +88,7 @@ const AdminReports = () => {
     const openGame = async (game) => {
         setActiveGame(game);
         setLoadingDt(true);
+        setFilterStatus(null);
         try {
             const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`);
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
@@ -93,19 +100,24 @@ const AdminReports = () => {
         }
     };
 
-
-
     // ── Merge overview DB data with catalog ───────────────────────────────────
     const getStats = (key) => overview.find(r => r.game_name === key) || {};
 
+    // ── Filtered rows ─────────────────────────────────────────────────────────
+    const filteredRows = detail ? detail.data.filter(r => {
+        if (!filterStatus) return true;
+        if (filterStatus === 'attempts') return true;
+        return r.status === filterStatus;
+    }) : [];
+
     // ── Sorted detail rows ────────────────────────────────────────────────────
-    const sortedRows = detail ? [...detail.data].sort((a, b) => {
+    const sortedRows = [...filteredRows].sort((a, b) => {
         let va = a[sortField], vb = b[sortField];
         if (sortField === 'start_time') { va = new Date(va); vb = new Date(vb); }
         if (va < vb) return sortDir === 'asc' ? -1 : 1;
         if (va > vb) return sortDir === 'asc' ? 1 : -1;
         return 0;
-    }) : [];
+    });
 
     const toggleSort = (field) => {
         if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -242,7 +254,7 @@ const AdminReports = () => {
         cardLocal: { fontSize: '0.78rem', color: '#94a3b8', marginBottom: 12 },
         tag:       (color) => ({ display: 'inline-block', background: color + '18', color, padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600, marginBottom: 16 }),
         kpiRow:    { display: 'flex', gap: 14, flexWrap: 'wrap' },
-        kpi:       { flex: 1, minWidth: 65, background: '#f8fafc', borderRadius: 10, padding: '8px 12px', textAlign: 'center' },
+        kpi:       (isActive) => ({ flex: 1, minWidth: 65, background: isActive ? '#f1f5f9' : '#f8fafc', borderRadius: 10, padding: '8px 12px', textAlign: 'center', border: isActive ? '2px solid #6366f1' : '2px solid transparent', cursor: 'pointer', transition: 'all 0.2s ease' }),
         kpiVal:    { fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' },
         kpiLbl:    { fontSize: '0.68rem', color: '#94a3b8', marginTop: 1 },
         // Detail view
@@ -291,31 +303,35 @@ const AdminReports = () => {
                 <div style={S.topBar}>
                     <div style={{ flex: 1 }}>
                         <div style={S.pageTitle}>{activeGame.title} — Attempt Log</div>
-                        <div style={S.pageSub}>One row per attempt · Latest first · {detail?.data.length ?? '…'} records</div>
+                        <div style={S.pageSub}>One row per attempt · Latest first · {filteredRows.length} records</div>
                     </div>
                     
                     {/* Real-time Summary Header */}
                     {(() => {
                         const s = getStats(activeGame.key);
                         return (
-                            <div style={{ display: 'flex', gap: '24px', marginRight: '32px', background: '#fff', padding: '8px 20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                                <div style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '16px', marginRight: '32px', background: '#fff', padding: '8px 20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                                <div style={S.kpi(filterStatus === 'attempts')} onClick={() => setFilterStatus(filterStatus === 'attempts' ? null : 'attempts')}>
                                     <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Attempts</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{s.total_attempts ?? 0}</div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
+                                <div style={S.kpi(filterStatus === 'in_progress')} onClick={() => setFilterStatus(filterStatus === 'in_progress' ? null : 'in_progress')}>
                                     <div style={{ fontSize: '0.65rem', color: '#2563eb', fontWeight: 700, textTransform: 'uppercase' }}>In Progress</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2563eb' }}>{s.in_progress ?? 0}</div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
+                                <div style={S.kpi(filterStatus === 'completed')} onClick={() => setFilterStatus(filterStatus === 'completed' ? null : 'completed')}>
                                     <div style={{ fontSize: '0.65rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>Completed</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669' }}>{s.completed ?? 0}</div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
+                                <div style={S.kpi(filterStatus === 'quit')} onClick={() => setFilterStatus(filterStatus === 'quit' ? null : 'quit')}>
+                                    <div style={{ fontSize: '0.65rem', color: '#ef4444', fontWeight: 700, textTransform: 'uppercase' }}>Quit</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
+                                </div>
+                                <div style={S.kpi(filterStatus === 'dropped')} onClick={() => setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}>
                                     <div style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
+                                <div style={S.kpi(filterStatus === 'paused')} onClick={() => setFilterStatus(filterStatus === 'paused' ? null : 'paused')}>
                                     <div style={{ fontSize: '0.65rem', color: '#854d0e', fontWeight: 700, textTransform: 'uppercase' }}>Paused</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#854d0e' }}>{s.paused ?? 0}</div>
                                 </div>
@@ -408,7 +424,7 @@ const AdminReports = () => {
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
                                     
-                                    <th style={{ ...S.th, textAlign: 'center' }}>Pauses</th>
+                                    <th style={{ ...S.th, textAlign: 'center' }}>Pause & Quit</th>
 
                                     {/* Assessment columns — visually separated */}
                                     {ASSESSMENT_COLS.map(ac => (
@@ -508,20 +524,23 @@ const AdminReports = () => {
                                             )}
                                             <td style={S.tdCenter}>
                                                 {statusBadge(row.status)}
-                                                {row.status !== 'completed' && row.quit_reason && (
-                                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontWeight: 'normal', maxWidth: '120px', whiteSpace: 'normal', margin: '4px auto 0' }}>
-                                                        "{row.quit_reason}"
-                                                    </div>
-                                                )}
                                             </td>
                                             <td style={S.tdCenter}>
-                                                <div title={(row.pauses||[]).map(p => `Q/Sec: ${p.questionNumber||p.questionKey||'—'} - "${p.reason||'No reason'}"`).join('\n')}>
-                                                    {row.pauses && row.pauses.length > 0 ? (
-                                                        <span style={{ background:'#fef08a', color:'#854d0e', padding:'2px 8px', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'help' }}>
-                                                            {row.pauses.length}
-                                                        </span>
-                                                    ) : <span style={{ color: '#cbd5e1' }}>0</span>}
-                                                </div>
+                                                {row.pauses && row.pauses.length > 0 ? (
+                                                    <button 
+                                                        onClick={() => setPqModal({ show: true, pauses: row.pauses, childName: row.child_name, quitReason: row.quit_reason })}
+                                                        style={{ background:'#fef08a', color:'#854d0e', padding:'4px 12px', border:'none', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'pointer' }}
+                                                    >
+                                                        View Details ({row.pauses.length})
+                                                    </button>
+                                                ) : row.quit_reason ? (
+                                                    <button 
+                                                        onClick={() => setPqModal({ show: true, pauses: [], childName: row.child_name, quitReason: row.quit_reason })}
+                                                        style={{ background:'#fee2e2', color:'#991b1b', padding:'4px 12px', border:'none', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'pointer' }}
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                ) : <span style={{ color: '#cbd5e1' }}>—</span>}
                                             </td>
                                             {ASSESSMENT_COLS.map(ac => (
                                                 <td key={ac.key} style={{ ...S.td, background: '#faf5ff', fontSize: '0.8rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
@@ -534,6 +553,56 @@ const AdminReports = () => {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* PAUSE/QUIT DETAILS MODAL */}
+                {pqModal.show && (
+                    <div className="admin-modal-overlay">
+                        <div className="admin-modal" style={{ maxWidth: '600px', width: '90%' }}>
+                            <div className="admin-modal-header">
+                                <div className="admin-modal-icon" style={{ background: '#fef3c7', borderColor: '#fcd34d' }}>⏳</div>
+                                <div>
+                                    <div className="admin-modal-title">Pause & Quit Details</div>
+                                    <div className="admin-modal-subtitle">{pqModal.childName}</div>
+                                </div>
+                            </div>
+                            
+                            <div style={{ padding: '16px 0', maxHeight: '400px', overflowY: 'auto' }}>
+                                {pqModal.quitReason && (
+                                    <div style={{ marginBottom: '20px', padding: '12px', background: '#fee2e2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#991b1b', textTransform: 'uppercase', marginBottom: '4px' }}>Final Quit Reason</div>
+                                        <div style={{ fontSize: '0.95rem', color: '#7f1d1d', fontWeight: 600 }}>"{pqModal.quitReason}"</div>
+                                    </div>
+                                )}
+
+                                {pqModal.pauses.length > 0 ? (
+                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                        {pqModal.pauses.map((p, idx) => (
+                                            <div key={idx} style={{ padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6366f1' }}>Event #{idx + 1}</span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.timestamp ? new Date(p.timestamp).toLocaleString() : '—'}</span>
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', marginBottom: '6px' }}>
+                                                    <strong>Position:</strong> {p.questionNumber ? `Q${p.questionNumber}` : (p.questionKey || '—')} 
+                                                    {p.timerSeconds !== undefined ? ` at ${Math.floor(p.timerSeconds/60)}m ${p.timerSeconds%60}s` : ''}
+                                                </div>
+                                                <div style={{ fontSize: '0.9rem', color: '#334155', fontStyle: 'italic', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #f1f5f9' }}>
+                                                    "{p.reason || 'No remarks provided'}"
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    !pqModal.quitReason && <div style={{ textAlign: 'center', color: '#94a3b8', padding: '20px' }}>No pause/quit remarks found.</div>
+                                )}
+                            </div>
+
+                            <div className="admin-modal-actions">
+                                <button className="admin-btn admin-btn-ghost" onClick={() => setPqModal({ show: false, pauses: [], childName: '' })}>Close</button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>
@@ -568,27 +637,35 @@ const AdminReports = () => {
                                 <div style={S.tag(game.color)}>{game.tag}</div>
 
                                 <div style={S.kpiRow}>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
                                         <div style={S.kpiVal}>{s.total_children ?? 0}</div>
                                         <div style={S.kpiLbl}>Children</div>
                                     </div>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
                                         <div style={S.kpiVal}>{s.total_attempts ?? 0}</div>
                                         <div style={S.kpiLbl}>Attempts</div>
                                     </div>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#2563eb' }}>{s.in_progress ?? 0}</div>
                                         <div style={S.kpiLbl}>In Progress</div>
                                     </div>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#059669' }}>{s.completed ?? 0}</div>
                                         <div style={S.kpiLbl}>Completed</div>
                                     </div>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
+                                        <div style={{ ...S.kpiVal, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
+                                        <div style={S.kpiLbl}>Quit</div>
+                                    </div>
+                                    <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
                                         <div style={S.kpiLbl}>Dropped</div>
                                     </div>
-                                    <div style={S.kpi}>
+                                    <div style={S.kpi(false)}>
+                                        <div style={{ ...S.kpiVal, color: '#854d0e' }}>{s.paused ?? 0}</div>
+                                        <div style={S.kpiLbl}>Paused</div>
+                                    </div>
+                                    <div style={S.kpi(false)}>
                                         <div style={S.kpiVal}>{s.avg_score ?? '—'}</div>
                                         <div style={S.kpiLbl}>Avg Score</div>
                                     </div>

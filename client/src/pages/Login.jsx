@@ -1,4 +1,5 @@
 import { API_URL } from '../services/api';
+import { getChildPhotoOrDefault } from '../services/photoUtils';
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -106,26 +107,39 @@ const Login = () => {
                             <div className="child-details-header">
                                 <h2>Child details</h2>
                                 <span className="child-details-status">
-                                    {childData ? 'Search using a Child ID above to view the child\'s basic information.' : 'No child selected'}
+                                    {childData ? 'Details found. Please verify before proceeding.' : 'No child selected'}
                                 </span>
                             </div>
 
-                            <div className="child-details-grid" style={{ marginTop: '10px' }}>
-                                <div className="form-group compact">
-                                    <label>Name</label>
-                                    <input type="text" readOnly disabled value={childData?.name || ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+                            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginTop: '15px' }}>
+                                <div style={{ flexShrink: 0 }}>
+                                    <div style={{ width: '90px', height: '90px', borderRadius: '12px', overflow: 'hidden', border: '2px solid #f3f4f6', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <img
+                                            src={getChildPhotoOrDefault(childData?.photo)}
+                                            alt={childData?.name || 'Child'}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            onError={(e) => { e.target.src = getChildPhotoOrDefault(null); }}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="form-group compact">
-                                    <label>Gender</label>
-                                    <input type="text" readOnly disabled value={childData?.gender ? childData.gender.charAt(0).toUpperCase() + childData.gender.slice(1) : ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
-                                </div>
-                                <div className="form-group compact">
-                                    <label>Date of Birth</label>
-                                    <input type="text" readOnly disabled value={childData?.dob ? new Date(childData.dob).toLocaleDateString('en-GB') : ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
-                                </div>
-                                <div className="form-group compact">
-                                    <label>Mobile Number</label>
-                                    <input type="text" readOnly disabled value={childData?.mobile || ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+
+                                <div className="child-details-grid" style={{ flexGrow: 1, marginTop: 0 }}>
+                                    <div className="form-group compact">
+                                        <label>Name</label>
+                                        <input type="text" readOnly disabled value={childData?.name || ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+                                    </div>
+                                    <div className="form-group compact">
+                                        <label>Gender</label>
+                                        <input type="text" readOnly disabled value={childData?.gender ? childData.gender.charAt(0).toUpperCase() + childData.gender.slice(1) : ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+                                    </div>
+                                    <div className="form-group compact">
+                                        <label>Date of Birth</label>
+                                        <input type="text" readOnly disabled value={childData?.dob ? new Date(childData.dob).toLocaleDateString('en-GB') : ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+                                    </div>
+                                    <div className="form-group compact">
+                                        <label>Mobile Number</label>
+                                        <input type="text" readOnly disabled value={childData?.mobile || ''} style={{ backgroundColor: '#f9fafb', color: '#6b7280' }} />
+                                    </div>
                                 </div>
                             </div>
                         </div>

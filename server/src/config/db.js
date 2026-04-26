@@ -175,6 +175,27 @@ const initDb = async () => {
       )
     `);
 
+    // Create assessors table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assessors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        mobile_number VARCHAR(15) NOT NULL,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email (email)
+      )
+    `);
+
+    // Safely add status to assessors table
+    try {
+      await connection.query("ALTER TABLE assessors ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active' AFTER mobile_number");
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
+    }
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {

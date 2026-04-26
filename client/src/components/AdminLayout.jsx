@@ -128,6 +128,12 @@ const AdminLayout = () => {
                             👥 Children
                         </Link>
                         <Link
+                            to="/admin/assessors"
+                            className={`admin-menu-item ${location.pathname.startsWith('/admin/assessors') ? 'active' : ''}`}
+                        >
+                            👨‍🏫 Assessors
+                        </Link>
+                        <Link
                             to="/admin/reports"
                             className={`admin-menu-item ${activeGroup === 'reports' ? 'active' : ''}`}
                         >

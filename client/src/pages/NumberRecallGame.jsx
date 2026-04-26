@@ -151,7 +151,7 @@ const NumpadPanel = ({
           <div className="nr-screen-title">{title}</div>
         </div>
         <div className="nr-chips">
-          <span className="nr-chip">{chipLabel}</span>
+
           {qTimerDisplay && (
             <span className="nr-chip" style={{ color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe', fontWeight: 700 }}>
               ⏱ {qTimerDisplay}
@@ -303,7 +303,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
           <div className="nr-screen-subtitle">Listen carefully and reproduce the number sequence</div>
         </div>
         <div className="nr-chips">
-          <span className="nr-chip">{chipLabel}</span>
+
           <span className="nr-chip">Not Scored</span>
         </div>
       </div>
@@ -439,10 +439,11 @@ const NumberRecallGame = () => {
 
   // ── Splash audio autoplay ──────────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+      audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Session timer ──────────────────────────────────────────
   useEffect(() => {
@@ -619,7 +620,12 @@ const NumberRecallGame = () => {
   const handleQuit = async (status) => {
     if (!quitReason.trim()) { alert('Please enter a reason'); return; }
     await saveToServer(status, quitReason);
-    navigate('/');
+    if (status === 'quit') {
+      setShowQuitModal(false);
+      setScreen('score');
+    } else {
+      navigate('/');
+    }
   };
 
   const toggleRecording = (target) => {
@@ -692,8 +698,7 @@ const NumberRecallGame = () => {
       {/* ─── Topbar ─── */}
       <header className="nr-topbar">
         <div className="nr-brand">
-          <div className="nr-brand-icon">N</div>
-          <div>Number Recall</div>
+          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
         </div>
         <div className="nr-stats">
           {childData?.child_id && (
@@ -708,11 +713,10 @@ const NumberRecallGame = () => {
           </div>
           {screen === 'game' && (
             <button
-              className="nr-btn nr-btn-warning"
-              style={{ padding: '0 12px', height: '34px', minWidth: 0, fontSize: '0.8rem', borderRadius: '30px', display: 'inline-flex', alignItems: 'center' }}
+              className="btn-pause-quit"
               onClick={() => setShowQuitModal(true)}
             >
-              Pause/Quit
+              <span>⏸</span> Pause/Quit
             </button>
           )}
         </div>
@@ -723,14 +727,6 @@ const NumberRecallGame = () => {
         {screen === 'splash' && (
           <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
             <div className="nr-screen-header">
-              <div>
-                <div className="nr-screen-title">Number Recall</div>
-                <div className="nr-screen-subtitle">Screen 0 · Listen to the instructions, then start the practice.</div>
-              </div>
-              <div className="nr-chips">
-                <span className="nr-chip">Screen 0 · Splash</span>
-                <span className="nr-chip">Audio + Image</span>
-              </div>
             </div>
 
             <div className="nr-splash-card">
@@ -748,22 +744,11 @@ const NumberRecallGame = () => {
 
               <div className="nr-splash-title">Welcome to Number Recall</div>
               
-              <div className="nr-activity-stats" style={{ marginBottom: '20px', textAlign: 'center', background: '#f8fafc', padding: '10px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                   <strong>Last Played:</strong> {activityData.lastPlayed}
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                   <strong>Attempts:</strong> {activityData.attempts} times
-                 </div>
-              </div>
 
-              <p className="nr-splash-subtitle">
-                Please listen to the instructions. When the audio finishes, you can start the practice.
-              </p>
 
               <div className="nr-btn-row">
                 <button
-                  className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : ''}`}
+                  className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
                   style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
@@ -860,9 +845,9 @@ const NumberRecallGame = () => {
           <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
             <div className="nr-screen-header">
               <div>
-                <div className="nr-screen-title">Assessment Complete</div>
+                <div className="nr-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
                 <div className="nr-screen-subtitle">
-                  {isStopped ? 'Stopped after 3 consecutive incorrect answers' : 'Test completed'}
+                  {quitReason ? `Reason: ${quitReason}` : (isStopped ? 'Stopped after 3 consecutive incorrect answers' : 'Test completed')}
                 </div>
               </div>
               <div className="nr-chips">
@@ -1029,7 +1014,7 @@ const NumberRecallGame = () => {
               <div className="nr-final-actions">
                 {assessmentSubmitted ? (
                   <>
-                    <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="nr-btn nr-btn-primary">↻ Retest</button>
+                    <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="nr-btn nr-btn-primary">↻ Retest</button>
                     <button onClick={() => navigate('/')} className="nr-btn nr-btn-secondary">🏠 Home</button>
                   </>
                 ) : (
@@ -1068,11 +1053,9 @@ const NumberRecallGame = () => {
             <div className="nr-btn-row" style={{ marginTop: 20 }}>
               <button className="nr-btn nr-btn-secondary" onClick={() => { 
                 setShowResumeModal(false); 
+                resetInternalState();
                 setAudioFinished(false);
                 setScreen('splash');
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                }
               }}>
                 Restart Fresh
               </button>

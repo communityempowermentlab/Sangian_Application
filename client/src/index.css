@@ -143,6 +143,36 @@ body {
   box-shadow: 0 6px 18px rgba(79, 70, 229, 0.85);
   transform: translateY(-1px);
 }
+/* SHARED GAME BUTTONS */
+.btn-pause-quit {
+  padding: 8px 24px !important;
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1.5px solid #fecaca !important;
+  font-weight: 800 !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.05) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+}
+
+.btn-pause-quit:hover {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+.btn-pause-quit span {
+  font-size: 16px;
+}
 
 /* MAIN SHELL */
 
@@ -617,20 +647,20 @@ body {
 .register-right {
   background: #f9fafb;
   border-radius: 18px;
-  padding: 16px 18px 16px;
+  padding: 12px 18px;
   border: 1px solid rgba(209, 213, 219, 0.9);
 }
 
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
 }
 
 .form-group label {

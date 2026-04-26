@@ -12,6 +12,7 @@ router.put('/sessions/update/:sessionId',               gameController.updateGam
 router.get('/sessions/resume/:childId/:gameName',       gameController.getResumeSession);
 router.get('/sessions/history/:childId',                gameController.getGameHistory);
 router.get('/sessions/summaries/:childId',              gameController.getGameSummaries);
+router.get('/sessions/pending-assessment/:childId',     gameController.getPendingAssessment);
 router.post('/assessments',                             gameController.submitAssessment);
 
 // ── Admin-only report routes (valid admin JWT required) ───────────────────────
