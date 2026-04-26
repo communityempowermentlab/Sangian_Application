@@ -137,6 +137,13 @@ const initDb = async () => {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (children.status):', e.message);
     }
 
+    // Safely add photo column to children table
+    try {
+      await connection.query("ALTER TABLE children ADD COLUMN photo VARCHAR(255) DEFAULT NULL AFTER mobile");
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (children.photo):', e.message);
+    }
+
     // Safely update game_sessions status enum to include 'dropped'
     try {
       await connection.query("ALTER TABLE game_sessions MODIFY COLUMN status ENUM('in_progress', 'completed', 'quit', 'paused', 'dropped') DEFAULT 'in_progress'");

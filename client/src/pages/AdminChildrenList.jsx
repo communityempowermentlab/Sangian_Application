@@ -1,8 +1,8 @@
-import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
+import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const calculateAge = (dob) => {
     if (!dob) return 'N/A';
@@ -50,7 +50,7 @@ const formatRelativeTime = (dateString) => {
 const AdminChildrenList = () => {
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(100);
     const [currentPage, setCurrentPage] = useState(1);
     const [goToPageInput, setGoToPageInput] = useState('');
     const [loading, setLoading] = useState(true);
@@ -62,7 +62,7 @@ const AdminChildrenList = () => {
 
     const fetchChildren = async () => {
         try {
-            const response = await axios.get(API_URL + '/admin/children');
+            const response = await axiosAdmin.get('/admin/children');
             setChildren(response.data);
         } catch (error) {
             console.error('Failed to fetch children:', error);
@@ -173,10 +173,10 @@ const AdminChildrenList = () => {
                                     value={pageSize}
                                     onChange={(e) => handlePageSelect(e.target.value)}
                                 >
-                                    <option value="5">5 / page</option>
-                                    <option value="10">10 / page</option>
-                                    <option value="20">20 / page</option>
+                                    <option value="25">25 / page</option>
                                     <option value="50">50 / page</option>
+                                    <option value="100">100 / page</option>
+                                    <option value="200">200 / page</option>
                                 </select>
                             </div>
                         </div>
@@ -187,26 +187,36 @@ const AdminChildrenList = () => {
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        <th style={{ width: '56px' }}>Photo</th>
                                         <th>Child Unique ID</th>
                                         <th>Child Name</th>
                                         <th>Date of Birth</th>
                                         <th>Age</th>
                                         <th>Gender</th>
                                         <th>Mobile</th>
-                                        <th>Last Login</th>
+                                        <th>Add Date</th>
+                                        <th style={{ textAlign: 'left' }}>Last Login</th>
                                         <th>Status</th>
                                         <th style={{ minWidth: '180px' }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="10" style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
+                                        <tr><td colSpan="12" style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
                                     ) : currentChildren.length === 0 ? (
-                                        <tr><td colSpan="10" style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
+                                        <tr><td colSpan="12" style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
                                     ) : (
                                         currentChildren.map((child, index) => (
                                             <tr key={child.child_id}>
                                                 <td>{startIndex + index + 1}</td>
+                                                <td>
+                                                    <img
+                                                        src={getChildPhotoOrDefault(child.photo)}
+                                                        alt={child.name}
+                                                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e0e7ff', display: 'block' }}
+                                                        onError={(e) => { e.target.src = getChildPhotoOrDefault(null); }}
+                                                    />
+                                                </td>
                                                 <td style={{ fontWeight: '600' }}>{child.child_id}</td>
                                                 <td>{child.name}</td>
                                                 {/* Ensure date format visually matches 2018-05-10 safely */}
@@ -214,10 +224,15 @@ const AdminChildrenList = () => {
                                                 <td>{calculateAge(child.dob)}</td>
                                                 <td style={{ textTransform: 'capitalize' }}>{child.gender}</td>
                                                 <td>{child.mobile}</td>
-                                                <td>
-                                                    <button 
+                                                <td style={{ whiteSpace: 'nowrap', color: '#374151', fontSize: '13px' }}>
+                                                    {child.created_at
+                                                        ? new Date(child.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                        : '—'}
+                                                </td>
+                                                <td style={{ textAlign: 'left' }}>
+                                                    <button
                                                         onClick={() => setSelectedChildForSessions(child.child_id)}
-                                                        style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '13px', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer' }}
+                                                        style={{ background: 'transparent', border: 'none', padding: 0, fontSize: '13px', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer', textAlign: 'left' }}
                                                     >
                                                         {formatRelativeTime(child.last_login)}
                                                     </button>

@@ -617,20 +617,20 @@ body {
 .register-right {
   background: #f9fafb;
   border-radius: 18px;
-  padding: 18px 18px 20px;
+  padding: 16px 18px 16px;
   border: 1px solid rgba(209, 213, 219, 0.9);
 }
 
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .form-group label {
@@ -648,7 +648,7 @@ body {
 .form-group select {
   border-radius: 10px;
   border: 1px solid #d1d5db;
-  padding: 8px 10px;
+  padding: 7px 10px;
   font-size: 14px;
   outline: none;
   background: #ffffff;

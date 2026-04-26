@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -22,6 +22,8 @@ import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
+import RequireAdminAuth from './guards/RequireAdminAuth';
+import RequireChildAuth from './guards/RequireChildAuth';
 
 import { LanguageProvider } from './contexts/LanguageContext';
 import './index.css';
@@ -39,7 +41,6 @@ const ROUTE_TITLES = {
     '/games/bagiya':            'Atlantis Game | Game | Community Empowerment Lab',
     '/games/chalo_mela_chale':  'Rover Game | Game | Community Empowerment Lab',
     '/games/chor_machaye_shor': 'Chor Machaye Shor | Game | Community Empowerment Lab',
-
     '/admin/login':             'Admin Login | Community Empowerment Lab',
     '/admin/dashboard':         'Dashboard | Admin Panel | Community Empowerment Lab',
     '/admin/children':          'Children | Admin Panel | Community Empowerment Lab',
@@ -60,16 +61,14 @@ const PageTitle = () => {
     return null;
 };
 
-// Public Layout incorporates standard Header and Footer
-const PublicLayout = () => {
-    return (
-        <>
-            <Navbar />
-            <Outlet />
-            <Footer />
-        </>
-    );
-};
+// Standard public layout with Navbar + Footer
+const PublicLayout = () => (
+    <>
+        <Navbar />
+        <Outlet />
+        <Footer />
+    </>
+);
 
 function App() {
     return (
@@ -78,37 +77,46 @@ function App() {
                 <PageTitle />
                 <div className="App">
                     <Routes>
-                        {/* Public Child Navigation Routes */}
+
+                        {/* ── Public Child Routes ─────────────────────── */}
                         <Route element={<PublicLayout />}>
                             <Route path="/" element={<Home />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/login" element={<Login />} />
                         </Route>
 
-                        {/* Isolated Game Routes */}
-                        <Route path="/games/number_skill" element={<NumberSkillGame />} />
-                        <Route path="/games/reading_skill" element={<ReadingSkillGame />} />
-                        <Route path="/games/number_recall" element={<NumberRecallGame />} />
-                        <Route path="/games/her_pher" element={<HerPherGame />} />
-                        <Route path="/games/dhyan_kahan_hai" element={<AuditoryAttentionGame />} />
-                        <Route path="/games/rachna" element={<TriangleRachnaGame />} />
-                        <Route path="/games/bagiya" element={<AtlantisBagiyaGame />} />
-                        <Route path="/games/chalo_mela_chale" element={<ChaloMelaChaleGame />} />
-                        <Route path="/games/chor_machaye_shor" element={<ChorMachayeShorGame />} />
+                        {/* ── Protected Game Routes (child must be logged in) ── */}
+                        <Route element={<RequireChildAuth />}>
+                            <Route path="/games/number_skill"      element={<NumberSkillGame />} />
+                            <Route path="/games/reading_skill"     element={<ReadingSkillGame />} />
+                            <Route path="/games/number_recall"     element={<NumberRecallGame />} />
+                            <Route path="/games/her_pher"          element={<HerPherGame />} />
+                            <Route path="/games/dhyan_kahan_hai"   element={<AuditoryAttentionGame />} />
+                            <Route path="/games/rachna"            element={<TriangleRachnaGame />} />
+                            <Route path="/games/bagiya"            element={<AtlantisBagiyaGame />} />
+                            <Route path="/games/chalo_mela_chale"  element={<ChaloMelaChaleGame />} />
+                            <Route path="/games/chor_machaye_shor" element={<ChorMachayeShorGame />} />
+                        </Route>
 
-
-                        {/* Isolated Admin Navigation Routes */}
+                        {/* ── Admin Login (public) ────────────────────── */}
                         <Route path="/admin/login" element={<AdminLogin />} />
 
-                        {/* Protected Admin Routes Wrap */}
-                        <Route path="/admin" element={<AdminLayout />}>
-                            <Route path="dashboard" element={<AdminDashboard />} />
-                            <Route path="children" element={<AdminChildrenList />} />
-                            <Route path="children/add" element={<AdminChildAdd />} />
-                            <Route path="children/edit/:id" element={<AdminChildEdit />} />
-                            <Route path="reports" element={<AdminReports />} />
-                            <Route path="docs" element={<AdminDocs />} />
+                        {/* ── Protected Admin Routes (valid JWT required) ─ */}
+                        <Route element={<RequireAdminAuth />}>
+                            <Route path="/admin" element={<AdminLayout />}>
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="dashboard"              element={<AdminDashboard />} />
+                                <Route path="children"               element={<AdminChildrenList />} />
+                                <Route path="children/add"           element={<AdminChildAdd />} />
+                                <Route path="children/edit/:id"      element={<AdminChildEdit />} />
+                                <Route path="reports"                element={<AdminReports />} />
+                                <Route path="docs"                   element={<AdminDocs />} />
+                            </Route>
                         </Route>
+
+                        {/* ── Catch-all: redirect unknown paths to home ─── */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+
                     </Routes>
                 </div>
             </Router>

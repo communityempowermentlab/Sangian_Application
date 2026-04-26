@@ -2,6 +2,7 @@ import { API_URL } from '../services/api';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const Navbar = () => {
     const [currentUser, setCurrentUser] = useState(null);
@@ -46,7 +47,13 @@ const Navbar = () => {
                         {t('navbar.language')}
                     </button>
                     {currentUser ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img
+                                src={getChildPhotoOrDefault(currentUser.photo)}
+                                alt={currentUser.name}
+                                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1', flexShrink: 0 }}
+                                onError={(e) => { e.target.src = getChildPhotoOrDefault(null); }}
+                            />
                             <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
                                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#111827', display: 'block' }}>{currentUser.name}</span>
                                 <span style={{ fontSize: '11px', color: '#6b7280' }}>{t('navbar.id')}: {currentUser.child_id}</span>

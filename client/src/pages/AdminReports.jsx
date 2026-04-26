@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../services/api';
+import axiosAdmin from '../services/axiosAdmin';
 
 // ─── Catalogue of all 9 games ─────────────────────────────────────────────────
 const GAME_CATALOG = [
@@ -68,10 +67,7 @@ const AdminReports = () => {
     const fetchOverview = useCallback(async () => {
         setLoadingOv(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${API_URL}/games/reports/overview`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axiosAdmin.get('/games/reports/overview');
             setOverview(res.data.data || []);
         } catch (e) {
             console.error(e);
@@ -87,10 +83,7 @@ const AdminReports = () => {
         setActiveGame(game);
         setLoadingDt(true);
         try {
-            const token = localStorage.getItem('adminToken');
-            const res = await axios.get(`${API_URL}/games/reports/detail/${game.key}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`);
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
         } catch (e) {
             console.error(e);

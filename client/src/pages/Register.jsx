@@ -1,8 +1,10 @@
 import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import axios from 'axios';
+import ChildPhotoUpload from '../components/ChildPhotoUpload';
 
 const Register = () => {
+    const [photoFile, setPhotoFile] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         dob: '',
@@ -75,11 +77,19 @@ const Register = () => {
         setStatusMsg({ type: '', text: '' });
 
         try {
-            const response = await axios.post(API_URL + '/children/register', formData);
+            // Use FormData so the optional photo file is sent as multipart
+            const data = new FormData();
+            data.append('name',   formData.name.trim());
+            data.append('dob',    formData.dob);
+            data.append('gender', formData.gender);
+            data.append('mobile', formData.mobile);
+            if (photoFile) data.append('photo', photoFile);
+
+            const response = await axios.post(API_URL + '/children/register', data);
             const generatedId = response.data.childId;
             setStatusMsg({ type: 'success', text: `Child registered successfully! Child ID: ${generatedId}` });
-            // Reset form upon success
             setFormData({ name: '', dob: '', gender: '', mobile: '' });
+            setPhotoFile(null);
         } catch (err) {
             const errorText = err.response?.data?.message || 'An error occurred during registration. Please try again.';
             setStatusMsg({ type: 'error', text: errorText });
@@ -128,7 +138,12 @@ const Register = () => {
                             </div>
                         )}
 
-                        <form className="register-form" onSubmit={handleSubmit} noValidate>
+                        <form className="register-form" onSubmit={handleSubmit} noValidate encType="multipart/form-data">
+                            {/* Photo Upload */}
+                            <div className="form-group">
+                                <ChildPhotoUpload onChange={setPhotoFile} label="Child Photo" />
+                            </div>
+
                             {/* Name */}
                             <div className="form-group">
                                 <label htmlFor="name">Child's Full Name<span className="required">*</span></label>

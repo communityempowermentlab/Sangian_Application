@@ -3,6 +3,7 @@ import TestModal from '../components/TestModal';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const Home = () => {
     const { t } = useLanguage();
@@ -134,8 +135,9 @@ const Home = () => {
         startUrl: ''
     });
 
-    const [summaries, setSummaries] = useState({});
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [summaries, setSummaries]     = useState({});
+    const [isLoggedIn, setIsLoggedIn]   = useState(false);
+    const [childData, setChildData]     = useState(null);
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -144,6 +146,7 @@ const Home = () => {
                 const child = JSON.parse(childStr);
                 if (child.child_id) {
                     setIsLoggedIn(true);
+                    setChildData(child);
                     fetchSummaries(child.child_id);
                 }
             } catch (e) {}
@@ -214,6 +217,31 @@ const Home = () => {
                         <li>{t('home.bullet2')}</li>
                         <li>{t('home.bullet3')}</li>
                     </ul>
+
+                    {/* Logged-in child banner */}
+                    {isLoggedIn && childData && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '14px',
+                            background: 'linear-gradient(135deg, #ede9fe, #e0f2fe)',
+                            border: '1.5px solid #c7d2fe',
+                            borderRadius: '16px',
+                            padding: '12px 18px',
+                            marginBottom: '16px',
+                            maxWidth: '420px',
+                        }}>
+                            <img
+                                src={getChildPhotoOrDefault(childData.photo)}
+                                alt={childData.name}
+                                style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1', flexShrink: 0 }}
+                                onError={(e) => { e.target.src = getChildPhotoOrDefault(null); }}
+                            />
+                            <div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Welcome back</div>
+                                <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1e1b4b' }}>{childData.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '1px' }}>ID: {childData.child_id}</div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="hero-actions">
                         <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>

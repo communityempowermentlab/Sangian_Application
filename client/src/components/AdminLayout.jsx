@@ -1,8 +1,19 @@
-import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosAdmin from '../services/axiosAdmin';
 import '../pages/AdminDashboard.css';
+
+// Decode JWT payload and check expiry without verifying signature
+const isTokenValid = () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+};
 
 const AdminLayout = () => {
     const [time, setTime] = useState(new Date().toLocaleTimeString());
@@ -20,6 +31,29 @@ const AdminLayout = () => {
     const adminName = adminUserStr ? JSON.parse(adminUserStr).name : 'Admin';
     const appVersion = 'v1.0.0';
 
+    // Guard: verify token on every route change (handles mid-session expiry)
+    useEffect(() => {
+        if (!isTokenValid()) {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminSessionId');
+            localStorage.removeItem('adminUser');
+            navigate('/admin/login', { replace: true });
+        }
+    }, [location.pathname, navigate]);
+
+    // Periodic background token expiry check (every 60 seconds)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!isTokenValid()) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminSessionId');
+                localStorage.removeItem('adminUser');
+                navigate('/admin/login', { replace: true });
+            }
+        }, 60_000);
+        return () => clearInterval(interval);
+    }, [navigate]);
+
     // Live Clock
     useEffect(() => {
         const interval = setInterval(() => {
@@ -36,7 +70,7 @@ const AdminLayout = () => {
         try {
             const sessionId = localStorage.getItem('adminSessionId');
             if (sessionId) {
-                await axios.post(`${API_URL}/admin/logout/${sessionId}`);
+                await axiosAdmin.post(`/admin/logout/${sessionId}`);
             }
         } catch (e) {
             console.error("Logout admin session error:", e);

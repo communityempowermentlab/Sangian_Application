@@ -1,4 +1,15 @@
-const { pool } = require('../config/db');
+const { pool }       = require('../config/db');
+const path           = require('path');
+const fs             = require('fs');
+const { UPLOAD_DIR } = require('../middleware/upload');
+
+const finalizePhoto = (tmpFile, childId) => {
+    const ext         = path.extname(tmpFile.filename);
+    const newFilename = `${childId}_${Date.now()}${ext}`;
+    const newPath     = path.join(UPLOAD_DIR, newFilename);
+    fs.renameSync(tmpFile.path, newPath);
+    return newFilename;
+};
 
 // @desc    Register a child
 // @route   POST /api/children/register
@@ -9,36 +20,42 @@ const registerChild = async (req, res) => {
 
         // Basic Validation
         if (!name || !dob || !gender || !mobile) {
+            if (req.file) fs.unlinkSync(req.file.path);
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
         if (mobile.trim().length !== 10) {
+            if (req.file) fs.unlinkSync(req.file.path);
             return res.status(400).json({ message: 'Mobile number must be exactly 10 digits.' });
         }
 
-        // Convert string to proper date just for safely
         const dobDate = new Date(dob);
         if (isNaN(dobDate.getTime())) {
+            if (req.file) fs.unlinkSync(req.file.path);
             return res.status(400).json({ message: 'Invalid Date of Birth.' });
         }
 
-        // Insert Query
-        const query = `
-      INSERT INTO children (name, dob, gender, mobile)
-      VALUES (?, ?, ?, ?)
-    `;
-
-        const [result] = await pool.query(query, [name.trim(), dob, gender.trim(), mobile.trim()]);
+        const [result] = await pool.query(
+            'INSERT INTO children (name, dob, gender, mobile) VALUES (?, ?, ?, ?)',
+            [name.trim(), dob, gender.trim(), mobile.trim()]
+        );
 
         const childIdStr = 'CH' + String(result.insertId).padStart(3, '0');
         await pool.query('UPDATE children SET child_id = ? WHERE id = ?', [childIdStr, result.insertId]);
 
+        // Optional photo upload
+        if (req.file) {
+            const photoFilename = finalizePhoto(req.file, childIdStr);
+            await pool.query('UPDATE children SET photo = ? WHERE child_id = ?', [photoFilename, childIdStr]);
+        }
+
         res.status(201).json({
             message: 'Child registered successfully!',
-            childId: childIdStr
+            childId: childIdStr,
         });
 
     } catch (error) {
+        if (req.file) fs.unlinkSync(req.file.path);
         console.error('Registration Error:', error);
         res.status(500).json({ message: 'Server error while registering the child. Please try again later.' });
     }
@@ -56,7 +73,7 @@ const lookupChild = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            'SELECT child_id, name, dob, gender, mobile, status FROM children WHERE child_id = ?',
+            'SELECT child_id, name, dob, gender, mobile, status, photo FROM children WHERE child_id = ?',
             [childId.toUpperCase()]
         );
 

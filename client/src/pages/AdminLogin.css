@@ -1,234 +1,602 @@
-.admin-page {
-    /* Scope variables for the admin panel to avoid global conflicts */
-    --bg: #f6f7fb;
-    --panel: #fff;
-    --text: #0f172a;
-    --muted: #64748b;
-    --border: #e5e7eb;
-    --shadow: 0 12px 30px rgba(15, 23, 42, .08);
-    --accent: #4f46e5;
-    --danger: #ef4444;
-    --dangerSoft: rgba(239, 68, 68, .12);
-    --radius: 16px;
+/* ═══════════════════════════════════════════════════════════
+   SANGIAN — ADMIN LOGIN  (world-class, game-themed)
+   ═══════════════════════════════════════════════════════════ */
 
+/* ── Reset & Root ─────────────────────────────────────────── */
+.al-root {
+    display: flex;
     min-height: 100vh;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+}
+
+.al-root * { box-sizing: border-box; }
+
+/* ══════════════════════════════════════════════════════════
+   LEFT PANEL
+══════════════════════════════════════════════════════════ */
+.al-left {
+    width: 52%;
+    position: relative;
+    background: linear-gradient(160deg, #0a0a1e 0%, #0f173c 60%, #1e0a32 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Subtle animated shimmer across the left panel */
+.al-left::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, transparent 50%, rgba(139, 92, 246, 0.06) 100%);
+    pointer-events: none;
+}
+
+.al-left-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 28px 28px 24px;
+    gap: 16px;
+    overflow: hidden;
+}
+
+/* Compact left header */
+.al-left-header {
+    flex-shrink: 0;
+}
+
+.al-left-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(99, 102, 241, 0.25);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: rgba(200, 200, 255, 0.9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+}
+
+.al-left-heading {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #fff;
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
-    background: radial-gradient(1200px 700px at 20% -10%, rgba(79, 70, 229, .12), transparent 60%),
-        radial-gradient(900px 600px at 100% 0%, rgba(79, 70, 229, .08), transparent 55%),
-        var(--bg);
-    color: var(--text);
-    box-sizing: border-box;
+    line-height: 1.25;
+    letter-spacing: -0.3px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
-.admin-page * {
-    box-sizing: border-box;
-}
-
-.admin-dashboard-container {
-    min-height: 100vh;
-    padding: 22px;
+/* ── Game Cards Grid ──────────────────────────────────────── */
+.al-games-grid {
     display: grid;
-    place-items: center;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+@keyframes alCardIn {
+    from { opacity: 0; transform: translateY(18px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.al-game-card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    animation: alCardIn 0.5s ease both;
+    cursor: default;
+    min-height: 0;
+}
+
+.al-game-card:hover {
+    transform: translateY(-3px) scale(1.02);
+    border-color: var(--card-color, #6366f1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--card-color, #6366f1);
+}
+
+/* Card image — fills full card */
+.al-card-img-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.al-card-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.al-game-card:hover .al-card-img {
+    transform: scale(1.08);
+}
+
+/* Gradient scrim — darkens bottom so text is legible */
+.al-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(10, 10, 30, 0.0)  35%,
+        rgba(10, 10, 30, 0.55) 70%,
+        rgba(10, 10, 30, 0.82) 100%
+    );
+    pointer-events: none;
+}
+
+/* Name + tag — overlaid at bottom of image */
+.al-card-label {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    padding: 8px 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    z-index: 1;
+}
+
+.al-card-label-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+    margin-bottom: 1px;
+}
+
+.al-card-label-name {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.al-card-label-tag {
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+    margin-top: 2px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+/* No-image fallback */
+.al-card-no-img {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     position: relative;
 }
 
-.admin-top-left-logo {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    text-decoration: none;
-    user-select: none;
+.al-card-icon-lg {
+    font-size: 2.4rem;
+    filter: drop-shadow(0 2px 10px rgba(0,0,0,0.4));
 }
 
-.admin-logo-img {
-    width: 300px;
-    height: 100px;
-    object-fit: contain;
-    display: block;
-}
 
-.admin-login-card {
-    width: min(460px, 100%);
-    background: rgba(255, 255, 255, .88);
-    border: 1px solid rgba(229, 231, 235, .9);
-    border-radius: calc(var(--radius) + 6px);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    backdrop-filter: blur(8px);
-}
-
-.admin-login-head {
+/* ══════════════════════════════════════════════════════════
+   RIGHT PANEL
+══════════════════════════════════════════════════════════ */
+.al-right {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(145deg, #f0f2ff 0%, #faf5ff 40%, #f0fdf9 100%);
     display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    overflow: hidden;
 }
 
-.admin-login-head h1 {
+/* Decorative blobs */
+.al-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+}
+
+.al-blob-1 {
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%);
+    top: -80px; right: -80px;
+    animation: alBlobFloat 8s ease-in-out infinite;
+}
+
+.al-blob-2 {
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.14), transparent 70%);
+    bottom: 40px; left: -60px;
+    animation: alBlobFloat 11s ease-in-out infinite reverse;
+}
+
+.al-blob-3 {
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.12), transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: alBlobFloat 14s ease-in-out infinite;
+}
+
+@keyframes alBlobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(20px, -20px) scale(1.05); }
+    66%       { transform: translate(-15px, 15px) scale(0.97); }
+}
+
+/* ── Right panel logo ────────────────────────────────────── */
+.al-right-logo {
+    position: absolute;
+    top: 22px;
+    right: 28px;
+    z-index: 2;
+}
+
+.al-right-logo img {
+    height: 56px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.2));
+}
+
+/* ── Form Wrapper ─────────────────────────────────────────── */
+.al-form-wrap {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 28px;
+    padding: 40px 36px 32px;
+    box-shadow:
+        0 4px 6px rgba(0,0,0,0.04),
+        0 20px 60px rgba(99, 102, 241, 0.12),
+        0 0 0 1px rgba(99, 102, 241, 0.06);
+    animation: alFormSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes alFormSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Form header */
+.al-form-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.al-lock-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.38);
+}
+
+.al-form-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px;
+    letter-spacing: -0.4px;
+}
+
+.al-form-sub {
+    font-size: 0.875rem;
+    color: #64748b;
     margin: 0;
-    font-size: 18px;
-    letter-spacing: -.2px;
-}
-
-.admin-login-head p {
-    margin: 6px 0 0;
-    color: var(--muted);
-    font-size: 13px;
     line-height: 1.5;
 }
 
-.admin-form {
-    display: grid;
-    gap: 12px;
-    margin-top: 10px;
+/* ── Form Fields ──────────────────────────────────────────── */
+.al-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.admin-form label {
-    font-size: 12px;
-    color: #334155;
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-}
-
-.admin-field {
-    display: grid;
+.al-field {
+    display: flex;
+    flex-direction: column;
     gap: 6px;
 }
 
-.admin-field input {
+.al-field label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    letter-spacing: 0.02em;
+}
+
+.al-field label svg {
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.al-field input {
     width: 100%;
-    padding: 12px;
+    padding: 13px 16px;
     border-radius: 14px;
-    border: 1px solid var(--border);
+    border: 1.5px solid #e5e7eb;
     outline: none;
-    font-size: 14px;
-    transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    font-size: 0.9rem;
+    color: #0f172a;
     background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
-.admin-field input:focus {
-    border-color: rgba(79, 70, 229, .45);
-    box-shadow: 0 0 0 5px rgba(79, 70, 229, .12);
+.al-field input::placeholder { color: #cbd5e1; }
+
+.al-field input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+    background: #fafbff;
 }
 
-.admin-field.invalid input {
-    border-color: rgba(239, 68, 68, .9) !important;
-    box-shadow: 0 0 0 5px rgba(239, 68, 68, .14) !important;
-    background: var(--dangerSoft);
+.al-field--err input {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.10) !important;
+    background: #fff5f5;
 }
 
-.admin-error {
-    font-size: 12px;
-    color: #b91c1c;
-    line-height: 1.3;
+.al-err-msg {
+    font-size: 0.75rem;
+    color: #dc2626;
     display: none;
+    align-items: center;
+    gap: 4px;
+}
+.al-field--err .al-err-msg { display: flex; }
+
+/* Password wrapper */
+.al-pw-wrap {
+    position: relative;
 }
 
-.admin-field.invalid .admin-error {
-    display: block;
+.al-pw-wrap input {
+    padding-right: 46px;
 }
 
-.admin-inline {
+.al-pw-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+}
+.al-pw-toggle:hover { color: #6366f1; }
+
+/* Keep logged in */
+.al-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 2px;
 }
 
-.admin-checkbox {
+.al-check-label {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 13px;
-    color: #111827;
+    font-size: 0.82rem;
+    color: #374151;
+    cursor: pointer;
     user-select: none;
 }
 
-.admin-checkbox input {
+.al-check-label input[type='checkbox'] {
+    display: none;
+}
+
+.al-check-box {
     width: 18px;
     height: 18px;
     border-radius: 6px;
-    padding: 0;
-    margin: 0;
+    border: 1.5px solid #d1d5db;
+    background: #fff;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
 }
 
-.admin-btn {
-    border: 0;
-    padding: 12px 14px;
+.al-check-label input[type='checkbox']:checked + .al-check-box {
+    background: #6366f1;
+    border-color: #6366f1;
+}
+
+.al-check-label input[type='checkbox']:checked + .al-check-box::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 8px;
+    height: 5px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg);
+}
+
+/* Server error */
+.al-server-err {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-size: 0.82rem;
+    color: #dc2626;
+    font-weight: 500;
+}
+.al-server-err svg { flex-shrink: 0; color: #ef4444; }
+
+/* Submit button */
+.al-submit {
+    width: 100%;
+    padding: 14px;
+    border: none;
     border-radius: 14px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     cursor: pointer;
-    font-weight: 800;
-    font-size: 14px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    user-select: none;
-    width: 100%;
-    transition: transform .06s ease, filter .15s ease, box-shadow .15s ease, opacity .15s ease;
+    gap: 8px;
+    box-shadow: 0 10px 28px rgba(79, 70, 229, 0.36);
+    transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    margin-top: 4px;
 }
 
-.admin-btn:active {
+.al-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(79, 70, 229, 0.46);
+}
+
+.al-submit:active:not(:disabled) {
     transform: translateY(1px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.3);
 }
 
-.admin-btn-primary {
-    background: linear-gradient(135deg, var(--accent), #7c3aed);
-    color: #fff;
-    box-shadow: 0 16px 32px rgba(79, 70, 229, .22);
-}
-
-.admin-btn:disabled {
-    opacity: .55;
+.al-submit:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
     box-shadow: none;
-    filter: grayscale(.1);
 }
 
-.admin-captcha-wrap {
-    margin-top: 6px;
+/* Spinner */
+.al-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: alSpin 0.7s linear infinite;
+}
+@keyframes alSpin { to { transform: rotate(360deg); } }
+
+/* Game dots strip */
+.al-game-dots {
     display: flex;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 22px;
 }
 
-.admin-captcha-error {
-    display: none;
-    margin-top: 6px;
-    font-size: 12px;
-    color: #b91c1c;
+.al-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s;
+    cursor: default;
 }
 
-.admin-captcha-error.show {
-    display: block;
+.al-dot:hover {
+    opacity: 1;
+    transform: scale(1.4);
 }
 
-.admin-copyright {
+/* Copyright */
+.al-copyright {
     position: absolute;
-    bottom: 14px;
-    left: 0;
-    right: 0;
+    bottom: 16px;
+    left: 0; right: 0;
     text-align: center;
-    color: var(--muted);
-    font-size: 12px;
-    padding: 0 16px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+    z-index: 1;
 }
 
-@media (max-width: 520px) {
-    .admin-dashboard-container {
-        padding: 16px;
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    .al-root { flex-direction: column; }
+
+    .al-left {
+        width: 100%;
+        height: 42vh;
+        min-height: 240px;
+        max-height: 360px;
     }
 
-    .admin-top-left-logo {
-        top: 12px;
-        left: 12px;
-    }
+    .al-left-inner { padding: 20px 16px 16px; gap: 12px; }
+    .al-left-heading { font-size: 1.1rem; }
 
-    .admin-logo-img {
-        width: 220px;
-        height: 74px;
+    .al-games-grid {
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 8px;
     }
+    .al-games-grid > .al-game-card:nth-child(n+11) { display: none; }
+
+    .al-right-logo { top: 14px; right: 16px; }
+    .al-right-logo img { height: 40px; }
+
+    .al-right { padding: 32px 20px 60px; }
+    .al-form-wrap { padding: 32px 24px 28px; }
+    .al-copyright { bottom: 10px; }
+}
+
+@media (max-width: 480px) {
+    .al-games-grid {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+    }
+    .al-games-grid > .al-game-card:nth-child(n+10) { display: none; }
+    .al-form-wrap { border-radius: 20px; }
 }
