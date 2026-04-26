@@ -428,7 +428,9 @@ const NumberSkillGame = () => {
     <div className="ns-app">
       <header className="ns-topbar">
         <div className="ns-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+          <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />
+          <div className="ns-divider"></div>
+          <span className="ns-test-title">Number Skill</span>
         </div>
         <div className="ns-stats">
           {childData?.child_id && (
@@ -452,7 +454,9 @@ const NumberSkillGame = () => {
               <div className="ns-splash-image-wrapper">
                 <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>{t('game.welcome')}</h2>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
+                Welcome to Number Skill
+              </h2>
               
 
               
@@ -624,8 +628,8 @@ const NumberSkillGame = () => {
               )}
 
               {/* Assessment Form Segment */}
-              <div className="ns-assessment-section">
-                <h3 className="ns-form-title">{t('game.sessionDetails')}</h3>
+              <div className="shared-assessment-section">
+                <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
                 
                 {[
                   { key: 'q1', label: t('game.q1Label') },
@@ -633,15 +637,15 @@ const NumberSkillGame = () => {
                   { key: 'q3', label: t('game.q3Label') },
                   { key: 'q4', label: t('game.q4Label') }
                 ].map((q) => (
-                  <div key={q.key} className="ns-q-group">
-                    <label className="ns-q-label">{q.label}</label>
-                    <div className="ns-radio-row">
+                  <div key={q.key} className="shared-form-group">
+                    <label className="shared-form-label">{q.label}</label>
+                    <div className="shared-radio-group">
                       {[
                         { val: 'Yes, a lot', str: t('game.optYes') },
                         { val: 'A little', str: t('game.optLittle') },
                         { val: 'Not much', str: t('game.optNotMuch') }
                       ].map(opt => (
-                        <label key={opt.val} className="ns-radio-label">
+                        <label key={opt.val} className="shared-radio-item">
                           <input type="radio" name={q.key} disabled={assessmentSubmitted} checked={assessment[q.key] === opt.val} onChange={() => setAssessment({...assessment, [q.key]: opt.val})} />
                           {opt.str}
                         </label>
@@ -650,9 +654,9 @@ const NumberSkillGame = () => {
                   </div>
                 ))}
 
-                <div className="ns-q-group">
-                  <label className="ns-q-label">{t('game.q5Label')}</label>
-                  <div className="ns-checkbox-grid">
+                <div className="shared-form-group">
+                  <label className="shared-form-label">{t('game.q5Label')}</label>
+                  <div className="shared-checkbox-grid">
                     {[
                       { val: 'Difficulty sustaining attention', str: t('game.b1') },
                       { val: 'Impulsive or random responding', str: t('game.b2') },
@@ -663,7 +667,7 @@ const NumberSkillGame = () => {
                       { val: 'Needed frequent reassurance', str: t('game.b7') },
                       { val: 'Calm and engaged throughout', str: t('game.b8') }
                     ].map(bhv => (
-                       <label key={bhv.val} className="ns-checkbox-label">
+                       <label key={bhv.val} className="shared-checkbox-item">
                          <input type="checkbox" disabled={assessmentSubmitted} checked={assessment.behaviors.includes(bhv.val)} onChange={(e) => {
                             if(e.target.checked) setAssessment({...assessment, behaviors:[...assessment.behaviors, bhv.val]});
                             else setAssessment({...assessment, behaviors: assessment.behaviors.filter(b=>b!==bhv.val)});
@@ -674,36 +678,32 @@ const NumberSkillGame = () => {
                   </div>
                 </div>
                 
-                <div className="ns-q-group">
-                   <label className="ns-q-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="shared-form-group">
+                   <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                      <span>{t('game.extraNotes')}</span>
                      <button 
+                       type="button"
+                       className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
                        onClick={() => toggleRecording('assessmentNotes')} 
-                       style={{ 
-                         background: isRecording && recordingTarget === 'assessmentNotes' ? '#fee2e2' : '#eff6ff',
-                         color: isRecording && recordingTarget === 'assessmentNotes' ? '#ef4444' : '#2563eb',
-                         border: '1px solid',
-                         borderColor: isRecording && recordingTarget === 'assessmentNotes' ? '#fca5a5' : '#bfdbfe',
-                         padding: '4px 10px', borderRadius: '999px', fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px'
-                       }}>
+                     >
                        🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
                      </button>
                    </label>
-                   <textarea className="ns-textarea" rows="3" disabled={assessmentSubmitted} placeholder={t('game.dictatePlaceholder')} value={assessment.notes} onChange={(e) => setAssessment({...assessment, notes: e.target.value})}></textarea>
+                   <textarea className="shared-textarea" disabled={assessmentSubmitted} placeholder={t('game.dictatePlaceholder')} value={assessment.notes} onChange={(e) => setAssessment({...assessment, notes: e.target.value})}></textarea>
                 </div>
-              </div>
 
-              <div className="ns-final-actions">
-                {assessmentSubmitted ? (
-                  <>
-                    <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="ns-btn ns-btn-primary">{t('game.retest')}</button>
-                    <button onClick={() => navigate('/')} className="ns-btn ns-btn-secondary">{t('game.home')}</button>
-                  </>
-                ) : (
-                  <button onClick={submitAssessmentForm} disabled={isAssessmentSubmitting} className="ns-btn ns-btn-primary" style={{ minWidth: '220px' }}>
-                    {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                  </button>
-                )}
+                <div className="shared-final-actions">
+                  {assessmentSubmitted ? (
+                    <>
+                      <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="ns-btn ns-btn-primary">{t('game.retest')}</button>
+                      <button onClick={() => navigate('/')} className="ns-btn ns-btn-secondary">{t('game.home')}</button>
+                    </>
+                  ) : (
+                    <button onClick={submitAssessmentForm} disabled={isAssessmentSubmitting} className="shared-submit-btn">
+                      {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

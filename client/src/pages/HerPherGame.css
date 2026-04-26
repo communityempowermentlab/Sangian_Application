@@ -386,32 +386,7 @@
   display: block;
 }
 
-.hp-img-btn.hp-clicked-correct {
-  border-color: #22c55e;
-  background: linear-gradient(135deg, #dcfce7, #ffffff);
-  animation: hp-click-correct 0.5s ease;
-}
-
-.hp-img-btn.hp-clicked-incorrect {
-  border-color: #ef4444;
-  background: linear-gradient(135deg, #fee2e2, #ffffff);
-  animation: hp-click-incorrect 0.5s ease;
-}
-
 .hp-img-btn:disabled { cursor: not-allowed; opacity: 0.6; }
-
-@keyframes hp-click-correct {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-@keyframes hp-click-incorrect {
-  0%   { transform: translateX(0); }
-  25%  { transform: translateX(-10px); }
-  75%  { transform: translateX(10px); }
-  100% { transform: translateX(0); }
-}
 
 /* ─── Game Controls ─────────────────────────── */
 .hp-game-controls {
@@ -656,6 +631,25 @@
 
 .btn-pause-quit span {
   font-size: 1rem;
+}
+
+.hp-brand-img {
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+}
+
+.hp-divider {
+  width: 1.5px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.hp-test-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
 }
 
 .hp-btn-highlight {

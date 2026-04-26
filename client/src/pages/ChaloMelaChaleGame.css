@@ -350,6 +350,25 @@
   z-index: 2;
 }
 
+.brand-img {
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+}
+
+.divider {
+  width: 1.5px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.test-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
 /* Highlight effect for Teaching Question buttons */
 .pattern-btn-highlight {
   background: linear-gradient(135deg, #10b981, #059669) !important;

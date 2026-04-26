@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import './HerPherGame.css';
@@ -121,6 +122,7 @@ function calcScore(questionNum, correctCount) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const HerPherGame = () => {
+  const { t }       = useLanguage();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [GAME_DATA] = useState(() => buildGameData()); // stable per session
@@ -594,7 +596,9 @@ const HerPherGame = () => {
         {/* ── Top Bar ── */}
         <header className="hp-topbar">
           <div className="hp-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />
+            <div className="hp-divider"></div>
+            <span className="hp-test-title">Her Pher</span>
           </div>
           <div className="hp-stats">
             <div className="hp-stat-pill">
@@ -641,7 +645,9 @@ const HerPherGame = () => {
                   />
                 </div>
 
-                <div className="hp-splash-title">Welcome to Her Pher</div>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                  Welcome to Her Pher
+                </h2>
                 
 
 
@@ -664,13 +670,10 @@ const HerPherGame = () => {
                       }
                     }}
                   >
-                    🔊 Replay Audio
+                    Replay Audio
                   </button>
                 </div>
 
-                <p className="hp-splash-note">
-                  The audio plays automatically. Once it ends, the <strong>Start Now</strong> button becomes active.
-                </p>
               </div>
             </div>
           )}
@@ -720,14 +723,10 @@ const HerPherGame = () => {
               {/* Image Grid */}
               <div className="hp-game-container">
                 {imageLayout.map(({ imageId, x, y }) => {
-                  const isClicked   = clickedImages.has(imageId);
-                  const clickIndex  = selectedOrder.indexOf(imageId);
-                  const wasCorrect  = isClicked && clickIndex !== -1 && responses[clickIndex] === 1;
-                  const wasWrong    = isClicked && clickIndex !== -1 && responses[clickIndex] === 0;
                   return (
                     <button
                       key={`${imageId}-${x}-${y}`}
-                      className={`hp-img-btn ${shuffleInProgress ? 'hp-shuffling' : ''} ${wasCorrect ? 'hp-clicked-correct' : ''} ${wasWrong ? 'hp-clicked-incorrect' : ''}`}
+                      className={`hp-img-btn ${shuffleInProgress ? 'hp-shuffling' : ''}`}
                       style={{
                         left: `${x}px`,
                         top: `${y}px`,
@@ -856,124 +855,119 @@ const HerPherGame = () => {
                 )}
 
                 {/* Assessment Form */}
-                <div className="hp-assessment-section">
-                  <h3 className="hp-form-title">Session Assessment Details</h3>
+                <div className="shared-assessment-section">
+                  <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
 
                   {[
-                    { key: 'q1', label: 'Q1. Did you enjoy playing the game?' },
-                    { key: 'q2', label: 'Q2. How did the game feel for you?' },
-                    { key: 'q3', label: 'Q3. Did you feel tired while playing?' },
-                    { key: 'q4', label: 'Q4. Would you like to play again?' },
+                    { key: 'q1', label: t('game.q1Label') },
+                    { key: 'q2', label: t('game.q2Label') },
+                    { key: 'q3', label: t('game.q3Label') },
+                    { key: 'q4', label: t('game.q4Label') },
                   ].map(({ key, label }) => (
-                    <div key={key} className="hp-q-group">
-                      <label className="hp-q-label">{label}</label>
-                      <div className="hp-radio-row">
-                        {['Yes, a lot', 'A little', 'Not much'].map(opt => (
-                          <label key={opt} className="hp-radio-label">
+                    <div key={key} className="shared-form-group">
+                      <label className="shared-form-label">{label}</label>
+                      <div className="shared-radio-group">
+                        {[
+                          { val: 'Yes, a lot', str: t('game.optYes') },
+                          { val: 'A little', str: t('game.optLittle') },
+                          { val: 'Not much', str: t('game.optNotMuch') }
+                        ].map(opt => (
+                          <label key={opt.val} className="shared-radio-item">
                             <input
                               type="radio"
                               name={key}
                               disabled={assessmentSubmitted}
-                              checked={assessment[key] === opt}
-                              onChange={() => setAssessment(a => ({ ...a, [key]: opt }))}
+                              checked={assessment[key] === opt.val}
+                              onChange={() => setAssessment(a => ({ ...a, [key]: opt.val }))}
                             />
-                            {opt}
+                            {opt.str}
                           </label>
                         ))}
                       </div>
                     </div>
                   ))}
 
-                  <div className="hp-q-group">
-                    <label className="hp-q-label">Q5. Observed Behaviours during the session (Multiple selection allowed)</label>
-                    <div className="hp-checkbox-grid">
+                  <div className="shared-form-group">
+                    <label className="shared-form-label">{t('game.q5Label')}</label>
+                    <div className="shared-checkbox-grid">
                       {[
-                        'Difficulty sustaining attention',
-                        'Impulsive or random responding',
-                        'Negative reaction to correction',
-                        'Hesitation in responding',
-                        'High focus or persistence',
-                        'Verbalisation of a memory strategy',
-                        'Needed frequent reassurance',
-                        'Calm and engaged throughout',
+                        { val: 'Difficulty sustaining attention', str: t('game.b1') },
+                        { val: 'Impulsive or random responding', str: t('game.b2') },
+                        { val: 'Negative reaction to correction', str: t('game.b3') },
+                        { val: 'Hesitation in responding', str: t('game.b4') },
+                        { val: 'High focus or persistence', str: t('game.b5') },
+                        { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
+                        { val: 'Needed frequent reassurance', str: t('game.b7') },
+                        { val: 'Calm and engaged throughout', str: t('game.b8') }
                       ].map(bhv => (
-                        <label key={bhv} className="hp-checkbox-label">
+                        <label key={bhv.val} className="shared-checkbox-item">
                           <input
                             type="checkbox"
                             disabled={assessmentSubmitted}
-                            checked={assessment.behaviors.includes(bhv)}
+                            checked={assessment.behaviors.includes(bhv.val)}
                             onChange={(e) => {
                               setAssessment(a => ({
                                 ...a,
                                 behaviors: e.target.checked
-                                  ? [...a.behaviors, bhv]
-                                  : a.behaviors.filter(b => b !== bhv),
+                                  ? [...a.behaviors, bhv.val]
+                                  : a.behaviors.filter(b => b !== bhv.val),
                               }));
                             }}
                           />
-                          {bhv}
+                          {bhv.str}
                         </label>
                       ))}
                     </div>
                   </div>
 
-                  <div className="hp-q-group">
-                    <label className="hp-q-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Additional Notes</span>
+                  <div className="shared-form-group">
+                    <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{t('game.extraNotes')}</span>
                       <button
+                        type="button"
+                        className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
                         onClick={() => toggleRecording('assessmentNotes')}
-                        style={{
-                          background: isRecording && recordingTarget === 'assessmentNotes' ? '#fee2e2' : '#eff6ff',
-                          color:      isRecording && recordingTarget === 'assessmentNotes' ? '#ef4444' : '#2563eb',
-                          border: '1px solid',
-                          borderColor: isRecording && recordingTarget === 'assessmentNotes' ? '#fca5a5' : '#bfdbfe',
-                          padding: '4px 10px', borderRadius: '999px', fontSize: '0.8rem',
-                          cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        }}
                       >
-                        🎙 {isRecording && recordingTarget === 'assessmentNotes' ? 'Recording… (Stop)' : 'Use Mic'}
+                        🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
                       </button>
                     </label>
                     <textarea
-                      className="hp-textarea"
-                      rows={3}
+                      className="shared-textarea"
                       disabled={assessmentSubmitted}
-                      placeholder="Type or dictate observations…"
+                      placeholder={t('game.dictatePlaceholder')}
                       value={assessment.notes}
                       onChange={(e) => setAssessment(a => ({ ...a, notes: e.target.value }))}
                     />
                   </div>
-                </div>
 
-                {/* Final Actions */}
-                <div className="hp-final-actions" style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '24px', paddingBottom: '24px' }}>
-                  {assessmentSubmitted ? (
-                    <>
+                  <div className="shared-final-actions">
+                    {assessmentSubmitted ? (
+                      <>
+                        <button
+                          className="hp-btn hp-btn-primary"
+                          onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
+                          style={{ minWidth: '160px' }}
+                        >
+                          {t('game.retest')}
+                        </button>
+                        <button 
+                          className="hp-btn hp-btn-secondary" 
+                          onClick={() => navigate('/')}
+                          style={{ minWidth: '160px' }}
+                        >
+                          {t('game.home')}
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        className="hp-btn hp-btn-primary"
-                        onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
-                        style={{ minWidth: '160px' }}
+                        className="shared-submit-btn"
+                        disabled={assessmentSubmitting}
+                        onClick={submitAssessment}
                       >
-                        ↻ Retest
+                        {assessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
                       </button>
-                      <button 
-                        className="hp-btn hp-btn-secondary" 
-                        onClick={() => navigate('/')}
-                        style={{ minWidth: '160px' }}
-                      >
-                        🏠 Home
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="hp-btn hp-btn-primary"
-                      disabled={assessmentSubmitting}
-                      style={{ minWidth: 200 }}
-                      onClick={submitAssessment}
-                    >
-                      {assessmentSubmitting ? 'Saving…' : 'Submit Assessment'}
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

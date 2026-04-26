@@ -894,91 +894,103 @@ const ChaloMelaChaleGame = () => {
           )}
         </div>
 
-        <div className="assessment-form-section">
-          <h3 className="form-section-title">Session Assessment Details</h3>
+        <div className="shared-assessment-section">
+          <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
           {[
-            { key: 'q1', label: 'Q1. Did the child enjoy playing the game?' },
-            { key: 'q2', label: 'Q2. How did the child feel while playing?' },
-            { key: 'q3', label: 'Q3. Did the child show signs of tiredness?' },
-            { key: 'q4', label: 'Q4. Would the child like to play again?' },
+            { key: 'q1', label: t('game.q1Label') },
+            { key: 'q2', label: t('game.q2Label') },
+            { key: 'q3', label: t('game.q3Label') },
+            { key: 'q4', label: t('game.q4Label') },
           ].map(q => (
-            <div key={q.key} className="form-group">
-              <label className="form-label">{q.label}</label>
-              <div className="radio-group">
-                {['Yes, a lot', 'A little', 'Not much'].map(opt => (
-                  <label key={opt} className="radio-item">
+            <div key={q.key} className="shared-form-group">
+              <label className="shared-form-label">{q.label}</label>
+              <div className="shared-radio-group">
+                {[
+                  { val: 'Yes, a lot', label: t('game.optYes') },
+                  { val: 'A little', label: t('game.optLittle') },
+                  { val: 'Not much', label: t('game.optNotMuch') }
+                ].map(opt => (
+                  <label key={opt.val} className="shared-radio-item">
                     <input
                       type="radio"
                       name={q.key}
                       disabled={assessmentSubmitted}
-                      checked={assessment[q.key] === opt}
-                      onChange={() => setAssessment({ ...assessment, [q.key]: opt })}
+                      checked={assessment[q.key] === opt.val}
+                      onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })}
                     />
-                    {opt}
+                    {opt.label}
                   </label>
                 ))}
               </div>
             </div>
           ))}
 
-          <div className="form-group">
-            <label className="form-label">Q5. Observed Behaviors during the session (Multiple selection allowed)</label>
-            <div className="checkbox-grid">
+          <div className="shared-form-group">
+            <label className="shared-form-label">{t('game.q5Label')}</label>
+            <div className="shared-checkbox-grid">
               {[
-                'Difficulty sustaining attention', 'Impulsive or random responding',
-                'Negative reaction to correction', 'Hesitation in responding',
-                'High focus or persistence', 'Calbalisation of a memory strategy',
-                'Needed frequent reassurance', 'Calm and engaged throughout',
+                { val: 'Difficulty sustaining attention', label: t('game.b1') },
+                { val: 'Impulsive or random responding', label: t('game.b2') },
+                { val: 'Negative reaction to correction', label: t('game.b3') },
+                { val: 'Hesitation in responding', label: t('game.b4') },
+                { val: 'High focus or persistence', label: t('game.b5') },
+                { val: 'Verbalisation of a memory strategy', label: t('game.b6') },
+                { val: 'Needed frequent reassurance', label: t('game.b7') },
+                { val: 'Calm and engaged throughout', label: t('game.b8') }
               ].map(bhv => (
-                <label key={bhv} className="checkbox-item">
+                <label key={bhv.val} className="shared-checkbox-item">
                   <input
                     type="checkbox"
                     disabled={assessmentSubmitted}
-                    checked={assessment.behaviors.includes(bhv)}
+                    checked={assessment.behaviors.includes(bhv.val)}
                     onChange={e => {
-                      if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv] });
-                      else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv) });
+                      if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
+                      else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
                     }}
                   />
-                  {bhv}
+                  {bhv.label}
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Additional Notes</span>
-              <button className="mic-btn" onClick={() => toggleRecording('notes')}>
-                🎙️ {isRecording && recordingTarget === 'notes' ? 'Recording…' : 'Use Mic'}
+          <div className="shared-form-group">
+            <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{t('game.extraNotes')}</span>
+              <button 
+                type="button"
+                className={`shared-mic-btn ${isRecording && recordingTarget === 'notes' ? 'recording' : ''}`}
+                onClick={() => toggleRecording('notes')}
+              >
+                🎙️ {isRecording && recordingTarget === 'notes' ? t('game.recordingStop') : t('game.useMic')}
               </button>
             </label>
             <textarea
-              className="form-textarea"
+              className="shared-textarea"
               disabled={assessmentSubmitted}
               value={assessment.notes}
               onChange={e => setAssessment({ ...assessment, notes: e.target.value })}
-              placeholder="Type or dictate observations…"
+              placeholder={t('game.dictatePlaceholder')}
             ></textarea>
           </div>
         </div>
 
-        <div className="final-actions">
+        <div className="shared-final-actions">
           {assessmentSubmitted ? (
             <>
               <button 
                   className="btn btn-primary" 
                   onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); }}
-                >↻ Retest</button>
-              <button className="btn btn-secondary" onClick={() => navigate('/')}>🏠 Home</button>
+                >{t('game.retest')}</button>
+              <button className="btn btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
             </>
           ) : (
             <button
-              className="btn btn-primary"
+              className="shared-submit-btn"
               disabled={isAssessmentSubmitting}
               onClick={submitAssessmentForm}
             >
-              {isAssessmentSubmitting ? 'Saving...' : 'Submit Assessment'}
+              {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
             </button>
           )}
         </div>
@@ -1102,7 +1114,9 @@ const ChaloMelaChaleGame = () => {
       <div className="app">
         <header className="topbar">
           <div className="brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
+            <div className="divider"></div>
+            <span className="test-title">Rover</span>
           </div>
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
@@ -1120,7 +1134,9 @@ const ChaloMelaChaleGame = () => {
               </div>
               <div className="card splash-card">
                 <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Rover" className="splash-image" /></div>
-                <div className="splash-title">Welcome to Rover</div>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                  Welcome to Rover
+                </h2>
 
                 <div className="btn-row">
                   <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')}>Start Now</button>

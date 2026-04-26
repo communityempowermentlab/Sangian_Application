@@ -261,6 +261,25 @@
   pointer-events: none;
 }
 
+.rg-brand-img {
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+}
+
+.rg-divider {
+  width: 1.5px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.rg-test-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
 .rg-btn-highlight {
   background: linear-gradient(135deg, #10b981, #059669) !important;
   color: white !important;

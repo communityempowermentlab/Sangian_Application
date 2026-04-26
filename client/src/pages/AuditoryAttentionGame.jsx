@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 import './AuditoryAttentionGame.css';
 
 // ─── Constants & Configurations ─────────────────────────────────────────
@@ -79,6 +80,7 @@ const formatTime = (sec) => {
 };
 
 const AuditoryAttentionGame = () => {
+  const { t }    = useLanguage();
   const navigate = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
 
@@ -120,6 +122,8 @@ const AuditoryAttentionGame = () => {
   const wordTimeoutRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const isGameRunningRef = useRef(false);
+  // Hard lock: reset to false when each new word starts, set to true after one click
+  const clickLockedRef = useRef(false);
   const isPausedRef = useRef(false);
   const wordsListRef = useRef([]);
   const wordIndexRef = useRef(-1);
@@ -273,9 +277,11 @@ const AuditoryAttentionGame = () => {
       // Reset full state
       setQuestionScores({ 1: null, 2: null, 3: null, 4: null });
       setQuestionTimes({ 1: null, 2: null, 3: null, 4: null });
+      setCanStartQ(false);
       setScreen('sampleA');
     } catch (e) {
       alert('Failed to start session on server. Progress won\'t be saved.');
+      setCanStartQ(false);
       setScreen('sampleA');
     }
   };
@@ -302,6 +308,7 @@ const AuditoryAttentionGame = () => {
     setQuestionTimes(qt);
     
     // Auto jump to first uncompleted question
+    setCanStartQ(false);
     if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); }
     else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); }
     else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); }
@@ -405,6 +412,7 @@ const AuditoryAttentionGame = () => {
 
   const navigateToLanding = (qIndex) => {
     cleanupAudio();
+    setCanStartQ(false);
     setCurrentQIndex(qIndex);
     setScreen(`question${qIndex}-landing`);
   };
@@ -419,16 +427,18 @@ const AuditoryAttentionGame = () => {
       });
     }
 
-    if (screen === 'sampleA') {
-      playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
-    } else if (screen === 'question1-landing') {
-      playInstructionAudio(CONFIG.QUESTION1.INSTRUCTION_AUDIO);
-    } else if (screen === 'question2-landing') {
-      playInstructionAudio(CONFIG.QUESTION2.INSTRUCTION_AUDIO);
-    } else if (screen === 'question3-landing') {
-      playInstructionAudio(CONFIG.QUESTION3.INSTRUCTION_AUDIO);
-    } else if (screen === 'question4-landing') {
-      playInstructionAudio(CONFIG.QUESTION4.INSTRUCTION_AUDIO);
+    if (!canStartQ) {
+      if (screen === 'sampleA') {
+        playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
+      } else if (screen === 'question1-landing') {
+        playInstructionAudio(CONFIG.QUESTION1.INSTRUCTION_AUDIO);
+      } else if (screen === 'question2-landing') {
+        playInstructionAudio(CONFIG.QUESTION2.INSTRUCTION_AUDIO);
+      } else if (screen === 'question3-landing') {
+        playInstructionAudio(CONFIG.QUESTION3.INSTRUCTION_AUDIO);
+      } else if (screen === 'question4-landing') {
+        playInstructionAudio(CONFIG.QUESTION4.INSTRUCTION_AUDIO);
+      }
     }
   }, [screen, canStartQ]);
 
@@ -493,6 +503,7 @@ const AuditoryAttentionGame = () => {
       wordAudioRef.current.pause();
     }
     wordAudioRef.current = new Audio(`${CONFIG.AUDIO_PATH}/${nextWord.toLowerCase()}.wav`);
+    clickLockedRef.current = false;   // reset: allow one click for this word cycle
     setIsPlayingWord(true);
     
     const finishWord = () => {
@@ -533,6 +544,7 @@ const AuditoryAttentionGame = () => {
     
     wordIndexRef.current = -1;
     pendingTargetsRef.current = [];
+    clickLockedRef.current = false;
     setWordIndex(-1);
     setPendingTargets([]);
     setLevelScores({ correct: 0, eoc: 0, eoi: 0, eoo: 0 });
@@ -573,7 +585,6 @@ const AuditoryAttentionGame = () => {
         setQuestionScores(newQs);
         setQuestionTimes(newQt);
         
-        showToast('correct', `🎉 Question ${currentQIndex} Complete!`);
         syncSessionProgress('in_progress', null, newQs, newQt);
         return finalTime;
       });
@@ -604,7 +615,13 @@ const AuditoryAttentionGame = () => {
   };
 
   const onGameImageClick = (imageId) => {
+    // Rule 1 & 2: block if game not running, paused, or no word played yet
     if (!isGameRunning || isPaused || wordIndexRef.current < 0) return;
+    // Rule 2: disable clicks while word audio is playing
+    if (isPlayingWord) return;
+    // Rule 3 & 4: allow only one click per word cycle
+    if (clickLockedRef.current) return;
+    clickLockedRef.current = true;   // lock immediately — no more clicks this cycle
     
     const config = getQConfig();
     const currentWord = wordsList[wordIndexRef.current];
@@ -626,26 +643,18 @@ const AuditoryAttentionGame = () => {
       setLevelScores(prev => ({...prev, correct: prev.correct + 1 }));
       pendingTargetsRef.current[matchingPendingIndex].responded = true;
       setPendingTargets([...pendingTargetsRef.current]);
-      showToast('correct', '✓ Correct!');
-      if (el) { el.classList.add('correct-flash'); setTimeout(()=>el.classList.remove('correct-flash'),500); }
     } else if (isTargetWord && !isTargetImage) {
       // EOI
       const expectedImage = config.TARGET_IMAGES[config.TARGET_WORDS.indexOf(currentWord)];
       if (imageId !== expectedImage) {
          setLevelScores(prev => ({...prev, eoi: prev.eoi + 1 }));
-         showToast('incorrect', '✗ Inhibition Error');
-         if (el) { el.classList.add('incorrect-flash'); setTimeout(()=>el.classList.remove('incorrect-flash'),500); }
       }
     } else if (!isTargetWord) {
       // EOC
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
-      showToast('incorrect', '✗ Commission Error');
-      if (el) { el.classList.add('incorrect-flash'); setTimeout(()=>el.classList.remove('incorrect-flash'),500); }
     } else {
       // EOC timing mismatch
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
-      showToast('incorrect', '✗ Commission Error');
-      if (el) { el.classList.add('incorrect-flash'); setTimeout(()=>el.classList.remove('incorrect-flash'),500); }
     }
   };
 
@@ -659,7 +668,9 @@ const AuditoryAttentionGame = () => {
         q3_tiredness: assessment.q3, q4_play_again: assessment.q4,
         q5_behaviors: assessment.behaviors, additional_notes: assessment.notes
       });
-      await syncSessionProgress('completed');
+      // Preserve quit status — only mark completed if the game ended naturally
+      const finalStatus = quitReason ? 'quit' : 'completed';
+      await syncSessionProgress(finalStatus, quitReason || null);
       setAssessmentSubmitted(true);
       alert('Assessment successfully saved!');
     } catch (e) {
@@ -694,7 +705,9 @@ const AuditoryAttentionGame = () => {
         {/* TOPBAR */}
         <header className="aa-topbar">
           <div className="aa-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />
+            <div className="aa-divider"></div>
+            <span className="aa-test-title">Dhyan Kahan Hai</span>
           </div>
           <div className="aa-stats">
             {childId && (
@@ -710,7 +723,11 @@ const AuditoryAttentionGame = () => {
             {screen !== 'checking' && screen !== 'splash' && (
               <button 
                 className="btn-pause-quit" 
-                onClick={() => setShowQuitModal(true)}>
+                onClick={() => {
+                  cleanupAudio();
+                  clearAllTimers();
+                  setShowQuitModal(true);
+                }}>
                 <span>⏸</span> Pause/Quit
               </button>
             )}
@@ -738,27 +755,18 @@ const AuditoryAttentionGame = () => {
                  <div className="aa-splash-image-wrapper">
                     <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-image" />
                  </div>
-                 <h2 className="aa-title" style={{ fontSize: '1.5rem' }}>Welcome to Dhyan Kahan Hai</h2>
-                 
+                 <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '28px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                   Welcome to Dhyan Kahan Hai
+                 </h2>
 
-
-                 <p className="aa-subtitle" style={{ marginBottom: 24, maxWidth: 400 }}>Auditory Attention Assessment</p>
-                  <button 
-                    className={`aa-btn aa-btn-primary ${canStartQ ? 'aa-btn-highlight' : ''}`} 
+                  <button
+                    className={`aa-btn aa-btn-primary ${canStartQ ? 'aa-btn-highlight' : ''}`}
                     disabled={!canStartQ}
                     style={{ opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
                     onClick={startNewGameSession}
                   >
                     Start Now
                   </button>
-                  <button className="aa-btn aa-btn-secondary" onClick={() => {
-                    if (audioRef.current) {
-                      setCanStartQ(false);
-                      setLandingAudioPlaying(true);
-                      audioRef.current.currentTime = 0;
-                      audioRef.current.play();
-                    }
-                  }}>Replay Audio</button>
                </div>
             </div>
           )}
@@ -779,7 +787,6 @@ const AuditoryAttentionGame = () => {
                       <div className="aa-audio-waves">
                         {[1,2,3,4,5].map(i => <div key={i} className="aa-audio-wave"></div>)}
                       </div>
-                      <span>{landingAudioPlaying ? 'Playing...' : 'Ready'}</span>
                    </div>
                  </div>
                  <div className="aa-btn-row">
@@ -795,7 +802,6 @@ const AuditoryAttentionGame = () => {
                      const isClicked = sampleClicked.includes(img.id);
                      return (
                      <div key={img.id} onClick={() => onSampleImageClick(img.id)} className={`aa-image-item ${isClicked ? 'selected' : ''}`}>
-                        {isClicked && <span className="aa-check-mark">✓</span>}
                         <img className="aa-selectable-image" src={`${CONFIG.IMAGE_PATH}/${isClicked ? img.highlighted : img.normal}`} alt={img.name} />
                         <span className="aa-image-label">{img.name}</span>
                      </div>
@@ -827,7 +833,6 @@ const AuditoryAttentionGame = () => {
                  <div className="aa-audio-status">
                    <div className={`aa-audio-indicator ${landingAudioPlaying ? 'playing' : ''}`}>
                       <div className="aa-audio-waves">{[1,2,3,4,5].map(i => <div key={i} className="aa-audio-wave"></div>)}</div>
-                      <span>{landingAudioPlaying ? 'Playing...' : 'Ready'}</span>
                    </div>
                  </div>
                  <div className="aa-btn-row">
@@ -955,71 +960,100 @@ const AuditoryAttentionGame = () => {
                  </div>
                </div>
 
-               <div className="nr-assessment-section" style={{ background: 'white', padding: 24, borderRadius: 16 }}>
-                 <h3 className="nr-form-title">Session Assessment Details</h3>
+               <div className="shared-assessment-section">
+                 <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
 
-                 {[{ key: 'q1', label: 'Q1. Did you enjoy playing the game?' },
-                   { key: 'q2', label: 'Q2. How did the game feel for you?' },
-                   { key: 'q3', label: 'Q3. Did you feel tired while playing the game?' },
-                   { key: 'q4', label: 'Q4. Would you like to play the game again?' }].map(q => (
-                   <div key={q.key} className="nr-q-group" style={{ marginBottom: 16 }}>
-                     <label className="nr-q-label" style={{ fontWeight: 600, display:'block', marginBottom: 8 }}>{q.label}</label>
-                     <div style={{ display: 'flex', gap: 16 }}>
-                       {['Yes, a lot', 'A little', 'Not much'].map(opt => (
-                         <label key={opt} style={{ display:'flex', alignItems:'center', gap:4 }}>
-                           <input type="radio" disabled={assessmentSubmitted} checked={assessment[q.key] === opt} onChange={() => setAssessment({ ...assessment, [q.key]: opt })} />
-                           {opt}
+                 {[
+                   { key: 'q1', label: t('game.q1Label') },
+                   { key: 'q2', label: t('game.q2Label') },
+                   { key: 'q3', label: t('game.q3Label') },
+                   { key: 'q4', label: t('game.q4Label') }
+                 ].map(q => (
+                   <div key={q.key} className="shared-form-group">
+                     <label className="shared-form-label">{q.label}</label>
+                     <div className="shared-radio-group">
+                       {[
+                         { val: 'Yes, a lot', str: t('game.optYes') },
+                         { val: 'A little', str: t('game.optLittle') },
+                         { val: 'Not much', str: t('game.optNotMuch') }
+                       ].map(opt => (
+                         <label key={opt.val} className="shared-radio-item">
+                           <input
+                             type="radio"
+                             name={q.key}
+                             disabled={assessmentSubmitted}
+                             checked={assessment[q.key] === opt.val}
+                             onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })}
+                           />
+                           {opt.str}
                          </label>
                        ))}
                      </div>
                    </div>
                  ))}
 
-                 <div className="nr-q-group" style={{ marginBottom: 16 }}>
-                   <label className="nr-q-label" style={{ fontWeight: 600, display:'block', marginBottom: 8 }}>Q5. Observed Behaviours during the session (Multiple selection allowed)</label>
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                     {['Difficulty sustaining attention', 'Impulsive or random responding', 'Negative reaction to correction', 'Hesitation in responding', 'High focus or persistence', 'Verbalisation of a memory strategy', 'Needed frequent reassurance', 'Calm and engaged throughout'].map(bhv => (
-                       <label key={bhv} style={{ display:'flex', alignItems:'center', gap:4, fontSize: '0.9rem' }}>
-                         <input type="checkbox" disabled={assessmentSubmitted} checked={assessment.behaviors.includes(bhv)}
+                 <div className="shared-form-group">
+                   <label className="shared-form-label">{t('game.q5Label')}</label>
+                   <div className="shared-checkbox-grid">
+                     {[
+                       { val: 'Difficulty sustaining attention', str: t('game.b1') },
+                       { val: 'Impulsive or random responding', str: t('game.b2') },
+                       { val: 'Negative reaction to correction', str: t('game.b3') },
+                       { val: 'Hesitation in responding', str: t('game.b4') },
+                       { val: 'High focus or persistence', str: t('game.b5') },
+                       { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
+                       { val: 'Needed frequent reassurance', str: t('game.b7') },
+                       { val: 'Calm and engaged throughout', str: t('game.b8') }
+                     ].map(bhv => (
+                       <label key={bhv.val} className="shared-checkbox-item">
+                         <input
+                           type="checkbox"
+                           disabled={assessmentSubmitted}
+                           checked={assessment.behaviors.includes(bhv.val)}
                            onChange={e => {
-                             if(e.target.checked) setAssessment({...assessment, behaviors: [...assessment.behaviors, bhv]});
-                             else setAssessment({...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv)});
+                             if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
+                             else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
                            }}
-                         /> {bhv}
+                         />
+                         {bhv.str}
                        </label>
                      ))}
                    </div>
                  </div>
 
-                 <div className="nr-q-group" style={{ marginBottom: 20 }}>
-                   <label className="nr-q-label" style={{ fontWeight: 600, display:'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                     <span>Additional Notes</span>
+                 <div className="shared-form-group">
+                   <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span>{t('game.extraNotes')}</span>
                      <button
+                       type="button"
+                       className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
                        onClick={() => toggleRecording('assessmentNotes')}
-                       style={{
-                         background: isRecording && recordingTarget === 'assessmentNotes' ? '#fee2e2' : '#eff6ff',
-                         color:      isRecording && recordingTarget === 'assessmentNotes' ? '#ef4444' : '#2563eb',
-                         border: '1px solid',
-                         borderColor: isRecording && recordingTarget === 'assessmentNotes' ? '#fca5a5' : '#bfdbfe',
-                         padding: '4px 10px', borderRadius: '999px', fontSize: '0.8rem',
-                         cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px'
-                       }}
                      >
-                       🎙 {isRecording && recordingTarget === 'assessmentNotes' ? 'Recording…' : 'Use Mic'}
+                       🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
                      </button>
                    </label>
-                   <textarea rows="3" disabled={assessmentSubmitted} placeholder="Type observations…" value={assessment.notes} onChange={e => setAssessment({...assessment, notes: e.target.value})} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1px solid #ccc' }} />
+                   <textarea
+                     className="shared-textarea"
+                     disabled={assessmentSubmitted}
+                     placeholder={t('game.dictatePlaceholder')}
+                     value={assessment.notes}
+                     onChange={e => setAssessment({ ...assessment, notes: e.target.value })}
+                   />
                  </div>
 
-                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+                 <div className="shared-final-actions">
                    {assessmentSubmitted ? (
                      <div style={{ display: 'flex', gap: 16 }}>
-                        <button onClick={() => handleRestartFresh()} style={{ padding: '12px 32px', borderRadius: 999, background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>↻ Retest</button>
-                       <button onClick={() => navigate('/')} style={{ padding: '12px 32px', borderRadius: 999, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 }}>🏠 Home</button>
+                        <button onClick={() => handleRestartFresh()} className="aa-btn aa-btn-primary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.retest')}</button>
+                       <button onClick={() => navigate('/')} className="aa-btn aa-btn-secondary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.home')}</button>
                      </div>
                    ) : (
-                     <button onClick={submitAssessmentForm} disabled={isAssessmentSubmitting} style={{ padding: '12px 32px', borderRadius: 999, background: '#4f46e5', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, minWidth: 240 }}>
-                       {isAssessmentSubmitting ? 'Saving...' : 'Submit Assessment'}
+                     <button
+                       className="shared-submit-btn"
+                       onClick={submitAssessmentForm}
+                       disabled={isAssessmentSubmitting}
+                     >
+                       {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
                      </button>
                    )}
                  </div>

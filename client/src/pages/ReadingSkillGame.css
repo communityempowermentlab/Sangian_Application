@@ -298,6 +298,25 @@
 .rs-result-header h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
 .rs-result-header p { font-size: 0.95rem; color: #64748b; font-weight: 500; }
 
+.rs-brand-img {
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+}
+
+.rs-divider {
+  width: 1.5px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.rs-test-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
 .rs-btn-highlight {
   animation: rs-pulsate 1.5s infinite ease-in-out;
   background: linear-gradient(135deg, #10b981, #059669) !important;

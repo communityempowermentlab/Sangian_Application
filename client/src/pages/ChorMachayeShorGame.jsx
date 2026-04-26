@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 import './ChorMachayeShorGame.css';
 
 const GAME_NAME = 'chor_machaye_shor';
@@ -292,6 +293,7 @@ const House = ({ house, onClick, interactionLocked }) => {
 };
 
 const ChorMachayeShorGame = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -341,24 +343,12 @@ const ChorMachayeShorGame = () => {
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
-  const [audioFinished, setAudioFinished] = useState(false);
+  const [audioFinished, setAudioFinished] = useState(true);
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
 
-  // Splash Audio Logic
-  useEffect(() => {
-    if (screen === 'splash' && audioRef.current && !showResumeModal && !audioFinished) {
-      audioRef.current.currentTime = 0;
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.warn("Autoplay blocked:", err);
-          setAudioFinished(true);
-        });
-      }
-    }
-  }, [screen, showResumeModal, audioFinished]);
+  // Splash Audio Logic removed as this test has no splash audio file
   
   // Load User
   useEffect(() => {
@@ -1023,7 +1013,9 @@ const ChorMachayeShorGame = () => {
   const submitAssessment = async () => {
     setIsAssessmentSubmitting(true);
     try {
-      await saveToServer('completed');
+      // Preserve quit/paused status — only mark completed if the game ended naturally
+      const finalStatus = quitReason ? 'quit' : 'completed';
+      await saveToServer(finalStatus);
       const config = {};
       const token = localStorage.getItem('token');
       if (token) config.headers = { Authorization: `Bearer ${token}` };
@@ -1082,10 +1074,13 @@ const ChorMachayeShorGame = () => {
         <div className="chor-app">
           <header className="chor-topbar">
             <div className="chor-brand">
-              <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+              <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
+              <div className="chor-divider"></div>
+              <span className="chor-test-title">Chor Machaye Shor</span>
             </div>
             <div className="chor-stats">
               <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
           <main className="chor-main">
@@ -1094,34 +1089,17 @@ const ChorMachayeShorGame = () => {
                 <div className="chor-splash-image-wrapper">
                   <img src={`${IMG_DIR}/chor_machaye_shor.jpg`} alt="Chor Machaye Shor" className="chor-splash-image" />
                 </div>
-                <div className="chor-screen-header">
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                  </div>
-                </div>
-                
+
                 <div className="chor-splash-footer">
                   <div className="chor-btn-row">
                     <button 
-                      className={`chor-btn chor-btn-primary ${!audioFinished ? 'disabled' : 'chor-btn-highlight'}`} 
+                      className={`chor-btn chor-btn-primary chor-btn-highlight`} 
                       onClick={startGame} 
-                      disabled={!audioFinished}
                     >Start Now</button>
-                    <button className="chor-btn chor-btn-secondary" onClick={() => {
-                      if (audioRef.current) {
-                        setAudioFinished(false);
-                        audioRef.current.currentTime = 0;
-                        audioRef.current.play().catch(() => {});
-                      }
-                    }}>Replay Audio</button>
                   </div>
-                  <p className="chor-splash-hint">The button will activate after the audio instructions finish.</p>
                 </div>
-                <audio 
-                  ref={audioRef} 
-                  src={`${AUDIO_DIR}/cm_splash.wav`} 
-                  onEnded={() => setAudioFinished(true)}
-                  onError={() => setAudioFinished(true)}
-                />
+
+                <h2 className="chor-welcome-text" style={{ marginTop: '30px' }}>Welcome to Chor Machaye Shor</h2>
               </div>
             </div>
           </main>
@@ -1161,7 +1139,9 @@ const ChorMachayeShorGame = () => {
         <div className="chor-app">
           <header className="chor-topbar">
             <div className="chor-brand">
-              <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+              <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
+              <div className="chor-divider"></div>
+              <span className="chor-test-title">Chor Machaye Shor</span>
             </div>
             <div className="chor-stats">
               <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
@@ -1266,85 +1246,92 @@ const ChorMachayeShorGame = () => {
               </div>
 
               {/* Assessment Form */}
-              <div className="assessment-form-section">
-                <h3 className="form-section-title">Clinical Assessment</h3>
-                
-                {assessmentSubmitted ? (
-                  <div className="chor-banner-success" style={{ marginTop: '20px' }}>
-                    Assessment submitted successfully!
-                  </div>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">1. Did the child enjoy the game?</label>
-                      <div className="radio-group">
-                        {['Yes', 'Somewhat', 'No'].map(opt => (
-                          <label key={opt} className="radio-item"><input type="radio" name="q1" value={opt} checked={assessment.q1===opt} onChange={e=>setAssessment(p=>({...p,q1:e.target.value}))}/> {opt}</label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">2. How was the child's feeling?</label>
-                      <div className="radio-group">
-                        {['Happy', 'Neutral', 'Frustrated', 'Sad'].map(opt => (
-                          <label key={opt} className="radio-item"><input type="radio" name="q2" value={opt} checked={assessment.q2===opt} onChange={e=>setAssessment(p=>({...p,q2:e.target.value}))}/> {opt}</label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">3. Did the child look tired?</label>
-                      <div className="radio-group">
-                        {['Yes', 'No'].map(opt => (
-                          <label key={opt} className="radio-item"><input type="radio" name="q3" value={opt} checked={assessment.q3===opt} onChange={e=>setAssessment(p=>({...p,q3:e.target.value}))}/> {opt}</label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">4. Did the child want to play again?</label>
-                      <div className="radio-group">
-                        {['Yes', 'No'].map(opt => (
-                          <label key={opt} className="radio-item"><input type="radio" name="q4" value={opt} checked={assessment.q4===opt} onChange={e=>setAssessment(p=>({...p,q4:e.target.value}))}/> {opt}</label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">5. Observe behaviors (Check all that apply)</label>
-                      <div className="checkbox-grid">
-                        {['Distracted', 'Hyperactive', 'Anxious', 'Impulsive', 'Quiet/Withdrawn', 'Engaged/Focused'].map(opt => (
-                          <label key={opt} className="checkbox-item">
-                            <input type="checkbox" checked={assessment.behaviors.includes(opt)} onChange={e => {
-                              const checked = e.target.checked;
-                              setAssessment(p => ({ ...p, behaviors: checked ? [...p.behaviors, opt] : p.behaviors.filter(b => b !== opt) }));
-                            }}/> {opt}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{display:'flex',justifyContent:'space-between'}}>
-                        Additional Notes
-                        <button type="button" className={`mic-btn ${isRecording&&recordingTarget==='notes'?'recording':''}`} onClick={()=>toggleRecording('notes')}>🎤 Dictate</button>
-                      </label>
-                      <textarea className="form-textarea" placeholder="Add any clinical observations..." value={assessment.notes} onChange={e=>setAssessment(p=>({...p,notes:e.target.value}))}></textarea>
-                    </div>
-                  </>
-                )}
+              <div className="shared-assessment-section">
+                <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
 
-                <div className="final-actions">
+                {[
+                  { key: 'q1', label: t('game.q1Label') },
+                  { key: 'q2', label: t('game.q2Label') },
+                  { key: 'q3', label: t('game.q3Label') },
+                  { key: 'q4', label: t('game.q4Label') }
+                ].map((q) => (
+                  <div key={q.key} className="shared-form-group">
+                    <label className="shared-form-label">{q.label}</label>
+                    <div className="shared-radio-group">
+                      {[
+                        { val: 'Yes, a lot', str: t('game.optYes') },
+                        { val: 'A little',   str: t('game.optLittle') },
+                        { val: 'Not much',   str: t('game.optNotMuch') }
+                      ].map(opt => (
+                        <label key={opt.val} className="shared-radio-item">
+                          <input type="radio" name={q.key} disabled={assessmentSubmitted}
+                            checked={assessment[q.key] === opt.val}
+                            onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })} />
+                          {opt.str}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="shared-form-group">
+                  <label className="shared-form-label">{t('game.q5Label')}</label>
+                  <div className="shared-checkbox-grid">
+                    {[
+                      { val: 'Difficulty sustaining attention',       str: t('game.b1') },
+                      { val: 'Impulsive or random responding',        str: t('game.b2') },
+                      { val: 'Negative reaction to correction',       str: t('game.b3') },
+                      { val: 'Hesitation in responding',              str: t('game.b4') },
+                      { val: 'High focus or persistence',             str: t('game.b5') },
+                      { val: 'Verbalisation of a memory strategy',    str: t('game.b6') },
+                      { val: 'Needed frequent reassurance',           str: t('game.b7') },
+                      { val: 'Calm and engaged throughout',           str: t('game.b8') }
+                    ].map(bhv => (
+                      <label key={bhv.val} className="shared-checkbox-item">
+                        <input type="checkbox" disabled={assessmentSubmitted}
+                          checked={assessment.behaviors.includes(bhv.val)}
+                          onChange={(e) => {
+                            if (e.target.checked)
+                              setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
+                            else
+                              setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
+                          }} />
+                        {bhv.str}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="shared-form-group">
+                  <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{t('game.extraNotes')}</span>
+                    <button type="button"
+                      className={`shared-mic-btn ${isRecording && recordingTarget === 'notes' ? 'recording' : ''}`}
+                      onClick={() => toggleRecording('notes')}>
+                      🎙 {isRecording && recordingTarget === 'notes' ? t('game.recordingStop') : t('game.useMic')}
+                    </button>
+                  </label>
+                  <textarea className="shared-textarea" disabled={assessmentSubmitted}
+                    placeholder={t('game.dictatePlaceholder')}
+                    value={assessment.notes}
+                    onChange={(e) => setAssessment({ ...assessment, notes: e.target.value })} />
+                </div>
+
+                <div className="shared-final-actions">
                   {assessmentSubmitted ? (
                     <>
                       <button className="chor-btn chor-btn-primary" onClick={() => {
                         resetGameState();
-                        setAudioFinished(false);
+                        setAudioFinished(true);
                         setScreen('splash');
                         setAssessmentSubmitted(false);
                         setGameSessionId(null);
-                      }}>↻ Retest</button>
-                      <button className="chor-btn chor-btn-secondary" onClick={() => navigate('/')}>🏠 Home</button>
+                      }}>{t('game.retest')}</button>
+                      <button className="chor-btn chor-btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
                     </>
                   ) : (
-                    <button className="chor-btn chor-btn-primary" onClick={submitAssessment} disabled={isAssessmentSubmitting}>
-                      {isAssessmentSubmitting ? 'Saving...' : 'Save & Exit'}
+                    <button className="shared-submit-btn" onClick={submitAssessment} disabled={isAssessmentSubmitting}>
+                      {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
                     </button>
                   )}
                 </div>
@@ -1368,7 +1355,9 @@ const ChorMachayeShorGame = () => {
       <div className="chor-app">
         <header className="chor-topbar">
           <div className="chor-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+            <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
+            <div className="chor-divider"></div>
+            <span className="chor-test-title">Chor Machaye Shor</span>
           </div>
           <div className="chor-stats">
             <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
@@ -1388,7 +1377,7 @@ const ChorMachayeShorGame = () => {
                 </div>
                 <div className="chor-screen-subtitle">Move: {currentMove} of {maxAtt}</div>
               </div>
-              <div className="chor-chips"><span className="chor-chip chor-chip-game">Playing</span></div>
+              <div className="chor-chips"></div>
             </div>
 
             <div className="chor-progress">

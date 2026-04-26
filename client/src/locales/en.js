@@ -103,6 +103,7 @@ export const en = {
     retest: "↻ Retest",
     home: "🏠 Home",
     submitAssessment: "Submit Assessment",
+    assessmentSubmitted: "Assessment submitted successfully!",
     saving: "Saving...",
     progressFound: "Saved Progress Found",
     progressDesc: "You have a previously paused game session.",

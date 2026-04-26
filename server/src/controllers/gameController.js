@@ -47,6 +47,14 @@ exports.updateGameSession = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Game session not found' });
         }
 
+        const currentStatus = existing[0].status;
+
+        // Guard: never overwrite a terminal status (quit/dropped) with completed.
+        // This is the server-side safety net against client-side bugs.
+        if (status === 'completed' && (currentStatus === 'quit' || currentStatus === 'dropped')) {
+            return res.status(200).json({ success: true, message: 'Session already finalized — status preserved.' });
+        }
+
         let updateQuery = 'UPDATE game_sessions SET ';
         let updateParams = [];
         

@@ -164,7 +164,7 @@ const NumpadPanel = ({
         <div className="nr-numpad-top">
           <div className="nr-numpad-title">Listen &amp; Remember</div>
           <button className="nr-replay-btn" onClick={playAudio} disabled={isPlaying}>
-            🔊 {isPlaying ? 'Playing…' : 'Replay Audio'}
+            🔊 Replay Audio
           </button>
         </div>
 
@@ -182,7 +182,7 @@ const NumpadPanel = ({
         </div>
 
         <div className="nr-numpad-actions">
-          {isPlaying && <div className="nr-action-msg" style={{ color: '#94a3b8' }}>🔊 Listening carefully…</div>}
+          {isPlaying && <div className="nr-action-msg" style={{ color: '#94a3b8' }}>🔊 </div>}
           {!isPlaying && answered && wasCorrect && (
             isScored
               ? <button className="nr-btn-next" onClick={() => onAdvance && onAdvance()}>✅ Correct! &nbsp; Next Question →</button>
@@ -698,7 +698,9 @@ const NumberRecallGame = () => {
       {/* ─── Topbar ─── */}
       <header className="nr-topbar">
         <div className="nr-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" style={{ height: '36px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }} />
+          <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />
+          <div className="nr-divider"></div>
+          <span className="nr-test-title">Number Recall</span>
         </div>
         <div className="nr-stats">
           {childData?.child_id && (
@@ -742,7 +744,9 @@ const NumberRecallGame = () => {
                 />
               </div>
 
-              <div className="nr-splash-title">Welcome to Number Recall</div>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
+                Welcome to Number Recall
+              </h2>
               
 
 
@@ -929,104 +933,103 @@ const NumberRecallGame = () => {
               )}
 
               {/* Assessment Form */}
-              <div className="nr-assessment-section">
-                <h3 className="nr-form-title">Session Assessment Details</h3>
+              <div className="shared-assessment-section">
+                <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
 
                 {[
-                  { key: 'q1', label: 'Q1. Did you enjoy playing the game?' },
-                  { key: 'q2', label: 'Q2. How did the game feel for you?' },
-                  { key: 'q3', label: 'Q3. Did you feel tired while playing the game?' },
-                  { key: 'q4', label: 'Q4. Would you like to play the game again?' },
+                  { key: 'q1', label: t('game.q1Label') },
+                  { key: 'q2', label: t('game.q2Label') },
+                  { key: 'q3', label: t('game.q3Label') },
+                  { key: 'q4', label: t('game.q4Label') },
                 ].map(q => (
-                  <div key={q.key} className="nr-q-group">
-                    <label className="nr-q-label">{q.label}</label>
-                    <div className="nr-radio-row">
-                      {['Yes, a lot', 'A little', 'Not much'].map(opt => (
-                        <label key={opt} className="nr-radio-label">
+                  <div key={q.key} className="shared-form-group">
+                    <label className="shared-form-label">{q.label}</label>
+                    <div className="shared-radio-group">
+                      {[
+                        { val: 'Yes, a lot', str: t('game.optYes') },
+                        { val: 'A little', str: t('game.optLittle') },
+                        { val: 'Not much', str: t('game.optNotMuch') }
+                      ].map(opt => (
+                        <label key={opt.val} className="shared-radio-item">
                           <input
                             type="radio"
                             name={q.key}
                             disabled={assessmentSubmitted}
-                            checked={assessment[q.key] === opt}
-                            onChange={() => setAssessment({ ...assessment, [q.key]: opt })}
+                            checked={assessment[q.key] === opt.val}
+                            onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })}
                           />
-                          {opt}
+                          {opt.str}
                         </label>
                       ))}
                     </div>
                   </div>
                 ))}
 
-                <div className="nr-q-group">
-                  <label className="nr-q-label">Q5. Observed Behaviours during the session (Multiple selection allowed)</label>
-                  <div className="nr-checkbox-grid">
+                <div className="shared-form-group">
+                  <label className="shared-form-label">{t('game.q5Label')}</label>
+                  <div className="shared-checkbox-grid">
                     {[
-                      'Difficulty sustaining attention', 'Impulsive or random responding',
-                      'Negative reaction to correction', 'Hesitation in responding',
-                      'High focus or persistence', 'Verbalisation of a memory strategy',
-                      'Needed frequent reassurance', 'Calm and engaged throughout',
+                      { val: 'Difficulty sustaining attention', str: t('game.b1') },
+                      { val: 'Impulsive or random responding', str: t('game.b2') },
+                      { val: 'Negative reaction to correction', str: t('game.b3') },
+                      { val: 'Hesitation in responding', str: t('game.b4') },
+                      { val: 'High focus or persistence', str: t('game.b5') },
+                      { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
+                      { val: 'Needed frequent reassurance', str: t('game.b7') },
+                      { val: 'Calm and engaged throughout', str: t('game.b8') }
                     ].map(bhv => (
-                      <label key={bhv} className="nr-checkbox-label">
+                      <label key={bhv.val} className="shared-checkbox-item">
                         <input
                           type="checkbox"
                           disabled={assessmentSubmitted}
-                          checked={assessment.behaviors.includes(bhv)}
+                          checked={assessment.behaviors.includes(bhv.val)}
                           onChange={e => {
-                            if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv] });
-                            else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv) });
+                            if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
+                            else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
                           }}
                         />
-                        {bhv}
+                        {bhv.str}
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="nr-q-group">
-                  <label className="nr-q-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Additional Notes</span>
+                <div className="shared-form-group">
+                  <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{t('game.extraNotes')}</span>
                     <button
+                      type="button"
+                      className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
                       onClick={() => toggleRecording('assessmentNotes')}
-                      style={{
-                        background: isRecording && recordingTarget === 'assessmentNotes' ? '#fee2e2' : '#eff6ff',
-                        color: isRecording && recordingTarget === 'assessmentNotes' ? '#ef4444' : '#2563eb',
-                        border: '1px solid',
-                        borderColor: isRecording && recordingTarget === 'assessmentNotes' ? '#fca5a5' : '#bfdbfe',
-                        padding: '4px 10px', borderRadius: '999px', fontSize: '0.8rem',
-                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        fontFamily: 'inherit',
-                      }}
                     >
-                      🎙 {isRecording && recordingTarget === 'assessmentNotes' ? 'Recording… (Stop)' : 'Use Mic'}
+                      🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
                     </button>
                   </label>
                   <textarea
-                    className="nr-textarea"
-                    rows="3"
+                    className="shared-textarea"
                     disabled={assessmentSubmitted}
-                    placeholder="Type or dictate observations…"
+                    placeholder={t('game.dictatePlaceholder')}
                     value={assessment.notes}
                     onChange={e => setAssessment({ ...assessment, notes: e.target.value })}
                   />
                 </div>
-              </div>
 
-              <div className="nr-final-actions">
-                {assessmentSubmitted ? (
-                  <>
-                    <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="nr-btn nr-btn-primary">↻ Retest</button>
-                    <button onClick={() => navigate('/')} className="nr-btn nr-btn-secondary">🏠 Home</button>
-                  </>
-                ) : (
-                  <button
-                    onClick={submitAssessmentForm}
-                    disabled={isAssessmentSubmitting}
-                    className="nr-btn nr-btn-primary"
-                    style={{ minWidth: 220 }}
-                  >
-                    {isAssessmentSubmitting ? 'Saving…' : 'Submit Assessment'}
-                  </button>
-                )}
+                <div className="shared-final-actions">
+                  {assessmentSubmitted ? (
+                    <>
+                      <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="nr-btn nr-btn-primary">{t('game.retest')}</button>
+                      <button onClick={() => navigate('/')} className="nr-btn nr-btn-secondary">{t('game.home')}</button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={submitAssessmentForm}
+                      disabled={isAssessmentSubmitting}
+                      className="shared-submit-btn"
+                    >
+                      {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -925,3 +925,171 @@ body {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ============================================
+   SHARED CLINICAL ASSESSMENT FORM STYLES
+   ============================================ */
+.shared-assessment-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 40px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+.shared-form-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 28px;
+  letter-spacing: -0.02em;
+}
+
+.shared-form-group {
+  margin-bottom: 32px;
+}
+
+.shared-form-label {
+  display: block;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 14px;
+  font-size: 1rem;
+}
+
+.shared-radio-group {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.shared-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.shared-radio-item input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.shared-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.shared-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #475569;
+  padding: 4px 0;
+}
+
+.shared-checkbox-item input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.shared-mic-btn {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.shared-mic-btn:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.shared-mic-btn.recording {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+  animation: shared-pulse 1.5s infinite;
+}
+
+.shared-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  background: #ffffff;
+  color: #1e293b;
+  margin-top: 10px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  transition: border-color 0.2s;
+}
+
+.shared-textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.shared-final-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 30px;
+  padding-bottom: 20px;
+}
+
+.shared-submit-btn {
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  color: white !important;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3) !important;
+  padding: 16px 50px !important;
+  font-size: 1.15rem !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  min-width: 280px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.shared-submit-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4) !important;
+}
+
+.shared-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes shared-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+  100% { transform: scale(1); }
+}

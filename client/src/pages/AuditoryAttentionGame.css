@@ -344,11 +344,31 @@
   font-size: 1rem;
 }
 
+.aa-brand-img {
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+}
+
+.aa-divider {
+  width: 1.5px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.aa-test-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
 .aa-btn-highlight {
   animation: aa-pulsate 1.5s infinite ease-in-out;
   background: linear-gradient(135deg, #10b981, #059669) !important;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.6) !important;
   transform: scale(1.05);
+  color: white !important;
 }
 
 @keyframes aa-pulsate {

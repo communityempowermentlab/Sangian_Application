@@ -103,6 +103,7 @@ export const hi = {
     retest: "↻ पुनः परीक्षण",
     home: "🏠 होम",
     submitAssessment: "मूल्यांकन जमा करें",
+    assessmentSubmitted: "मूल्यांकन सफलतापूर्वक जमा किया गया!",
     saving: "सहेजा जा रहा है...",
     progressFound: "सहेजी गई प्रगति मिली",
     progressDesc: "आपका पहले रोका गया गेम सत्र मौजूद है।",
