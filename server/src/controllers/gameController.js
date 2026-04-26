@@ -144,8 +144,8 @@ exports.getReportOverview = async (req, res) => {
         const [rows] = await pool.query(`
             SELECT
                 CASE
-                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
-                    WHEN game_name = 'chor_machaye_shor' THEN 'cognitive_flex_chor'
+                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela') THEN 'rover_mela'
+                    WHEN game_name IN ('chor_machaye_shor', 'cognitive_flex_chor') THEN 'cognitive_flex_chor'
                     ELSE game_name
                 END AS game_name,
                 COUNT(DISTINCT child_id)                        AS total_children,
@@ -172,10 +172,10 @@ exports.getReportDetail = async (req, res) => {
         const { gameName } = req.params;
 
         let gameFilter = [gameName];
-        if (gameName === 'rover_mela' || gameName === 'Rover Game' || gameName === 'chalo_mela_chale') {
-            gameFilter = ['rover_mela', 'Chalo Mela Chale', 'chalo_mela_chale', 'Rover Test', 'Rover Game'];
+        if (['rover_mela', 'chalo_mela_chale', 'Chalo Mela Chale'].includes(gameName)) {
+            gameFilter = ['rover_mela', 'chalo_mela_chale', 'Chalo Mela Chale', 'Rover Test', 'Rover Game'];
         }
-        if (gameName === 'cognitive_flex_chor') {
+        if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
             gameFilter = ['cognitive_flex_chor', 'chor_machaye_shor'];
         }
 
@@ -206,36 +206,31 @@ exports.getReportDetail = async (req, res) => {
         `, [gameFilter]);
 
         const allUniqueKeys = new Set();
-        // Parse saved_state JSON and flatten per-question scores
+        
         const enriched = rows.map((row, idx) => {
-            let parsedState = null;
+            let parsedState = row.saved_state;
             try {
-                parsedState = typeof row.saved_state === 'string'
-                    ? JSON.parse(row.saved_state)
-                    : row.saved_state;
-            } catch (_) {}
+                if (typeof parsedState === 'string') {
+                    parsedState = JSON.parse(parsedState);
+                    // Handle double-encoded JSON if it exists
+                    if (typeof parsedState === 'string') parsedState = JSON.parse(parsedState);
+                }
+            } catch (_) { parsedState = {}; }
 
             const scores = parsedState?.allScores || [];
             const chorItems = parsedState?.itemResults || [];
             const questionScores = {};
-            let maxQIds = 0;
-
-            // Standard format (allScores) used by most games
+            
+            // Standard format (allScores)
             scores.forEach(s => {
                 const qid = s.qId || s.id;
                 if (qid !== undefined) {
                     const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq')))
-                        ? qid
-                        : `q${qid}`;
+                        ? qid : `q${qid}`;
                     questionScores[key] = s.score;
                     allUniqueKeys.add(key);
-                    if (s.correctCount !== undefined) questionScores[`${key}_correct`] = s.correctCount;
-                    if (s.eoi !== undefined) questionScores[`${key}_eoi`] = s.eoi;
-                    if (s.eoo !== undefined) questionScores[`${key}_eoo`] = s.eoo;
-                    if (s.eoc !== undefined) questionScores[`${key}_eoc`] = s.eoc;
                     questionScores[`${key}_time`] = s.timeTaken ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
-                    if (!isNaN(qid)) maxQIds = Math.max(maxQIds, parseInt(qid));
                 }
             });
 
@@ -245,30 +240,29 @@ exports.getReportDetail = async (req, res) => {
                 if (item.itemId === 1 && item.trial === 2) key = 'q1t2';
                 else if (item.itemId === 1) key = 'q1t1';
                 else key = `q${item.itemId}`;
+                
                 questionScores[key] = item.score ?? null;
                 questionScores[`${key}_moves`] = item.moves ?? null;
                 questionScores[`${key}_time`] = item.timeTaken ?? null;
                 allUniqueKeys.add(key);
             });
 
-            // Calculate Total Moves and Actual Game Time as sum of individual values
-            const allItems = chorItems.length > 0 ? chorItems : scores;
+            // Global Metrics Calculation
+            const allItems = (chorItems.length > 0) ? chorItems : scores;
             let totalMoves = allItems.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
             let actualGameTime = allItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
-            actualGameTime = Math.round(actualGameTime);
-            if (actualGameTime === 0 && allItems.length === 0) actualGameTime = null;
-            if (totalMoves === 0 && allItems.length === 0) totalMoves = null;
+            
+            // Fallback for sessions where moves/time might be stored differently
+            if (totalMoves === 0 && parsedState?.totalMoves) totalMoves = parsedState.totalMoves;
+            if (actualGameTime === 0 && parsedState?.timerSeconds) actualGameTime = parsedState.timerSeconds;
 
             let totalSessionTime = null;
             if (row.start_time && row.end_time) {
                 totalSessionTime = Math.floor((new Date(row.end_time) - new Date(row.start_time)) / 1000);
             }
 
-            // Parse behaviors JSON array if stored as string
             let behaviors = row.q5_behaviors;
-            try {
-                if (typeof behaviors === 'string') behaviors = JSON.parse(behaviors);
-            } catch (_) {}
+            try { if (typeof behaviors === 'string') behaviors = JSON.parse(behaviors); } catch (_) {}
 
             return {
                 attempt_no: idx + 1,
@@ -276,10 +270,10 @@ exports.getReportDetail = async (req, res) => {
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
                 score: row.score,
-                correct_count: chorItems.length > 0
+                correct_count: (chorItems.length > 0)
                     ? chorItems.filter(r => r.completed).length
                     : scores.filter(s => s.score > 0).length,
-                attempted_questions: chorItems.length > 0 ? chorItems.length : scores.length,
+                attempted_questions: (chorItems.length > 0) ? chorItems.length : scores.length,
                 total_questions: row.total_questions,
                 status: row.status,
                 quit_reason: row.quit_reason,
@@ -287,8 +281,8 @@ exports.getReportDetail = async (req, res) => {
                 start_time: row.start_time,
                 end_time: row.end_time,
                 total_session_time: totalSessionTime,
-                actual_game_time: actualGameTime,
-                total_moves: totalMoves,
+                actual_game_time: Math.round(actualGameTime) || null,
+                total_moves: totalMoves || null,
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
@@ -301,26 +295,18 @@ exports.getReportDetail = async (req, res) => {
             };
         });
 
-        // Determine column set: sort logically (TQs first, then numeric Qs)
-        let sortedQIds = Array.from(allUniqueKeys).sort((a, b) => {
-            const isTQa = a.startsWith('tq');
-            const isTQb = b.startsWith('tq');
-            if (isTQa && !isTQb) return -1;
-            if (!isTQa && isTQb) return 1;
-            const na = parseInt(a.replace(/\D/g, '')) || 0;
-            const nb = parseInt(b.replace(/\D/g, '')) || 0;
-            return na - nb;
-        });
-
-        if (gameName === 'rover_mela' || gameName === 'Rover Game' || gameName === 'chalo_mela_chale') {
-            sortedQIds = [
-                'tq1', 'tq2', 'tq3', 'tq4',
-                'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10',
-                'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'
-            ];
-        }
-        if (gameName === 'cognitive_flex_chor') {
+        // Determine Columns
+        let sortedQIds = [];
+        if (['rover_mela', 'chalo_mela_chale'].includes(gameName)) {
+            sortedQIds = ['tq1', 'tq2', 'tq3', 'tq4', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'];
+        } else if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
             sortedQIds = ['q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11'];
+        } else {
+            sortedQIds = Array.from(allUniqueKeys).sort((a, b) => {
+                const na = parseInt(a.replace(/\D/g, '')) || 0;
+                const nb = parseInt(b.replace(/\D/g, '')) || 0;
+                return na - nb;
+            });
         }
 
         res.status(200).json({
@@ -334,7 +320,6 @@ exports.getReportDetail = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching report detail' });
     }
 };
-
 // Submit assessment formulation tied to a session
 exports.submitAssessment = async (req, res) => {
 
