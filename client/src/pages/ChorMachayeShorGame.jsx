@@ -1040,7 +1040,6 @@ const ChorMachayeShorGame = () => {
       }, config);
       setAssessmentSubmitted(true);
       alert('Assessment successfully saved!');
-      navigate('/');
     } catch (e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
@@ -1334,12 +1333,14 @@ const ChorMachayeShorGame = () => {
                 <div className="final-actions">
                   {assessmentSubmitted ? (
                     <>
-                      <button className="chor-btn chor-btn-primary" onClick={() => navigate('/')}>🏠 Go to Home</button>
-                      <button className="chor-btn chor-btn-success" onClick={() => {
+                      <button className="chor-btn chor-btn-primary" onClick={() => {
                         resetGameState();
                         setAudioFinished(false);
                         setScreen('splash');
-                      }}>↻ Restart Game</button>
+                        setAssessmentSubmitted(false);
+                        setGameSessionId(null);
+                      }}>↻ Retest</button>
+                      <button className="chor-btn chor-btn-secondary" onClick={() => navigate('/')}>🏠 Home</button>
                     </>
                   ) : (
                     <button className="chor-btn chor-btn-primary" onClick={submitAssessment} disabled={isAssessmentSubmitting}>

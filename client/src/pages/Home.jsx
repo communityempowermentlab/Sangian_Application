@@ -108,7 +108,7 @@ const Home = () => {
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
             startUrl: "/games/number_skill",
-            image: "/assets/images/number_skill.jpg",
+            image: "/assets/images/number_skill/number_skill.jpg",
             shortTitle: t('home.games.numeracy.title'),
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),

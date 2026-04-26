@@ -450,7 +450,7 @@ const NumberSkillGame = () => {
             
             <div className="ns-card ns-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
               <div className="ns-splash-image-wrapper">
-                <img src="/assets/images/number_skill.jpg" alt="Number Skill" className="ns-splash-image" onError={e => e.target.style.display='none'} />
+                <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px', color: '#111827' }}>{t('game.welcome')}</h2>
               
@@ -713,7 +713,7 @@ const NumberSkillGame = () => {
       {!isCheckingSession && (
         <audio 
           ref={audioRef} 
-          src="/assets/audios/number_skill_splash.wav" 
+          src="/assets/audios/number_skill/splash.wav"
           preload="auto" 
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
