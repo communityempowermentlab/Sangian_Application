@@ -281,8 +281,8 @@ exports.getReportDetail = async (req, res) => {
                 start_time: row.start_time,
                 end_time: row.end_time,
                 total_session_time: totalSessionTime,
-                actual_game_time: Math.round(actualGameTime) || null,
-                total_moves: totalMoves || null,
+                actual_game_time: (actualGameTime > 0) ? Math.round(actualGameTime) : (chorItems.length > 0 || scores.length > 0 ? 0 : null),
+                total_moves: (totalMoves > 0) ? totalMoves : (chorItems.length > 0 || scores.length > 0 ? 0 : null),
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
@@ -311,6 +311,7 @@ exports.getReportDetail = async (req, res) => {
 
         res.status(200).json({
             success: true,
+            version: '2026-04-26-0840', // Current fix timestamp
             gameName,
             columns: sortedQIds,
             data: enriched,
