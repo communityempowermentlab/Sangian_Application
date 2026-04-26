@@ -919,7 +919,8 @@ const ChorMachayeShorGame = () => {
       phase1Time: phase1TimeTaken > 0 ? phase1TimeTaken : timerSeconds,
       phase2Time: phase1TimeTaken > 0 ? (timerSeconds - phase1TimeTaken) : 0,
       mistakes: currentMistakes, consecutiveBreaks: currentConsecutiveBreaks,
-      finalRule: phase2Rule ? phase2Rule.type : null
+      finalRule: phase2Rule ? phase2Rule.type : null,
+      trial: currentTrial
     };
     
     const newResults = [...itemResults, result];
