@@ -13,6 +13,9 @@ exports.startGameSession = async (req, res) => {
         if (['Chalo Mela Chale', 'chalo_mela_chale'].includes(game_name)) {
             normalizedName = 'rover_mela';
         }
+        if (game_name === 'chor_machaye_shor') {
+            normalizedName = 'cognitive_flex_chor';
+        }
 
         const [result] = await pool.query(
             `INSERT INTO game_sessions 
@@ -76,13 +79,16 @@ exports.updateGameSession = async (req, res) => {
 exports.getResumeSession = async (req, res) => {
     try {
         const { childId, gameName } = req.params;
+        let normalizedName = gameName;
+        if (['Chalo Mela Chale', 'chalo_mela_chale'].includes(gameName)) normalizedName = 'rover_mela';
+        if (gameName === 'chor_machaye_shor') normalizedName = 'cognitive_flex_chor';
 
         // Find the absolute latest session for this game
         const [rows] = await pool.query(
             `SELECT * FROM game_sessions 
              WHERE child_id = ? AND game_name = ?
              ORDER BY start_time DESC LIMIT 1`,
-            [childId, gameName]
+            [childId, normalizedName]
         );
 
         // Only offer resume if the very last recorded session was not completed or quit
