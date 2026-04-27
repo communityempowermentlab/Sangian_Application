@@ -219,15 +219,15 @@
   border: none;
   outline: none;
   border-radius: 999px;
-  padding: 10px 24px;
-  font-size: 0.9rem;
+  padding: 12px 32px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   justify-content: center;
-  min-width: 110px;
+  min-width: 130px;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
@@ -391,7 +391,7 @@
   border: 2px dashed #cbd5e1;
   border-radius: var(--rg-r-md);
   transition: border-color 0.2s, background-color 0.2s;
-  overflow: hidden;
+  overflow: visible; /* Allow shapes & controls to extend beyond boundary */
 }
 
 .rg-workspace.drag-over {
@@ -417,12 +417,13 @@
   position: absolute;
   cursor: grab;
   user-select: none;
-  z-index: 5;
+  /* z-index is set via inline style (5 + array index) so later-placed
+     shapes always sit above earlier ones. Dragging moves the item to
+     the end of the array, giving it the highest index automatically. */
 }
 
-.rg-workspace-item:hover  { z-index: 20; }
-.rg-workspace-item.active { z-index: 50; cursor: grabbing; }
-.rg-workspace-item.rotating-active { z-index: 50; }
+.rg-workspace-item.active { cursor: grabbing; }
+.rg-workspace-item.rotating-active { cursor: crosshair; }
 
 .rg-shape-wrapper {
   /* rotation applied via inline style */

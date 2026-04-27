@@ -167,15 +167,16 @@
   border: none;
   outline: none;
   border-radius: 999px;
-  padding: 18px 32px;
-  font-size: 1.05rem;
-  font-weight: 700;
+  padding: 12px 32px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-width: 130px;
 }
 
 

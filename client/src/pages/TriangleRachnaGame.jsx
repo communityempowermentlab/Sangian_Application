@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useLanguage } from '../contexts/LanguageContext';
 import { API_URL } from '../services/api';
 import './TriangleRachnaGame.css';
 
@@ -75,7 +76,7 @@ const QUESTIONS = {
              {id:'yc-sm5',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'}]},
 
   teachingQ5: { type:'teaching', title:'Teaching Question 5', next:'question6', isSample:true,
-    sources:[{id:'yt-lg6',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-up'},
+    sources:[{id:'yt-lg6',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-up', scale:1.21},
              {id:'bs-lg6',name:'Blue Square',size:'large',color:'#3498db',shape:'square'}]},
 
   question6:  { type:'question', title:'Question 6',  next:'question7', isSample:false,
@@ -86,11 +87,11 @@ const QUESTIONS = {
 
   question7:  { type:'question', title:'Question 7',  next:'question8', isSample:false,
     sources:[{id:'yt-lg8',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-down'},
-             {id:'yt-sm8',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'triangle-down'},
+             {id:'yt-sm8',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'triangle-down', scale:1.3},
              {id:'rc-sm8',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'}]},
 
   question8:  { type:'question', title:'Question 8',  next:'question9', isSample:false,
-    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:1.2},
              {id:'yc-sm9a',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'yc-sm9b',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'rc-sm9a',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'},
@@ -310,6 +311,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false }) {
 
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
+  const { t }    = useLanguage();
   const navigate = useNavigate();
 
   const [childData, setChildData]           = useState(null);
@@ -440,15 +442,10 @@ const TriangleRachnaGame = () => {
     }).replace(/am|pm/g, match => match.toUpperCase());
   };
 
-  // ── Splash audio ──────────────────────────────────────────────
+  // Splash audio disabled as requested
   useEffect(() => {
-    if (screen === 'splash' && audioRef.current && !showResumeModal && !audioFinished) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((e) => {
-        if (e.name !== 'NotAllowedError') setAudioFinished(true);
-      });
-    }
-  }, [screen, showResumeModal, audioFinished]);
+    setAudioFinished(true);
+  }, [screen]);
 
   // ── Timer ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -615,6 +612,7 @@ const TriangleRachnaGame = () => {
       id: Date.now() + Math.random(), sourceId: src.id,
       name: src.name, shape: src.shape, color: src.color,
       size: src.size, orientation: src.orientation || 'BL',
+      scale: src.scale || 1,
       x, y, rotation: 0,
     }]);
   };
@@ -627,6 +625,13 @@ const TriangleRachnaGame = () => {
         e.target.classList.contains('rg-rotation-handle')) return;
     e.preventDefault();
     itemDragRef.current = { id: item.id, startX: e.clientX, startY: e.clientY, origX: item.x, origY: item.y };
+    // Bring to front: move this item to the end of the array so it renders
+    // on top (highest index = highest z-index) during and after drag.
+    setWorkspaceItems(prev => {
+      const others = prev.filter(it => it.id !== item.id);
+      const current = prev.find(it => it.id === item.id);
+      return current ? [...others, current] : prev;
+    });
   };
 
   // ── Start rotating a workspace item ──────────────────────────
@@ -808,27 +813,17 @@ const TriangleRachnaGame = () => {
         
 
         <div className="rg-splash-footer">
-          <div className="rg-btn-row" style={{ marginTop: 18 }}>
+          <div className="rg-btn-row" style={{ marginTop: 18, justifyContent: 'center' }}>
             <button
-              className={`rg-btn rg-btn-primary ${audioFinished ? 'rg-btn-highlight' : ''}`}
-              disabled={!audioFinished}
+              className="rg-btn rg-btn-primary rg-btn-highlight"
               onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
             >
               ▶ Start Now
             </button>
-            <button className="rg-btn rg-btn-secondary"
-              onClick={() => { if (audioRef.current) { setAudioFinished(false); audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } }}>
-              ↺ Replay Audio
-            </button>
           </div>
-          <p className="rg-splash-hint">
-            The audio plays automatically. Once it ends, the <span className="rg-accent-text">Start Now</span> button activates.<br/>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>(If audio doesn't start, please click <b>↺ Replay Audio</b>)</span>
-          </p>
         </div>
       </div>
-      <audio ref={audioRef} src={`${AUDIO_PATH}/splash.wav`} preload="auto"
-        onEnded={() => setAudioFinished(true)} onError={() => setAudioFinished(true)} />
+      {/* Audio disabled */}
     </div>
   );
 
@@ -897,18 +892,18 @@ const TriangleRachnaGame = () => {
                 {workspaceItems.length === 0 && (
                   <div className="rg-workspace-placeholder">Drop shapes here to build the pattern</div>
                 )}
-                {workspaceItems.map((item) => {
+                {workspaceItems.map((item, index) => {
                   const sz = SHAPE_SIZE_PX[item.size] || 100;
                   const rotatable = isRotatable(item);
                   return (
                     <div
                       key={item.id}
                       className="rg-workspace-item"
-                      style={{ left: item.x, top: item.y, width: sz, height: sz }}
+                      style={{ left: item.x, top: item.y, width: sz, height: sz, zIndex: 5 + index }}
                       onMouseDown={e => onItemMouseDown(e, item)}
                       onDoubleClick={e => rotatable && onItemDblClick(e, item)}
                     >
-                      <div className="rg-shape-wrapper" style={{ transform: `rotate(${item.rotation}deg)` }}>
+                      <div className="rg-shape-wrapper" style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
                         <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
                       </div>
                       <button className="rg-remove-btn" onClick={() => removeFromWorkspace(item.id)}>×</button>
@@ -944,7 +939,9 @@ const TriangleRachnaGame = () => {
                   onTouchMove={onSourceTouchMove}
                   onTouchEnd={onSourceTouchEnd}
                 >
-                  <ShapeEl shape={src.shape} color={src.color} size={src.size} orientation={src.orientation} workspace={false} />
+                  <div style={{ transform: `scale(${src.scale || 1})`, display: 'inline-flex' }}>
+                    <ShapeEl shape={src.shape} color={src.color} size={src.size} orientation={src.orientation} workspace={false} />
+                  </div>
                   <div className="rg-source-label">{src.name} ({src.size})</div>
                 </div>
               )})}
@@ -952,16 +949,10 @@ const TriangleRachnaGame = () => {
           </div>
 
           <div className="rg-btn-panel">
-            <button 
-              className="rg-btn rg-btn-primary" 
-              onClick={() => {
-                setQuestionScores({});
-                setQuestionTimes({});
-                setTotalScore(0);
-                setAudioFinished(false);
-                setScreen('splash');
-              }}
-            >↻ Retest</button>
+            <button
+              className="rg-btn rg-btn-primary"
+              onClick={handleDone}
+            >↻ Done</button>
             {q.type === 'sample' && (
               <button className="rg-btn rg-btn-secondary" onClick={handleRetake}>↺ Retake</button>
             )}

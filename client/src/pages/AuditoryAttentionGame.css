@@ -161,9 +161,9 @@
 
 .aa-btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 .aa-btn {
-  border: none; outline: none; border-radius: 999px; padding: 12px 28px;
+  border: none; outline: none; border-radius: 999px; padding: 12px 32px;
   font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 120px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 130px;
 }
 .aa-btn-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3); }
 .aa-btn-secondary { background: #e5edff; color: #1d4ed8; border: 1px solid #bfdbfe; }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 import './ChaloMelaChaleGame.css';
 const GAME_NAME = 'rover_mela';
 const TOTAL_QUESTIONS = 22; 
@@ -234,6 +235,7 @@ const SB_PATH1_SEQ = ["R4C1","R3C1","R2C1","R2C2","R2C3","R2C4"];
 const SB_PATH2_SEQ = ["R4C1","R3C1","R2C2","R2C3","R2C4"];
 
 const ChaloMelaChaleGame = () => {
+  const { t }    = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [childData, setChildData] = useState(null);
@@ -256,6 +258,7 @@ const ChaloMelaChaleGame = () => {
   const [recordingTarget, setRecordingTarget] = useState(null);
   const [isDropped, setIsDropped] = useState(false);
   
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
   const [isPaused, setIsPaused] = useState(false);
@@ -323,7 +326,7 @@ const ChaloMelaChaleGame = () => {
       const config = {};
       const token = localStorage.getItem('token');
       if (token) config.headers = { Authorization: `Bearer ${token}` };
-      
+
       const res = await axios.get(`${API_URL}/games/sessions/resume/${childId}/${GAME_NAME}`, config);
       if (res.data.success && res.data.sessionInfo) {
         const info = res.data.sessionInfo;
@@ -332,8 +335,6 @@ const ChaloMelaChaleGame = () => {
           setPendingResumeData(info.saved_state);
           setShowResumeModal(true);
         } else {
-          // If in_progress but not paused, we might still want to resume or just start fresh
-          // Usually, if it's in_progress and we are here, it's a new load
           startNewGame(childId);
         }
       } else {
@@ -342,6 +343,8 @@ const ChaloMelaChaleGame = () => {
     } catch (e) {
       console.error('Resume check failed', e);
       startNewGame(childId);
+    } finally {
+      setIsCheckingSession(false);
     }
   };
 
@@ -576,9 +579,15 @@ const ChaloMelaChaleGame = () => {
 
   // Handle auto-start on screen change
   useEffect(() => {
-    if (screen === 'splash' && audioRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => setAudioFinished(true));
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Autoplay blocked by browser policy:', err);
+          setAudioFinished(true);
+        });
+      }
     }
     
     if (screen === 'splash') {
@@ -590,7 +599,7 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [screen, startAutoDemoA, startAutoDemoSB, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB, audioFinished]);
 
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
@@ -1116,12 +1125,14 @@ const ChaloMelaChaleGame = () => {
           <div className="brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
             <div className="divider"></div>
-            <span className="test-title">Rover</span>
+            <span className="test-title">Chalo Mela Chale</span>
           </div>
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
-            <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
+            {screen !== 'splash' && (
+              <button className="btn-pause-quit" onClick={() => setShowPauseModal(true)}><span>⏸</span> Pause/Quit</button>
+            )}
           </div>
         </header>
         <main className="main">
@@ -1133,9 +1144,9 @@ const ChaloMelaChaleGame = () => {
                 </div>
               </div>
               <div className="card splash-card">
-                <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Rover" className="splash-image" /></div>
+                <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chale" className="splash-image" /></div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  Welcome to Rover
+                  Welcome to Chalo Mela Chale
                 </h2>
 
                 <div className="btn-row">
@@ -1297,7 +1308,7 @@ const ChaloMelaChaleGame = () => {
       {isPaused && <div style={{ position: 'fixed', inset: 0, zIndex: 999, cursor: 'not-allowed' }} />}
       <audio 
         ref={audioRef} 
-        src={screen === 'splash' ? `${AUDIO_DIR}/splash.wav` : undefined}
+        src={screen === 'splash' ? `${AUDIO_DIR}/SB_splash.wav` : undefined}
         onEnded={() => setAudioFinished(true)}
         onError={() => setAudioFinished(true)}
       />

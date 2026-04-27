@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 import './NumberRecallGame.css';
 
 // ─── Game Name ─────────────────────────────────────────────────
@@ -300,7 +301,6 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
       <div className="nr-screen-header">
         <div>
           <div className="nr-screen-title">{title}</div>
-          <div className="nr-screen-subtitle">Listen carefully and reproduce the number sequence</div>
         </div>
         <div className="nr-chips">
 
@@ -357,6 +357,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
 // ─── Main Component ─────────────────────────────────────────────
 const NumberRecallGame = () => {
+  const { t }    = useLanguage();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -755,13 +756,11 @@ const NumberRecallGame = () => {
                   className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
-                  style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
                 >
                   Start Now
                 </button>
                 <button
                   className="nr-btn nr-btn-secondary"
-                  style={{ minWidth: 150, padding: '13px 28px', fontSize: '1rem' }}
                   onClick={() => { if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } }}
                 >
                   Replay Audio

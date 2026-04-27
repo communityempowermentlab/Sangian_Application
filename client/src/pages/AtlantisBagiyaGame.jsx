@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 import './AtlantisBagiyaGame.css';
 
 // ─── Constants ───────────────────────────────────────────
@@ -179,6 +180,7 @@ const formatTime = (sec) => {
 
 // ─── Main Component ───────────────────────────────────────
 const AtlantisBagiyaGame = () => {
+  const { t }    = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -469,7 +471,7 @@ const AtlantisBagiyaGame = () => {
 
   // ─── Practice helpers ────────────────────────────────────
   const pickPracticeItem = () => {
-    const item = PRACTICE_POOL[Math.floor(Math.random() * PRACTICE_POOL.length)];
+    const item = ITEMS.find(i => i.stem === 'bird_ba');
     setPracticeItem(item);
     setPracticeFeedback({});
     setPracticeAnswered(false);
@@ -506,10 +508,8 @@ const AtlantisBagiyaGame = () => {
   }, [screen, practiceItem]);
 
   const handlePracticeAnswer = (chosenItem) => {
-    const isCorrect = chosenItem.id === practiceItem.id;
-    setPracticeFeedback({ [chosenItem.id]: isCorrect ? 'correct' : 'wrong', [practiceItem.id]: 'correct' });
+    if (practiceAnswered) return;
     setPracticeAnswered(true);
-    if (isCorrect) playAudio(`${AUD}/bilkul_sahi.wav`);
   };
 
   // ─── Audio helpers ────────────────────────────────────────
@@ -538,22 +538,13 @@ const AtlantisBagiyaGame = () => {
     const cfg = SCREEN_CONFIGS.find(c => c.num === mainScreenNumRef.current);
     if (!cfg) return;
     const sqIdx = subQIndexRef.current;
+    if (subQAnsweredRef.current[sqIdx]) return;
 
     const targetStem = cfg.subQStems[sqIdx];
     const target = itemByStem[targetStem];
     if (!target) return;
 
     const pts = scoreAnswer(chosenItem, target);
-
-    // Visual feedback
-    setGridFeedback(() => {
-      const next = {};
-      next[chosenItem.id] = pts === 2 ? 'correct' : 'wrong';
-      if (pts !== 2) next[target.id] = 'correct';
-      return next;
-    });
-
-    if (pts === 2) playAudio(`${AUD}/bilkul_sahi.wav`);
 
     // Record score
     const newEntry = {
@@ -568,8 +559,7 @@ const AtlantisBagiyaGame = () => {
       timeTaken: qTimerRef.current,
     };
     
-    // Allow re-answering by removing old entry if it exists
-    const updScores = allScoresRef.current.filter(s => s.qId !== newEntry.qId);
+    const updScores = [...allScoresRef.current];
     updScores.push(newEntry);
     allScoresRef.current = updScores;
     setAllScores(updScores);
@@ -743,13 +733,11 @@ const AtlantisBagiyaGame = () => {
                   className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ' ab-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
-                  style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
                 >
                   Start Now
                 </button>
                 <button
                   className="ab-btn ab-btn-secondary"
-                  style={{ minWidth: 150, padding: '13px 28px', fontSize: '1rem' }}
                   onClick={() => {
                     if (splashAudioRef.current) {
                       splashAudioRef.current.currentTime = 0;
@@ -778,13 +766,12 @@ const AtlantisBagiyaGame = () => {
             </div>
 
             <div className="ab-splash-centered">
-              <div className="ab-splash-img-box">
-                <img src={practiceItem.img} alt={practiceItem.name} style={{ width: '100%', display: 'block' }} />
+              <div className="ab-question-img-box">
+                <img src={practiceItem.img} alt={practiceItem.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               </div>
               <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
                 <button
                   className="ab-btn ab-btn-secondary"
-                  style={{ minWidth: 150, padding: '13px 28px', fontSize: '1rem' }}
                   onClick={() => {
                     setPracticeAudioDone(false);
                     const audio = new Audio(practiceItem.audio);
@@ -799,7 +786,6 @@ const AtlantisBagiyaGame = () => {
                 <button
                   className={`ab-btn ab-btn-primary${!practiceAudioDone ? ' ab-btn-disabled' : ''}`}
                   disabled={!practiceAudioDone}
-                  style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
                   onClick={() => setScreen('practice_r')}
                 >
                   Answer
@@ -823,14 +809,17 @@ const AtlantisBagiyaGame = () => {
 
             <div className="ab-card">
               <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0 }}>
-                <button className="ab-btn ab-btn-secondary" onClick={() => {
-                  setPracticeResponseAudioDone(false);
-                  const audio = new Audio(practiceItem.khaHai);
-                  activeAudioRef.current = audio;
-                  audio.play().catch(() => setPracticeResponseAudioDone(true));
-                  audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
-                  audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
-                }}>
+                <button
+                  className={`ab-btn ab-btn-secondary${practiceAnswered ? ' ab-btn-disabled' : ''}`}
+                  disabled={practiceAnswered}
+                  onClick={() => {
+                    setPracticeResponseAudioDone(false);
+                    const audio = new Audio(practiceItem.khaHai);
+                    activeAudioRef.current = audio;
+                    audio.play().catch(() => setPracticeResponseAudioDone(true));
+                    audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
+                    audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
+                  }}>
                   Replay Audio
                 </button>
               </div>
@@ -839,7 +828,7 @@ const AtlantisBagiyaGame = () => {
                 {practiceResponseSet.map(item => (
                   <div
                     key={item.id}
-                    className="ab-grid-item"
+                    className={`ab-grid-item${practiceAnswered ? ' locked' : ''}`}
                     onClick={() => handlePracticeAnswer(item)}
                   >
                     <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
@@ -874,20 +863,11 @@ const AtlantisBagiyaGame = () => {
         {/* ── MAIN GAME ── */}
         {screen === 'game' && currentConfig && (
           <div className="ab-screen">
-            {/* Progress */}
-            <div className="ab-progress-bar-wrap">
-              <div className="ab-progress-bar-fill" style={{ width: `${((mainScreenNum - 1) / 12) * 100}%` }} />
-            </div>
-
             {mainPhase === 'question' && (
               <>
                 <div className="ab-screen-header">
                   <div>
                     <div className="ab-screen-title">Question {mainScreenNum} of 12</div>
-                  </div>
-                  <div className="ab-chips">
-                    <span className="ab-chip">Question Screen {mainScreenNum}</span>
-                    <span className="ab-chip">{itemByStem[currentConfig.questionStem]?.category}</span>
                   </div>
                 </div>
 
@@ -895,11 +875,11 @@ const AtlantisBagiyaGame = () => {
                   const qi = itemByStem[currentConfig.questionStem];
                   return (
                     <div className="ab-splash-centered">
-                      <div className="ab-splash-img-box">
-                        <img src={qi.img} alt={qi.name} style={{ width: '100%', display: 'block' }} />
+                      <div className="ab-question-img-box">
+                        <img src={qi.img} alt={qi.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                       </div>
                       <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
-                        <button className="ab-btn ab-btn-secondary" style={{ minWidth: 150, padding: '13px 28px', fontSize: '1rem' }}
+                        <button className="ab-btn ab-btn-secondary"
                           onClick={() => {
                             if (qi?.audio) {
                               setQuestionAudioDone(false);
@@ -956,17 +936,20 @@ const AtlantisBagiyaGame = () => {
 
                   <div className="ab-card">
                     <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0, justifyContent: 'flex-start' }}>
-                      <button className="ab-btn ab-btn-secondary" onClick={() => {
-                        setSubQAudioDone(false);
-                        const item = itemByStem[currentConfig.subQStems[subQIndex]];
-                        if (item?.khaHai) {
-                          const audio = new Audio(item.khaHai);
-                          activeAudioRef.current = audio;
-                          audio.play().catch(() => setSubQAudioDone(true));
-                          audio.addEventListener('ended', () => setSubQAudioDone(true));
-                          audio.addEventListener('error', () => setSubQAudioDone(true));
-                        }
-                      }}>
+                      <button
+                        className={`ab-btn ab-btn-secondary${subQAnswered[subQIndex] ? ' ab-btn-disabled' : ''}`}
+                        disabled={!!subQAnswered[subQIndex]}
+                        onClick={() => {
+                          setSubQAudioDone(false);
+                          const item = itemByStem[currentConfig.subQStems[subQIndex]];
+                          if (item?.khaHai) {
+                            const audio = new Audio(item.khaHai);
+                            activeAudioRef.current = audio;
+                            audio.play().catch(() => setSubQAudioDone(true));
+                            audio.addEventListener('ended', () => setSubQAudioDone(true));
+                            audio.addEventListener('error', () => setSubQAudioDone(true));
+                          }
+                        }}>
                         Replay Audio
                       </button>
                     </div>
@@ -976,7 +959,7 @@ const AtlantisBagiyaGame = () => {
                       {responseItems.map(item => (
                         <div
                           key={item.id}
-                          className="ab-grid-item"
+                          className={`ab-grid-item${subQAnswered[subQIndex] ? ' locked' : ''}`}
                           onClick={() => handleMainAnswer(item)}
                         >
                           <img src={item.img} alt={item.name} className="ab-grid-item-img" />
