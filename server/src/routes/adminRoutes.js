@@ -9,6 +9,9 @@ const { upload }           = require('../middleware/upload');
 // ── Public routes (no auth required) ─────────────────────────────────────────
 router.post('/login', adminController.loginAdmin);
 
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+router.get('/dashboard/stats', adminAuth, adminController.getDashboardStats);
+
 // ── Protected routes (valid admin JWT required) ───────────────────────────────
 router.post('/logout/:sessionId', adminAuth, adminController.logoutAdmin);
 

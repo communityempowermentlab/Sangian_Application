@@ -125,7 +125,95 @@ const logoutAdmin = async (req, res) => {
     }
 };
 
+// @desc    Dashboard aggregate stats
+// @route   GET /api/admin/dashboard/stats
+// @access  Protected
+const getDashboardStats = async (req, res) => {
+    const conn = await pool.getConnection();
+    try {
+        const [[sessionCounts]] = await conn.execute(`
+            SELECT
+                COUNT(*) AS total,
+                SUM(status = 'completed')  AS completed,
+                SUM(status = 'quit')       AS quit,
+                SUM(status = 'paused')     AS paused,
+                SUM(status = 'in_progress') AS in_progress,
+                SUM(status = 'dropped')    AS dropped
+            FROM game_sessions
+        `);
+
+        const [[childCount]]    = await conn.execute('SELECT COUNT(*) AS total FROM children');
+        const [[assessorCount]] = await conn.execute('SELECT COUNT(*) AS total FROM assessors');
+
+        const [[activeToday]] = await conn.execute(`
+            SELECT COUNT(*) AS count FROM game_sessions
+            WHERE status = 'in_progress' AND DATE(updated_at) = CURDATE()
+        `);
+
+        const [[newThisWeek]] = await conn.execute(`
+            SELECT COUNT(*) AS count FROM children
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        `);
+
+        const [recentActivity] = await conn.execute(`
+            SELECT gs.id, gs.game_name, gs.status, gs.score, gs.updated_at, gs.created_at,
+                   c.child_id, c.name AS child_name
+            FROM game_sessions gs
+            JOIN children c ON gs.child_id = c.id
+            ORDER BY gs.updated_at DESC
+            LIMIT 20
+        `);
+
+        const [gameStats] = await conn.execute(`
+            SELECT
+                CASE game_name WHEN 'chor_machaye_shor' THEN 'cognitive_flex_chor' ELSE game_name END AS game_name,
+                COUNT(*) AS total,
+                SUM(status = 'completed') AS completed,
+                SUM(status = 'quit')      AS quit,
+                SUM(status = 'dropped')   AS dropped,
+                ROUND(AVG(CASE WHEN status = 'completed' AND score IS NOT NULL THEN score END), 1) AS avg_score
+            FROM game_sessions
+            GROUP BY CASE game_name WHEN 'chor_machaye_shor' THEN 'cognitive_flex_chor' ELSE game_name END
+            ORDER BY total DESC
+        `);
+
+        const [weekTrend] = await conn.execute(`
+            SELECT DATE(created_at) AS date, COUNT(*) AS count
+            FROM game_sessions
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        `);
+
+        res.json({
+            success: true,
+            kpi: {
+                totalSessions:      Number(sessionCounts.total)       || 0,
+                completed:          Number(sessionCounts.completed)    || 0,
+                quit:               Number(sessionCounts.quit)         || 0,
+                paused:             Number(sessionCounts.paused)       || 0,
+                inProgress:         Number(sessionCounts.in_progress)  || 0,
+                dropped:            Number(sessionCounts.dropped)      || 0,
+                totalChildren:      Number(childCount.total)           || 0,
+                totalAssessors:     Number(assessorCount.total)        || 0,
+                activeToday:        Number(activeToday.count)          || 0,
+                newChildrenThisWeek: Number(newThisWeek.count)         || 0,
+            },
+            recentActivity,
+            gameStats,
+            weekTrend,
+            generatedAt: new Date().toISOString(),
+        });
+    } catch (err) {
+        console.error('Dashboard stats error:', err);
+        res.status(500).json({ success: false, message: 'Failed to load dashboard stats' });
+    } finally {
+        conn.release();
+    }
+};
+
 module.exports = {
     loginAdmin,
-    logoutAdmin
+    logoutAdmin,
+    getDashboardStats,
 };
