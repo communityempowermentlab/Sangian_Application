@@ -159,7 +159,7 @@ const getDashboardStats = async (req, res) => {
             SELECT gs.id, gs.game_name, gs.status, gs.score, gs.updated_at, gs.created_at,
                    c.child_id, c.name AS child_name
             FROM game_sessions gs
-            JOIN children c ON gs.child_id = c.id
+            JOIN children c ON gs.child_id = c.child_id
             ORDER BY gs.updated_at DESC
             LIMIT 20
         `);
