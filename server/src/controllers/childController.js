@@ -52,6 +52,7 @@ const registerChild = async (req, res) => {
         res.status(201).json({
             message: 'Child registered successfully!',
             childId: childIdStr,
+            child_id: childIdStr, // Safety fallback
         });
 
     } catch (error) {
