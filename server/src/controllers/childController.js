@@ -49,10 +49,10 @@ const registerChild = async (req, res) => {
             await pool.query('UPDATE children SET photo = ? WHERE child_id = ?', [photoFilename, childIdStr]);
         }
 
+        console.log('Registration Success:', { insertId: result.insertId, childId: childIdStr });
         res.status(201).json({
             message: 'Child registered successfully!',
             childId: childIdStr,
-            child_id: childIdStr, // Safety fallback
         });
 
     } catch (error) {

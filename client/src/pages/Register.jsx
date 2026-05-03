@@ -86,10 +86,7 @@ const Register = () => {
             if (photoFile) data.append('photo', photoFile);
 
             const response = await axios.post(API_URL + '/children/register', data);
-            
-            // Resilience: check all possible ID keys
-            const generatedId = response.data.childId || response.data.child_id || response.data.id || 'Unknown';
-            
+            const generatedId = response.data.childId;
             setStatusMsg({ type: 'success', text: `Child registered successfully! Child ID: ${generatedId}` });
             setFormData({ name: '', dob: '', gender: '', mobile: '' });
             setPhotoFile(null);
