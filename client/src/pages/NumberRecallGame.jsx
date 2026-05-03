@@ -761,7 +761,13 @@ const NumberRecallGame = () => {
                 </button>
                 <button
                   className="nr-btn nr-btn-secondary"
-                  onClick={() => { if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } }}
+                  onClick={() => { 
+                    if (audioRef.current) { 
+                      setAudioFinished(false);
+                      audioRef.current.currentTime = 0; 
+                      audioRef.current.play().catch(() => setAudioFinished(true)); 
+                    } 
+                  }}
                 >
                   Replay Audio
                 </button>

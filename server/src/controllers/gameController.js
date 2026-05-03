@@ -205,10 +205,12 @@ exports.getReportDetail = async (req, res) => {
                 ga.q3_tiredness,
                 ga.q4_play_again,
                 ga.q5_behaviors,
-                ga.additional_notes
+                ga.additional_notes,
+                pdf.file_path AS pdf_url
             FROM game_sessions gs
             LEFT JOIN children c ON gs.child_id = c.child_id
             LEFT JOIN game_assessments ga ON ga.session_id = gs.id
+            LEFT JOIN game_dashboard_pdfs pdf ON pdf.session_id = gs.id
             WHERE gs.game_name IN (?)
             ORDER BY gs.start_time DESC
         `, [gameFilter]);
@@ -300,6 +302,7 @@ exports.getReportDetail = async (req, res) => {
                     q5_behaviors:   Array.isArray(behaviors) ? behaviors.join(', ') : (behaviors || null),
                     additional_notes: row.additional_notes || null,
                 },
+                pdf_url: row.pdf_url || null,
             };
         });
 
@@ -427,5 +430,33 @@ exports.getPendingAssessment = async (req, res) => {
     } catch (error) {
         console.error('Error checking pending assessments:', error);
         res.status(500).json({ success: false, message: 'Server error checking pending assessments' });
+    }
+};
+
+exports.uploadDashboardPdf = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
+        }
+        
+        const { child_id, session_id, game_name } = req.body;
+        const file_name = req.file.filename;
+        const file_path = `/dashboard_pdfs/${file_name}`;
+
+        await pool.query(
+            `INSERT INTO game_dashboard_pdfs 
+             (child_id, session_id, game_name, file_name, file_path) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [child_id, session_id, game_name, file_name, file_path]
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Dashboard PDF uploaded successfully',
+            file_path
+        });
+    } catch (error) {
+        console.error('Error uploading dashboard PDF:', error);
+        res.status(500).json({ success: false, message: 'Server error uploading PDF' });
     }
 };

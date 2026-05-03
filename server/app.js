@@ -18,6 +18,7 @@ app.use(express.json());
 // Serve uploaded child photos publicly
 // __dirname = server/  →  uploads lives at server/uploads/
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/dashboard_pdfs', express.static(path.join(__dirname, 'dashboard_pdfs')));
 
 // Routes
 app.use('/api/users', userRoutes);

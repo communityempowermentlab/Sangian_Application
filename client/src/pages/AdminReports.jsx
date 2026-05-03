@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
-
+import { API_URL } from '../services/api';
 // ─── Catalogue of all 9 games ─────────────────────────────────────────────────
 const GAME_CATALOG = [
-    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Game',        local: 'BAGIYA',           tag: 'Visual Memory',    color: '#6366f1' },
+    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Test',        local: 'BAGIYA',           tag: 'Visual Memory',    color: '#6366f1' },
     { key: 'number_recall_lottery',     icon: '🎟️', title: 'Number Recall',        local: 'LOTTERY KA TICKET',tag: 'Auditory Span',    color: '#f59e0b' },
     { key: 'rover_mela',                icon: '🗺️', title: 'Rover Game',           local: 'CHALO MELA CHALE', tag: 'Spatial Planning', color: '#10b981' },
     { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle',             local: 'RACHNA',           tag: 'Construction',     color: '#ef4444' },
@@ -430,6 +430,7 @@ const AdminReports = () => {
                                     {ASSESSMENT_COLS.map(ac => (
                                         <th key={ac.key} style={{ ...S.th, background: '#ede9fe', color: '#6d28d9', minWidth: 120 }}>{ac.label}</th>
                                     ))}
+                                    <th style={{ ...S.th, textAlign: 'center', background: '#e2e8f0', minWidth: 110 }}>Dashboard</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -496,11 +497,12 @@ const AdminReports = () => {
                                                 detail.columns.map(c => {
                                                     const v = row.question_scores[c];
                                                     const isTriangle = activeGame?.key === 'triangle_rachna';
+                                                    const isAtlantis = activeGame?.key === 'atlantis_bagiya';
                                                     return (
                                                         <React.Fragment key={c}>
-                                                            <td style={S.scoreCell(v, isTriangle)}>
-                                                                {isTriangle 
-                                                                    ? (v != null ? `${v}/2` : '—')
+                                                            <td style={S.scoreCell(v, isTriangle || isAtlantis)}>
+                                                                {(isTriangle || isAtlantis)
+                                                                    ? (v != null ? (isAtlantis ? v : `${v}/2`) : '—')
                                                                     : (v > 0 ? '✔' : v === 0 ? '✖' : '—')}
                                                             </td>
                                                             <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
@@ -548,6 +550,15 @@ const AdminReports = () => {
                                                     {row.assessment?.[ac.key] || <span style={{ color: '#d1d5db' }}>—</span>}
                                                 </td>
                                             ))}
+                                            <td style={{ ...S.tdCenter, background: '#f8fafc', borderLeft: '1px solid #f1f5f9' }}>
+                                                {row.pdf_url ? (
+                                                    <a href={`${API_URL.replace('/api', '')}${row.pdf_url}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', background: '#3b82f6', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold', display: 'inline-block', transition: 'background 0.2s' }}>
+                                                        Download PDF
+                                                    </a>
+                                                ) : (
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>N/A</span>
+                                                )}
+                                            </td>
                                         </tr>
                                     );
                                 })}

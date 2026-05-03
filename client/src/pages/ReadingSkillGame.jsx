@@ -472,7 +472,7 @@ const ReadingSkillGame = () => {
                    if (audioRef.current) {
                      setAudioFinished(false);
                      audioRef.current.currentTime = 0;
-                     audioRef.current.play();
+                     audioRef.current.play().catch(() => setAudioFinished(true));
                    }
                 }}>Replay Audio</button>
               </div>

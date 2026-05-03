@@ -7,7 +7,7 @@ import './AtlantisBagiyaGame.css';
 
 // ─── Constants ───────────────────────────────────────────
 const GAME_NAME = 'atlantis_bagiya';
-const TOTAL_MAX_SUB_QUESTIONS = 53; // 1+2+2+3+3+4+5+4+5+7+6+11
+const TOTAL_MAX_SUB_QUESTIONS = 54; // 1+2+2+3+3+4+5+4+5+7+6+6+6
 
 const IMG = '/assets/images/bagiya';
 const AUD = '/assets/audios/bagiya';
@@ -120,7 +120,7 @@ const SCREEN_CONFIGS = [
   },
   {
     num: 11,
-    questionStem: 'bird_5',
+    questionStem: 'flower_pegeto',
     requiredStems: ['bird_deem','flower_pegeto','bird_jul','flower_mulpaki','insect_baigul','bird_5'],
     responseCount: 11,
     subQStems: ['bird_deem','flower_pegeto','bird_jul','flower_mulpaki','insect_baigul','bird_5'],
@@ -129,9 +129,17 @@ const SCREEN_CONFIGS = [
   {
     num: 12,
     questionStem: 'flower_dhulkoma',
-    requiredStems: ['insect_thooli','flower_pegeto','bird_ba','flower_dhulkoma','insect_mogju','bird_2','insect_ghesa','insect_baigul','bird_hoop','flower_shibagu','flower_4'],
+    requiredStems: ['insect_thooli', 'flower_pegeto', 'bird_ba', 'flower_dhulkoma', 'insect_mogju', 'flower_4'],
     responseCount: 12,
-    subQStems: ['insect_thooli','flower_pegeto','bird_ba','flower_dhulkoma','insect_mogju','bird_2','insect_ghesa','insect_baigul','bird_hoop','flower_shibagu','flower_4'],
+    subQStems: ['insect_thooli', 'flower_pegeto', 'bird_ba', 'flower_dhulkoma', 'insect_mogju', 'flower_4'],
+    checkpoint: null,
+  },
+  {
+    num: 13,
+    questionStem: 'flower_dhulkoma',
+    requiredStems: ['insect_ghesa', 'insect_baigul', 'flower_dhulkoma', 'bird_hoop', 'flower_shibagu', 'insect_4'],
+    responseCount: 13,
+    subQStems: ['insect_ghesa', 'insect_baigul', 'flower_dhulkoma', 'bird_hoop', 'flower_shibagu', 'insect_4'],
     checkpoint: null,
   },
 ];
@@ -155,7 +163,37 @@ function buildResponseSet(cfg) {
   }
   const required = cfg.requiredStems.map(s => itemByStem[s]).filter(Boolean);
   const reqIds = new Set(required.map(i => i.id));
-  const fillers = shuffle(ITEMS.filter(i => !reqIds.has(i.id))).slice(0, cfg.responseCount - required.length);
+  
+  let availablePool = ITEMS.filter(i => !reqIds.has(i.id));
+
+  if (cfg.num === 10) {
+    availablePool = availablePool.filter(item => 
+      item.stem !== 'flower_pegeto' && 
+      item.stem !== 'flower_dhulkoma' && 
+      (item.audio !== null || item.stem === 'bird_4')
+    );
+  }
+  
+  if (cfg.num === 11) {
+    availablePool = availablePool.filter(item => 
+      item.stem !== 'flower_dhulkoma' && 
+      (item.audio !== null || item.stem === 'bird_5')
+    );
+  }
+  
+  if (cfg.num === 12) {
+    availablePool = availablePool.filter(item => 
+      item.audio !== null || item.stem === 'flower_4'
+    );
+  }
+
+  if (cfg.num === 13) {
+    availablePool = availablePool.filter(item => 
+      item.audio !== null || item.stem === 'insect_4'
+    );
+  }
+
+  const fillers = shuffle(availablePool).slice(0, cfg.responseCount - required.length);
   return shuffle([...required, ...fillers]);
 }
 
@@ -209,6 +247,7 @@ const AtlantisBagiyaGame = () => {
   const [practiceItem, setPracticeItem] = useState(null);
   const [practiceFeedback, setPracticeFeedback] = useState({});
   const [practiceAnswered, setPracticeAnswered] = useState(false);
+  const [practiceCorrect, setPracticeCorrect] = useState(false);
   const [practiceAudioDone, setPracticeAudioDone] = useState(false);
   const [practiceResponseAudioDone, setPracticeResponseAudioDone] = useState(false);
   const [practiceResponseSet, setPracticeResponseSet] = useState([]);
@@ -424,7 +463,7 @@ const AtlantisBagiyaGame = () => {
         score: scores.reduce((s, a) => s + a.score, 0),
         progress_level: TOTAL_MAX_SUB_QUESTIONS,
         status: 'completed',
-        saved_state: { allScores: scores, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, mainScreenNum: 12 },
+        saved_state: { allScores: scores, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, mainScreenNum: 13 },
       }).catch(e => console.error(e));
     }
     setScreen('score');
@@ -475,6 +514,7 @@ const AtlantisBagiyaGame = () => {
     setPracticeItem(item);
     setPracticeFeedback({});
     setPracticeAnswered(false);
+    setPracticeCorrect(false);
     setPracticeAudioDone(false);
   };
 
@@ -510,6 +550,13 @@ const AtlantisBagiyaGame = () => {
   const handlePracticeAnswer = (chosenItem) => {
     if (practiceAnswered) return;
     setPracticeAnswered(true);
+    if (chosenItem.id === practiceItem.id) {
+      setPracticeCorrect(true);
+      playAudio(`${AUD}/bilkul_sahi.wav`);
+    } else {
+      setPracticeCorrect(false);
+      playAudio(`${AUD}/Dubara koshish karte hai.wav`);
+    }
   };
 
   // ─── Audio helpers ────────────────────────────────────────
@@ -545,6 +592,10 @@ const AtlantisBagiyaGame = () => {
     if (!target) return;
 
     const pts = scoreAnswer(chosenItem, target);
+
+    if (pts === 2) {
+      playAudio(`${AUD}/bilkul_sahi.wav`);
+    }
 
     // Record score
     const newEntry = {
@@ -584,14 +635,18 @@ const AtlantisBagiyaGame = () => {
     }
 
     const nextNum = currentNum + 1;
-    if (nextNum > 12) {
+    if (nextNum > 13) {
       completeGame();
       return;
     }
 
     mainScreenNumRef.current = nextNum;
     setMainScreenNum(nextNum);
-    setMainPhase('question');
+    if (nextNum === 13) {
+      setMainPhase('response');
+    } else {
+      setMainPhase('question');
+    }
     setSubQIndex(0); subQIndexRef.current = 0;
     setSubQAnswered({}); subQAnsweredRef.current = {};
     setGridFeedback({});
@@ -643,6 +698,46 @@ const AtlantisBagiyaGame = () => {
     setRecordingTarget(target);
   };
 
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // Use dynamic height to prevent cropping long dashboards
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Atlantis_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionId);
+      formData.append('game_name', 'atlantis_bagiya');
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
+    }
+  };
+
   // ─── Assessment submit ────────────────────────────────────
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
@@ -657,7 +752,15 @@ const AtlantisBagiyaGame = () => {
         q5_behaviors: assessment.behaviors,
         additional_notes: assessment.notes,
       });
+      
       setAssessmentSubmitted(true);
+      setShowGrid(true); // Force grid to open so questions are captured
+      
+      // Wait for DOM to render the grid and any CSS transitions before capturing
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 500);
+      
       alert('Assessment successfully saved!');
     } catch (e) {
       console.error(e);
@@ -685,7 +788,7 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
           <div className="ab-divider"></div>
-          <span className="ab-test-title">Atlantis Game</span>
+          <span className="ab-test-title">Atlantis Test</span>
         </div>
         <div className="ab-stats">
           {childData?.child_id && (
@@ -719,12 +822,12 @@ const AtlantisBagiyaGame = () => {
 
             <div className="ab-splash-centered">
               <div className="ab-splash-img-box">
-                <img src={`${IMG}/bagiya.jpg`} alt="Atlantis Game" className="ab-splash-img-full"
+                <img src={`${IMG}/bagiya.jpg`} alt="Atlantis Test" className="ab-splash-img-full"
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               </div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Welcome to Atlantis Game
+                Welcome to Atlantis Test
               </h2>
               
 
@@ -740,8 +843,9 @@ const AtlantisBagiyaGame = () => {
                   className="ab-btn ab-btn-secondary"
                   onClick={() => {
                     if (splashAudioRef.current) {
+                      setAudioFinished(false);
                       splashAudioRef.current.currentTime = 0;
-                      splashAudioRef.current.play().catch(() => {});
+                      splashAudioRef.current.play().catch(() => setAudioFinished(true));
                     }
                   }}
                 >
@@ -837,12 +941,16 @@ const AtlantisBagiyaGame = () => {
               </div>
 
               <div className="ab-btn-row" style={{ marginTop: 20 }}>
-                <button className="ab-btn ab-btn-secondary" onClick={() => { pickPracticeItem(); setScreen('practice_q'); }}>
+                <button 
+                  className={`ab-btn ${practiceAnswered && !practiceCorrect && !feedbackAudioPlaying ? 'ab-pulse-warning' : 'ab-btn-secondary'}${feedbackAudioPlaying ? ' ab-btn-disabled' : ''}`}
+                  disabled={feedbackAudioPlaying}
+                  onClick={() => { pickPracticeItem(); setScreen('practice_q'); }}
+                >
                   Try Again
                 </button>
                 <button
-                  className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
-                  disabled={!(practiceResponseAudioDone && practiceAnswered && !feedbackAudioPlaying)}
+                  className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
+                  disabled={!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying)}
                   onClick={() => {
                     const sets = generateAllResponseSets();
                     setResponseSets(sets);
@@ -914,7 +1022,8 @@ const AtlantisBagiyaGame = () => {
             )}
 
             {mainPhase === 'response' && (() => {
-              const responseItems = responseSets[mainScreenNum] || [];
+              let responseItems = responseSets[mainScreenNum] || [];
+
               const allSubQsDone = currentConfig.subQStems.every((_, i) => subQAnswered[i]);
               const activeTargetStem = currentConfig.subQStems[subQIndex];
               const activeTarget = itemByStem[activeTargetStem];
@@ -983,7 +1092,7 @@ const AtlantisBagiyaGame = () => {
                             advanceToNextScreen();
                           }
                         }}>
-                        {subQIndex < currentConfig.subQStems.length - 1 ? 'Next Question →' : (mainScreenNum < 12 ? 'Next Screen →' : 'Finish Game')}
+                        {subQIndex < currentConfig.subQStems.length - 1 ? 'Next Question →' : (mainScreenNum < 13 ? 'Next Screen →' : 'Finish Game')}
                       </button>
                     </div>
                   </div>
@@ -995,11 +1104,11 @@ const AtlantisBagiyaGame = () => {
 
         {/* ── SCORE ── */}
         {screen === 'score' && (
-          <div className="ab-screen">
+          <div className="ab-screen" id="dashboard-capture-area">
             <div className="ab-screen-header">
               <div>
                 <div className="ab-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
-                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Atlantis Game · Final Results'}</div>
+                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Atlantis Test · Final Results'}</div>
               </div>
               <div className="ab-chips">
                 <span className="ab-chip">Final Results</span>
@@ -1021,7 +1130,7 @@ const AtlantisBagiyaGame = () => {
                     { label: '✗ Wrong (0pts)', val: wrongCount, cls: 'red' },
                     { label: '% Accuracy', val: `${accuracyPct}%`, cls: '' },
                     { label: '⏱ Time', val: formatTime(totalTimeSec), cls: '' },
-                    { label: 'Screens', val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 12`, cls: '' },
+                    { label: 'Screens', val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="ab-metric-box">
                       <label>{m.label}</label>

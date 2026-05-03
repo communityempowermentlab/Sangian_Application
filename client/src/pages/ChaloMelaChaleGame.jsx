@@ -1151,7 +1151,7 @@ const ChaloMelaChaleGame = () => {
 
                 <div className="btn-row">
                   <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')}>Start Now</button>
-                  <button className="btn btn-secondary" onClick={() => playAudio('SB_splash.wav', () => setAudioFinished(true))}>Replay Audio</button>
+                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }}>Replay Audio</button>
                 </div>
 
               </div>

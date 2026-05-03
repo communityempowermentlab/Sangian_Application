@@ -41,7 +41,7 @@ const ROUTE_TITLES = {
     '/games/her_pher':          'Working Memory | Game | Community Empowerment Lab',
     '/games/dhyan_kahan_hai':   'Auditory Attention | Game | Community Empowerment Lab',
     '/games/rachna':            'Triangle | Game | Community Empowerment Lab',
-    '/games/bagiya':            'Atlantis Game | Game | Community Empowerment Lab',
+    '/games/bagiya':            'Atlantis Test | Game | Community Empowerment Lab',
     '/games/chalo_mela_chale':  'Rover Game | Game | Community Empowerment Lab',
     '/games/chor_machaye_shor': 'Chor Machaye Shor | Game | Community Empowerment Lab',
     '/admin/login':             'Admin Login | Community Empowerment Lab',

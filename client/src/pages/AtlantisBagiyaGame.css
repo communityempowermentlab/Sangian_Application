@@ -1,6 +1,6 @@
 /* ============================================
    AtlantisBagiyaGame.css — ab- prefix
-   Atlantis Game (Bagiya)
+   Atlantis Test (Bagiya)
    ============================================ */
 
 :root {
@@ -284,6 +284,19 @@
 .ab-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+@keyframes ab-pulse {
+  0% { transform: scale(1); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2); }
+  50% { transform: scale(1.05); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.4); }
+  100% { transform: scale(1); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2); }
+}
+
+.ab-pulse-warning {
+  animation: ab-pulse 1.5s infinite ease-in-out;
+  background: #f59e0b !important; /* var(--ab-warning) */
+  color: #fff !important;
+  border: none !important;
 }
 
 /* ─── Content Row (question + instructions side-by-side) ── */
