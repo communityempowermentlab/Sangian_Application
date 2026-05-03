@@ -663,6 +663,10 @@ const AtlantisBagiyaGame = () => {
     if (status === 'quit') {
       setShowQuitModal(false);
       setScreen('score');
+      // Wait for score screen to render then upload PDF
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
     } else {
       navigate('/');
     }
