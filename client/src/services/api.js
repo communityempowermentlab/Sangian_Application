@@ -10,7 +10,7 @@ const isLocalhost = Boolean(
 
 const API_URL = isLocalhost
     ? 'http://localhost:5000/api'
-    : 'https://sangianapi.celworld.org/api';
+    : 'https://sangian.celworld.org/api';
 
 export { API_URL };
 export default API_URL;
