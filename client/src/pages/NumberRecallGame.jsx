@@ -76,11 +76,14 @@ const NumpadPanel = ({
   const [answered, setAnswered] = useState(false);
   const [wasCorrect, setWasCorrect] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [replayCount, setReplayCount] = useState(0);
 
   const audioRef = useRef(null);
 
-  const playAudio = useCallback(() => {
+  const playAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
+    if (isManual) setReplayCount(prev => prev + 1);
+    setSelected([]); // Clear selections when replaying audio
     if (!audioRef.current) {
       audioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
       audioRef.current.addEventListener('playing', () => setIsPlaying(true));
@@ -95,10 +98,9 @@ const NumpadPanel = ({
 
   useEffect(() => {
     if (autoPlay) {
-      const t = setTimeout(playAudio, 400);
+      const t = setTimeout(() => playAudio(false), 400);
       return () => clearTimeout(t);
     }
-    return () => {};
   }, [autoPlay, playAudio]);
 
   useEffect(() => {
@@ -128,14 +130,11 @@ const NumpadPanel = ({
     const isCorrect = exactMatch(sel, correct);
     setWasCorrect(isCorrect);
     if (isCorrect) {
-      onCorrect && onCorrect(sel);
+      onCorrect && onCorrect(sel, replayCount);
       // For scored questions: user clicks Next; for unscored: immediate feedback only
     } else {
-      onWrong && onWrong(sel);
-      if (isScored) {
-        // Auto-advance after short delay so user sees feedback
-        setTimeout(() => onAdvance && onAdvance(), 700);
-      }
+      onWrong && onWrong(sel, replayCount);
+      // No auto-advance on wrong answer anymore; user will click manual "Next Question" button
     }
   };
 
@@ -144,6 +143,8 @@ const NumpadPanel = ({
     : selected.length < maxSelect
       ? `Select ${maxSelect} number${maxSelect > 1 ? 's' : ''} in order`
       : 'Selection complete';
+
+  const showNextButton = !isPlaying && answered && isScored;
 
   return (
     <div>
@@ -164,7 +165,7 @@ const NumpadPanel = ({
       <div className="nr-numpad-wrap">
         <div className="nr-numpad-top">
           <div className="nr-numpad-title">Listen &amp; Remember</div>
-          <button className="nr-replay-btn" onClick={playAudio} disabled={isPlaying}>
+          <button className="nr-replay-btn" onClick={() => playAudio(true)} disabled={isPlaying || showNextButton}>
             🔊 Replay Audio
           </button>
         </div>
@@ -184,13 +185,12 @@ const NumpadPanel = ({
 
         <div className="nr-numpad-actions">
           {isPlaying && <div className="nr-action-msg" style={{ color: '#94a3b8' }}>🔊 </div>}
-          {!isPlaying && answered && wasCorrect && (
-            isScored
-              ? <button className="nr-btn-next" onClick={() => onAdvance && onAdvance()}>✅ Correct! &nbsp; Next Question →</button>
-              : <div className="nr-action-msg" style={{ color: '#4ade80' }}>✅ Correct!</div>
-          )}
-          {!isPlaying && answered && !wasCorrect && isScored && (
-            <div className="nr-action-msg" style={{ color: '#fbbf24' }}>Not quite — moving to next question…</div>
+          {showNextButton ? (
+            <button className="nr-btn-next" onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}>Next Question →</button>
+          ) : (
+            !isPlaying && answered && wasCorrect && !isScored && (
+              <div className="nr-action-msg" style={{ color: '#4ade80' }}>✅ Correct!</div>
+            )
           )}
           {!isPlaying && answered && !wasCorrect && !isScored && (
             <>
@@ -212,12 +212,15 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   const [isWaiting, setIsWaiting] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [replayCount, setReplayCount] = useState(0);
 
   const mainAudioRef = useRef(null);
   const teachingAudioRef = useRef(null);
 
-  const playMainAudio = useCallback(() => {
+  const playMainAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
+    if (isManual) setReplayCount(prev => prev + 1);
+    setSelected([]); // Clear selections when replaying audio
     if (!mainAudioRef.current) {
       mainAudioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
       mainAudioRef.current.addEventListener('playing', () => setIsPlaying(true));
@@ -257,7 +260,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   }, [teachingAudioSrc]);
 
   useEffect(() => {
-    const t = setTimeout(playMainAudio, 400);
+    const t = setTimeout(() => playMainAudio(false), 400);
     return () => {
       clearTimeout(t);
       if (mainAudioRef.current) { mainAudioRef.current.pause(); mainAudioRef.current = null; }
@@ -314,7 +317,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
             <div className="nr-numpad-title">Listen &amp; Remember</div>
             <div className="nr-numpad-sub">Audio plays automatically</div>
           </div>
-          <button className="nr-replay-btn" onClick={playMainAudio} disabled={isPlaying}>
+          <button className="nr-replay-btn" onClick={() => playMainAudio(true)} disabled={isPlaying || showNextButton}>
             🔊 Replay Audio
           </button>
         </div>
@@ -458,11 +461,12 @@ const NumberRecallGame = () => {
 
   // ── Question timer ─────────────────────────────────────────
   useEffect(() => {
-    if (screen === 'game' && !showQuitModal) {
+    // Timer runs only if the current question hasn't been answered yet
+    if (screen === 'game' && !showQuitModal && allScores.length <= questionIndex) {
       const interval = setInterval(() => setQTimer(p => p + 1), 1000);
       return () => clearInterval(interval);
     }
-  }, [screen, showQuitModal]);
+  }, [screen, showQuitModal, allScores.length, questionIndex]);
 
   // ── Sync refs with state ───────────────────────────────────
   useEffect(() => { questionIndexRef.current = questionIndex; }, [questionIndex]);
@@ -552,7 +556,7 @@ const NumberRecallGame = () => {
   };
 
   // ── Scoring logic — uses refs to avoid stale closures ──────
-  const handleCorrect = useCallback((sel) => {
+  const handleCorrect = useCallback((sel, replays = 0) => {
     const idx = questionIndexRef.current;
     const q = QUESTIONS[idx];
     const newScore = {
@@ -562,6 +566,7 @@ const NumberRecallGame = () => {
       timeTaken: qTimerRef.current,
       userResponse: sel || q.correct.slice(),
       correctAnswer: q.correct.slice(),
+      replayCount: replays,
     };
     const upScores = [...allScoresRef.current, newScore];
     allScoresRef.current = upScores;
@@ -571,7 +576,7 @@ const NumberRecallGame = () => {
     // NOTE: advance happens when user clicks the "Next" button via handleAdvance
   }, []);
 
-  const handleWrong = useCallback((userResponse) => {
+  const handleWrong = useCallback((userResponse, replays = 0) => {
     const idx = questionIndexRef.current;
     const q = QUESTIONS[idx];
     const newScore = {
@@ -581,6 +586,7 @@ const NumberRecallGame = () => {
       timeTaken: qTimerRef.current,
       userResponse: userResponse || [],
       correctAnswer: q.correct.slice(),
+      replayCount: replays,
     };
     const upScores = [...allScoresRef.current, newScore];
     allScoresRef.current = upScores;
@@ -624,6 +630,10 @@ const NumberRecallGame = () => {
     if (status === 'quit') {
       setShowQuitModal(false);
       setScreen('score');
+      // Wait for score screen to render then upload PDF
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
     } else {
       navigate('/');
     }
@@ -672,12 +682,58 @@ const NumberRecallGame = () => {
         additional_notes: assessment.notes,
       });
       setAssessmentSubmitted(true);
+      
+      // Wait for DOM to render then capture
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
+      
       alert('Assessment successfully saved!');
     } catch (e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
     } finally {
       setIsAssessmentSubmitting(false);
+    }
+  };
+
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // Use dynamic height to prevent cropping long dashboards
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Rover_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionId);
+      formData.append('game_name', 'rover_mela');
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
     }
   };
 
@@ -851,7 +907,7 @@ const NumberRecallGame = () => {
 
         {/* ─────────────── SCORE ─────────────── */}
         {screen === 'score' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="nr-screen" style={{ backgroundColor: '#fff' }} id="dashboard-capture-area">
             <div className="nr-screen-header">
               <div>
                 <div className="nr-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
@@ -912,6 +968,7 @@ const NumberRecallGame = () => {
                         <th>Status</th>
                         <th>Score</th>
                         <th>Time</th>
+                        <th>Replays</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -929,6 +986,7 @@ const NumberRecallGame = () => {
                             </td>
                             <td>{s.score}</td>
                             <td style={{ fontFamily: 'monospace' }}>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
+                            <td style={{ fontFamily: 'monospace' }}>{s.replayCount ?? 0}</td>
                           </tr>
                         );
                       })}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
+import ChildGameHistoryModal from '../components/ChildGameHistoryModal';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const calculateAge = (dob) => {
@@ -55,6 +56,7 @@ const AdminChildrenList = () => {
     const [goToPageInput, setGoToPageInput] = useState('');
     const [loading, setLoading] = useState(true);
     const [selectedChildForSessions, setSelectedChildForSessions] = useState(null);
+    const [selectedChildForHistory, setSelectedChildForHistory] = useState(null);
 
     useEffect(() => {
         fetchChildren();
@@ -249,7 +251,10 @@ const AdminChildrenList = () => {
                                                         <Link to={`/admin/children/edit/${child.child_id}`} style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}>
                                                             ✏️ Edit
                                                         </Link>
-                                                        <button style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                                        <button 
+                                                            onClick={() => setSelectedChildForHistory(child.child_id)}
+                                                            style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                        >
                                                             🏆 Scoreboard
                                                         </button>
                                                     </div>
@@ -302,6 +307,12 @@ const AdminChildrenList = () => {
                 <ChildSessionHistoryModal 
                     childId={selectedChildForSessions} 
                     onClose={() => setSelectedChildForSessions(null)} 
+                />
+            )}
+            {selectedChildForHistory && (
+                <ChildGameHistoryModal 
+                    childId={selectedChildForHistory} 
+                    onClose={() => setSelectedChildForHistory(null)} 
                 />
             )}
         </main>

@@ -132,7 +132,11 @@ exports.getGameHistory = async (req, res) => {
         const { childId } = req.params;
 
         const [rows] = await pool.query(
-            'SELECT * FROM game_sessions WHERE child_id = ? ORDER BY start_time DESC',
+            `SELECT gs.*, pdf.file_path AS pdf_url 
+             FROM game_sessions gs
+             LEFT JOIN game_dashboard_pdfs pdf ON pdf.session_id = gs.id
+             WHERE gs.child_id = ? 
+             ORDER BY gs.start_time DESC`,
             [childId]
         );
 
@@ -241,6 +245,7 @@ exports.getReportDetail = async (req, res) => {
                     allUniqueKeys.add(key);
                     questionScores[`${key}_time`] = s.timeTaken ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
+                    questionScores[`${key}_replays`] = s.replayCount ?? 0;
                 }
             });
 

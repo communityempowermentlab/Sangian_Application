@@ -165,6 +165,7 @@ const AdminReports = () => {
                 qHeaders.push(colLabel);
                 if (isRover || isChorCSV) qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
+                qHeaders.push(`${colLabel} Replays`);
             });
         }
 
@@ -217,6 +218,7 @@ const AdminReports = () => {
                     rowArr.push(r.question_scores?.[c] ?? '');
                     if (isRoverCSV || isChorCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
+                    rowArr.push(r.question_scores?.[`${c}_replays`] ?? '');
                 });
             }
             
@@ -401,6 +403,7 @@ const AdminReports = () => {
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>{c.toUpperCase()} Score</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>
                                                 </React.Fragment>
                                             ))}
                                         </>
@@ -412,6 +415,7 @@ const AdminReports = () => {
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{colLabel}</th>
                                                     <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>REPLAYS</th>
                                                 </React.Fragment>
                                             );
                                         })
@@ -489,6 +493,7 @@ const AdminReports = () => {
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -503,9 +508,10 @@ const AdminReports = () => {
                                                             <td style={S.scoreCell(v, isTriangle || isAtlantis)}>
                                                                 {(isTriangle || isAtlantis)
                                                                     ? (v != null ? (isAtlantis ? v : `${v}/2`) : '—')
-                                                                    : (v > 0 ? '✔' : v === 0 ? '✖' : '—')}
+                                                                    : (v != null ? v : '—')}
                                                             </td>
                                                             <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
                                                         </React.Fragment>
                                                     );
                                                 })
