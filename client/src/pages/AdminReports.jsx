@@ -157,11 +157,19 @@ const AdminReports = () => {
                 const label = `Q${i+1}`;
                 qHeaders.push(`${label} Correct Responses`, `${label} Score`, `${label} Time(s)`);
             });
+        } else if (activeGame?.key === 'triangle_rachna') {
+            detail.columns.forEach((c, idx) => {
+                const colLabel = `Q${idx + 1}`;
+                qHeaders.push(`${colLabel} Score`);
+                qHeaders.push(`${colLabel} Gap > 2?`);
+                qHeaders.push(`${colLabel} Align > 2?`);
+                qHeaders.push(`${colLabel} Match Tgt?`);
+                qHeaders.push(`${colLabel} Time(s)`);
+            });
         } else {
             detail.columns.forEach((c, idx) => {
-                const isTriangle = activeGame?.key === 'triangle_rachna';
                 const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
-                const colLabel = isTriangle ? `Q${idx + 1}` : isChorCSV ? chorColLabel(c) : c.toUpperCase();
+                const colLabel = isChorCSV ? chorColLabel(c) : c.toUpperCase();
                 qHeaders.push(colLabel);
                 if (isRover || isChorCSV) qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
@@ -210,6 +218,17 @@ const AdminReports = () => {
                         qs[`q${qId}_correct`] ?? '',
                         qs[`q${qId}`] ?? '',
                         qs[`q${qId}_time`] ? Math.round(qs[`q${qId}_time`]) : ''
+                    );
+                });
+            } else if (activeGame?.key === 'triangle_rachna') {
+                detail?.columns?.forEach(c => {
+                    const qs = r.question_scores || {};
+                    rowArr.push(
+                        qs[c] ?? '',
+                        qs[`${c}_ass_q1`] ?? '',
+                        qs[`${c}_ass_q2`] ?? '',
+                        qs[`${c}_ass_q3`] ?? '',
+                        qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : ''
                     );
                 });
             } else {
@@ -407,10 +426,23 @@ const AdminReports = () => {
                                                 </React.Fragment>
                                             ))}
                                         </>
+                                    ) : activeGame?.key === 'triangle_rachna' ? (
+                                        detail.columns.map((c, idx) => {
+                                            const colLabel = `Q${idx + 1}`;
+                                            return (
+                                                <React.Fragment key={c}>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#dbeafe', minWidth: 60 }}>{colLabel} Score</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0e7ff', minWidth: 60 }}>{colLabel} Gap &gt; 2?</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0e7ff', minWidth: 60 }}>{colLabel} Align &gt; 2?</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0e7ff', minWidth: 60 }}>{colLabel} Match?</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>{colLabel} Time(s)</th>
+                                                </React.Fragment>
+                                            );
+                                        })
                                     ) : (
                                         detail.columns.map((c, idx) => {
-                                            const isTriangle = activeGame?.key === 'triangle_rachna';
-                                            const colLabel = isTriangle ? `Q${idx + 1}` : c.toUpperCase();
+                                            const isAtlantis = activeGame?.key === 'atlantis_bagiya';
+                                            const colLabel = c.toUpperCase();
                                             return (
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{colLabel}</th>
@@ -498,17 +530,28 @@ const AdminReports = () => {
                                                         );
                                                     })}
                                                 </>
+                                            ) : activeGame?.key === 'triangle_rachna' ? (
+                                                detail.columns.map(c => {
+                                                    const qs = row.question_scores;
+                                                    const v = qs[c];
+                                                    return (
+                                                        <React.Fragment key={`tr-${c}`}>
+                                                            <td style={{ ...S.tdCenter, fontWeight: 700, color: v > 0 ? '#059669' : v === 0 ? '#dc2626' : '#94a3b8' }}>{v != null ? `${v}/2` : '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q1`] === 'YES' ? '#059669' : qs[`${c}_ass_q1`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q1`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q2`] === 'YES' ? '#059669' : qs[`${c}_ass_q2`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q2`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q3`] === 'YES' ? '#059669' : qs[`${c}_ass_q3`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q3`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
                                             ) : (
                                                 detail.columns.map(c => {
                                                     const v = row.question_scores[c];
-                                                    const isTriangle = activeGame?.key === 'triangle_rachna';
                                                     const isAtlantis = activeGame?.key === 'atlantis_bagiya';
                                                     return (
                                                         <React.Fragment key={c}>
-                                                            <td style={S.scoreCell(v, isTriangle || isAtlantis)}>
-                                                                {(isTriangle || isAtlantis)
-                                                                    ? (v != null ? (isAtlantis ? v : `${v}/2`) : '—')
-                                                                    : (v != null ? v : '—')}
+                                                            <td style={S.scoreCell(v, isAtlantis)}>
+                                                                {v != null ? v : '—'}
                                                             </td>
                                                             <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>

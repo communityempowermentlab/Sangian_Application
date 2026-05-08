@@ -77,7 +77,7 @@ const QUESTIONS = {
 
   teachingQ5: { type:'teaching', title:'Teaching Question 5', next:'question6', isSample:true,
     sources:[{id:'yt-lg6',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-up', scale:1.21},
-             {id:'bs-lg6',name:'Blue Square',size:'large',color:'#3498db',shape:'square'}]},
+             {id:'bs-lg6',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:0.9}]},
 
   question6:  { type:'question', title:'Question 6',  next:'question7', isSample:false,
     sources:[{id:'bs-lg7a',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
@@ -91,7 +91,7 @@ const QUESTIONS = {
              {id:'rc-sm8',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'}]},
 
   question8:  { type:'question', title:'Question 8',  next:'question9', isSample:false,
-    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:1.2},
+    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:1.0},
              {id:'yc-sm9a',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'yc-sm9b',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'rc-sm9a',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'},
@@ -331,6 +331,8 @@ const TriangleRachnaGame = () => {
   const [totalScore, setTotalScore]         = useState(0);
   const [questionScores, setQuestionScores] = useState({});
   const [questionTimes, setQuestionTimes]   = useState({});
+  const [questionMoves, setQuestionMoves]   = useState({});
+  const [questionDetails, setQuestionDetails] = useState({});
 
   const [showGrid, setShowGrid]             = useState(false);
   const [showQuitModal, setShowQuitModal]   = useState(false);
@@ -351,9 +353,11 @@ const TriangleRachnaGame = () => {
   const rotateRef       = useRef(null); // { id, centerX, centerY, startAngle, origRot }
   const pausesRef       = useRef([]);
   const timeElapsedRef  = useRef(0);
+  const questionDetailsRef = useRef({});
 
   useEffect(() => { pausesRef.current = pauses; }, [pauses]);
   useEffect(() => { timeElapsedRef.current = timeElapsed; }, [timeElapsed]);
+  useEffect(() => { questionDetailsRef.current = questionDetails; }, [questionDetails]);
 
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -512,7 +516,7 @@ const TriangleRachnaGame = () => {
     }));
     axios.put(`${API_URL}/games/sessions/update/${sessionIdRef.current}`, {
       score: totalSc, progress_level: Object.keys(scores).length,
-      status, saved_state: { allScores, totalScore: totalSc, pauses: pausesRef.current },
+      status, saved_state: { allScores, totalScore: totalSc, pauses: pausesRef.current, questionDetails: questionDetailsRef.current },
     }).catch(e => console.error(e));
   }, []);
 
@@ -615,9 +619,13 @@ const TriangleRachnaGame = () => {
       scale: src.scale || 1,
       x, y, rotation: 0,
     }]);
+    setQuestionMoves(p => ({ ...p, [currentKey]: (p[currentKey] || 0) + 1 }));
   };
 
-  const removeFromWorkspace = (id) => setWorkspaceItems(prev => prev.filter(it => it.id !== id));
+  const removeFromWorkspace = (id) => {
+    setWorkspaceItems(prev => prev.filter(it => it.id !== id));
+    setQuestionMoves(p => ({ ...p, [currentKey]: (p[currentKey] || 0) + 1 }));
+  };
 
   // ── Start dragging a workspace item ──────────────────────────
   const onItemMouseDown = (e, item) => {
@@ -650,6 +658,7 @@ const TriangleRachnaGame = () => {
         e.target.classList.contains('rg-rotation-handle')) return;
     setWorkspaceItems(prev => prev.map(it =>
       it.id === item.id ? { ...it, rotation: it.rotation + 90 } : it));
+    setQuestionMoves(p => ({ ...p, [currentKey]: (p[currentKey] || 0) + 1 }));
     try { new Audio(`${AUDIO_PATH}/rotate.wav`).play().catch(() => {}); } catch(_) {}
   };
 
@@ -709,6 +718,9 @@ const TriangleRachnaGame = () => {
     setQuestionTimes({});
     setTotalScore(0);
     setAudioFinished(false);
+    setQuestionDetails({});
+    questionDetailsRef.current = {};
+    setQuestionMoves({});
     setScreen('splash');
   };
 
@@ -731,6 +743,15 @@ const TriangleRachnaGame = () => {
     const loadedPauses = st.pauses || [];
     setPauses(loadedPauses);
     pausesRef.current = loadedPauses;
+
+    const loadedDetails = st.questionDetails || {};
+    setQuestionDetails(loadedDetails);
+    questionDetailsRef.current = loadedDetails;
+
+    // Estimate questionMoves based on details
+    const loadedMoves = {};
+    Object.keys(loadedDetails).forEach(k => { loadedMoves[k] = loadedDetails[k].moves || 0; });
+    setQuestionMoves(loadedMoves);
 
     let nextUnanswered = SCORED_QUESTIONS[0];
     for (let i = 0; i < SCORED_QUESTIONS.length; i++) {
@@ -760,6 +781,10 @@ const TriangleRachnaGame = () => {
     
     if (statusType === 'quit') {
       setScreen('score');
+      // Wait for score screen to render then upload PDF
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
     } else {
       navigate('/');
     }
@@ -779,8 +804,52 @@ const TriangleRachnaGame = () => {
         additional_notes: assessment.notes,
       });
       setAssDone(true);
+      
+      // Wait for DOM to render then capture
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
+      
       alert('Assessment successfully saved!');
     } catch (e) { console.error(e); } finally { setAssSub(false); }
+  };
+
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Triangle_SES${sessionIdRef.current}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', sessionIdRef.current);
+      formData.append('game_name', 'triangle_rachna');
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
+    }
   };
 
   // ──────────────────────── RENDER ────────────────────────────
@@ -980,7 +1049,7 @@ const TriangleRachnaGame = () => {
     ];
 
     return (
-      <div className="rg-screen">
+      <div className="rg-screen" id="dashboard-capture-area">
         <div className="rg-screen-header">
           <div>
             <div className="rg-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
@@ -1017,21 +1086,110 @@ const TriangleRachnaGame = () => {
           </div>
 
           {showGrid && (
-            <div className="rg-q-grid">
+            <div className="rg-breakdown-grid">
               {scoredEntries.map(([key, sc]) => {
                 const t = questionTimes[key] || 0;
+                const details = questionDetails[key] || {};
+                const wsItems = details.workspaceItems || [];
+                const qa = details.qAnswers || {};
+                const moves = details.moves || 0;
+
+                // Calculate bounding box for perfectly centered rendering
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                if (wsItems.length > 0) {
+                  wsItems.forEach(item => {
+                    const sz = SHAPE_SIZE_PX[item.size] || 100;
+                    minX = Math.min(minX, item.x);
+                    minY = Math.min(minY, item.y);
+                    maxX = Math.max(maxX, item.x + sz);
+                    maxY = Math.max(maxY, item.y + sz);
+                  });
+                } else {
+                  minX = 0; minY = 0; maxX = 200; maxY = 200;
+                }
+                
+                const padding = 30;
+                minX -= padding; minY -= padding; maxX += padding; maxY += padding;
+                const contentWidth = maxX - minX;
+                const contentHeight = maxY - minY;
+                
+                // Reduce scale to make the frame more compact as requested
+                const scale = Math.min(180 / contentWidth, 140 / contentHeight, 0.55);
+
                 return (
-                  <div className="rg-q-card" key={key}>
-                    <div className="rg-q-top">
-                      <span className="rg-q-num">{getQuestionTitle(key).replace('Question ','Q')}</span>
-                      <span className="rg-q-time">{formatTimerDisplay(t)}</span>
+                  <div className="rg-breakdown-card" key={key}>
+                    <div className="rg-breakdown-header">
+                      <span className="rg-breakdown-title">{getQuestionTitle(key)}</span>
+                      <div className="rg-breakdown-metrics">
+                        <span className="rg-bd-metric"><strong>Score:</strong> <span style={{color: sc>0?'#059669':'#e11d48'}}>{sc}/2</span></span>
+                        <span className="rg-bd-metric"><strong>Time:</strong> {formatTimerDisplay(t)}</span>
+                        <span className="rg-bd-metric"><strong>Moves:</strong> {moves}</span>
+                      </div>
                     </div>
-                    <div className="rg-q-bottom">
-                      <span className="rg-q-stars">{'★'.repeat(sc)}{'☆'.repeat(2-sc)}</span>
-                      <span style={{ fontSize:'0.8rem', fontWeight:700, color: sc>0?'#059669':'#94a3b8',
-                        background: sc>0?'#d1fae5':'#f1f5f9', borderRadius:'999px', padding:'2px 7px' }}>
-                        {sc}/2
-                      </span>
+                    
+                    <div className="rg-breakdown-body">
+                      {/* Target Column */}
+                      <div className="rg-bd-col">
+                        <div className="rg-bd-col-title">Target Image</div>
+                        <div className="rg-bd-img-container">
+                          <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" onError={e => e.target.style.display='none'} />
+                        </div>
+                      </div>
+
+                      {/* User Generated Column */}
+                      <div className="rg-bd-col">
+                        <div className="rg-bd-col-title">User Attempt</div>
+                        <div className="rg-bd-mini-ws">
+                          {wsItems.length === 0 ? (
+                            <span style={{color: '#94a3b8', fontSize: '0.85rem'}}>No attempt recorded</span>
+                          ) : (
+                            <div className="rg-mini-ws-inner" style={{ 
+                              position: 'absolute',
+                              left: '50%',
+                              top: '50%',
+                              width: contentWidth, 
+                              height: contentHeight, 
+                              transform: `translate(-50%, -50%) scale(${scale})` 
+                            }}>
+                              {wsItems.map((item, idx) => {
+                                const sz = SHAPE_SIZE_PX[item.size] || 100;
+                                return (
+                                  <div key={idx} style={{ position: 'absolute', left: item.x - minX, top: item.y - minY, width: sz, height: sz, zIndex: 5 + idx, pointerEvents: 'none' }}>
+                                    <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
+                                      <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Assessor Column */}
+                      <div className="rg-bd-col rg-bd-criteria-col">
+                        <div className="rg-bd-col-title">Assessment Answers</div>
+                        <div className="rg-bd-criteria">
+                          <div className="rg-bd-crit-item">
+                            <span className="rg-crit-text">1. Gap {'>'} 2 squares</span>
+                            <span className={`rg-crit-ans ${qa.q1 === 'yes' ? 'bad' : qa.q1 === 'no' ? 'good' : ''}`}>
+                              {qa.q1 ? qa.q1.toUpperCase() : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="rg-bd-crit-item">
+                            <span className="rg-crit-text">2. Align {'>'} 2 squares</span>
+                            <span className={`rg-crit-ans ${qa.q2 === 'yes' ? 'bad' : qa.q2 === 'no' ? 'good' : ''}`}>
+                              {qa.q2 ? qa.q2.toUpperCase() : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="rg-bd-crit-item">
+                            <span className="rg-crit-text">3. Matches target</span>
+                            <span className={`rg-crit-ans ${qa.q3 === 'yes' ? 'good' : qa.q3 === 'no' ? 'bad' : ''}`}>
+                              {qa.q3 ? qa.q3.toUpperCase() : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1186,6 +1344,16 @@ const TriangleRachnaGame = () => {
     } else if (qAnswers.q3 === 'no') {
       finalScore = 1;
     }
+    
+    // Save details before proceeding
+    const details = {
+      workspaceItems: [...workspaceItems],
+      qAnswers: { ...qAnswers },
+      moves: questionMoves[currentKey] || 0
+    };
+    setQuestionDetails(prev => ({ ...prev, [currentKey]: details }));
+    questionDetailsRef.current = { ...questionDetailsRef.current, [currentKey]: details };
+
     proceedToNext(finalScore);
   };
 

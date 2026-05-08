@@ -241,11 +241,22 @@ exports.getReportDetail = async (req, res) => {
                 if (qid !== undefined) {
                     const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq')))
                         ? qid : `q${qid}`;
+                    
+                    // Filter out non-scored items for Triangle if any
+                    if (gameName === 'triangle_rachna' && typeof key === 'string' && !key.startsWith('question')) return;
+
                     questionScores[key] = s.score;
                     allUniqueKeys.add(key);
                     questionScores[`${key}_time`] = s.timeTaken ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
                     questionScores[`${key}_replays`] = s.replayCount ?? 0;
+
+                    if (gameName === 'triangle_rachna') {
+                        const td = parsedState.questionDetails?.[qid] || {};
+                        questionScores[`${key}_ass_q1`] = td.qAnswers?.q1 ? td.qAnswers.q1.toUpperCase() : '—';
+                        questionScores[`${key}_ass_q2`] = td.qAnswers?.q2 ? td.qAnswers.q2.toUpperCase() : '—';
+                        questionScores[`${key}_ass_q3`] = td.qAnswers?.q3 ? td.qAnswers.q3.toUpperCase() : '—';
+                    }
                 }
             });
 
@@ -261,6 +272,7 @@ exports.getReportDetail = async (req, res) => {
                 questionScores[`${key}_time`] = item.timeTaken ?? null;
                 allUniqueKeys.add(key);
             });
+
 
             // Global Metrics Calculation
             const allItems = (chorItems.length > 0) ? chorItems : scores;
