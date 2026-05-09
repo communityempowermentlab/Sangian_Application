@@ -497,7 +497,9 @@ const AdminReports = () => {
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{colLabel}</th>
                                                     <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>REPLAYS</th>
+                                                    {activeGame?.key !== 'numeracy_number_skill' && (
+                                                        <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>REPLAYS</th>
+                                                    )}
                                                 </React.Fragment>
                                             );
                                         })
@@ -629,7 +631,9 @@ const AdminReports = () => {
                                                                 {v != null ? v : '—'}
                                                             </td>
                                                             <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
-                                                            <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
+                                                            {activeGame?.key !== 'numeracy_number_skill' && (
+                                                                <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
+                                                            )}
                                                         </React.Fragment>
                                                     );
                                                 })
@@ -676,8 +680,17 @@ const AdminReports = () => {
                                             ))}
                                             <td style={{ ...S.tdCenter, background: '#f8fafc', borderLeft: '1px solid #f1f5f9' }}>
                                                 {row.pdf_url ? (
-                                                    <a href={`${API_URL.replace('/api', '')}${row.pdf_url}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', background: '#3b82f6', color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold', display: 'inline-block', transition: 'background 0.2s' }}>
-                                                        Download PDF
+                                                    <a 
+                                                        href={`${API_URL.replace('/api', '')}${row.pdf_url}`} 
+                                                        target="_blank" 
+                                                        rel="noreferrer" 
+                                                        style={{ 
+                                                            textDecoration: 'none', background: '#3b82f6', color: '#fff', 
+                                                            padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', 
+                                                            fontWeight: 'bold', display: 'inline-block', transition: 'background 0.2s' 
+                                                        }}
+                                                    >
+                                                        View Dashboard
                                                     </a>
                                                 ) : (
                                                     <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>N/A</span>

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import './NumberSkillGame.css';
 
 const CONFIG = {
@@ -350,6 +352,8 @@ const NumberSkillGame = () => {
           progress_level: questionIndex + 1,
           status: 'completed',
           saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
+        }).then(() => {
+          setTimeout(generateAndUploadPDF, 1500);
         }).catch(e=>console.log(e));
       }
     } else {
@@ -392,12 +396,44 @@ const NumberSkillGame = () => {
     if (status === 'quit') {
       setShowQuitModal(false);
       setScreen('score');
+      setTimeout(generateAndUploadPDF, 1500);
     } else {
       navigate('/');
     }
   };
 
   const getTotalScore = () => allScores.filter(s => s.score === 1).length;
+
+  const generateAndUploadPDF = async () => {
+    if (!gameSessionId) return;
+    try {
+      setShowGrid(true); // Force table to be visible for PDF capture
+      await new Promise(r => setTimeout(r, 500)); // Wait for render
+      
+      const el = document.querySelector('.ns-main');
+      if (!el) return;
+      
+      const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      formData.append('pdf', pdfBlob, `numeracy_number_skill_${gameSessionId}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionId);
+      formData.append('game_name', 'numeracy_number_skill');
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
+    }
+  };
 
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
@@ -414,6 +450,7 @@ const NumberSkillGame = () => {
       });
       setAssessmentSubmitted(true);
       alert('Assessment successfully saved!');
+      setTimeout(generateAndUploadPDF, 1500);
     } catch(e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
@@ -597,33 +634,43 @@ const NumberSkillGame = () => {
                 </div>
               </div>
 
-              {((getTotalScore() / QUESTIONS.length) * 100) > 80 && (
-                 <div className="ns-banner">{t('game.outstanding')}</div>
-              )}
-
-              <div className="ns-accordion-toggle" onClick={() => setShowGrid(!showGrid)}>
+              <div className="ns-accordion-toggle" data-html2canvas-ignore onClick={() => setShowGrid(!showGrid)}>
                 {showGrid ? '▼' : '▶'} {t('game.showGrid')}
               </div>
 
               {showGrid && (
-                <div className="ns-q-grid">
-                  {allScores.map((scoreObj, idx) => {
-                    const qObj = QUESTIONS.find(q=>q.qid === scoreObj.qId);
-                    const catName = qObj?.questionCategory === 10 ? t('game.catSingle') : qObj?.questionCategory === 11 ? t('game.catDouble') : qObj?.questionCategory === 12 ? t('game.catSub') : t('game.catDiv');
-                    const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
-                    return (
-                      <div key={idx} className="ns-q-card">
-                        <div className="ns-q-top">
-                          <span className="ns-q-num">Q{scoreObj.questionNumber}</span>
-                          <span className="ns-q-cat">{catName}</span>
-                        </div>
-                        <div className="ns-q-bottom">
-                          <span className="ns-q-time">{timeDisp}</span>
-                          <span className={scoreObj.score === 1 ? 'ns-q-icon green' : 'ns-q-icon red'}>{scoreObj.score === 1 ? '✔' : '✖'}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div style={{ marginTop: '20px', overflowX: 'auto', marginBottom: '30px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                    <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <tr>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Question No</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Question</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Correct Answer</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Score</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Time Taken</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allScores.map((scoreObj, idx) => {
+                        const qObj = QUESTIONS.find(q => q.qid === scoreObj.qId);
+                        const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
+                        let cAnsText = qObj?.correctAnswer || '—';
+                        if (qObj?.questionCategory === 13) cAnsText = `Q:${qObj.correctAnswer}, R:${qObj.remainder}`;
+                        
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{scoreObj.questionNumber}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{qObj?.text}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{cAnsText}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b' }}>{timeDisp}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score === 1 ? 'Correct' : 'Incorrect'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
