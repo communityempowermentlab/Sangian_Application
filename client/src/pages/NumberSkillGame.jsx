@@ -598,10 +598,7 @@ const NumberSkillGame = () => {
             </div>
             
             <div className="ns-card ns-result-card">
-              <div className="ns-result-header">
-                <h2>{t('game.performance')}</h2>
-                <p>{t('game.assessmentCompleted')}</p>
-              </div>
+
 
               <div className="ns-score-top">
                 <div className="ns-score-dial-container">
