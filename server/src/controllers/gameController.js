@@ -210,11 +210,10 @@ exports.getReportDetail = async (req, res) => {
                 ga.q4_play_again,
                 ga.q5_behaviors,
                 ga.additional_notes,
-                pdf.file_path AS pdf_url
+                (SELECT file_path FROM game_dashboard_pdfs WHERE session_id = gs.id ORDER BY id DESC LIMIT 1) AS pdf_url
             FROM game_sessions gs
             LEFT JOIN children c ON gs.child_id = c.child_id
             LEFT JOIN game_assessments ga ON ga.session_id = gs.id
-            LEFT JOIN game_dashboard_pdfs pdf ON pdf.session_id = gs.id
             WHERE gs.game_name IN (?)
             ORDER BY gs.start_time DESC
         `, [gameFilter]);
@@ -256,6 +255,16 @@ exports.getReportDetail = async (req, res) => {
                         questionScores[`${key}_ass_q1`] = td.qAnswers?.q1 ? td.qAnswers.q1.toUpperCase() : '—';
                         questionScores[`${key}_ass_q2`] = td.qAnswers?.q2 ? td.qAnswers.q2.toUpperCase() : '—';
                         questionScores[`${key}_ass_q3`] = td.qAnswers?.q3 ? td.qAnswers.q3.toUpperCase() : '—';
+                    }
+
+                    if (['literacy_reading_skill', 'reading_skill'].includes(gameName)) {
+                        questionScores[`${key}_ssr`] = s.ssrAnswers || null;
+                        if (s.ssrAnswers) {
+                            // Map the criteria answers (Yes/No) to standard keys
+                            questionScores[`${key}_ass_q1`] = s.ssrAnswers[0] ? s.ssrAnswers[0].toUpperCase() : '—';
+                            questionScores[`${key}_ass_q2`] = s.ssrAnswers[1] ? s.ssrAnswers[1].toUpperCase() : '—';
+                            questionScores[`${key}_ass_q3`] = s.ssrAnswers[2] ? s.ssrAnswers[2].toUpperCase() : '—';
+                        }
                     }
                 }
             });

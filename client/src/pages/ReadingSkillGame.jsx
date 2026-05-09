@@ -88,7 +88,8 @@ const ReadingSkillGame = () => {
   const [midTestAnswers, setMidTestAnswers] = useState({});
 
   // Final Assessment Form State
-  const [showGrid, setShowGrid] = useState(false);
+  const [showDetailedResults, setShowDetailedResults] = useState(false);
+  const [expandedQuestions, setExpandedQuestions] = useState({});
   const [assessment, setAssessment] = useState({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   const [isAssessmentSubmitting, setIsAssessmentSubmitting] = useState(false);
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
@@ -283,7 +284,7 @@ const ReadingSkillGame = () => {
     setRecordingTarget(target);
   };
 
-  const saveToServer = async (statusOverride, reason) => {
+  const saveToServer = async (statusOverride = null, reason = null) => {
     if (!gameSessionId) return;
     try {
       let updatedPauses = [...pauses];
@@ -306,13 +307,53 @@ const ReadingSkillGame = () => {
     } catch (e) { console.error('Failed to sync progress to server:', e); }
   };
 
-  const processScoring = (score) => {
+  // ── PDF Generation & Upload ───────────────────────────────────
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_ReadingSkill_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionId);
+      formData.append('game_name', 'literacy_reading_skill');
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
+    }
+  };
+
+  const processScoring = (score, ssrAnswers = null) => {
     const q = QUESTIONS[questionIndex];
     const newScoreRec = {
       qId: q.id,
       questionNumber: questionIndex + 1,
-      score: score, // 0 or 1
+      score: score, // 0, 0.5, or 1
       timeTaken: qTimer,
+      ssrAnswers: ssrAnswers
     };
     
     const upScores = [...allScores, newScoreRec];
@@ -347,6 +388,8 @@ const ReadingSkillGame = () => {
           progress_level: questionIndex + 1,
           status: 'completed',
           saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
+        }).then(() => {
+            setTimeout(generateAndUploadPDF, 1500);
         }).catch(e=>console.log(e));
       }
     } else {
@@ -367,15 +410,15 @@ const ReadingSkillGame = () => {
   };
 
   const handleMidTestAssessmentComplete = () => {
-    // Score based on answers: ANY "yes" = 0, ALL "no" = 1
-    let finalScore = 1;
-    for (let key in midTestAnswers) {
-      if (midTestAnswers[key] === 'yes') {
-        finalScore = 0; break;
-      }
-    }
+    // Scoring Rules (Updated): 
+    // ANY "Yes" = 0.0
+    // ALL "No" = 1.0
+    const answers = Object.values(midTestAnswers);
+    const yesCount = answers.filter(val => val === 'yes').length;
+    const finalScore = (yesCount > 0) ? 0 : 1;
+    
     setShowMidTestModal(false);
-    processScoring(finalScore);
+    processScoring(finalScore, midTestAnswers);
   };
 
   const handleQuit = async (status) => {
@@ -384,6 +427,7 @@ const ReadingSkillGame = () => {
     if (status === 'quit') {
       setShowQuitModal(false);
       setScreen('score');
+      setTimeout(generateAndUploadPDF, 1500);
     } else {
       navigate('/');
     }
@@ -403,6 +447,7 @@ const ReadingSkillGame = () => {
         additional_notes: assessment.notes
       });
       setAssessmentSubmitted(true);
+      setTimeout(generateAndUploadPDF, 1000);
       alert('Assessment successfully saved!');
     } catch(e) {
       console.error(e);
@@ -423,6 +468,14 @@ const ReadingSkillGame = () => {
   };
 
   const totalScoreVal = allScores.reduce((sum, s) => sum + s.score, 0);
+  const totalQuestionsCount = QUESTIONS.length;
+  const attemptedCount = allScores.length;
+  const skippedCount = totalQuestionsCount - attemptedCount;
+  const incorrectCount = attemptedCount - totalScoreVal;
+  const accuracyPercent = ((totalScoreVal / totalQuestionsCount) * 100).toFixed(1);
+  const totalTimeSeconds = allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0);
+  const totalTimeDisp = `${Math.floor(totalTimeSeconds / 60)}m ${totalTimeSeconds % 60}s`;
+  const avgTimePerQuestion = Math.round(totalTimeSeconds / (attemptedCount || 1)) + 's';
 
   return (
     <div className="rs-app">
@@ -518,7 +571,7 @@ const ReadingSkillGame = () => {
         )}
 
         {screen === 'score' && (
-          <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="rs-screen" id="dashboard-capture-area" style={{ backgroundColor: '#fff', padding: '20px' }}>
             <div className="rs-screen-header">
               <div>
                 <div className="rs-screen-title">Assessment Complete</div>
@@ -527,7 +580,7 @@ const ReadingSkillGame = () => {
               <div className="rs-chips">
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  Time: {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
+                  Time: {totalTimeDisp}
                 </span>
               </div>
             </div>
@@ -541,13 +594,13 @@ const ReadingSkillGame = () => {
               <div className="rs-score-top">
                 <div className="rs-score-dial-container">
                   <div className="rs-score-dial-big">{totalScoreVal}</div>
-                  <div className="rs-score-dial-small">/ {allScores.length}</div>
+                  <div className="rs-score-dial-small">/ {totalQuestionsCount}</div>
                 </div>
 
                 <div className="rs-metric-grid">
                   <div className="rs-metric-box">
                     <label>Total Score</label>
-                    <div className="metric-val">{totalScoreVal} / {allScores.length}</div>
+                    <div className="metric-val">{totalScoreVal} / {totalQuestionsCount}</div>
                   </div>
                   <div className="rs-metric-box">
                     <label>Correct</label>
@@ -555,51 +608,106 @@ const ReadingSkillGame = () => {
                   </div>
                   <div className="rs-metric-box">
                     <label>Incorrect</label>
-                    <div className="metric-val red">{allScores.length - totalScoreVal}</div>
+                    <div className="metric-val red">{incorrectCount}</div>
                   </div>
                   <div className="rs-metric-box">
                     <label>Percentage</label>
-                    <div className="metric-val">{((totalScoreVal / (allScores.length || 1)) * 100).toFixed(1)}%</div>
+                    <div className="metric-val">{accuracyPercent}%</div>
                   </div>
                   <div className="rs-metric-box">
                     <label>Total Time</label>
-                    <div className="metric-val">
-                       {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
-                    </div>
+                    <div className="metric-val">{totalTimeDisp}</div>
                   </div>
                   <div className="rs-metric-box">
                     <label>Avg Time/Q</label>
-                    <div className="metric-val">{Math.round(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / (allScores.length||1))}s</div>
+                    <div className="metric-val">{avgTimePerQuestion}</div>
                   </div>
                 </div>
               </div>
 
-              {((totalScoreVal / (allScores.length || 1)) * 100) >= 80 && (
-                 <div className="rs-banner">Excellent work! Keep it up! ⭐</div>
-              )}
-
-              <div className="rs-accordion-toggle" onClick={() => setShowGrid(!showGrid)}>
-                {showGrid ? '▼' : '▶'} Show per-question results with time
+              <div className="rs-accordion-toggle" onClick={() => setShowDetailedResults(!showDetailedResults)} style={{ marginBottom: '20px' }}>
+                {showDetailedResults ? '▼ Hide per-question results' : '▶ Show per-question results'}
               </div>
 
-              {showGrid && (
-                <div className="rs-q-grid">
-                  {allScores.map((scoreObj, idx) => {
-                    const qObj = QUESTIONS.find(q=>q.id === scoreObj.qId);
-                    const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
-                    return (
-                      <div key={idx} className="rs-q-card">
-                        <div className="rs-q-top">
-                          <span className="rs-q-num">Q{scoreObj.questionNumber}</span>
-                          <span className="rs-q-cat">{qObj.categoryName}</span>
-                        </div>
-                        <div className="rs-q-bottom">
-                          <span className="rs-q-time">{timeDisp}</span>
-                          <span className={scoreObj.score === 1 ? 'rs-q-icon green' : 'rs-q-icon red'}>{scoreObj.score === 1 ? '✔' : '✖'}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
+              {showDetailedResults && (
+                <div className="rs-table-container" style={{ marginTop: '0', boxShadow: 'none', border: '1px solid #e2e8f0' }}>
+                  <div className="rs-table-responsive">
+                    <table className="rs-data-table">
+                      <thead>
+                        <tr>
+                          <th>Question No.</th>
+                          <th>Question Type</th>
+                          <th>Question</th>
+                          <th>Correct Answer</th>
+                          <th>Score</th>
+                          <th>Time Taken</th>
+                          <th>Attempt Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {QUESTIONS.map((q, idx) => {
+                          const scoreObj = allScores.find(s => s.qId === q.id);
+                          const isAttempted = !!scoreObj;
+                          const isExpanded = expandedQuestions[q.id];
+                          const hasSSR = q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH;
+
+                          return (
+                            <React.Fragment key={q.id}>
+                              <tr 
+                                className={!isAttempted ? 'row-skipped' : ''} 
+                                onClick={() => hasSSR && setExpandedQuestions(prev => ({...prev, [q.id]: !prev[q.id]}))}
+                                style={{ cursor: hasSSR ? 'pointer' : 'default' }}
+                              >
+                                <td>{q.order}</td>
+                                <td>{q.categoryName}</td>
+                                <td className="col-text" title={q.text}>{q.text}</td>
+                                <td>{hasSSR ? 'All Criteria Met' : q.text}</td>
+                                <td style={{ fontWeight: 'bold' }}>{isAttempted ? scoreObj.score : 0}</td>
+                                <td>{isAttempted ? scoreObj.timeTaken + 's' : '—'}</td>
+                                <td>
+                                  <span className={`status-badge status-${isAttempted ? 'attempted' : 'skipped'}`}>
+                                    {isAttempted ? 'Attempted' : 'Skipped'}
+                                  </span>
+                                </td>
+                              </tr>
+                              {hasSSR && isExpanded && isAttempted && (
+                                <tr>
+                                  <td colSpan="7" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
+                                    <div style={{ padding: '15px 30px' }}>
+                                      <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>SSR Question</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>User Answer</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>Correct Answer</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>Score</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {(q.assessmentCriteria || []).map((criterion, cIdx) => {
+                                            const answer = scoreObj.ssrAnswers?.[cIdx] || '—';
+                                            const isCorrect = answer === 'no';
+                                            return (
+                                              <tr key={cIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '8px' }}>{criterion}</td>
+                                                <td style={{ padding: '8px', textTransform: 'capitalize' }}>{answer}</td>
+                                                <td style={{ padding: '8px' }}>No</td>
+                                                <td style={{ padding: '8px', fontWeight: 'bold' }}>{isCorrect ? 1 : 0}</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 

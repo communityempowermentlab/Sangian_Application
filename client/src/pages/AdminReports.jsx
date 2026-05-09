@@ -64,10 +64,13 @@ const AdminReports = () => {
     // Filter state
     const [filterStatus, setFilterStatus] = useState(null);
 
+    // Reading Skill Expansion state
+    const [expandedRows, setExpandedRows] = useState({}); // { sessionId: boolean }
+
     // Pause/Quit Details Modal state
     const [pqModal, setPqModal] = useState({ show: false, pauses: [], childName: '' });
 
-    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); };
+    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); setExpandedRows({}); setPqModal({ show: false, pauses: [], childName: '', quitReason: '' }); };
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
     const fetchOverview = useCallback(async () => {
@@ -166,6 +169,20 @@ const AdminReports = () => {
                 qHeaders.push(`${colLabel} Match Tgt?`);
                 qHeaders.push(`${colLabel} Time(s)`);
             });
+        } else if (activeGame?.key === 'literacy_reading_skill') {
+            detail.columns.forEach((c, idx) => {
+                const colLabel = `Q${idx + 1}`;
+                qHeaders.push(`${colLabel} Score`);
+                qHeaders.push(`${colLabel} Time(s)`);
+                if (c.includes('story') || c.includes('paragraph')) {
+                    qHeaders.push(`${colLabel} SSR 1 Ans`);
+                    qHeaders.push(`${colLabel} SSR 1 Score`);
+                    qHeaders.push(`${colLabel} SSR 2 Ans`);
+                    qHeaders.push(`${colLabel} SSR 2 Score`);
+                    qHeaders.push(`${colLabel} SSR 3 Ans`);
+                    qHeaders.push(`${colLabel} SSR 3 Score`);
+                }
+            });
         } else {
             detail.columns.forEach((c, idx) => {
                 const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
@@ -230,6 +247,17 @@ const AdminReports = () => {
                         qs[`${c}_ass_q3`] ?? '',
                         qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : ''
                     );
+                });
+            } else if (activeGame?.key === 'literacy_reading_skill') {
+                detail?.columns?.forEach(c => {
+                    const qs = r.question_scores || {};
+                    rowArr.push(qs[c] ?? '', qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');
+                    if (c.includes('story') || c.includes('paragraph')) {
+                        const ssr = qs[`${c}_ssr`] || [];
+                        rowArr.push(ssr[0]?.answer || '', ssr[0]?.score ?? '');
+                        rowArr.push(ssr[1]?.answer || '', ssr[1]?.score ?? '');
+                        rowArr.push(ssr[2]?.answer || '', ssr[2]?.score ?? '');
+                    }
                 });
             } else {
                 const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
@@ -439,6 +467,28 @@ const AdminReports = () => {
                                                 </React.Fragment>
                                             );
                                         })
+                                    ) : activeGame?.key === 'literacy_reading_skill' ? (
+                                        <>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5' }}>Total Score</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
+                                            {detail?.columns?.map((c, idx) => {
+                                                const qNum = idx + 1;
+                                                const isSSR = qNum === 21 || qNum === 22;
+                                                return (
+                                                    <React.Fragment key={c}>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>Q{qNum} Score</th>
+                                                        {isSSR && (
+                                                            <>
+                                                                <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Skip Words?</th>
+                                                                <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Pronunc. Err?</th>
+                                                                <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Need Help?</th>
+                                                            </>
+                                                        )}
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </>
                                     ) : (
                                         detail.columns.map((c, idx) => {
                                             const isAtlantis = activeGame?.key === 'atlantis_bagiya';
@@ -475,7 +525,8 @@ const AdminReports = () => {
                                     const isChor = activeGame?.key === 'cognitive_flex_chor';
                                     
                                     return (
-                                        <tr key={row.session_id} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                        <React.Fragment key={row.session_id}>
+                                            <tr style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
                                             <td style={S.td}>{i + 1}</td>
                                             <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
                                             <td style={S.td}>{row.child_name}</td>
@@ -544,6 +595,30 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
+                                            ) : activeGame?.key === 'literacy_reading_skill' ? (
+                                                <>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 700, color: '#059669' }}>{row.score != null ? `${row.score}/22` : '—'}</td>
+                                                    <td style={{ ...S.tdCenter, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    {detail?.columns?.map((c, idx) => {
+                                                        const qNum = idx + 1;
+                                                        const isSSR = qNum === 21 || qNum === 22;
+                                                        const qs = row.question_scores;
+                                                        const score = qs[c];
+                                                        return (
+                                                            <React.Fragment key={`rs-${c}`}>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
+                                                                {isSSR && (
+                                                                    <>
+                                                                        <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q1`] === 'YES' ? '#dc2626' : qs[`${c}_ass_q1`] === 'NO' ? '#059669' : '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>{qs[`${c}_ass_q1`] ?? '—'}</td>
+                                                                        <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q2`] === 'YES' ? '#dc2626' : qs[`${c}_ass_q2`] === 'NO' ? '#059669' : '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>{qs[`${c}_ass_q2`] ?? '—'}</td>
+                                                                        <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q3`] === 'YES' ? '#dc2626' : qs[`${c}_ass_q3`] === 'NO' ? '#059669' : '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>{qs[`${c}_ass_q3`] ?? '—'}</td>
+                                                                    </>
+                                                                )}
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </>
                                             ) : (
                                                 detail.columns.map(c => {
                                                     const v = row.question_scores[c];
@@ -609,6 +684,7 @@ const AdminReports = () => {
                                                 )}
                                             </td>
                                         </tr>
+                                    </React.Fragment>
                                     );
                                 })}
                             </tbody>
