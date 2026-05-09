@@ -672,7 +672,6 @@ const NumberSkillGame = () => {
                     </tbody>
                   </table>
                 </div>
-              )}
 
               {/* Assessment Form Segment */}
               <div className="shared-assessment-section">

@@ -704,7 +704,6 @@ const ReadingSkillGame = () => {
                     </table>
                   </div>
                 </div>
-              )}
 
               {/* Assessment Form Segment */}
               <div className="shared-assessment-section">
