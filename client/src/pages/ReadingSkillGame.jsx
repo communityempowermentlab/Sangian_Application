@@ -625,12 +625,7 @@ const ReadingSkillGame = () => {
                 </div>
               </div>
 
-              <div className="rs-accordion-toggle" onClick={() => setShowDetailedResults(!showDetailedResults)} style={{ marginBottom: '20px' }}>
-                {showDetailedResults ? '▼ Hide per-question results' : '▶ Show per-question results'}
-              </div>
-
-              {showDetailedResults && (
-                <div className="rs-table-container" style={{ marginTop: '0', boxShadow: 'none', border: '1px solid #e2e8f0' }}>
+              <div className="rs-table-container" style={{ marginTop: '0', boxShadow: 'none', border: '1px solid #e2e8f0' }}>
                   <div className="rs-table-responsive">
                     <table className="rs-data-table">
                       <thead>

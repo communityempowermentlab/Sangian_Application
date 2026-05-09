@@ -639,11 +639,6 @@ const NumberSkillGame = () => {
                 </div>
               </div>
 
-              <div className="ns-accordion-toggle" data-html2canvas-ignore onClick={() => setShowGrid(!showGrid)}>
-                {showGrid ? '▼' : '▶'} {t('game.showGrid')}
-              </div>
-
-              {showGrid && (
                 <div style={{ marginTop: '20px', overflowX: 'auto', marginBottom: '30px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
