@@ -258,12 +258,21 @@ exports.getReportDetail = async (req, res) => {
                     }
 
                     if (['literacy_reading_skill', 'reading_skill'].includes(gameName)) {
-                        questionScores[`${key}_ssr`] = s.ssrAnswers || null;
-                        if (s.ssrAnswers) {
-                            // Map the criteria answers (Yes/No) to standard keys
-                            questionScores[`${key}_ass_q1`] = s.ssrAnswers[0] ? s.ssrAnswers[0].toUpperCase() : '—';
-                            questionScores[`${key}_ass_q2`] = s.ssrAnswers[1] ? s.ssrAnswers[1].toUpperCase() : '—';
-                            questionScores[`${key}_ass_q3`] = s.ssrAnswers[2] ? s.ssrAnswers[2].toUpperCase() : '—';
+                        // Look for assessment data in multiple potential locations for robustness
+                        let ans = s.ssrAnswers || s.midTestAnswers || (parsedState.questionDetails?.[qid]?.ssrAnswers) || (parsedState.questionDetails?.[qid]?.qAnswers) || (parsedState.questionDetails?.[qid]);
+                        
+                        if (ans) {
+                            if (typeof ans === 'string') {
+                                try { ans = JSON.parse(ans); } catch(e) {}
+                            }
+                            // Support numeric keys (0,1,2), string keys ("0","1","2"), and labelled keys (q1,q2,q3)
+                            const getAns = (i, k) => {
+                                const val = ans[i] ?? ans[String(i)] ?? ans[k] ?? '—';
+                                return String(val).toUpperCase();
+                            };
+                            questionScores[`${key}_ass_q1`] = getAns(0, 'q1');
+                            questionScores[`${key}_ass_q2`] = getAns(1, 'q2');
+                            questionScores[`${key}_ass_q3`] = getAns(2, 'q3');
                         }
                     }
                 }
