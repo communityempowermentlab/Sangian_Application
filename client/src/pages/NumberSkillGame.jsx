@@ -415,11 +415,10 @@ const NumberSkillGame = () => {
       
       const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, logging: false });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       const pdfBlob = pdf.output('blob');
       
