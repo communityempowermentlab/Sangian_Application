@@ -413,7 +413,13 @@ const NumberSkillGame = () => {
       const el = document.querySelector('.ns-main');
       if (!el) return;
       
-      const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, logging: false });
+      const canvas = await html2canvas(el, { 
+        scale: 1.5, 
+        useCORS: true, 
+        logging: false,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight
+      });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
