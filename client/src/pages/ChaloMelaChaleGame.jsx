@@ -883,24 +883,19 @@ const ChaloMelaChaleGame = () => {
         </div>
 
         <div className="accordion-section">
-          <button className="accordion-btn" onClick={() => setShowResultsGrid(!showResultsGrid)}>
-            {showResultsGrid ? '▼ Hide per-question results with time' : '▶ Show per-question results with time'}
-          </button>
-          {showResultsGrid && (
-            <div className="results-grid-cards">
-              {allScores.map((s, idx) => (
-                <div key={idx} className="result-mini-card">
-                  <div className="res-card-top">
-                    <span className="res-qname">{s.id.toUpperCase()}</span>
-                    <span className="res-status">{s.score > 0 ? '✅' : '❌'}</span>
-                  </div>
-                  <div className="res-card-bottom">
-                    <span className="res-details">Moves: {s.moves} | {Math.round(parseFloat(s.timeTaken))} sec</span>
-                  </div>
+          <div className="results-grid-cards">
+            {allScores.map((s, idx) => (
+              <div key={idx} className="result-mini-card">
+                <div className="res-card-top">
+                  <span className="res-qname">{s.id.toUpperCase()}</span>
+                  <span className="res-status">{s.score > 0 ? '✅' : '❌'}</span>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="res-card-bottom">
+                  <span className="res-details">Moves: {s.moves} | {Math.round(parseFloat(s.timeTaken))} sec</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="shared-assessment-section">

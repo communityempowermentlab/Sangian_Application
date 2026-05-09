@@ -643,15 +643,13 @@ const ReadingSkillGame = () => {
                         {QUESTIONS.map((q, idx) => {
                           const scoreObj = allScores.find(s => s.qId === q.id);
                           const isAttempted = !!scoreObj;
-                          const isExpanded = expandedQuestions[q.id];
                           const hasSSR = q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH;
 
                           return (
                             <React.Fragment key={q.id}>
                               <tr 
                                 className={!isAttempted ? 'row-skipped' : ''} 
-                                onClick={() => hasSSR && setExpandedQuestions(prev => ({...prev, [q.id]: !prev[q.id]}))}
-                                style={{ cursor: hasSSR ? 'pointer' : 'default' }}
+                                style={{ cursor: 'default' }}
                               >
                                 <td>{q.order}</td>
                                 <td>{q.categoryName}</td>
@@ -665,7 +663,7 @@ const ReadingSkillGame = () => {
                                   </span>
                                 </td>
                               </tr>
-                              {hasSSR && isExpanded && isAttempted && (
+                              {hasSSR && isAttempted && (
                                 <tr>
                                   <td colSpan="7" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
                                     <div style={{ padding: '15px 30px' }}>

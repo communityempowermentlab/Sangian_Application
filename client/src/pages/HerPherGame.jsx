@@ -822,37 +822,31 @@ const HerPherGame = () => {
                    <div className="hp-banner">Outstanding performance! You're a memory star! ⭐</div>
                 )}
 
-                {/* Toggle detail grid */}
-                <div className="hp-accordion-toggle" onClick={() => setShowGrid(g => !g)}>
-                  {showGrid ? '▼' : '▶'} Show per-question detail with time
-                </div>
-
-                {showGrid && (
-                  <div className="hp-q-grid" style={{ marginTop: 12 }}>
-                    {scoredHistory.map((h, i) => (
-                      <div className="hp-q-card" key={i}>
-                        <div className="hp-q-top">
-                          <span className="hp-q-num">Q{h.question - 1}</span>
-                          <span className="hp-q-cat">{GAME_DATA[h.question]?.category}</span>
-                        </div>
-                        <div className="hp-q-bottom">
-                          <span className="hp-q-time">{formatTime(h.time)}</span>
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            {h.correctCount ?? 0} correct
-                          </span>
-                          <span style={{
-                            fontSize: '0.82rem', fontWeight: 700,
-                            color: h.score > 0 ? '#059669' : '#94a3b8',
-                            background: h.score > 0 ? '#d1fae5' : '#f1f5f9',
-                            borderRadius: '999px', padding: '2px 8px'
-                          }}>
-                            {h.score > 0 ? `+${h.score}` : '0'}
-                          </span>
-                        </div>
+                {/* Per-question detail grid */}
+                <div className="hp-q-grid" style={{ marginTop: 12 }}>
+                  {scoredHistory.map((h, i) => (
+                    <div className="hp-q-card" key={i}>
+                      <div className="hp-q-top">
+                        <span className="hp-q-num">Q{h.question - 1}</span>
+                        <span className="hp-q-cat">{GAME_DATA[h.question]?.category}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="hp-q-bottom">
+                        <span className="hp-q-time">{formatTime(h.time)}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          {h.correctCount ?? 0} correct
+                        </span>
+                        <span style={{
+                          fontSize: '0.82rem', fontWeight: 700,
+                          color: h.score > 0 ? '#059669' : '#94a3b8',
+                          background: h.score > 0 ? '#d1fae5' : '#f1f5f9',
+                          borderRadius: '999px', padding: '2px 8px'
+                        }}>
+                          {h.score > 0 ? `+${h.score}` : '0'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Assessment Form */}
                 <div className="shared-assessment-section">

@@ -952,48 +952,42 @@ const NumberRecallGame = () => {
                 <div className="nr-banner">Outstanding performance! Great memory span! ⭐</div>
               )}
 
-              {/* Per-question grid toggle */}
-              <div className="nr-accordion-toggle" onClick={() => setShowGrid(!showGrid)}>
-                {showGrid ? '▼' : '▶'} Show per-question results
+              {/* Per-question results */}
+              <div className="nr-q-table-wrap">
+                <table className="nr-q-table">
+                  <thead>
+                    <tr>
+                      <th>Q#</th>
+                      <th>Your Response</th>
+                      <th>Correct Answer</th>
+                      <th>Status</th>
+                      <th>Score</th>
+                      <th>Time</th>
+                      <th>Replays</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allScores.map((s, i) => {
+                      const ok = s.score === 1;
+                      return (
+                        <tr key={i} className={ok ? 'nr-row-correct' : 'nr-row-incorrect'}>
+                          <td>Q{s.questionNumber}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{(s.userResponse || []).join(', ')}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{(s.correctAnswer || []).join(', ')}</td>
+                          <td>
+                            <span className={`nr-status-badge ${ok ? 'nr-badge-correct' : 'nr-badge-incorrect'}`}>
+                              {ok ? 'Correct' : 'Incorrect'}
+                            </span>
+                          </td>
+                          <td>{s.score}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{s.replayCount ?? 0}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-
-              {showGrid && (
-                <div className="nr-q-table-wrap">
-                  <table className="nr-q-table">
-                    <thead>
-                      <tr>
-                        <th>Q#</th>
-                        <th>Your Response</th>
-                        <th>Correct Answer</th>
-                        <th>Status</th>
-                        <th>Score</th>
-                        <th>Time</th>
-                        <th>Replays</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allScores.map((s, i) => {
-                        const ok = s.score === 1;
-                        return (
-                          <tr key={i} className={ok ? 'nr-row-correct' : 'nr-row-incorrect'}>
-                            <td>Q{s.questionNumber}</td>
-                            <td style={{ fontFamily: 'monospace' }}>{(s.userResponse || []).join(', ')}</td>
-                            <td style={{ fontFamily: 'monospace' }}>{(s.correctAnswer || []).join(', ')}</td>
-                            <td>
-                              <span className={`nr-status-badge ${ok ? 'nr-badge-correct' : 'nr-badge-incorrect'}`}>
-                                {ok ? 'Correct' : 'Incorrect'}
-                              </span>
-                            </td>
-                            <td>{s.score}</td>
-                            <td style={{ fontFamily: 'monospace' }}>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
-                            <td style={{ fontFamily: 'monospace' }}>{s.replayCount ?? 0}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
 
               {/* Assessment Form */}
               <div className="shared-assessment-section">

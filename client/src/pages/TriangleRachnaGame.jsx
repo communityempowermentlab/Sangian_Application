@@ -1081,121 +1081,116 @@ const TriangleRachnaGame = () => {
           {pct >= 80 && <div className="rg-banner">Outstanding performance! 🌟</div>}
 
           {/* Per-question detail */}
-          <div className="rg-accordion-toggle" onClick={() => setShowGrid(g => !g)}>
-            {showGrid ? '▼' : '▶'} Show per-question breakdown
-          </div>
+          {/* Per-question detail breakdown */}
+          <div className="rg-breakdown-grid">
+            {scoredEntries.map(([key, sc]) => {
+              const t = questionTimes[key] || 0;
+              const details = questionDetails[key] || {};
+              const wsItems = details.workspaceItems || [];
+              const qa = details.qAnswers || {};
+              const moves = details.moves || 0;
 
-          {showGrid && (
-            <div className="rg-breakdown-grid">
-              {scoredEntries.map(([key, sc]) => {
-                const t = questionTimes[key] || 0;
-                const details = questionDetails[key] || {};
-                const wsItems = details.workspaceItems || [];
-                const qa = details.qAnswers || {};
-                const moves = details.moves || 0;
+              // Calculate bounding box for perfectly centered rendering
+              let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+              if (wsItems.length > 0) {
+                wsItems.forEach(item => {
+                  const sz = SHAPE_SIZE_PX[item.size] || 100;
+                  minX = Math.min(minX, item.x);
+                  minY = Math.min(minY, item.y);
+                  maxX = Math.max(maxX, item.x + sz);
+                  maxY = Math.max(maxY, item.y + sz);
+                });
+              } else {
+                minX = 0; minY = 0; maxX = 200; maxY = 200;
+              }
+              
+              const padding = 30;
+              minX -= padding; minY -= padding; maxX += padding; maxY += padding;
+              const contentWidth = maxX - minX;
+              const contentHeight = maxY - minY;
+              
+              // Reduce scale to make the frame more compact
+              const scale = Math.min(180 / contentWidth, 140 / contentHeight, 0.55);
 
-                // Calculate bounding box for perfectly centered rendering
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                if (wsItems.length > 0) {
-                  wsItems.forEach(item => {
-                    const sz = SHAPE_SIZE_PX[item.size] || 100;
-                    minX = Math.min(minX, item.x);
-                    minY = Math.min(minY, item.y);
-                    maxX = Math.max(maxX, item.x + sz);
-                    maxY = Math.max(maxY, item.y + sz);
-                  });
-                } else {
-                  minX = 0; minY = 0; maxX = 200; maxY = 200;
-                }
-                
-                const padding = 30;
-                minX -= padding; minY -= padding; maxX += padding; maxY += padding;
-                const contentWidth = maxX - minX;
-                const contentHeight = maxY - minY;
-                
-                // Reduce scale to make the frame more compact as requested
-                const scale = Math.min(180 / contentWidth, 140 / contentHeight, 0.55);
-
-                return (
-                  <div className="rg-breakdown-card" key={key}>
-                    <div className="rg-breakdown-header">
-                      <span className="rg-breakdown-title">{getQuestionTitle(key)}</span>
-                      <div className="rg-breakdown-metrics">
-                        <span className="rg-bd-metric"><strong>Score:</strong> <span style={{color: sc>0?'#059669':'#e11d48'}}>{sc}/2</span></span>
-                        <span className="rg-bd-metric"><strong>Time:</strong> {formatTimerDisplay(t)}</span>
-                        <span className="rg-bd-metric"><strong>Moves:</strong> {moves}</span>
+              return (
+                <div className="rg-breakdown-card" key={key}>
+                  <div className="rg-breakdown-header">
+                    <span className="rg-breakdown-title">{getQuestionTitle(key)}</span>
+                    <div className="rg-breakdown-metrics">
+                      <span className="rg-bd-metric"><strong>Score:</strong> <span style={{color: sc>0?'#059669':'#e11d48'}}>{sc}/2</span></span>
+                      <span className="rg-bd-metric"><strong>Time:</strong> {formatTimerDisplay(t)}</span>
+                      <span className="rg-bd-metric"><strong>Moves:</strong> {moves}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="rg-breakdown-body">
+                    {/* Target Column */}
+                    <div className="rg-bd-col">
+                      <div className="rg-bd-col-title">Target Image</div>
+                      <div className="rg-bd-img-container">
+                        <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" onError={e => e.target.style.display='none'} />
                       </div>
                     </div>
-                    
-                    <div className="rg-breakdown-body">
-                      {/* Target Column */}
-                      <div className="rg-bd-col">
-                        <div className="rg-bd-col-title">Target Image</div>
-                        <div className="rg-bd-img-container">
-                          <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" onError={e => e.target.style.display='none'} />
-                        </div>
-                      </div>
 
-                      {/* User Generated Column */}
-                      <div className="rg-bd-col">
-                        <div className="rg-bd-col-title">User Attempt</div>
-                        <div className="rg-bd-mini-ws">
-                          {wsItems.length === 0 ? (
-                            <span style={{color: '#94a3b8', fontSize: '0.85rem'}}>No attempt recorded</span>
-                          ) : (
-                            <div className="rg-mini-ws-inner" style={{ 
-                              position: 'absolute',
-                              left: '50%',
-                              top: '50%',
-                              width: contentWidth, 
-                              height: contentHeight, 
-                              transform: `translate(-50%, -50%) scale(${scale})` 
-                            }}>
-                              {wsItems.map((item, idx) => {
-                                const sz = SHAPE_SIZE_PX[item.size] || 100;
-                                return (
-                                  <div key={idx} style={{ position: 'absolute', left: item.x - minX, top: item.y - minY, width: sz, height: sz, zIndex: 5 + idx, pointerEvents: 'none' }}>
-                                    <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
-                                      <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
-                                    </div>
+                    {/* User Generated Column */}
+                    <div className="rg-bd-col">
+                      <div className="rg-bd-col-title">User Attempt</div>
+                      <div className="rg-bd-mini-ws">
+                        {wsItems.length === 0 ? (
+                          <span style={{color: '#94a3b8', fontSize: '0.85rem'}}>No attempt recorded</span>
+                        ) : (
+                          <div className="rg-mini-ws-inner" style={{ 
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            width: contentWidth, 
+                            height: contentHeight, 
+                            transform: `translate(-50%, -50%) scale(${scale})` 
+                          }}>
+                            {wsItems.map((item, idx) => {
+                              const sz = SHAPE_SIZE_PX[item.size] || 100;
+                              return (
+                                <div key={idx} style={{ position: 'absolute', left: item.x - minX, top: item.y - minY, width: sz, height: sz, zIndex: 5 + idx, pointerEvents: 'none' }}>
+                                  <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
+                                    <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
+                    </div>
 
-                      {/* Assessor Column */}
-                      <div className="rg-bd-col rg-bd-criteria-col">
-                        <div className="rg-bd-col-title">Assessment Answers</div>
-                        <div className="rg-bd-criteria">
-                          <div className="rg-bd-crit-item">
-                            <span className="rg-crit-text">1. Gap {'>'} 2 squares</span>
-                            <span className={`rg-crit-ans ${qa.q1 === 'yes' ? 'bad' : qa.q1 === 'no' ? 'good' : ''}`}>
-                              {qa.q1 ? qa.q1.toUpperCase() : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="rg-bd-crit-item">
-                            <span className="rg-crit-text">2. Align {'>'} 2 squares</span>
-                            <span className={`rg-crit-ans ${qa.q2 === 'yes' ? 'bad' : qa.q2 === 'no' ? 'good' : ''}`}>
-                              {qa.q2 ? qa.q2.toUpperCase() : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="rg-bd-crit-item">
-                            <span className="rg-crit-text">3. Matches target</span>
-                            <span className={`rg-crit-ans ${qa.q3 === 'yes' ? 'good' : qa.q3 === 'no' ? 'bad' : ''}`}>
-                              {qa.q3 ? qa.q3.toUpperCase() : 'N/A'}
-                            </span>
-                          </div>
+                    {/* Assessor Column */}
+                    <div className="rg-bd-col rg-bd-criteria-col">
+                      <div className="rg-bd-col-title">Assessment Answers</div>
+                      <div className="rg-bd-criteria">
+                        <div className="rg-bd-crit-item">
+                          <span className="rg-crit-text">1. Gap {'>'} 2 squares</span>
+                          <span className={`rg-crit-ans ${qa.q1 === 'yes' ? 'bad' : qa.q1 === 'no' ? 'good' : ''}`}>
+                            {qa.q1 ? qa.q1.toUpperCase() : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="rg-bd-crit-item">
+                          <span className="rg-crit-text">2. Align {'>'} 2 squares</span>
+                          <span className={`rg-crit-ans ${qa.q2 === 'yes' ? 'bad' : qa.q2 === 'no' ? 'good' : ''}`}>
+                            {qa.q2 ? qa.q2.toUpperCase() : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="rg-bd-crit-item">
+                          <span className="rg-crit-text">3. Matches target</span>
+                          <span className={`rg-crit-ans ${qa.q3 === 'yes' ? 'good' : qa.q3 === 'no' ? 'bad' : ''}`}>
+                            {qa.q3 ? qa.q3.toUpperCase() : 'N/A'}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* Assessment Form */}
           <div className="shared-assessment-section">

@@ -1148,49 +1148,43 @@ const AtlantisBagiyaGame = () => {
                 <div className="ab-banner">Outstanding performance! Excellent visual memory! ⭐</div>
               )}
 
-              {/* Per-question grid toggle */}
-              <div className="ab-accordion-toggle" onClick={() => setShowGrid(!showGrid)}>
-                {showGrid ? '▼' : '▶'} Show per-question results
-              </div>
-
-              {showGrid && (
-                <div className="ab-q-table-wrap">
-                  <table className="ab-q-table">
-                    <thead>
-                      <tr>
-                        <th>Screen</th>
-                        <th>Sub-Q</th>
-                        <th>Target</th>
-                        <th>Child Chose</th>
-                        <th>Status</th>
-                        <th>Score</th>
-                        <th>Time</th>
+              {/* Per-question results */}
+              <div className="ab-q-table-wrap">
+                <table className="ab-q-table">
+                  <thead>
+                    <tr>
+                      <th>Screen</th>
+                      <th>Sub-Q</th>
+                      <th>Target</th>
+                      <th>Child Chose</th>
+                      <th>Status</th>
+                      <th>Score</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allScores.map((s, i) => (
+                      <tr key={i}>
+                        <td>S{s.screen}</td>
+                        <td>Q{s.subQ}</td>
+                        <td>
+                          <img src={itemByStem[s.targetStem]?.img} alt={s.targetName} className="ab-q-img" />
+                        </td>
+                        <td>
+                          <img src={itemByStem[s.chosenStem]?.img} alt={s.chosenName} className="ab-q-img" />
+                        </td>
+                        <td>
+                          <span className="ab-badge">
+                            {s.score === 2 ? 'Correct' : s.score === 1 ? 'Partial' : 'Wrong'}
+                          </span>
+                        </td>
+                        <td>{s.score}</td>
+                        <td>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {allScores.map((s, i) => (
-                        <tr key={i}>
-                          <td>S{s.screen}</td>
-                          <td>Q{s.subQ}</td>
-                          <td>
-                            <img src={itemByStem[s.targetStem]?.img} alt={s.targetName} className="ab-q-img" />
-                          </td>
-                          <td>
-                            <img src={itemByStem[s.chosenStem]?.img} alt={s.chosenName} className="ab-q-img" />
-                          </td>
-                          <td>
-                            <span className="ab-badge">
-                              {s.score === 2 ? 'Correct' : s.score === 1 ? 'Partial' : 'Wrong'}
-                            </span>
-                          </td>
-                          <td>{s.score}</td>
-                          <td>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Assessment Form */}
               <div className="shared-assessment-section">

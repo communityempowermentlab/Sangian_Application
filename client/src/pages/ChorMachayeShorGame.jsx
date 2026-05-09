@@ -1211,38 +1211,33 @@ const ChorMachayeShorGame = () => {
 
               {/* Breakdown Accordion */}
               <div className="chor-accordion">
-                <button className="chor-accordion-toggle" onClick={() => setShowGrid(!showGrid)}>
-                  {showGrid ? '▼' : '▶'} Show per-question results with time
-                </button>
-                {showGrid && (
-                  <div className="chor-q-grid">
-                    {itemResults.map((r, i) => (
-                      <div key={i} className="chor-q-card">
-                        <div className="q-card-top">
-                          <span className="q-id">Item {r.itemId}</span>
-                          <span className={`q-status ${r.completed ? 'pass' : 'fail'}`}>{r.completed ? '✔' : '✘'}</span>
-                        </div>
-                        <div className="q-item-name">{r.itemName}</div>
-                        <div className="q-stats-row">
-                          <span className="q-stat">Score: <strong>{r.score}</strong></span>
-                          <span className="q-stat">Moves: <strong>{r.moves}</strong></span>
-                          <span className="q-stat">Time: <strong>{r.timeTaken}s</strong></span>
-                        </div>
-                        {r.phase2Time > 0 && (
-                          <div className="q-advanced">
-                            <div className="q-adv-title">ADVANCED METRICS</div>
-                            <div className="q-adv-phases">
-                              <span>Phase 1: {r.phase1Time}s</span>
-                              <span>Phase 2: {r.phase2Time}s</span>
-                            </div>
-                            <div className="q-adv-row">Mistakes: {r.mistakes || 0}</div>
-                            <div className="q-adv-row">Rule: <strong>{r.finalRule || 'N/A'}</strong></div>
-                          </div>
-                        )}
+                <div className="chor-q-grid">
+                  {itemResults.map((r, i) => (
+                    <div key={i} className="chor-q-card">
+                      <div className="q-card-top">
+                        <span className="q-id">Item {r.itemId}</span>
+                        <span className={`q-status ${r.completed ? 'pass' : 'fail'}`}>{r.completed ? '✔' : '✘'}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="q-item-name">{r.itemName}</div>
+                      <div className="q-stats-row">
+                        <span className="q-stat">Score: <strong>{r.score}</strong></span>
+                        <span className="q-stat">Moves: <strong>{r.moves}</strong></span>
+                        <span className="q-stat">Time: <strong>{r.timeTaken}s</strong></span>
+                      </div>
+                      {r.phase2Time > 0 && (
+                        <div className="q-advanced">
+                          <div className="q-adv-title">ADVANCED METRICS</div>
+                          <div className="q-adv-phases">
+                            <span>Phase 1: {r.phase1Time}s</span>
+                            <span>Phase 2: {r.phase2Time}s</span>
+                          </div>
+                          <div className="q-adv-row">Mistakes: {r.mistakes || 0}</div>
+                          <div className="q-adv-row">Rule: <strong>{r.finalRule || 'N/A'}</strong></div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Assessment Form */}
