@@ -1,5 +1,5 @@
 /* ============================================================
-   TriangleRachnaGame.css — Triangle Game (RACHNA)
+   TriangleRachnaGame.css — Triangle Test (RACHNA)
    All classes prefixed with .rg- to avoid collisions.
    ============================================================ */
 
@@ -363,6 +363,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  z-index: 10;
 }
 
 .rg-panel-title { font-weight: 700; font-size: 0.88rem; }
@@ -391,7 +392,7 @@
   border: 2px dashed #cbd5e1;
   border-radius: var(--rg-r-md);
   transition: border-color 0.2s, background-color 0.2s;
-  overflow: visible; /* Allow shapes & controls to extend beyond boundary */
+  overflow: hidden; /* Prevent shapes from extending beyond boundary */
 }
 
 .rg-workspace.drag-over {

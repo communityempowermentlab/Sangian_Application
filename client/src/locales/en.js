@@ -33,7 +33,7 @@ export const en = {
       bagiya: { title: "Atlantis Test", local: "(BAGIYA)", tag: "Core visual memory", desc: "Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed.", sub: "Visual associative learning" },
       lottery: { title: "Number Recall", local: "(LOTTERY KA TICKET)", tag: "Core auditory span", desc: "Child listens to a series of numbers and repeats them in the same order.", sub: "Auditory short-term memory" },
       mela: { title: "Rover Game", local: "(CHALO MELA CHALE)", tag: "Spatial planning", desc: "Child plans a path through simple visual mazes.", sub: "Planning & spatial reasoning" },
-      rachna: { title: "Triangle", local: "(RACHNA)", tag: "Construction skills", desc: "Child builds shapes and patterns using pieces.", sub: "Visual construction" },
+      rachna: { title: "Triangle Test", local: "(RACHNA)", tag: "Construction skills", desc: "Child builds shapes and patterns using pieces.", sub: "Visual construction" },
       dhyan: { title: "Auditory Attention", local: "(DHYAN KAHAN HAI)", tag: "Listening focus", desc: "Child responds only when they hear specific target words.", sub: "Selective listening & focus" },
       herpher: { title: "Working Memory", local: "(HER PHER)", tag: "Dynamic memory", desc: "Child keeps rules or information in mind while answering.", sub: "Holding & using information" },
       chor: { title: "Cognitive Flex", local: "(CHOR MACHAYE SHOR)", tag: "Rule switching", desc: "Child shifts between changing rules.", sub: "Rule switching & inhibition" },

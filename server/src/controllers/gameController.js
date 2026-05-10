@@ -257,9 +257,9 @@ exports.getReportDetail = async (req, res) => {
                     }
 
                     if (gameName === 'auditory_dhyan') {
-                        questionScores[`${key}_eoi`] = s.eoi ?? 0;
-                        questionScores[`${key}_eoo`] = s.eoo ?? 0;
-                        questionScores[`${key}_eoc`] = s.eoc ?? 0;
+                        questionScores[`${key}_eoi`] = s.eoi ?? s.scoreObj?.eoi ?? 0;
+                        questionScores[`${key}_eoo`] = s.eoo ?? s.scoreObj?.eoo ?? 0;
+                        questionScores[`${key}_eoc`] = s.eoc ?? s.scoreObj?.eoc ?? 0;
                     }
 
                     if (gameName === 'triangle_rachna') {

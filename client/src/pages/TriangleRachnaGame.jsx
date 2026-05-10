@@ -1,5 +1,5 @@
 // ============================================================
-// TriangleRachnaGame.jsx — Triangle Game (RACHNA)
+// TriangleRachnaGame.jsx — Triangle Test (RACHNA)
 // React port of rachna.js integrated with Sangian backend.
 // ============================================================
 
@@ -262,48 +262,61 @@ const SHAPE_SIZE_PX = { large: 200, small: 99 };
 const SOURCE_SIZE_PX = { large: 56, small: 38 };
 
 // ─── Shape renderer (both source and workspace) ───────────────
-function ShapeEl({ shape, color, size, orientation, workspace = false }) {
-  const sizePx = workspace ? SHAPE_SIZE_PX[size] : SOURCE_SIZE_PX[size];
-  const cls = workspace ? 'rg-shape-' : 'rg-source-shape ';
+function ShapeEl({ shape, color, size, orientation, workspace = false, customSize }) {
+  const sizePx = customSize || (workspace ? SHAPE_SIZE_PX[size] : SOURCE_SIZE_PX[size]);
+  const filter = workspace ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' : 'none';
 
   if (shape === 'circle') {
-    return <div className={`${cls}circle ${size}`} style={{ width: sizePx, height: sizePx, background: color }} />;
+    return (
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
+        <circle cx="50" cy="50" r="50" fill={color} />
+      </svg>
+    );
   }
   if (shape === 'square') {
-    return <div className={`${cls}square ${size}`} style={{ width: sizePx, height: sizePx, background: color }} />;
+    return (
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
+        <rect width="100" height="100" fill={color} />
+      </svg>
+    );
   }
   if (shape === 'diamond') {
-    const innerSz = Math.round(sizePx * 0.85); // made larger for better usability
+    // Original was a square of 0.85 * sizePx rotated 45 degrees.
+    // A square of side 0.85 in a 1.0 container has tip-to-tip = 0.85 * sqrt(2) = 1.202
+    // Tips at 0.5 +/- 0.601
     return (
-      <div style={{ width: sizePx, height: sizePx, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-        <div
-          className={`${cls}square ${size}`}
-          style={{ width: innerSz, height: innerSz, background: color, transform:'rotate(45deg)', flexShrink:0 }}
-        />
-      </div>
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter, overflow: 'visible' }}>
+        <polygon points="50,-10.1 110.1,50 50,110.1 -10.1,50" fill={color} />
+      </svg>
     );
   }
   if (shape === 'triangle-up') {
-    const b = sizePx / 2;
+    // Original height was sizePx / 2. Centered in a sizePx container.
+    // In a 100 viewBox, height is 50. Centered between 25 and 75.
     return (
-      <div className={`${workspace ? 'rg-shape-triangle-up rg-shape-' : 'rg-source-shape triangle-up '}${size}`}
-        style={{ borderBottomColor: color, borderLeftWidth: b, borderRightWidth: b, borderBottomWidth: b }} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
+        <polygon points="50,25 0,75 100,75" fill={color} />
+      </svg>
     );
   }
   if (shape === 'triangle-down') {
-    const b = sizePx / 2;
+    // Centered between 25 and 75.
     return (
-      <div className={`${workspace ? 'rg-shape-triangle-down rg-shape-' : 'rg-source-shape triangle-down '}${size}`}
-        style={{ borderTopColor: color, borderLeftWidth: b, borderRightWidth: b, borderTopWidth: b }} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
+        <polygon points="0,25 100,25 50,75" fill={color} />
+      </svg>
     );
   }
   if (shape === 'right-triangle') {
     const o = orientation || 'BL';
+    let pts = "0,0 0,100 100,100"; // BL
+    if (o === 'BR') pts = "100,0 0,100 100,100";
+    if (o === 'UL') pts = "0,0 0,100 100,0";
+    if (o === 'UR') pts = "0,0 100,0 100,100";
     return (
-      <div
-        className={`${workspace ? 'rg-shape-right-triangle rg-shape-' : 'rg-source-shape right-triangle rg-rt-'}${workspace ? size + ' rg-rt-' + o : o}`}
-        style={{ width: sizePx, height: sizePx, background: color }}
-      />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter }}>
+        <polygon points={pts} fill={color} />
+      </svg>
     );
   }
   return null;
@@ -481,8 +494,18 @@ const TriangleRachnaGame = () => {
       if (itemDragRef.current) {
         const { id, startX, startY, origX, origY } = itemDragRef.current;
         const dx = e.clientX - startX, dy = e.clientY - startY;
-        setWorkspaceItems(prev => prev.map(it =>
-          it.id === id ? { ...it, x: origX + dx, y: origY + dy } : it));
+        setWorkspaceItems(prev => {
+          const item = prev.find(it => it.id === id);
+          if (!item || !workspaceRef.current) return prev;
+          const sz = SHAPE_SIZE_PX[item.size] || 100;
+          const rect = workspaceRef.current.getBoundingClientRect();
+          let newX = origX + dx;
+          let newY = origY + dy;
+          // Boundary clamping
+          newX = Math.max(0, Math.min(newX, rect.width - sz));
+          newY = Math.max(0, Math.min(newY, rect.height - sz));
+          return prev.map(it => it.id === id ? { ...it, x: newX, y: newY } : it);
+        });
       }
       if (rotateRef.current) {
         const { id, centerX, centerY, startAngle, origRot } = rotateRef.current;
@@ -605,8 +628,11 @@ const TriangleRachnaGame = () => {
     if (!src) return;
     const rect = workspaceRef.current.getBoundingClientRect();
     const sz = SHAPE_SIZE_PX[src.size] || 100;
-    const x = e.clientX - rect.left - sz / 2;
-    const y = e.clientY - rect.top  - sz / 2;
+    let x = e.clientX - rect.left - sz / 2;
+    let y = e.clientY - rect.top  - sz / 2;
+    // Boundary clamping
+    x = Math.max(0, Math.min(x, rect.width - sz));
+    y = Math.max(0, Math.min(y, rect.height - sz));
     addToWorkspace(src, x, y);
     dragItemRef.current = null;
   };
@@ -877,7 +903,7 @@ const TriangleRachnaGame = () => {
           <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
         </div>
         <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          Welcome to Triangle Game
+          Welcome to Triangle Test
         </h2>
         
 
@@ -1143,16 +1169,32 @@ const TriangleRachnaGame = () => {
                             position: 'absolute',
                             left: '50%',
                             top: '50%',
-                            width: contentWidth, 
-                            height: contentHeight, 
-                            transform: `translate(-50%, -50%) scale(${scale})` 
+                            width: contentWidth * scale, 
+                            height: contentHeight * scale, 
+                            transform: `translate(-50%, -50%)` 
                           }}>
                             {wsItems.map((item, idx) => {
-                              const sz = SHAPE_SIZE_PX[item.size] || 100;
+                              const origSz = SHAPE_SIZE_PX[item.size] || 100;
+                              const sz = origSz * scale;
                               return (
-                                <div key={idx} style={{ position: 'absolute', left: item.x - minX, top: item.y - minY, width: sz, height: sz, zIndex: 5 + idx, pointerEvents: 'none' }}>
-                                  <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
-                                    <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
+                                <div key={idx} style={{ 
+                                  position: 'absolute', 
+                                  left: (item.x - minX) * scale, 
+                                  top: (item.y - minY) * scale, 
+                                  width: sz, 
+                                  height: sz, 
+                                  zIndex: 5 + idx, 
+                                  pointerEvents: 'none' 
+                                }}>
+                                  <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})`, width: '100%', height: '100%' }}>
+                                    <ShapeEl 
+                                      shape={item.shape} 
+                                      color={item.color} 
+                                      size={item.size} 
+                                      orientation={item.orientation} 
+                                      workspace 
+                                      customSize={sz} 
+                                    />
                                   </div>
                                 </div>
                               );
@@ -1417,7 +1459,7 @@ const TriangleRachnaGame = () => {
           <div className="rg-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
             <div className="rg-divider"></div>
-            <span className="rg-test-title">Triangle Game</span>
+            <span className="rg-test-title">Triangle Test</span>
           </div>
           <div className="rg-stats">
             {childData?.child_id && (

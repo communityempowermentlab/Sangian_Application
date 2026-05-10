@@ -7,7 +7,7 @@ const GAME_CATALOG = [
     { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Test',        local: 'BAGIYA',           tag: 'Visual Memory',    color: '#6366f1' },
     { key: 'number_recall_lottery',     icon: '🎟️', title: 'Number Recall',        local: 'LOTTERY KA TICKET',tag: 'Auditory Span',    color: '#f59e0b' },
     { key: 'rover_mela',                icon: '🗺️', title: 'Rover Game',           local: 'CHALO MELA CHALE', tag: 'Spatial Planning', color: '#10b981' },
-    { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle',             local: 'RACHNA',           tag: 'Construction',     color: '#ef4444' },
+    { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle Test',             local: 'RACHNA',           tag: 'Construction',     color: '#ef4444' },
     { key: 'auditory_dhyan',            icon: '👂', title: 'Auditory Attention',   local: 'DHYAN KAHAN HAI',  tag: 'Listening Focus',  color: '#8b5cf6' },
     { key: 'working_memory_herpher',    icon: '🔄', title: 'Working Memory',       local: 'HER PHER',         tag: 'Dynamic Memory',   color: '#0891b2' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Cognitive Flex',       local: 'CHOR MACHAYE SHOR',tag: 'Rule Switching',   color: '#dc2626' },
