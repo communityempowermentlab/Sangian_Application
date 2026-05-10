@@ -87,6 +87,7 @@ const AuditoryAttentionGame = () => {
   // ─── Core Nav State ──────────────────────────────
   const [screen, setScreen] = useState('checking'); // checking, splash, sampleA, q1..q4-landing, q1..q4-game, score
   const [childId, setChildId] = useState('');
+  const [childData, setChildData] = useState(null);
   const [gameSessionId, setGameSessionId] = useState(null);
   
   // Checking/Resume States
@@ -128,6 +129,8 @@ const AuditoryAttentionGame = () => {
   const wordsListRef = useRef([]);
   const wordIndexRef = useRef(-1);
   const pendingTargetsRef = useRef([]);
+  const actionLogRef = useRef([]);
+  const levelTimeRef = useRef(0);
 
   // Toast
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
@@ -230,6 +233,7 @@ const AuditoryAttentionGame = () => {
     }
     try {
       const c = JSON.parse(raw);
+      setChildData(c);
       setChildId(c.child_id);
       handleProceedClick(c.child_id);
       fetchActivity(c.child_id);
@@ -343,6 +347,7 @@ const AuditoryAttentionGame = () => {
           eoo: qs[qKey].eoo || 0,
           eoc: qs[qKey].eoc || 0,
           timeTaken: Math.max(1, Math.round((qt[qKey] || 0) / 1000)),
+          actionLog: qs[qKey].actionLog || [],
           scoreObj: qs[qKey] // internal reference
         });
       }
@@ -495,6 +500,16 @@ const AuditoryAttentionGame = () => {
       });
     }
 
+    // Log EVERY word
+    actionLogRef.current.push({
+      id: nextIndex,
+      requestedWord: nextWord,
+      response: 'No Tap',
+      result: targetIndex !== -1 ? 'EOO' : 'No Action Required',
+      time: formatTime(Math.floor(levelTimeRef.current/1000)),
+      isTarget: targetIndex !== -1
+    });
+
     pendingTargetsRef.current = newArr;
     setPendingTargets([...newArr]);
 
@@ -544,6 +559,8 @@ const AuditoryAttentionGame = () => {
     
     wordIndexRef.current = -1;
     pendingTargetsRef.current = [];
+    actionLogRef.current = [];
+    levelTimeRef.current = 0;
     clickLockedRef.current = false;
     setWordIndex(-1);
     setPendingTargets([]);
@@ -556,7 +573,11 @@ const AuditoryAttentionGame = () => {
 
     // Timer setup
     timerIntervalRef.current = setInterval(() => {
-      setLevelTime(prev => prev + 100);
+      setLevelTime(prev => {
+        const nt = prev + 100;
+        levelTimeRef.current = nt;
+        return nt;
+      });
     }, 100);
 
     setTimeout(() => playNextWord(), 1500); // Intro delay
@@ -579,7 +600,8 @@ const AuditoryAttentionGame = () => {
     setLevelScores(finalScores => {
       setLevelTime(finalTime => {
         // Prepare state update
-        const newQs = { ...questionScores, [currentQIndex]: { ...finalScores } };
+        const finalObjWithLog = { ...finalScores, actionLog: [...actionLogRef.current] };
+        const newQs = { ...questionScores, [currentQIndex]: finalObjWithLog };
         const newQt = { ...questionTimes, [currentQIndex]: finalTime };
         
         setQuestionScores(newQs);
@@ -595,7 +617,13 @@ const AuditoryAttentionGame = () => {
   const togglePause = () => {
     if (isPaused) {
       setIsPaused(false);
-      timerIntervalRef.current = setInterval(() => setLevelTime(prev => prev + 100), 100);
+      timerIntervalRef.current = setInterval(() => {
+         setLevelTime(prev => {
+            const nt = prev + 100;
+            levelTimeRef.current = nt;
+            return nt;
+         });
+      }, 100);
       wordTimeoutRef.current = setTimeout(playNextWord, 500);
     } else {
       setIsPaused(true);
@@ -642,19 +670,43 @@ const AuditoryAttentionGame = () => {
       // CORRECT
       setLevelScores(prev => ({...prev, correct: prev.correct + 1 }));
       pendingTargetsRef.current[matchingPendingIndex].responded = true;
+      
+      const targetIndex = pendingTargetsRef.current[matchingPendingIndex].wordIndex;
+      const logE = actionLogRef.current.find(l => l.id === targetIndex);
+      if (logE) {
+        logE.response = 'Tap';
+        logE.result = 'Correct Response';
+      }
+
       setPendingTargets([...pendingTargetsRef.current]);
     } else if (isTargetWord && !isTargetImage) {
       // EOI
       const expectedImage = config.TARGET_IMAGES[config.TARGET_WORDS.indexOf(currentWord)];
       if (imageId !== expectedImage) {
          setLevelScores(prev => ({...prev, eoi: prev.eoi + 1 }));
+         
+         const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
+         if (logE) {
+           logE.response = 'Wrong Tap';
+           logE.result = 'EOI';
+         }
       }
     } else if (!isTargetWord) {
       // EOC
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
+      const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
+      if (logE) {
+        logE.response = 'Wrong Tap';
+        logE.result = 'EOC';
+      }
     } else {
       // EOC timing mismatch
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
+      const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
+      if (logE) {
+        logE.response = 'Tap';
+        logE.result = 'EOC';
+      }
     }
   };
 
@@ -668,9 +720,50 @@ const AuditoryAttentionGame = () => {
         q3_tiredness: assessment.q3, q4_play_again: assessment.q4,
         q5_behaviors: assessment.behaviors, additional_notes: assessment.notes
       });
-      // Preserve quit status — only mark completed if the game ended naturally
       const finalStatus = quitReason ? 'quit' : 'completed';
       await syncSessionProgress(finalStatus, quitReason || null);
+
+      // Small delay to ensure the DOM (including the summary table) is fully settled
+      setTimeout(async () => {
+        try {
+          const element = document.getElementById('dashboard-container');
+          if (element) {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(element, { 
+              scale: 1.5, 
+              useCORS: true,
+              windowWidth: element.scrollWidth,
+              windowHeight: element.scrollHeight,
+              logging: false
+            });
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            const pdfWidth = 210; 
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const pdfBlob = pdf.output('blob');
+            
+            const formData = new FormData();
+            const childNameSafe = (childData?.name || childId || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+            const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+            formData.append('pdf', pdfBlob, `${childNameSafe}_AuditoryDhyan_SES${gameSessionId}_${ts}.pdf`);
+            formData.append('child_id', childId);
+            formData.append('session_id', gameSessionId);
+            formData.append('game_name', 'auditory_dhyan');
+            
+            await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+            console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
+          }
+        } catch (err) {
+          console.error("PDF generation failed:", err);
+        }
+      }, 1000);
+
       setAssessmentSubmitted(true);
       alert('Assessment successfully saved!');
     } catch (e) {
@@ -720,7 +813,7 @@ const AuditoryAttentionGame = () => {
               <span className="aa-stat-label">SCORE</span>
               <span className="aa-stat-value">{Object.values(questionScores).reduce((a,c) => a + (c ? c.correct : 0), 0) + levelScores.correct}</span>
             </div>
-            {screen !== 'checking' && screen !== 'splash' && (
+            {screen !== 'checking' && screen !== 'splash' && screen !== 'score' && (
               <button 
                 className="btn-pause-quit" 
                 onClick={() => {
@@ -918,7 +1011,7 @@ const AuditoryAttentionGame = () => {
 
           {/* FINAL SCORE & ASSESSMENT */}
           {screen === 'score' && (
-            <div className="aa-screen" style={{ overflowY: 'auto' }}>
+            <div id="dashboard-container" className="aa-screen" style={{ overflowY: 'auto' }}>
                <div className="aa-header">
                  <div>
                    <h2 className="aa-title">{quitReason ? '🏆 Assessment Terminated' : '🏆 Assessment Complete'}</h2>
@@ -954,6 +1047,50 @@ const AuditoryAttentionGame = () => {
                              <td style={{ padding: '12px', fontWeight: 500 }}>{qt}s</td>
                            </tr>
                          )
+                       })}
+                     </tbody>
+                   </table>
+                 </div>
+               </div>
+
+               <div className="aa-card" style={{ background: 'white', padding: 24, borderRadius: 16, marginBottom: 20 }}>
+                 <h3 className="nr-form-title" style={{ marginBottom: 16, textAlign: 'center' }}>Analytical Action Dashboard</h3>
+                 <div style={{ overflowX: 'auto' }}>
+                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800, fontSize: '0.8rem' }}>
+                     <thead>
+                       <tr style={{ background: '#f8fafc', color: '#475569' }}>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '40px' }}>Q#</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>Requested Words</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>User Responses</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>Result Type</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '60px' }}>Time</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {[1, 2, 3, 4].map(q => {
+                         const qs = questionScores[q];
+                         if (!qs || !qs.actionLog || qs.actionLog.length === 0) return null;
+                         
+                         return qs.actionLog.map((l, idx) => {
+                           let clr = '#475569';
+                           if (l.result === 'Correct Response') clr = '#059669';
+                           else if (l.result === 'EOO') clr = '#dc2626';
+                           else if (l.result === 'EOC') clr = '#7c3aed';
+                           else if (l.result === 'EOI') clr = '#d97706';
+
+                           // Only show Question number on the very first row of that question
+                           const showQNum = idx === 0;
+
+                           return (
+                             <tr key={`log-${q}-${idx}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                               <td style={{ padding: '10px 12px', fontWeight: showQNum ? 700 : 400, color: showQNum ? '#0f172a' : '#cbd5e1' }}>{showQNum ? q : ''}</td>
+                               <td style={{ padding: '10px 12px', fontWeight: 600 }}>{l.requestedWord}</td>
+                               <td style={{ padding: '10px 12px' }}>{l.response}</td>
+                               <td style={{ padding: '10px 12px', color: clr, fontWeight: clr !== '#475569' ? 600 : 400 }}>{l.result}</td>
+                               <td style={{ padding: '10px 12px', color: '#64748b' }}>{l.time}</td>
+                             </tr>
+                           );
+                         });
                        })}
                      </tbody>
                    </table>

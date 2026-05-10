@@ -512,11 +512,9 @@ const AdminReports = () => {
                                         })
                                     )}
                                     
-                                    {activeGame?.key !== 'auditory_dhyan' && (
-                                        <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
-                                            {activeGame?.key === 'working_memory_herpher' ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
-                                        </th>
-                                    )}
+                                    <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
+                                        {['working_memory_herpher', 'auditory_dhyan'].includes(activeGame?.key) ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
+                                    </th>
                                     {activeGame?.key === 'working_memory_herpher' && (
                                         <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Match Analysis</th>
                                     )}
@@ -653,19 +651,17 @@ const AdminReports = () => {
                                                 })
                                             )}
                                             
-                                            {activeGame?.key !== 'auditory_dhyan' && (
-                                                <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
-                                                    {activeGame?.key === 'working_memory_herpher'
-                                                        ? (row.score ?? '—')
-                                                        : (
-                                                            <>
-                                                               <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
-                                                               <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
-                                                            </>
-                                                        )
-                                                    }
-                                                </td>
-                                            )}
+                                            <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
+                                                {['working_memory_herpher', 'auditory_dhyan'].includes(activeGame?.key)
+                                                    ? (row.score ?? '—')
+                                                    : (
+                                                        <>
+                                                           <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
+                                                           <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
+                                                        </>
+                                                    )
+                                                }
+                                            </td>
                                             {activeGame?.key === 'working_memory_herpher' && (
                                                 <td style={S.tdCenter}>
                                                     <button 

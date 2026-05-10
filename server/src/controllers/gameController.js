@@ -256,6 +256,12 @@ exports.getReportDetail = async (req, res) => {
                         questionScores[`${key}_total`] = s.expectedImages?.length ?? null;
                     }
 
+                    if (gameName === 'auditory_dhyan') {
+                        questionScores[`${key}_eoi`] = s.eoi ?? 0;
+                        questionScores[`${key}_eoo`] = s.eoo ?? 0;
+                        questionScores[`${key}_eoc`] = s.eoc ?? 0;
+                    }
+
                     if (gameName === 'triangle_rachna') {
                         const td = parsedState.questionDetails?.[qid] || {};
                         questionScores[`${key}_ass_q1`] = td.qAnswers?.q1 ? td.qAnswers.q1.toUpperCase() : '—';
