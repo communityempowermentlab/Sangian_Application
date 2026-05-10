@@ -665,3 +665,148 @@
   50% { transform: scale(1.1); box-shadow: 0 0 30px rgba(16, 185, 129, 0.7); }
   100% { transform: scale(1.05); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
 }
+
+/* Detailed Score Integrity Dashboard */
+.hp-q-card-detailed {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.hp-q-detailed-header {
+  background: #f8fafc;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hp-q-detailed-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hp-practice-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #fcd34d;
+}
+
+.hp-q-detailed-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hp-q-detailed-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hp-img-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.hp-img-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hp-img-thumb-wrap {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 4px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hp-img-thumb-wrap.expected {
+  border-color: #cbd5e1;
+}
+
+.hp-img-thumb-wrap.correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.hp-img-thumb-wrap.incorrect {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.hp-img-thumb {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.hp-icon-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+}
+
+.correct-badge {
+  background: #10b981;
+}
+
+.incorrect-badge {
+  background: #ef4444;
+}
+
+.hp-match-analysis {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hp-match-item {
+  display: flex;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.hp-match-label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.hp-match-value {
+  font-family: monospace;
+  font-size: 0.95rem;
+}
+
+.hp-match-value.green { color: #059669; }
+.hp-match-value.red { color: #e11d48; }
+.hp-match-value.orange { color: #d97706; }

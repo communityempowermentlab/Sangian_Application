@@ -90,7 +90,7 @@ function buildGameData() {
     6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'insects',   imageIds: range(11)        },
     7: { questionOrder: 7, isSample: false, imageCount: 12, category: 'household', imageIds: r(range(14), 12) },
     8: { questionOrder: 8, isSample: false, imageCount: 13, category: 'animals',   imageIds: r(range(14), 13) },
-    9: { questionOrder: 9, isSample: false, imageCount: 13, category: 'transport', imageIds: r(range(16), 13) },
+    9: { questionOrder: 9, isSample: false, imageCount: 13, category: 'transport', imageIds: r(range(14), 13) },
   };
 }
 
@@ -125,7 +125,7 @@ const HerPherGame = () => {
   const { t }       = useLanguage();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
-  const [GAME_DATA] = useState(() => buildGameData()); // stable per session
+  const [GAME_DATA, setGAME_DATA] = useState(() => buildGameData()); // stable per session
 
   // Child data
   const [childData, setChildData]         = useState(null);
@@ -179,6 +179,7 @@ const HerPherGame = () => {
   // Timers
   const timerRef       = useRef(null);
   const audioSplashRef = useRef(null);
+  const isResumingRef  = useRef(false);
 
   // ──── Init: load child from localStorage ────────────────────────────────────
   useEffect(() => {
@@ -241,6 +242,13 @@ const HerPherGame = () => {
   // ──── Build image layout when question/attempt changes ───────────────────────
   useEffect(() => {
     if (screen !== 'game') return;
+    
+    // Prevent reset if we are resuming an exact paused state
+    if (isResumingRef.current) {
+      isResumingRef.current = false;
+      return;
+    }
+
     const qData = GAME_DATA[currentQuestion];
     const positions = shuffle(getPositionsForCount(qData.imageCount));
     const layout = qData.imageIds.map((imageId, i) => ({
@@ -293,12 +301,27 @@ const HerPherGame = () => {
   const resumeGame = () => {
     setGameSessionId(resumeData.id);
     const saved = resumeData.saved_state || {};
+    
+    if (saved.gameData) {
+      setGAME_DATA(saved.gameData);
+    }
+    
     setCurrentQuestion(saved.currentQuestion || 1);
     setCurrentAttempt(saved.currentAttempt || 1);
     setScoreHistory(saved.scoreHistory || []);
     setTotalScore(saved.totalScore || 0);
     setTotalTime(saved.totalTime || 0);
     setPauses(saved.pauses || []);
+    
+    if (saved.imageLayout) {
+      isResumingRef.current = true;
+      setImageLayout(saved.imageLayout);
+      setClickedImages(new Set(saved.clickedImages || []));
+      setResponses(saved.responses || []);
+      setSelectedOrder(saved.selectedOrder || []);
+      setQuestionTime(saved.questionTime || 0);
+    }
+    
     setScreen('game');
     setShowResumeModal(false);
   };
@@ -333,11 +356,26 @@ const HerPherGame = () => {
         saved_state: {
           currentQuestion, currentAttempt, scoreHistory, totalScore,
           totalTime, pauses: updatedPauses,
+          
+          // Current Attempt State
+          clickedImages: Array.from(clickedImages),
+          responses,
+          selectedOrder,
+          questionTime,
+          imageLayout,
+          gameData: GAME_DATA,
+          
           allScores: scoreHistory.map(h => ({
             qId: h.question,
             score: h.score,
             timeTaken: h.time,
             correctCount: h.correctCount,
+            expectedImages: h.expectedImages,
+            selectedImages: h.selected,
+            matchedImages: h.matchedImages,
+            incorrectSelections: h.incorrectSelections,
+            missedImages: h.missedImages,
+            category: h.category
           })),
           ...extraState,
         },
@@ -402,6 +440,22 @@ const HerPherGame = () => {
   const finishQuestion = useCallback((resp, sel, qData) => {
     const correctCount = resp.filter(v => v === 1).length;
     const questionScore = calcScore(currentQuestion, correctCount);
+    
+    // Detailed Match Analysis
+    const expected = qData.imageIds;
+    const matched = [];
+    const incorrect = [];
+    const seen = new Set();
+    sel.forEach((id) => {
+      if (!seen.has(id)) {
+        seen.add(id);
+        matched.push(id);
+      } else {
+        incorrect.push(id);
+      }
+    });
+    const missed = expected.filter(id => !seen.has(id));
+
     const record = {
       question: currentQuestion,
       attempt: currentAttempt,
@@ -411,6 +465,11 @@ const HerPherGame = () => {
       score: questionScore,
       time: questionTime,
       isSample: qData.isSample,
+      category: qData.category,
+      expectedImages: expected,
+      matchedImages: matched,
+      incorrectSelections: incorrect,
+      missedImages: missed
     };
 
     setScoreHistory(prev => {
@@ -516,6 +575,8 @@ const HerPherGame = () => {
     if (status === 'quit') {
       setShowQuitModal(false);
       setScreen('score');
+      // Delay slightly so score screen renders before PDF capture
+      setTimeout(() => generateAndUploadPDF(), 500);
     } else {
       navigate('/');
     }
@@ -536,12 +597,52 @@ const HerPherGame = () => {
         additional_notes: assessment.notes,
       });
       setAssessmentSubmitted(true);
+      await generateAndUploadPDF();
       alert('Assessment successfully saved!');
     } catch (e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
     } finally {
       setAssessmentSubmitting(false);
+    }
+  };
+
+  // ──── PDF Generation ─────────────────────────────────────────────────────────
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 1.5, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_HerPher_SES${gameSessionIdRef.current}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionIdRef.current);
+      formData.append('game_name', GAME_NAME);
+      
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
     }
   };
 
@@ -776,7 +877,7 @@ const HerPherGame = () => {
                 </div>
               </div>
 
-              <div className="hp-card hp-result-card" style={{ padding: 30 }}>
+              <div className="hp-card hp-result-card" style={{ padding: 30 }} id="dashboard-capture-area">
                 <div className="hp-result-header" style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>Working Memory Performance</h2>
                   <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Assessment Completed</p>
@@ -822,30 +923,92 @@ const HerPherGame = () => {
                    <div className="hp-banner">Outstanding performance! You're a memory star! ⭐</div>
                 )}
 
-                {/* Per-question detail grid */}
-                <div className="hp-q-grid" style={{ marginTop: 12 }}>
-                  {scoredHistory.map((h, i) => (
-                    <div className="hp-q-card" key={i}>
-                      <div className="hp-q-top">
-                        <span className="hp-q-num">Q{h.question - 1}</span>
-                        <span className="hp-q-cat">{GAME_DATA[h.question]?.category}</span>
+                {/* Detailed Per-Question Integrity Dashboard */}
+                <div className="hp-q-grid" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {scoredHistory.map((h, i) => {
+                    const isPractice = h.isSample;
+                    const cat = h.category || GAME_DATA[h.question]?.category;
+                    const expected = h.expectedImages || [];
+                    const selected = h.selectedImages || h.selected || [];
+                    const matched = h.matchedImages || [];
+                    const incorrect = h.incorrectSelections || [];
+                    const missed = h.missedImages || [];
+                    
+                    return (
+                      <div className="hp-q-card-detailed" key={`${h.question}-${h.attempt}-${i}`}>
+                        <div className="hp-q-detailed-header">
+                          <div className="hp-q-detailed-title">
+                            <span className="hp-q-num">{isPractice ? 'Sample Round' : `Question ${h.question - 1}`}</span>
+                            <span className="hp-q-cat" style={{ textTransform: 'capitalize' }}>{cat}</span>
+                            {isPractice && <span className="hp-practice-badge">Practice</span>}
+                          </div>
+                          <div className="hp-q-detailed-metrics">
+                            <span className="hp-q-time">⏱ {formatTime(h.time)}</span>
+                            {!isPractice && (
+                              <span style={{
+                                fontSize: '0.9rem', fontWeight: 700,
+                                color: h.score > 0 ? '#059669' : '#94a3b8',
+                                background: h.score > 0 ? '#d1fae5' : '#f1f5f9',
+                                borderRadius: '999px', padding: '4px 10px'
+                              }}>
+                                Score: {h.score > 0 ? `+${h.score}` : '0'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="hp-q-detailed-body">
+                          {/* Expected Images */}
+                          <div className="hp-img-section">
+                            <h4 className="hp-img-section-title">Expected Images (Total: {expected.length})</h4>
+                            <div className="hp-img-row">
+                              {expected.map((imgId, idx) => (
+                                <div key={`exp-${imgId}-${idx}`} className="hp-img-thumb-wrap expected">
+                                  <img src={`${IMAGE_PATH}/${cat}/${imgId}.png`} alt={`Expected ${imgId}`} className="hp-img-thumb" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* User Selected Images */}
+                          <div className="hp-img-section">
+                            <h4 className="hp-img-section-title">User Selected Images ({selected.length} clicks)</h4>
+                            <div className="hp-img-row">
+                              {selected.map((imgId, idx) => {
+                                const isCorrectClick = h.responses[idx] === 1;
+                                return (
+                                  <div key={`sel-${imgId}-${idx}`} className={`hp-img-thumb-wrap ${isCorrectClick ? 'correct' : 'incorrect'}`}>
+                                    <img src={`${IMAGE_PATH}/${cat}/${imgId}.png`} alt={`Selected ${imgId}`} className="hp-img-thumb" />
+                                    {isCorrectClick ? (
+                                      <span className="hp-icon-badge correct-badge">✓</span>
+                                    ) : (
+                                      <span className="hp-icon-badge incorrect-badge">✗</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Match Analysis */}
+                          <div className="hp-match-analysis">
+                            <div className="hp-match-item">
+                              <span className="hp-match-label">Matched Correctly:</span>
+                              <span className="hp-match-value green">{matched.length > 0 ? matched.join(', ') : 'None'}</span>
+                            </div>
+                            <div className="hp-match-item">
+                              <span className="hp-match-label">Incorrect Selections (Duplicates):</span>
+                              <span className="hp-match-value red">{incorrect.length > 0 ? incorrect.join(', ') : 'None'}</span>
+                            </div>
+                            <div className="hp-match-item">
+                              <span className="hp-match-label">Missed Items:</span>
+                              <span className="hp-match-value orange">{missed.length > 0 ? missed.join(', ') : 'None'}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="hp-q-bottom">
-                        <span className="hp-q-time">{formatTime(h.time)}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {h.correctCount ?? 0} correct
-                        </span>
-                        <span style={{
-                          fontSize: '0.82rem', fontWeight: 700,
-                          color: h.score > 0 ? '#059669' : '#94a3b8',
-                          background: h.score > 0 ? '#d1fae5' : '#f1f5f9',
-                          borderRadius: '999px', padding: '2px 8px'
-                        }}>
-                          {h.score > 0 ? `+${h.score}` : '0'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Assessment Form */}

@@ -250,6 +250,12 @@ exports.getReportDetail = async (req, res) => {
                     questionScores[`${key}_moves`] = s.moves ?? null;
                     questionScores[`${key}_replays`] = s.replayCount ?? 0;
 
+                    if (gameName === 'working_memory_herpher') {
+                        questionScores[`${key}_correct`] = s.correctCount ?? null;
+                        questionScores[`${key}_incorrect`] = s.incorrectSelections?.length ?? null;
+                        questionScores[`${key}_total`] = s.expectedImages?.length ?? null;
+                    }
+
                     if (gameName === 'triangle_rachna') {
                         const td = parsedState.questionDetails?.[qid] || {};
                         questionScores[`${key}_ass_q1`] = td.qAnswers?.q1 ? td.qAnswers.q1.toUpperCase() : '—';

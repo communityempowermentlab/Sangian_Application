@@ -158,7 +158,7 @@ const AdminReports = () => {
             // Q1–Q8 = internal qIds 2–9 (qId 1 is sample, excluded)
             [2,3,4,5,6,7,8,9].forEach((qId, i) => {
                 const label = `Q${i+1}`;
-                qHeaders.push(`${label} Correct Responses`, `${label} Score`, `${label} Time(s)`);
+                qHeaders.push(`${label} Total Images`, `${label} User Correct`, `${label} Incorrect`, `${label} Score`, `${label} Time(s)`);
             });
         } else if (activeGame?.key === 'triangle_rachna') {
             detail.columns.forEach((c, idx) => {
@@ -232,7 +232,9 @@ const AdminReports = () => {
                 [2,3,4,5,6,7,8,9].forEach(qId => {
                     const qs = r.question_scores;
                     rowArr.push(
+                        qs[`q${qId}_total`] ?? '',
                         qs[`q${qId}_correct`] ?? '',
+                        qs[`q${qId}_incorrect`] ?? '',
                         qs[`q${qId}`] ?? '',
                         qs[`q${qId}_time`] ? Math.round(qs[`q${qId}_time`]) : ''
                     );
@@ -424,7 +426,9 @@ const AdminReports = () => {
                                     ) : activeGame?.key === 'working_memory_herpher' ? (
                                         [1,2,3,4,5,6,7,8].map(q => (
                                             <React.Fragment key={`hph-${q}`}>
-                                                <th style={{ ...S.th, textAlign: 'center', background: '#dbeafe', minWidth: 60 }}>Q{q} Correct</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#e2e8f0', minWidth: 60 }}>Q{q} Total Images</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#dbeafe', minWidth: 60 }}>Q{q} User Correct</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#fee2e2', minWidth: 60 }}>Q{q} Incorrect</th>
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>Q{q} Score</th>
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Q{q} Time(s)</th>
                                             </React.Fragment>
@@ -555,12 +559,16 @@ const AdminReports = () => {
                                             ) : activeGame?.key === 'working_memory_herpher' ? (
                                                 [2,3,4,5,6,7,8,9].map((qId, i) => {
                                                     const qs = row.question_scores;
+                                                    const total = qs[`q${qId}_total`];
                                                     const correct = qs[`q${qId}_correct`];
+                                                    const incorrect = qs[`q${qId}_incorrect`];
                                                     const score = qs[`q${qId}`];
                                                     const time = qs[`q${qId}_time`];
                                                     return (
                                                         <React.Fragment key={`hp-${qId}`}>
+                                                            <td style={{ ...S.tdCenter, color: '#475569', fontWeight: 600 }}>{total ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#0369a1', fontWeight: 600 }}>{correct ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#991b1b', fontWeight: 600 }}>{incorrect ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: score > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>{score ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#64748b' }}>{time != null ? `${Math.round(time)}s` : '—'}</td>
                                                         </React.Fragment>
