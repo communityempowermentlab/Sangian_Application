@@ -553,6 +553,12 @@ const HerPherGame = () => {
           score: h.score,
           timeTaken: h.time,
           correctCount: h.correctCount,
+          expectedImages: h.expectedImages,
+          selectedImages: h.selected,
+          matchedImages: h.matchedImages,
+          incorrectSelections: h.incorrectSelections,
+          missedImages: h.missedImages,
+          category: h.category
         }));
         setTotalScore(ts => {
           axios.put(`${API_URL}/games/sessions/update/${sessId}`, {

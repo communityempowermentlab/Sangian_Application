@@ -343,6 +343,7 @@ exports.getReportDetail = async (req, res) => {
                     q5_behaviors:   Array.isArray(behaviors) ? behaviors.join(', ') : (behaviors || null),
                     additional_notes: row.additional_notes || null,
                 },
+                raw_scores: scores,
                 pdf_url: row.pdf_url || null,
             };
         });

@@ -70,7 +70,10 @@ const AdminReports = () => {
     // Pause/Quit Details Modal state
     const [pqModal, setPqModal] = useState({ show: false, pauses: [], childName: '' });
 
-    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); setExpandedRows({}); setPqModal({ show: false, pauses: [], childName: '', quitReason: '' }); };
+    // Her Pher Data Modal state
+    const [hpDataModal, setHpDataModal] = useState({ show: false, rowData: null });
+
+    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); setExpandedRows({}); setPqModal({ show: false, pauses: [], childName: '', quitReason: '' }); setHpDataModal({ show: false, rowData: null }); };
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
     const fetchOverview = useCallback(async () => {
@@ -514,6 +517,9 @@ const AdminReports = () => {
                                             {activeGame?.key === 'working_memory_herpher' ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
                                         </th>
                                     )}
+                                    {activeGame?.key === 'working_memory_herpher' && (
+                                        <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Match Analysis</th>
+                                    )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
                                     
                                     <th style={{ ...S.th, textAlign: 'center' }}>Pause & Quit</th>
@@ -660,6 +666,16 @@ const AdminReports = () => {
                                                     }
                                                 </td>
                                             )}
+                                            {activeGame?.key === 'working_memory_herpher' && (
+                                                <td style={S.tdCenter}>
+                                                    <button 
+                                                        onClick={() => setHpDataModal({ show: true, rowData: row })}
+                                                        style={{ background:'#38bdf8', color:'#fff', padding:'4px 12px', border:'none', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'pointer' }}
+                                                    >
+                                                        View Data
+                                                    </button>
+                                                </td>
+                                            )}
                                             <td style={S.tdCenter}>
                                                 {statusBadge(row.status)}
                                             </td>
@@ -758,6 +774,80 @@ const AdminReports = () => {
 
                             <div className="admin-modal-actions">
                                 <button className="admin-btn admin-btn-ghost" onClick={() => setPqModal({ show: false, pauses: [], childName: '' })}>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* HER PHER MATCH ANALYSIS MODAL */}
+                {hpDataModal.show && (
+                    <div className="admin-modal-overlay">
+                        <div className="admin-modal" style={{ maxWidth: '800px', width: '90%' }}>
+                            <div className="admin-modal-header">
+                                <div className="admin-modal-icon" style={{ background: '#e0f2fe', borderColor: '#bae6fd' }}>🔍</div>
+                                <div>
+                                    <div className="admin-modal-title">Match Analysis Data</div>
+                                    <div className="admin-modal-subtitle">{hpDataModal.rowData?.child_name} (Session: {hpDataModal.rowData?.session_id})</div>
+                                </div>
+                            </div>
+                            
+                            <div style={{ padding: '16px 0', maxHeight: '500px', overflowY: 'auto' }}>
+                                {hpDataModal.rowData?.raw_scores && hpDataModal.rowData.raw_scores.length > 0 ? (
+                                    <div style={{ display: 'grid', gap: '16px' }}>
+                                        {hpDataModal.rowData.raw_scores.map((scoreObj, idx) => {
+                                            const qId = scoreObj.qId || scoreObj.id;
+                                            if (!qId || qId === 1) return null; // Skip if no ID or sample question
+                                            const qNum = (typeof qId === 'number') ? qId - 1 : qId; // qId 2 is Q1
+                                            
+                                            return (
+                                                <div key={idx} style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
+                                                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Question {qNum} <span style={{fontSize: '0.8rem', color: '#64748b', fontWeight: 500}}>({scoreObj.category || 'Unknown Category'})</span></span>
+                                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score > 0 ? '#059669' : '#dc2626' }}>Score: {scoreObj.score ?? 0}</span>
+                                                    </div>
+                                                    
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.85rem' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, color: '#475569', marginBottom: '4px' }}>Expected Images ({scoreObj.expectedImages?.length || 0})</div>
+                                                            <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #f1f5f9', minHeight: '36px', wordWrap: 'break-word' }}>
+                                                                {scoreObj.expectedImages?.join(', ') || '—'}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, color: '#475569', marginBottom: '4px' }}>User Selections ({scoreObj.selectedImages?.length || 0})</div>
+                                                            <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #f1f5f9', minHeight: '36px', wordWrap: 'break-word' }}>
+                                                                {scoreObj.selectedImages?.join(', ') || '—'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style={{ display: 'flex', gap: '12px', marginTop: '12px', fontSize: '0.8rem' }}>
+                                                        <div style={{ flex: 1, background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '8px', borderRadius: '6px' }}>
+                                                            <strong style={{ color: '#059669', display: 'block', marginBottom: '2px' }}>Matched ({scoreObj.matchedImages?.length || 0})</strong>
+                                                            <span style={{ color: '#047857' }}>{scoreObj.matchedImages?.join(', ') || 'None'}</span>
+                                                        </div>
+                                                        <div style={{ flex: 1, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px', borderRadius: '6px' }}>
+                                                            <strong style={{ color: '#dc2626', display: 'block', marginBottom: '2px' }}>Incorrect ({scoreObj.incorrectSelections?.length || 0})</strong>
+                                                            <span style={{ color: '#b91c1c' }}>{scoreObj.incorrectSelections?.join(', ') || 'None'}</span>
+                                                        </div>
+                                                        <div style={{ flex: 1, background: '#fffbeb', border: '1px solid #fde68a', padding: '8px', borderRadius: '6px' }}>
+                                                            <strong style={{ color: '#d97706', display: 'block', marginBottom: '2px' }}>Missed ({scoreObj.missedImages?.length || 0})</strong>
+                                                            <span style={{ color: '#b45309' }}>{scoreObj.missedImages?.join(', ') || 'None'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 20px' }}>
+                                        No detailed match data available for this session. (Complete a new assessment to see matching details).
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="admin-modal-actions">
+                                <button className="admin-btn admin-btn-ghost" onClick={() => setHpDataModal({ show: false, rowData: null })}>Close</button>
                             </div>
                         </div>
                     </div>
