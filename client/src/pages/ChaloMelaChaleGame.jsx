@@ -331,7 +331,11 @@ const ChaloMelaChaleGame = () => {
     setIsAnimating(false);
   }, [stopAudio]);
 
+  const sessionCheckRef = useRef(false);
+
   useEffect(() => {
+    if (sessionCheckRef.current) return;
+    sessionCheckRef.current = true;
     const data = localStorage.getItem('currentChild');
     if (data) {
       const parsed = JSON.parse(data);
@@ -740,12 +744,58 @@ const ChaloMelaChaleGame = () => {
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
       setAssessmentSubmitted(true);
+      setTimeout(() => {
+        generateAndUploadPDF();
+      }, 1000);
       alert('Assessment successfully saved!');
     } catch (e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
     } finally {
       setIsAssessmentSubmitting(false);
+    }
+  };
+
+  const generateAndUploadPDF = async () => {
+    try {
+      const element = document.getElementById('dashboard-capture-area');
+      if (!element) return;
+      
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { 
+        scale: 2.0, 
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      
+      const formData = new FormData();
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Rover_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('child_id', childData?.child_id);
+      formData.append('session_id', gameSessionId);
+      formData.append('game_name', GAME_NAME);
+      
+      const config = {};
+      const token = localStorage.getItem('token');
+      if (token) config.headers = { Authorization: `Bearer ${token}` };
+
+      await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
+    } catch (e) {
+      console.error('Failed to generate and upload PDF:', e);
     }
   };
 
@@ -789,7 +839,7 @@ const ChaloMelaChaleGame = () => {
     }
     
     if (actionStatus === 'quit') {
-      await saveToServer('quit', quitReason); 
+      await saveToServer('quit', null, null, quitReason); 
       setShowPauseModal(false);
       setScreen('results');
     } else {
@@ -836,7 +886,7 @@ const ChaloMelaChaleGame = () => {
     const totalTimeSec = Math.floor(totalTimeSeconds % 60);
 
     return (
-      <div className="results-screen">
+      <div className="results-screen" id="dashboard-capture-area">
         <div className="screen-header">
           <div>
             <div className="screen-title">{isDropped ? 'Session Dropped (Clinical Rule)' : (quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete')}</div>
@@ -931,21 +981,21 @@ const ChaloMelaChaleGame = () => {
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f1f5f9', padding: '8px', borderRadius: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>Targeted Moves:</span>
+                      <span style={{ color: '#475569', fontWeight: '600' }}>Targeted Moves:</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(s.id)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>User Moves:</span>
+                      <span style={{ color: '#475569', fontWeight: '600' }}>User Moves:</span>
                       <span style={{ color: '#0369a1', fontWeight: '700' }}>{s.moves}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>Time Taken:</span>
+                      <span style={{ color: '#475569', fontWeight: '600' }}>Time Taken:</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{Math.round(parseFloat(s.timeTaken))}s</span>
                     </div>
                   </div>
                   {matrix && s.path && s.path.length > 0 && (
                     <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
+                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
                        <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
                           {matrix.flat().map((type, i) => {
                              const r = Math.floor(i / matrix[0].length);
@@ -964,9 +1014,9 @@ const ChaloMelaChaleGame = () => {
 
                              return (
                                <div key={i} style={{ aspectRatio: '1/1', background: bg, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.3 : 0.9 }} />
+                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.5 : 0.9 }} />
                                  {inPath && (
-                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: '900', color: '#1e3a8a', textShadow: '0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,0.8)' }}>
+                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: '900', color: '#000000', textShadow: '0 0 6px rgba(255,255,255,1), 0 0 3px rgba(255,255,255,1)' }}>
                                      {pathIndex === 0 ? "S" : cumulativeMoves[pathIndex]}
                                    </div>
                                  )}

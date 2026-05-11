@@ -230,8 +230,8 @@ exports.getReportDetail = async (req, res) => {
                 }
             } catch (_) { parsedState = {}; }
 
-            const scores = parsedState?.allScores || [];
-            const chorItems = parsedState?.itemResults || [];
+            const scores = Array.isArray(parsedState?.allScores) ? parsedState.allScores : [];
+            const chorItems = Array.isArray(parsedState?.itemResults) ? parsedState.itemResults : [];
             const questionScores = {};
             
             // Standard format (allScores)
