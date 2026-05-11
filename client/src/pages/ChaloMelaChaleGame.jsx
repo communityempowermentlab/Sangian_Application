@@ -765,9 +765,18 @@ const ChaloMelaChaleGame = () => {
       const { jsPDF } = await import('jspdf');
 
       const canvas = await html2canvas(element, { 
-        scale: 2.0, 
+        scale: 2, 
         useCORS: true,
         backgroundColor: '#ffffff',
+        logging: false,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('dashboard-capture-area');
+          if (el) {
+            el.style.background = '#ffffff';
+            el.style.padding = '20px';
+            el.style.borderRadius = '0';
+          }
+        },
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight
       });
@@ -981,21 +990,21 @@ const ChaloMelaChaleGame = () => {
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f1f5f9', padding: '8px', borderRadius: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#475569', fontWeight: '600' }}>Targeted Moves:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>Targeted Moves:</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(s.id)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#475569', fontWeight: '600' }}>User Moves:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>User Moves:</span>
                       <span style={{ color: '#0369a1', fontWeight: '700' }}>{s.moves}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
-                      <span style={{ color: '#475569', fontWeight: '600' }}>Time Taken:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>Time Taken:</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{Math.round(parseFloat(s.timeTaken))}s</span>
                     </div>
                   </div>
                   {matrix && s.path && s.path.length > 0 && (
                     <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
+                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
                        <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
                           {matrix.flat().map((type, i) => {
                              const r = Math.floor(i / matrix[0].length);
@@ -1014,9 +1023,9 @@ const ChaloMelaChaleGame = () => {
 
                              return (
                                <div key={i} style={{ aspectRatio: '1/1', background: bg, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.5 : 0.9 }} />
+                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.3 : 0.9 }} />
                                  {inPath && (
-                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: '900', color: '#000000', textShadow: '0 0 6px rgba(255,255,255,1), 0 0 3px rgba(255,255,255,1)' }}>
+                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: '900', color: '#1e3a8a', textShadow: '0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,0.8)' }}>
                                      {pathIndex === 0 ? "S" : cumulativeMoves[pathIndex]}
                                    </div>
                                  )}
