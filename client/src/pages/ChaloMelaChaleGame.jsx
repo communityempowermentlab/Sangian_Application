@@ -227,6 +227,27 @@ const QUESTION_CONFIG = {
   q18: { time: 180, t2: 8, t1: 9 }
 };
 
+const MATRIX_MAP = {
+  p1: MATRIX_P1,
+  tq1: MATRIX_TQ1,
+  tq2: MATRIX_TQ2,
+  sb: MATRIX_SB,
+  tq3: MATRIX_TQ3,
+  tq4: MATRIX_TQ4,
+  q1: MATRIX_Q1, q2: MATRIX_Q2, q3: MATRIX_Q3, q4: MATRIX_Q4,
+  q5: MATRIX_Q5, q6: MATRIX_Q6, q7: MATRIX_Q7, q8: MATRIX_Q8,
+  q9: MATRIX_Q9, q10: MATRIX_Q10, q11: MATRIX_Q11, q12: MATRIX_Q12,
+  q13: MATRIX_Q13, q14: MATRIX_Q14, q15: MATRIX_Q15, q16: MATRIX_Q16,
+  q17: MATRIX_Q17, q18: MATRIX_Q18
+};
+
+const getTargetMoves = (id) => {
+  if (id.startsWith('tq')) return id === 'tq4' ? 5 : 3;
+  if (id.startsWith('p') || id.startsWith('sb')) return '-';
+  return QUESTION_CONFIG[id]?.t2 || '-';
+};
+
+
 const PATH1_SEQ = ["R4C1","R4C2","R4C3","R4C4","R3C4","R2C4","R2C3"];
 const PATH2_SEQ = ["R4C1","R3C1","R2C1","R2C2","R2C3"];
 const PATH3_SEQ = ["R4C1", "R3C1", "R2C2", "R2C3"];
@@ -655,10 +676,9 @@ const ChaloMelaChaleGame = () => {
     
     const resultMsg = isSuccess ? `✅ Reached End | Score: ${score}` : `❌ ${reason} | Score: 0`;
     const now = Date.now();
-    // Use Ref for logic to avoid stale closure issues
     const startTimeToUse = qStartTimeRef.current;
     const timeTaken = startTimeToUse ? ((now - startTimeToUse) / 1000).toFixed(1) : "0.0";
-    const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken };
+    const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: s.path, failReason: isSuccess ? null : reason };
     
     setAllScores(prev => {
       const existingIdx = prev.findIndex(e => e.id === s.id);
@@ -878,23 +898,87 @@ const ChaloMelaChaleGame = () => {
           </div>
         </div>
 
-        <div className="motivation-banner" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}>
-          Excellent work! Keep it up! ⭐
-        </div>
-
         <div className="accordion-section">
-          <div className="results-grid-cards">
-            {allScores.map((s, idx) => (
-              <div key={idx} className="result-mini-card">
-                <div className="res-card-top">
-                  <span className="res-qname">{s.id.toUpperCase()}</span>
-                  <span className="res-status">{s.score > 0 ? '✅' : '❌'}</span>
+          <div className="results-grid-cards" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            {allScores.map((s, idx) => {
+              const matrix = MATRIX_MAP[s.id];
+              const cumulativeMoves = [];
+              let currentMoves = 0;
+              if (s.path && matrix) {
+                for (let i = 0; i < s.path.length; i++) {
+                  if (i === 0) {
+                    cumulativeMoves.push(0);
+                  } else {
+                    const p = s.path[i];
+                    const type = matrix[p.row][p.col];
+                    currentMoves += (type === "7-T3" ? 2 : 1);
+                    cumulativeMoves.push(currentMoves);
+                  }
+                }
+              }
+              return (
+                <div key={idx} className="result-mini-card" style={{ gap: '12px' }}>
+                  <div className="res-card-top">
+                    <span className="res-qname" style={{ fontSize: '1.05rem' }}>{s.id.toUpperCase()}</span>
+                    <span className="res-status" style={{ fontSize: '1.3rem' }}>{s.score > 0 ? '✅' : '❌'}</span>
+                  </div>
+                  {s.failReason && (
+                    <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '6px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #fca5a5' }}>
+                      {s.failReason === "Hit Weed" ? "Question Ended Due to Illegal Moves" : 
+                       s.failReason === "Timeout" ? "Time Out – Destination Not Achieved" : 
+                       "Destination Not Achieved"}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f1f5f9', padding: '8px', borderRadius: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>Targeted Moves:</span>
+                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(s.id)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>User Moves:</span>
+                      <span style={{ color: '#0369a1', fontWeight: '700' }}>{s.moves}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>Time Taken:</span>
+                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{Math.round(parseFloat(s.timeTaken))}s</span>
+                    </div>
+                  </div>
+                  {matrix && s.path && s.path.length > 0 && (
+                    <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
+                       <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
+                          {matrix.flat().map((type, i) => {
+                             const r = Math.floor(i / matrix[0].length);
+                             const c = i % matrix[0].length;
+                             const pathIndex = s.path.findIndex(p => p.row === r && p.col === c);
+                             const inPath = pathIndex !== -1;
+                             const isStart = type === "7-SP";
+                             const isEnd = type === "7-EP";
+                             
+                             let bg = '#ffffff';
+                             if (inPath) {
+                                bg = isStart ? '#bfdbfe' : isEnd ? '#bbf7d0' : '#e0e7ff';
+                             } else {
+                                if (isStart || isEnd) bg = '#f1f5f9';
+                             }
+
+                             return (
+                               <div key={i} style={{ aspectRatio: '1/1', background: bg, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.3 : 0.9 }} />
+                                 {inPath && (
+                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: '900', color: '#1e3a8a', textShadow: '0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,0.8)' }}>
+                                     {pathIndex === 0 ? "S" : cumulativeMoves[pathIndex]}
+                                   </div>
+                                 )}
+                               </div>
+                             );
+                          })}
+                       </div>
+                    </div>
+                  )}
                 </div>
-                <div className="res-card-bottom">
-                  <span className="res-details">Moves: {s.moves} | {Math.round(parseFloat(s.timeTaken))} sec</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1125,7 +1209,7 @@ const ChaloMelaChaleGame = () => {
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
-            {screen !== 'splash' && (
+            {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => setShowPauseModal(true)}><span>⏸</span> Pause/Quit</button>
             )}
           </div>
