@@ -354,11 +354,11 @@ const AtlantisBagiyaGame = () => {
 
   // ── Question timer ──────────────────────────────────────
   useEffect(() => {
-    if (screen === 'game' && mainPhase === 'response' && !showQuitModal) {
+    if (screen === 'game' && mainPhase === 'response' && !showQuitModal && !subQAnswered[subQIndex]) {
       const id = setInterval(() => setQTimer(p => p + 1), 1000);
       return () => clearInterval(id);
     }
-  }, [screen, mainPhase, subQIndex, showQuitModal]);
+  }, [screen, mainPhase, subQIndex, showQuitModal, subQAnswered]);
 
   // ─── API ────────────────────────────────────────────────
   const checkResume = async (childId) => {
@@ -731,7 +731,7 @@ const AtlantisBagiyaGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-      formData.append('pdf', pdfBlob, `${childNameSafe}_Atlantis_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Bagiya_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
       formData.append('game_name', 'atlantis_bagiya');
@@ -781,7 +781,7 @@ const AtlantisBagiyaGame = () => {
   const partialCount = allScores.filter(s => s.score === 1).length;
   const wrongCount   = allScores.filter(s => s.score === 0).length;
   const accuracyPct  = allScores.length > 0 ? ((correctCount / allScores.length) * 100).toFixed(1) : '0.0';
-  const totalTimeSec = timerSeconds;
+  const totalTimeSec = allScores.reduce((acc, s) => acc + (s.timeTaken || 0), 0);
 
   // ─── RENDER ──────────────────────────────────────────────
   return (
@@ -792,7 +792,7 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
           <div className="ab-divider"></div>
-          <span className="ab-test-title">Atlantis Test</span>
+          <span className="ab-test-title">Bagiya</span>
         </div>
         <div className="ab-stats">
           {childData?.child_id && (
@@ -826,12 +826,12 @@ const AtlantisBagiyaGame = () => {
 
             <div className="ab-splash-centered">
               <div className="ab-splash-img-box">
-                <img src={`${IMG}/bagiya.jpg`} alt="Atlantis Test" className="ab-splash-img-full"
+                <img src={`${IMG}/bagiya.jpg`} alt="Bagiya" className="ab-splash-img-full"
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               </div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Welcome to Atlantis Test
+                Welcome to Bagiya
               </h2>
               
 
@@ -1042,7 +1042,6 @@ const AtlantisBagiyaGame = () => {
                       </div>
                     </div>
                     <div className="ab-chips">
-                      <span className="ab-chip">Response Screen {mainScreenNum}</span>
                       <span className="ab-chip">⏱ {formatTime(qTimer)}</span>
                     </div>
                   </div>
@@ -1112,7 +1111,7 @@ const AtlantisBagiyaGame = () => {
             <div className="ab-screen-header">
               <div>
                 <div className="ab-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
-                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Atlantis Test · Final Results'}</div>
+                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Bagiya · Final Results'}</div>
               </div>
               <div className="ab-chips">
                 <span className="ab-chip">Final Results</span>
@@ -1144,9 +1143,7 @@ const AtlantisBagiyaGame = () => {
                 </div>
               </div>
 
-              {totalPts >= maxPts * 0.8 && maxPts > 0 && (
-                <div className="ab-banner">Outstanding performance! Excellent visual memory! ⭐</div>
-              )}
+
 
               {/* Per-question results */}
               <div className="ab-q-table-wrap">

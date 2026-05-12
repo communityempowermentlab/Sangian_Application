@@ -726,10 +726,10 @@ const NumberRecallGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-      formData.append('pdf', pdfBlob, `${childNameSafe}_Rover_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Lottery_Ka_Ticket_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
-      formData.append('game_name', 'rover_mela');
+      formData.append('game_name', 'number_recall_lottery');
       
       await axios.post(`${API_URL}/games/pdfs/upload`, formData);
     } catch (e) {
@@ -757,7 +757,7 @@ const NumberRecallGame = () => {
         <div className="nr-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />
           <div className="nr-divider"></div>
-          <span className="nr-test-title">Number Recall</span>
+          <span className="nr-test-title">Lottery Ka Ticket</span>
         </div>
         <div className="nr-stats">
           {childData?.child_id && (
@@ -802,7 +802,7 @@ const NumberRecallGame = () => {
               </div>
 
               <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                Welcome to Number Recall
+                Welcome to Lottery Ka Ticket
               </h2>
               
 

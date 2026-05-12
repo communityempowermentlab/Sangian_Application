@@ -793,7 +793,7 @@ const ChaloMelaChaleGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-      formData.append('pdf', pdfBlob, `${childNameSafe}_Rover_SES${gameSessionId}_${ts}.pdf`);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Chalo_Mela_Chalen_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
       formData.append('game_name', GAME_NAME);
@@ -1156,7 +1156,7 @@ const ChaloMelaChaleGame = () => {
       <div className="screen">
         <div className="screen-header">
           <div>
-            <div className="screen-title">Rover - {title}</div>
+            <div className="screen-title">Chalo Mela Chalen - {title}</div>
             <div className="screen-subtitle">
               {QUESTION_CONFIG[questionState.id]?.subtitle || ""}
             </div>
@@ -1263,7 +1263,7 @@ const ChaloMelaChaleGame = () => {
           <div className="brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
             <div className="divider"></div>
-            <span className="test-title">Chalo Mela Chale</span>
+            <span className="test-title">Chalo Mela Chalen</span>
           </div>
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
@@ -1282,9 +1282,9 @@ const ChaloMelaChaleGame = () => {
                 </div>
               </div>
               <div className="card splash-card">
-                <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chale" className="splash-image" /></div>
+                <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-image" /></div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  Welcome to Chalo Mela Chale
+                  Welcome to Chalo Mela Chalen
                 </h2>
 
                 <div className="btn-row">
@@ -1299,7 +1299,7 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">Rover - Sample A</div>
+                  <div className="screen-title">Chalo Mela Chalen - Sample A</div>
                 </div>
               </div>
           <div className="pattern-controls">
@@ -1349,7 +1349,7 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">Rover - Sample B</div>
+                  <div className="screen-title">Chalo Mela Chalen - Sample B</div>
                 </div>
               </div>
           <div className="pattern-controls">

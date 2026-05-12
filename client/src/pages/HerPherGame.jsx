@@ -1,5 +1,5 @@
 // ============================================================
-// HerPherGame.jsx — Working Memory (Her Pher)
+// HerPherGame.jsx — Her Pher
 // React port of the standalone her_pher.js game.
 // Integrated with child ID (localStorage) + backend API.
 // ============================================================
@@ -641,7 +641,7 @@ const HerPherGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-      formData.append('pdf', pdfBlob, `${childNameSafe}_HerPher_SES${gameSessionIdRef.current}_${ts}.pdf`);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Her_Pher_SES${gameSessionIdRef.current}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionIdRef.current);
       formData.append('game_name', GAME_NAME);
@@ -747,7 +747,7 @@ const HerPherGame = () => {
                     className="hp-splash-img"
                     onError={(e) => {
                       e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = '<div class="hp-splash-fallback">🔄<br/>Working Memory<br/>Her Pher</div>';
+                      e.target.parentElement.innerHTML = '<div class="hp-splash-fallback">🔄<br/>Her Pher</div>';
                     }}
                   />
                 </div>
@@ -790,7 +790,7 @@ const HerPherGame = () => {
             <div className="hp-screen">
               <div className="hp-screen-header">
                 <div>
-                  <div className="hp-screen-title">Working Memory — Her Pher</div>
+                  <div className="hp-screen-title">Her Pher</div>
                   <div className="hp-screen-subtitle">
                     {questionLabel}
                   </div>
@@ -885,7 +885,7 @@ const HerPherGame = () => {
 
               <div className="hp-card hp-result-card" style={{ padding: 30 }} id="dashboard-capture-area">
                 <div className="hp-result-header" style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>Working Memory Performance</h2>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>Her Pher Performance</h2>
                   <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Assessment Completed</p>
                 </div>
 

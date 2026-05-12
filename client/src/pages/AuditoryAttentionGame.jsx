@@ -751,7 +751,7 @@ const AuditoryAttentionGame = () => {
             const formData = new FormData();
             const childNameSafe = (childData?.name || childId || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
             const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-            formData.append('pdf', pdfBlob, `${childNameSafe}_AuditoryDhyan_SES${gameSessionId}_${ts}.pdf`);
+            formData.append('pdf', pdfBlob, `${childNameSafe}_Dhyan_Kahan_Hai_SES${gameSessionId}_${ts}.pdf`);
             formData.append('child_id', childId);
             formData.append('session_id', gameSessionId);
             formData.append('game_name', 'auditory_dhyan');

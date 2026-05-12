@@ -483,7 +483,7 @@ const ReadingSkillGame = () => {
         <div className="rs-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />
           <div className="rs-divider"></div>
-          <span className="rs-test-title">Reading Skill</span>
+          <span className="rs-test-title">Padh ke batao</span>
         </div>
         <div className="rs-stats">
           {childData?.child_id && (
@@ -505,10 +505,10 @@ const ReadingSkillGame = () => {
             
             <div className="rs-card rs-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
               <div className="rs-splash-image-wrapper">
-                <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-splash-image" onError={e => e.target.style.display='none'} />
+                <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                Welcome to Reading Skill
+                Welcome to Padh ke batao
               </h2>
 
               

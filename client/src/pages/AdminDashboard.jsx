@@ -4,14 +4,14 @@ import axiosAdmin from '../services/axiosAdmin';
 import './AdminDashboard.css';
 
 const GAME_LABELS = {
-  'literacy_reading_skill':  'Reading Skill',
-  'numeracy_number_skill':   'Number Skill',
-  'number_recall_lottery':   'Number Recall',
-  'atlantis_bagiya':         'Atlantis Bagiya',
+  'literacy_reading_skill':  'Padh ke batao',
+  'numeracy_number_skill':   'Ankganit',
+  'number_recall_lottery':   'Lottery Ka Ticket',
+  'atlantis_bagiya':         'Bagiya',
   'working_memory_herpher':  'Her Pher',
-  'auditory_dhyan':          'Auditory Attention',
-  'triangle_rachna':         'Triangle Rachna',
-  'rover_mela':              'Chalo Mela Chale',
+  'auditory_dhyan':          'Dhyan Kahan Hai',
+  'triangle_rachna':         'Rachna',
+  'rover_mela':              'Chalo Mela Chalen',
   'cognitive_flex_chor':     'Chor Machaye Shor',
 };
 

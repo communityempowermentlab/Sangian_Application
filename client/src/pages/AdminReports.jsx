@@ -4,15 +4,15 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 // ─── Catalogue of all 9 games ─────────────────────────────────────────────────
 const GAME_CATALOG = [
-    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Test',        local: 'BAGIYA',           tag: 'Visual Memory',    color: '#6366f1' },
-    { key: 'number_recall_lottery',     icon: '🎟️', title: 'Number Recall',        local: 'LOTTERY KA TICKET',tag: 'Auditory Span',    color: '#f59e0b' },
-    { key: 'rover_mela',                icon: '🗺️', title: 'Rover Game',           local: 'CHALO MELA CHALE', tag: 'Spatial Planning', color: '#10b981' },
-    { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle Test',             local: 'RACHNA',           tag: 'Construction',     color: '#ef4444' },
-    { key: 'auditory_dhyan',            icon: '👂', title: 'Auditory Attention',   local: 'DHYAN KAHAN HAI',  tag: 'Listening Focus',  color: '#8b5cf6' },
-    { key: 'working_memory_herpher',    icon: '🔄', title: 'Working Memory',       local: 'HER PHER',         tag: 'Dynamic Memory',   color: '#0891b2' },
-    { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Cognitive Flex',       local: 'CHOR MACHAYE SHOR',tag: 'Rule Switching',   color: '#dc2626' },
-    { key: 'numeracy_number_skill',     icon: '🔢', title: 'Numeracy Test',        local: 'Number Skills',    tag: 'Academic – Maths', color: '#7c3aed' },
-    { key: 'literacy_reading_skill',    icon: '📖', title: 'Literacy Test',        local: 'Reading Skills',   tag: 'Academic – Lang',  color: '#059669' },
+    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Bagiya',        local: '',           tag: 'Visual Memory',    color: '#6366f1' },
+    { key: 'number_recall_lottery',     icon: '🎟️', title: 'Lottery Ka Ticket',        local: '',tag: 'Auditory Span',    color: '#f59e0b' },
+    { key: 'rover_mela',                icon: '🗺️', title: 'Chalo Mela Chalen',           local: '', tag: 'Spatial Planning', color: '#10b981' },
+    { key: 'auditory_dhyan',            icon: '👂', title: 'Dhyan Kahan Hai',   local: '',  tag: 'Listening Focus',  color: '#8b5cf6' },
+    { key: 'working_memory_herpher',    icon: '🔄', title: 'Her Pher',       local: '',         tag: 'Dynamic Memory',   color: '#0891b2' },
+    { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: 'Academic – Maths', color: '#7c3aed' },
+    { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: 'Academic – Lang',  color: '#059669' },
+    { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: 'Rule Switching',   color: '#dc2626' },
+    { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: 'Construction',     color: '#ef4444' },
 ];
 
 const statusBadge = (status) => {
@@ -188,7 +188,7 @@ const AdminReports = () => {
             });
         } else {
             detail.columns.forEach((c, idx) => {
-                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
+                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                 const colLabel = isChorCSV ? chorColLabel(c) : c.toUpperCase();
                 qHeaders.push(colLabel);
                 if (isRover || isChorCSV) qHeaders.push(`${colLabel} Moves`);
@@ -265,7 +265,7 @@ const AdminReports = () => {
                     }
                 });
             } else {
-                const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
+                const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                 detail?.columns?.forEach(c => {
                     rowArr.push(r.question_scores?.[c] ?? '');
                     if (isRoverCSV || isChorCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
@@ -448,7 +448,7 @@ const AdminReports = () => {
                                                 </React.Fragment>
                                             ))}
                                         </>
-                                    ) : (activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover')) ? (
+                                    ) : (activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela')) ? (
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
@@ -531,7 +531,7 @@ const AdminReports = () => {
                             </thead>
                             <tbody>
                                 {sortedRows.map((row, i) => {
-                                    const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Rover');
+                                    const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                                     const isChor = activeGame?.key === 'cognitive_flex_chor';
                                     
                                     return (
@@ -876,7 +876,7 @@ const AdminReports = () => {
                             >
                                 <div style={S.cardIcon}>{game.icon}</div>
                                 <div style={S.cardTitle}>{game.title}</div>
-                                <div style={S.cardLocal}>({game.local})</div>
+                                {game.local && <div style={S.cardLocal}>({game.local})</div>}
                                 <div style={S.tag(game.color)}>{game.tag}</div>
 
                                 <div style={S.kpiRow}>

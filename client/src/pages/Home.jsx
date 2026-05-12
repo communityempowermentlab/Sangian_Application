@@ -51,19 +51,6 @@ const Home = () => {
         },
         {
             id: 4,
-            gameKey: 'triangle_rachna',
-            title: t('home.games.rachna.title') + " " + t('home.games.rachna.local'),
-            subtitle: t('home.games.rachna.sub'),
-            desc: t('home.games.rachna.desc'),
-            startUrl: "/games/rachna",
-            image: "/assets/images/rachna/rachna.jpg",
-            shortTitle: t('home.games.rachna.title'),
-            local: t('home.games.rachna.local'),
-            tag: t('home.games.rachna.tag'),
-            tagClass: "test-tag"
-        },
-        {
-            id: 5,
             gameKey: 'auditory_dhyan',
             title: t('home.games.dhyan.title') + " " + t('home.games.dhyan.local'),
             subtitle: t('home.games.dhyan.sub'),
@@ -76,7 +63,7 @@ const Home = () => {
             tagClass: "test-tag"
         },
         {
-            id: 6,
+            id: 5,
             gameKey: 'working_memory_herpher',
             title: t('home.games.herpher.title') + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
@@ -88,21 +75,9 @@ const Home = () => {
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"
         },
+
         {
-            id: 7,
-            gameKey: 'cognitive_flex_chor',
-            title: t('home.games.chor.title') + " " + t('home.games.chor.local'),
-            subtitle: t('home.games.chor.sub'),
-            desc: t('home.games.chor.desc'),
-            startUrl: "/games/chor_machaye_shor",
-            image: "/assets/images/chor_machaye_shor/chor_machaye_shor.jpg",
-            shortTitle: t('home.games.chor.title'),
-            local: t('home.games.chor.local'),
-            tag: t('home.games.chor.tag'),
-            tagClass: "test-tag"
-        },
-        {
-            id: 8,
+            id: 6,
             gameKey: 'numeracy_number_skill',
             title: t('home.games.numeracy.title'),
             subtitle: t('home.games.numeracy.sub'),
@@ -115,7 +90,7 @@ const Home = () => {
             tagClass: "test-tag test-tag-academic"
         },
         {
-            id: 9,
+            id: 7,
             gameKey: 'literacy_reading_skill',
             title: t('home.games.literacy.title'),
             subtitle: t('home.games.literacy.sub'),
@@ -126,6 +101,32 @@ const Home = () => {
             local: t('home.games.literacy.local'),
             tag: t('home.games.literacy.tag'),
             tagClass: "test-tag test-tag-academic"
+        },
+        {
+            id: 8,
+            gameKey: 'cognitive_flex_chor',
+            title: t('home.games.chor.title'),
+            subtitle: t('home.games.chor.sub'),
+            desc: t('home.games.chor.desc'),
+            startUrl: "/games/chor_machaye_shor",
+            image: "/assets/images/chor_machaye_shor/chor_machaye_shor.jpg",
+            shortTitle: t('home.games.chor.title'),
+            local: t('home.games.chor.local'),
+            tag: t('home.games.chor.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 9,
+            gameKey: 'triangle_rachna',
+            title: t('home.games.rachna.title'),
+            subtitle: t('home.games.rachna.sub'),
+            desc: t('home.games.rachna.desc'),
+            startUrl: "/games/rachna",
+            image: "/assets/images/rachna/rachna.jpg",
+            shortTitle: t('home.games.rachna.title'),
+            local: t('home.games.rachna.local'),
+            tag: t('home.games.rachna.tag'),
+            tagClass: "test-tag"
         }
     ];
     const [modalData, setModalData] = useState({

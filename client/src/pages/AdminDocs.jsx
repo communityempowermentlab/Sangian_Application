@@ -3,15 +3,15 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 
 const GAME_CATALOG = [
-    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Atlantis Test',        local: 'BAGIYA',            color: '#6366f1' },
-    { key: 'number_recall_lottery',     icon: '🎟️', title: 'Number Recall',        local: 'LOTTERY KA TICKET', color: '#f59e0b' },
-    { key: 'rover_mela',                icon: '🗺️', title: 'Rover Game',           local: 'CHALO MELA CHALE',  color: '#10b981' },
-    { key: 'triangle_rachna',           icon: '🔺', title: 'Triangle',             local: 'RACHNA',            color: '#ef4444' },
-    { key: 'auditory_dhyan',            icon: '👂', title: 'Auditory Attention',   local: 'DHYAN KAHAN HAI',   color: '#8b5cf6' },
-    { key: 'working_memory_herpher',    icon: '🔄', title: 'Working Memory',       local: 'HER PHER',          color: '#0891b2' },
-    { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Cognitive Flex',       local: 'CHOR MACHAYE SHOR', color: '#dc2626' },
-    { key: 'numeracy_number_skill',     icon: '🔢', title: 'Numeracy Test',        local: 'Number Skills',     color: '#7c3aed' },
-    { key: 'literacy_reading_skill',    icon: '📖', title: 'Literacy Test',        local: 'Reading Skills',    color: '#059669' },
+    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Bagiya',        local: '',            color: '#6366f1' },
+    { key: 'number_recall_lottery',     icon: '🎟️', title: 'Lottery Ka Ticket',        local: '', color: '#f59e0b' },
+    { key: 'rover_mela',                icon: '🗺️', title: 'Chalo Mela Chalen',           local: '',  color: '#10b981' },
+    { key: 'auditory_dhyan',            icon: '👂', title: 'Dhyan Kahan Hai',   local: '',   color: '#8b5cf6' },
+    { key: 'working_memory_herpher',    icon: '🔄', title: 'Her Pher',       local: '',          color: '#0891b2' },
+    { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',     color: '#7c3aed' },
+    { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',    color: '#059669' },
+    { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '', color: '#dc2626' },
+    { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',            color: '#ef4444' },
 ];
 
 const NUMERACY_DEFAULT = `# 📦 Numeracy Test – Documentation
@@ -109,10 +109,10 @@ Q1–Q10: 8 correct → Q11–Q20: 7 correct → Q21–Q24: 3 correct → Q25–
 *Last updated by system on first load.*
 `;
 
-const LITERACY_DEFAULT = `# 📖 Literacy Test – Documentation
+const LITERACY_DEFAULT = `# 📖 Padh ke batao – Documentation
 
 ## Overview
-The Literacy Test is an academic assessment module evaluating a child's reading and language skills across progressive categories including letter recognition, sentence comprehension, short stories, and paragraph reading.
+The Padh ke batao test is an academic assessment module evaluating a child's reading and language skills across progressive categories including letter recognition, sentence comprehension, short stories, and paragraph reading.
 
 ---
 
@@ -222,7 +222,7 @@ const AdminDocs = () => {
                 setUpdatedBy(res.data.doc.updated_by);
             } else {
                 // Seed default content
-                const defaultText = game.key === 'numeracy_number_skill' ? NUMERACY_DEFAULT : (game.key === 'literacy_reading_skill' ? LITERACY_DEFAULT : `# ${game.title}\n\nDocumentation for **${game.title}** (${game.local}) has not been added yet.\n\nClick **Edit** to start writing.`);
+                const defaultText = game.key === 'numeracy_number_skill' ? NUMERACY_DEFAULT : (game.key === 'literacy_reading_skill' ? LITERACY_DEFAULT : `# ${game.title}\n\nDocumentation for **${game.title}** ${game.local ? `(${game.local})` : ''} has not been added yet.\n\nClick **Edit** to start writing.`);
                 setContent(defaultText);
                 setUpdatedAt(null);
                 setUpdatedBy(null);

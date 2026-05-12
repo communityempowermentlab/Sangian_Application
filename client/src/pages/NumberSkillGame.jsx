@@ -429,7 +429,9 @@ const NumberSkillGame = () => {
       const pdfBlob = pdf.output('blob');
       
       const formData = new FormData();
-      formData.append('pdf', pdfBlob, `numeracy_number_skill_${gameSessionId}.pdf`);
+      const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      formData.append('pdf', pdfBlob, `${childNameSafe}_Ankganit_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
       formData.append('game_name', 'numeracy_number_skill');
@@ -472,7 +474,7 @@ const NumberSkillGame = () => {
         <div className="ns-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />
           <div className="ns-divider"></div>
-          <span className="ns-test-title">Number Skill</span>
+          <span className="ns-test-title">Ankganit</span>
         </div>
         <div className="ns-stats">
           {childData?.child_id && (
@@ -494,10 +496,10 @@ const NumberSkillGame = () => {
             
             <div className="ns-card ns-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
               <div className="ns-splash-image-wrapper">
-                <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-splash-image" onError={e => e.target.style.display='none'} />
+                <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                Welcome to Number Skill
+                Welcome to Ankganit
               </h2>
               
 
