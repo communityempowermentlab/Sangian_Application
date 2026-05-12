@@ -89,6 +89,7 @@ const AuditoryAttentionGame = () => {
   const [childId, setChildId] = useState('');
   const [childData, setChildData] = useState(null);
   const [gameSessionId, setGameSessionId] = useState(null);
+  const [attemptNo, setAttemptNo] = useState(1);
   
   // Checking/Resume States
   const [isCheckingSession, setIsCheckingSession] = useState(false);
@@ -277,11 +278,15 @@ const AuditoryAttentionGame = () => {
         total_questions: 4
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       
       // Reset full state
       setQuestionScores({ 1: null, 2: null, 3: null, 4: null });
       setQuestionTimes({ 1: null, 2: null, 3: null, 4: null });
       setCanStartQ(false);
+      setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+      setQuitReason('');
+      setAssessmentSubmitted(false);
       setScreen('sampleA');
     } catch (e) {
       alert('Failed to start session on server. Progress won\'t be saved.');
@@ -294,6 +299,7 @@ const AuditoryAttentionGame = () => {
     setShowResumeModal(false);
     if (!resumeData) return startNewGameSession();
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     
     // Parse scores
     const saved = resumeData.saved_state || {};
@@ -819,6 +825,7 @@ const AuditoryAttentionGame = () => {
                 onClick={() => {
                   cleanupAudio();
                   clearAllTimers();
+                  setQuitReason('');
                   setShowQuitModal(true);
                 }}>
                 <span>⏸</span> Pause/Quit
@@ -1012,10 +1019,13 @@ const AuditoryAttentionGame = () => {
           {/* FINAL SCORE & ASSESSMENT */}
           {screen === 'score' && (
             <div id="dashboard-container" className="aa-screen" style={{ overflowY: 'auto' }}>
-               <div className="aa-header">
+               <div className="aa-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                  <div>
                    <h2 className="aa-title">{quitReason ? '🏆 Assessment Terminated' : '🏆 Assessment Complete'}</h2>
                    <p className="aa-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Final Results'}</p>
+                 </div>
+                 <div style={{ background: '#4f46e5', color: '#fff', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem' }}>
+                   Attempt #{attemptNo}
                  </div>
                </div>
 

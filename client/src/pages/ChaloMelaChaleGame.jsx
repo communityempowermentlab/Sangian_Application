@@ -285,6 +285,7 @@ const ChaloMelaChaleGame = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [pendingResumeData, setPendingResumeData] = useState(null);
+  const [attemptNo, setAttemptNo] = useState(1);
   
   // Animation State
   const [activePath, setActivePath] = useState(null);
@@ -358,6 +359,7 @@ const ChaloMelaChaleGame = () => {
         setGameSessionId(info.id);
         if (info.status === 'paused' && info.saved_state) {
           setPendingResumeData(info.saved_state);
+          setAttemptNo(info.attempt_no || 1);
           setShowResumeModal(true);
         } else {
           startNewGame(childId);
@@ -401,6 +403,7 @@ const ChaloMelaChaleGame = () => {
       }, config);
       const newSessionId = res.data.sessionId;
       setGameSessionId(newSessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       setStartTime(Date.now());
       setQStartTime(null);
       
@@ -820,6 +823,7 @@ const ChaloMelaChaleGame = () => {
     setIsDropped(false);
     setAudioFinished(false);
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setQuitReason('');
     setAssessmentSubmitted(false);
     hasAutoStarted.current = { sampleA: false, sampleB: false };
     setQuestionState({
@@ -902,6 +906,7 @@ const ChaloMelaChaleGame = () => {
             <div className="screen-subtitle">{isDropped ? 'Q1-Q3 score < 2: System-enforced drop' : (quitReason ? 'Assessor requested early exit' : 'Test finished successfully')}</div>
           </div>
           <div className="chips">
+            <span className="chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
             <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>Final Results</span>
             <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>Time: {totalTimeMin}m {totalTimeSec}s</span>
           </div>
@@ -1269,7 +1274,7 @@ const ChaloMelaChaleGame = () => {
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
             {screen !== 'splash' && screen !== 'results' && (
-              <button className="btn-pause-quit" onClick={() => setShowPauseModal(true)}><span>⏸</span> Pause/Quit</button>
+              <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowPauseModal(true); }}><span>⏸</span> Pause/Quit</button>
             )}
           </div>
         </header>

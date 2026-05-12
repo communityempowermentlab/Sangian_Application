@@ -24,10 +24,17 @@ exports.startGameSession = async (req, res) => {
             [child_id, normalizedName, total_questions || 0]
         );
 
+        // Get attempt number for this session
+        const [[countResult]] = await pool.query(
+            `SELECT COUNT(*) as attempt_no FROM game_sessions WHERE child_id = ? AND game_name = ?`,
+            [child_id, normalizedName]
+        );
+
         res.status(201).json({
             success: true,
             message: 'Game session started',
-            sessionId: result.insertId
+            sessionId: result.insertId,
+            attempt_no: countResult.attempt_no
         });
     } catch (error) {
         console.error('Error starting game session:', error);
@@ -98,20 +105,29 @@ exports.getResumeSession = async (req, res) => {
              ORDER BY start_time DESC LIMIT 1`,
             [childId, normalizedName]
         );
-
-        // Only offer resume if the very last recorded session was not completed or quit
-        if (rows.length > 0 && ['in_progress', 'paused'].includes(rows[0].status)) {
-            // Parse saved state
+        if (rows.length > 0) {
             let savedState = rows[0].saved_state;
             if (typeof savedState === 'string') {
-                try { savedState = JSON.parse(savedState); } catch (e) {}
+                try {
+                    savedState = JSON.parse(savedState);
+                } catch (e) {
+                    console.error("Error parsing saved_state:", e);
+                }
             }
-            
+
+            // Get attempt number for this child/game
+            const [[countResult]] = await pool.query(
+                `SELECT COUNT(*) as attempt_no FROM game_sessions 
+                 WHERE child_id = ? AND game_name = ? AND start_time <= ?`,
+                [childId, normalizedName, rows[0].start_time]
+            );
+
             res.status(200).json({
                 success: true,
                 sessionInfo: {
                     ...rows[0],
-                    saved_state: savedState
+                    saved_state: savedState,
+                    attempt_no: countResult.attempt_no
                 }
             });
         } else {
@@ -136,13 +152,24 @@ exports.getGameHistory = async (req, res) => {
              FROM game_sessions gs
              LEFT JOIN game_dashboard_pdfs pdf ON pdf.session_id = gs.id
              WHERE gs.child_id = ? 
-             ORDER BY gs.start_time DESC`,
+             ORDER BY gs.start_time ASC`, // Changed to ASC to calculate attempt numbers easily
             [childId]
         );
 
+        // Group by game_name to assign attempt numbers
+        const gameCounts = {};
+        const historyWithAttempts = rows.map(row => {
+            const gName = row.game_name;
+            gameCounts[gName] = (gameCounts[gName] || 0) + 1;
+            return { ...row, attempt_no: gameCounts[gName] };
+        });
+
+        // Re-sort to DESC for UI
+        historyWithAttempts.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+
         res.status(200).json({
             success: true,
-            history: rows
+            history: historyWithAttempts
         });
     } catch (error) {
         console.error('Error fetching game history:', error);
@@ -215,12 +242,17 @@ exports.getReportDetail = async (req, res) => {
             LEFT JOIN children c ON gs.child_id = c.child_id
             LEFT JOIN game_assessments ga ON ga.session_id = gs.id
             WHERE gs.game_name IN (?)
-            ORDER BY gs.start_time DESC
+            ORDER BY gs.start_time ASC
         `, [gameFilter]);
 
+        // Calculate per-child attempt numbers
+        const childAttemptCounts = {};
         const allUniqueKeys = new Set();
-        
-        const enriched = rows.map((row, idx) => {
+        const enriched = rows.map((row) => {
+            const cid = row.child_id;
+            childAttemptCounts[cid] = (childAttemptCounts[cid] || 0) + 1;
+            const currentAttempt = childAttemptCounts[cid];
+
             let parsedState = row.saved_state;
             try {
                 if (typeof parsedState === 'string') {
@@ -322,7 +354,7 @@ exports.getReportDetail = async (req, res) => {
             try { if (typeof behaviors === 'string') behaviors = JSON.parse(behaviors); } catch (_) {}
 
             return {
-                attempt_no: idx + 1,
+                child_attempt_no: currentAttempt,
                 session_id: row.session_id,
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
@@ -353,6 +385,9 @@ exports.getReportDetail = async (req, res) => {
                 pdf_url: row.pdf_url || null,
             };
         });
+
+        // Re-sort to DESC for report listing
+        enriched.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
         // Determine Columns
         let sortedQIds = [];

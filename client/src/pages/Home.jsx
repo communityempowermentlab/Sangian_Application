@@ -284,10 +284,12 @@ const Home = () => {
                                         {isLoggedIn && (
                                             <div className="test-activity">
                                                 <div className="activity-item">
-                                                    <span>Last Played:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                                    <span>Last Attempt:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : (
+                                                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Never Played</span>
+                                                    )}
                                                 </div>
                                                 <div className="activity-item">
-                                                    <span>Attempts:</span> {summaries[test.gameKey]?.total_attempts || 0} times
+                                                    <span>History:</span> {summaries[test.gameKey]?.total_attempts || 0} session{summaries[test.gameKey]?.total_attempts !== 1 ? 's' : ''}
                                                 </div>
                                             </div>
                                         )}

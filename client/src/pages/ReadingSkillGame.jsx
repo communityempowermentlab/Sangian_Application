@@ -70,6 +70,7 @@ const ReadingSkillGame = () => {
   const [allScores, setAllScores] = useState([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [gameSessionId, setGameSessionId] = useState(null);
+  const [attemptNo, setAttemptNo] = useState(1);
   
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [resumeData, setResumeData] = useState(null);
@@ -186,6 +187,7 @@ const ReadingSkillGame = () => {
         total_questions: QUESTIONS.length
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       resetInternalState();
       setScreen('game');
     } catch (e) { alert('Failed to start session on server.'); setScreen('game'); }
@@ -193,6 +195,7 @@ const ReadingSkillGame = () => {
 
   const resumeGame = () => {
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     const saved = resumeData.saved_state || {};
     setQuestionIndex(saved.questionIndex || 0);
     setAllScores(saved.allScores || []);
@@ -211,6 +214,7 @@ const ReadingSkillGame = () => {
     setPauses([]);
     setAssessmentSubmitted(false);
     setAudioFinished(false);
+    setQuitReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
@@ -490,7 +494,7 @@ const ReadingSkillGame = () => {
             <div className="rs-stat-pill"><span className="rs-stat-label">CHILD ID</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
           <div className="rs-stat-pill"><span className="rs-stat-label">SCORE</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
-          {screen === 'game' && <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}><span>⏸</span> Pause/Quit</button>}
+          {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
 
@@ -578,6 +582,7 @@ const ReadingSkillGame = () => {
                 <div className="rs-screen-subtitle">Test finished successfully</div>
               </div>
               <div className="rs-chips">
+                <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   Time: {totalTimeDisp}

@@ -69,6 +69,7 @@ const ChildGameHistoryModal = ({ childId, onClose }) => {
                         <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                             <tr>
                                 <th style={{ textAlign: 'left', padding: '14px' }}>Game Name</th>
+                                <th style={{ textAlign: 'center', padding: '14px' }}>Attempt</th>
                                 <th style={{ textAlign: 'center', padding: '14px' }}>Score</th>
                                 <th style={{ textAlign: 'center', padding: '14px' }}>Status</th>
                                 <th style={{ textAlign: 'left', padding: '14px' }}>Date & Time</th>
@@ -77,14 +78,23 @@ const ChildGameHistoryModal = ({ childId, onClose }) => {
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Loading history...</td></tr>
+                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Loading history...</td></tr>
                             ) : history.length === 0 ? (
-                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
+                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
                             ) : (
                                 history.map((session) => (
                                     <tr key={session.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                                             {GAME_LABELS[session.game_name] || session.game_name}
+                                        </td>
+                                        <td style={{ padding: '14px', textAlign: 'center' }}>
+                                            <span style={{ 
+                                                background: '#f1f5f9', color: '#475569', 
+                                                padding: '2px 8px', borderRadius: '6px', 
+                                                fontSize: '0.75rem', fontWeight: 700 
+                                            }}>
+                                                #{session.attempt_no || '1'}
+                                            </span>
                                         </td>
                                         <td style={{ padding: '14px', textAlign: 'center' }}>
                                             <span style={{ 
@@ -101,6 +111,8 @@ const ChildGameHistoryModal = ({ childId, onClose }) => {
                                                 <span className="admin-tag good">Completed</span>
                                             ) : session.status === 'quit' ? (
                                                 <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Quit</span>
+                                            ) : session.status === 'paused' ? (
+                                                <span className="admin-tag" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>Paused</span>
                                             ) : (
                                                 <span className="admin-tag" style={{ background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>{session.status}</span>
                                             )}

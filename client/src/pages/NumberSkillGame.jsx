@@ -57,6 +57,7 @@ const NumberSkillGame = () => {
   const [allScores, setAllScores] = useState([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [gameSessionId, setGameSessionId] = useState(null);
+  const [attemptNo, setAttemptNo] = useState(1);
   
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [resumeData, setResumeData] = useState(null);
@@ -178,6 +179,7 @@ const NumberSkillGame = () => {
         total_questions: QUESTIONS.length
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       resetInternalState();
       setScreen('game');
     } catch (e) { alert('Failed to start session on server.'); setScreen('game'); }
@@ -185,6 +187,7 @@ const NumberSkillGame = () => {
 
   const resumeGame = () => {
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     const saved = resumeData.saved_state || {};
     setQuestionIndex(saved.questionIndex || 0);
     setAllScores(saved.allScores || []);
@@ -207,6 +210,7 @@ const NumberSkillGame = () => {
     setAssessmentSubmitted(false);
     setActiveInput('answer');
     setAudioFinished(false);
+    setQuitReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
@@ -481,7 +485,7 @@ const NumberSkillGame = () => {
             <div className="ns-stat-pill"><span className="ns-stat-label">CHILD ID</span> <span className="ns-stat-value">{childData.child_id}</span></div>
           )}
           <div className="ns-stat-pill"><span className="ns-stat-label">SCORE</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
-          {screen === 'game' && <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}><span>⏸</span> Pause/Quit</button>}
+          {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
 
@@ -592,6 +596,7 @@ const NumberSkillGame = () => {
                 <div className="ns-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : t('game.allQuestionsCompleted')}</div>
               </div>
               <div className="ns-chips">
+                <span className="ns-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   {t('game.time')}: {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s

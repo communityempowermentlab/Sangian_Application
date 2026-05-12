@@ -129,6 +129,8 @@ const HerPherGame = () => {
 
   // Child data
   const [childData, setChildData]         = useState(null);
+  const [attemptNo, setAttemptNo]         = useState(1);
+  const [gameSessionId, setGameSessionId] = useState(null);
 
   // Screen: 'splash' | 'game' | 'score'
   const [screen, setScreen]               = useState('splash');
@@ -155,7 +157,6 @@ const HerPherGame = () => {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   // Session
-  const [gameSessionId, setGameSessionId]       = useState(null);
   const gameSessionIdRef = useRef(null);
 
   // Modals
@@ -290,6 +291,7 @@ const HerPherGame = () => {
         total_questions: 8, // 8 scored
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
     } catch (e) {
       console.error('Start session failed', e);
     }
@@ -300,6 +302,7 @@ const HerPherGame = () => {
   // ──── Resume session ─────────────────────────────────────────────────────────
   const resumeGame = () => {
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     const saved = resumeData.saved_state || {};
     
     if (saved.gameData) {
@@ -334,6 +337,7 @@ const HerPherGame = () => {
     setTotalTime(0);
     setPauses([]);
     setAssessmentSubmitted(false);
+    setQuitReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
@@ -720,7 +724,7 @@ const HerPherGame = () => {
             {screen === 'game' && (
               <button
                 className="btn-pause-quit"
-                onClick={() => setShowQuitModal(true)}
+                onClick={() => { setQuitReason(''); setShowQuitModal(true); }}
               >
                 <span>⏸</span> Pause/Quit
               </button>
@@ -876,6 +880,7 @@ const HerPherGame = () => {
                   <div className="hp-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'All questions completed'}</div>
                 </div>
                 <div className="hp-chips">
+                  <span className="hp-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
                     Time: {Math.floor(totalTime / 60)}m {totalTime % 60}s

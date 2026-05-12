@@ -334,6 +334,7 @@ const TriangleRachnaGame = () => {
   const [isCheckingSession, setIsCheck]     = useState(true);
 
   const [currentKey, setCurrentKey]         = useState('sampleA');
+  const [attemptNo, setAttemptNo]           = useState(1);
   const [workspaceItems, setWorkspaceItems] = useState([]);
   const [timeElapsed, setTimeElapsed]       = useState(0);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
@@ -421,6 +422,7 @@ const TriangleRachnaGame = () => {
       .then(res => {
         if (res.data.success && res.data.sessionInfo) {
           sessionIdRef.current = res.data.sessionInfo.id;
+          setAttemptNo(res.data.sessionInfo.attempt_no || 1);
           setResumeState(res.data.sessionInfo);
           setShowResumeModal(true);
           setScreen('splash');
@@ -528,6 +530,7 @@ const TriangleRachnaGame = () => {
         child_id: childData.child_id, game_name: GAME_NAME, total_questions: SCORED_QUESTIONS.length,
       });
       sessionIdRef.current = res.data.sessionId;
+      setAttemptNo(res.data.attempt_no || 1);
     } catch (e) { console.error(e); }
   }, [childData]);
 
@@ -747,6 +750,9 @@ const TriangleRachnaGame = () => {
     setQuestionDetails({});
     questionDetailsRef.current = {};
     setQuestionMoves({});
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setQuitReason('');
+    setAssDone(false);
     setScreen('splash');
   };
 
@@ -1082,6 +1088,7 @@ const TriangleRachnaGame = () => {
             <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Triangle Rachna — Final Results'}</div>
           </div>
           <div className="rg-chips">
+            <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
             <span className="rg-chip rg-chip-complete">COMPLETE</span>
             <span className="rg-chip">Time: {Math.floor(totalTime/60)}m {totalTime%60}s</span>
           </div>
@@ -1473,7 +1480,7 @@ const TriangleRachnaGame = () => {
               <span className="rg-stat-value">{totalScore}</span>
             </div>
             {screen === 'game' && (
-              <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}>
+              <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}>
                 <span>⏸</span> Pause/Quit
               </button>
             )}

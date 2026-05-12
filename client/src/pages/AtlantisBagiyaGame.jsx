@@ -227,6 +227,7 @@ const AtlantisBagiyaGame = () => {
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [screen, setScreen] = useState('splash'); // splash|practice_q|practice_r|game|score
   const [gameSessionId, setGameSessionId] = useState(null);
+  const [attemptNo, setAttemptNo] = useState(1);
   const [allScores, setAllScores] = useState([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [qTimer, setQTimer] = useState(0);
@@ -384,6 +385,7 @@ const AtlantisBagiyaGame = () => {
         total_questions: TOTAL_MAX_SUB_QUESTIONS,
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
     } catch (e) {
       console.error('Failed to start session', e);
     }
@@ -397,6 +399,7 @@ const AtlantisBagiyaGame = () => {
   const resumeGame = () => {
     const saved = resumeData.saved_state || {};
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     const scores = saved.allScores || [];
     setAllScores(scores); allScoresRef.current = scores;
     setTimerSeconds(saved.timerSeconds || 0);
@@ -426,6 +429,8 @@ const AtlantisBagiyaGame = () => {
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
     setFeedbackAudioPlaying(false);
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setQuitReason('');
     setAssessmentSubmitted(false);
   };
 
@@ -806,7 +811,7 @@ const AtlantisBagiyaGame = () => {
             <span className="ab-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
-            <button className="btn-pause-quit" onClick={() => setShowQuitModal(true)}>
+            <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}>
               <span>⏸</span> Pause/Quit
             </button>
           )}
@@ -1114,6 +1119,7 @@ const AtlantisBagiyaGame = () => {
                 <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Bagiya · Final Results'}</div>
               </div>
               <div className="ab-chips">
+                <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
                 <span className="ab-chip">Final Results</span>
                 <span className="ab-chip">Time: {formatTime(totalTimeSec)}</span>
               </div>

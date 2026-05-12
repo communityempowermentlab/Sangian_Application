@@ -540,6 +540,15 @@ const AdminReports = () => {
                                             <td style={S.td}>{i + 1}</td>
                                             <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
                                             <td style={S.td}>{row.child_name}</td>
+                                            <td style={{ ...S.td, textAlign: 'center' }}>
+                                                <span style={{ 
+                                                    background: '#f1f5f9', color: '#475569', 
+                                                    padding: '2px 8px', borderRadius: '6px', 
+                                                    fontSize: '0.7rem', fontWeight: 700 
+                                                }}>
+                                                    #{row.child_attempt_no || '1'}
+                                                </span>
+                                            </td>
                                             <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.start_time)}</td>
                                             <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
                                             <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>

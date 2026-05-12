@@ -311,6 +311,7 @@ const ChorMachayeShorGame = () => {
   
   // Game State
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [attemptNo, setAttemptNo] = useState(1);
   const [currentTrial, setCurrentTrial] = useState(1);
   const [currentPhase, setCurrentPhase] = useState(1);
   const [currentMove, setCurrentMove] = useState(0);
@@ -374,6 +375,7 @@ const ChorMachayeShorGame = () => {
         setGameSessionId(info.id);
         if (info.status === 'paused' && info.saved_state) {
           setPendingResumeData(info.saved_state);
+          setAttemptNo(info.attempt_no || 1);
           setShowResumeModal(true);
         } else {
           startNewSession(childId);
@@ -392,13 +394,13 @@ const ChorMachayeShorGame = () => {
       const config = {};
       const token = localStorage.getItem('token');
       if (token) config.headers = { Authorization: `Bearer ${token}` };
-
       const res = await axios.post(`${API_URL}/games/sessions/start`, {
         child_id: childId,
         game_name: GAME_NAME,
         total_questions: TOTAL_QUESTIONS,
       }, config);
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       
       setTimeout(() => {
         saveToServer('in_progress', []);
@@ -994,6 +996,7 @@ const ChorMachayeShorGame = () => {
 
   const handlePauseClick = () => {
     setIsPaused(true);
+    setQuitReason('');
     setShowPauseModal(true);
     stopTimer();
   };
@@ -1117,7 +1120,10 @@ const ChorMachayeShorGame = () => {
                   setAudioFinished(false);
                   setScreen('splash');
                 }}>Restart Fresh</button>
-                <button className="modal-btn modal-btn-primary" onClick={resumeGame}>Resume Game</button>
+                <button className="modal-btn modal-btn-primary" onClick={() => {
+                  setAttemptNo(resumeData.attempt_no || 1);
+                  resumeGame();
+                }}>Resume Game</button>
               </div>
             </div>
           </div>
@@ -1159,6 +1165,7 @@ const ChorMachayeShorGame = () => {
                   <div className="chor-dash-subtitle">{quitReason ? 'Assessor requested early exit' : 'Test finished successfully'}</div>
                 </div>
                 <div className="chor-dash-badges">
+                  <span className="chor-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
                   <span className="chor-chip chor-chip-splash">Final Results</span>
                   <span className="chor-chip chor-chip-game">Time: {Math.floor(tTime / 60)}m {tTime % 60}s</span>
                 </div>

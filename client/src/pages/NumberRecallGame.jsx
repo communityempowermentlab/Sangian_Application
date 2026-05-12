@@ -367,6 +367,7 @@ const NumberRecallGame = () => {
   const [screen, setScreen] = useState('splash'); // splash | practice | teaching1 | teaching2 | game | score
   const [questionIndex, setQuestionIndex] = useState(0);
   const [allScores, setAllScores] = useState([]);
+  const [attemptNo, setAttemptNo] = useState(1);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [qTimer, setQTimer] = useState(0);
   const [gameSessionId, setGameSessionId] = useState(null);
@@ -505,6 +506,7 @@ const NumberRecallGame = () => {
         total_questions: TOTAL_SCORED_QUESTIONS,
       });
       setGameSessionId(res.data.sessionId);
+      setAttemptNo(res.data.attempt_no || 1);
       resetInternalState();
       setScreen('practice');
     } catch (e) {
@@ -516,6 +518,7 @@ const NumberRecallGame = () => {
 
   const resumeGame = () => {
     setGameSessionId(resumeData.id);
+    setAttemptNo(resumeData.attempt_no || 1);
     const saved = resumeData.saved_state || {};
     setQuestionIndex(saved.questionIndex || 0);
     setAllScores(saved.allScores || []);
@@ -534,6 +537,8 @@ const NumberRecallGame = () => {
     setQTimer(0); qTimerRef.current = 0;
     setPauses([]); pausesRef.current = [];
     setConsecutiveWrong(0); consecutiveWrongRef.current = 0;
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setQuitReason('');
     setAssessmentSubmitted(false);
   };
 
@@ -773,7 +778,7 @@ const NumberRecallGame = () => {
           {screen === 'game' && (
             <button
               className="btn-pause-quit"
-              onClick={() => setShowQuitModal(true)}
+              onClick={() => { setQuitReason(''); setShowQuitModal(true); }}
             >
               <span>⏸</span> Pause/Quit
             </button>
@@ -916,6 +921,7 @@ const NumberRecallGame = () => {
                 </div>
               </div>
               <div className="nr-chips">
+                <span className="nr-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
                 <span className="nr-chip">Final Results</span>
                 <span className="nr-chip">Time: {formatDurationMs(totalTimeMs)}</span>
               </div>
