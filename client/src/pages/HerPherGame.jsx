@@ -19,8 +19,11 @@ const MAX_POSITIONS = 15;
 const IMAGE_SIZE    = 200;
 const GRID_COLS     = 5;
 const GRID_ROWS     = 3;  // eslint-disable-line no-unused-vars
-const GRID_OFFSET_X = 20;
+const GRID_OFFSET_X = 12;
 const GRID_OFFSET_Y = 10;
+const GRID_WIDTH    = 1024;
+const GRID_HEIGHT_3 = 620;
+const GRID_HEIGHT_2 = 420;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 const shuffle = (arr) => {
@@ -832,15 +835,18 @@ const HerPherGame = () => {
               </div>
 
               {/* Image Grid */}
-              <div className="hp-game-container">
+              <div className={`hp-game-container ${qData.imageCount <= 6 ? 'hp-rows-2' : ''}`}>
                 {imageLayout.map(({ imageId, x, y }) => {
+                  const currentHeight = qData.imageCount <= 6 ? GRID_HEIGHT_2 : GRID_HEIGHT_3;
                   return (
                     <button
                       key={`${imageId}-${x}-${y}`}
                       className={`hp-img-btn ${shuffleInProgress ? 'hp-shuffling' : ''}`}
                       style={{
-                        left: `${x}px`,
-                        top: `${y}px`,
+                        left: `${(x / GRID_WIDTH) * 100}%`,
+                        top: `${(y / currentHeight) * 100}%`,
+                        width: `${(IMAGE_SIZE / GRID_WIDTH) * 100}%`,
+                        height: `${(IMAGE_SIZE / currentHeight) * 100}%`,
                       }}
                       disabled={buttonsDisabled}
                       onClick={() => handleImageClick(imageId)}
