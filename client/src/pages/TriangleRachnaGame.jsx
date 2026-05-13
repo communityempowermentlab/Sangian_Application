@@ -1,5 +1,5 @@
 // ============================================================
-// TriangleRachnaGame.jsx — Triangle Test (RACHNA)
+// TriangleRachnaGame.jsx — Rachna
 // React port of rachna.js integrated with Sangian backend.
 // ============================================================
 
@@ -411,6 +411,15 @@ const TriangleRachnaGame = () => {
 
   // ── Auth & Resume ──────────────────────────────────────────────
   useEffect(() => {
+    document.title = 'Rachna';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowAssessmentModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     const raw = localStorage.getItem('currentChild');
     if (!raw) { navigate('/login'); return; }
     const cd = JSON.parse(raw);
@@ -433,6 +442,8 @@ const TriangleRachnaGame = () => {
         console.error(e);
         setScreen('splash');
       });
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
   const fetchActivity = async (cid) => {
@@ -466,12 +477,23 @@ const TriangleRachnaGame = () => {
     setAudioFinished(true);
   }, [screen]);
 
-  // ── Timer ─────────────────────────────────────────────────────
+  // ── Timer Reset ──────────────────────────────────────────────
   useEffect(() => {
-    if (screen !== 'game' || showQuitModal || showAssessmentModal) { clearInterval(timerRef.current); return; }
+    if (screen === 'game') {
+      setTimeElapsed(0);
+    }
+  }, [currentKey, screen]);
+
+  // ── Timer Interval ───────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== 'game' || showQuitModal || showAssessmentModal) { 
+      clearInterval(timerRef.current); 
+      return; 
+    }
+    
     const limit = TIMER_LIMITS[currentKey] || 0;
-    setTimeElapsed(0);
     clearInterval(timerRef.current);
+    
     timerRef.current = setInterval(() => {
       setTimeElapsed(t => {
         const next = t + 1;
@@ -909,7 +931,7 @@ const TriangleRachnaGame = () => {
           <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
         </div>
         <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          Welcome to Triangle Test
+          Welcome to Rachna
         </h2>
         
 
@@ -1085,7 +1107,7 @@ const TriangleRachnaGame = () => {
         <div className="rg-screen-header">
           <div>
             <div className="rg-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
-            <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Triangle Rachna — Final Results'}</div>
+            <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Rachna — Final Results'}</div>
           </div>
           <div className="rg-chips">
             <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
@@ -1407,8 +1429,13 @@ const TriangleRachnaGame = () => {
       <div className="rg-modal-overlay">
         <div className="rg-assessment-dialog">
           <div className="rg-ad-header">
-            <h2 className="rg-ad-title">Assessment</h2>
-            <p className="rg-ad-subtitle">Please answer all criteria:</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 className="rg-ad-title">Assessment</h2>
+                <p className="rg-ad-subtitle">Please answer all criteria:</p>
+              </div>
+              <button className="rg-ad-close-btn" onClick={() => setShowAssessmentModal(false)}>✕</button>
+            </div>
           </div>
           <div className="rg-ad-body">
             {/* Criteria 1 */}
@@ -1466,7 +1493,7 @@ const TriangleRachnaGame = () => {
           <div className="rg-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
             <div className="rg-divider"></div>
-            <span className="rg-test-title">Triangle Test</span>
+            <span className="rg-test-title">Rachna</span>
           </div>
           <div className="rg-stats">
             {childData?.child_id && (

@@ -246,10 +246,12 @@ const Home = () => {
                         </div>
                     )}
 
-                    <div className="hero-actions">
-                        <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
-                        <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
-                    </div>
+                    {!isLoggedIn && (
+                        <div className="hero-actions">
+                            <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
+                            <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
+                        </div>
+                    )}
 
                     <p className="hero-note">
                         {t('home.warningNote')}

@@ -1,5 +1,5 @@
 /* ============================================================
-   TriangleRachnaGame.css — Triangle Test (RACHNA)
+   TriangleRachnaGame.css — Rachna
    All classes prefixed with .rg- to avoid collisions.
    ============================================================ */
 
@@ -921,6 +921,27 @@
   background: #fff7ed;
   border-color: #f97316;
   color: #ea580c;
+}
+
+.rg-ad-close-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rg-ad-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: rotate(90deg);
 }
 
 .rg-ad-footer { margin-top: 10px; display: flex; justify-content: center; }
