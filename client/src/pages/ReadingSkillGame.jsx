@@ -226,7 +226,7 @@ const ReadingSkillGame = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [screen, showQuitModal, showMidTestModal]);
+  }, [screen, showQuitModal, showMidTestModal, questionIndex]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');

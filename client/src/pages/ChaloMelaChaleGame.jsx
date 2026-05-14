@@ -384,11 +384,30 @@ const ChaloMelaChaleGame = () => {
     if (ss.unlockedPaths) setUnlockedPaths(ss.unlockedPaths);
     if (ss.completedPaths) setCompletedPaths(ss.completedPaths);
     if (ss.screen) setScreen(ss.screen);
-    if (ss.questionState) setQuestionState(ss.questionState);
+    if (ss.questionState) {
+      setQuestionState(ss.questionState);
+      if (ss.questionState.gameStarted && !ss.questionState.isComplete) {
+        clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+          setQuestionState(prev => {
+            if (prev.timeRemaining <= 1) { 
+              clearInterval(timerRef.current); 
+              handleResult(false, "Timeout"); 
+              return { ...prev, timeRemaining: 0 }; 
+            }
+            if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
+            return { ...prev, timeRemaining: prev.timeRemaining - 1 };
+          });
+        }, 1000);
+        const timeLimit = QUESTION_CONFIG[ss.questionState.id]?.time || 10;
+        const timeSpent = timeLimit - ss.questionState.timeRemaining;
+        const adjustedQStart = Date.now() - (timeSpent * 1000);
+        setQStartTime(adjustedQStart);
+        qStartTimeRef.current = adjustedQStart;
+      }
+    }
     if (ss.isDropped) setIsDropped(true);
-    
-    setStartTime(Date.now()); // Reset session timer start to now (cumulative time is handled by progress)
-    setQStartTime(Date.now());
+    setStartTime(Date.now());
     setShowResumeModal(false);
   };
 
@@ -1319,7 +1338,11 @@ const ChaloMelaChaleGame = () => {
             <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
             {screen !== 'splash' && screen !== 'results' && (
-              <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowPauseModal(true); }}><span>⏸</span> Pause/Quit</button>
+              <button className="btn-pause-quit" onClick={() => { 
+                clearInterval(timerRef.current);
+                setQuitReason(''); 
+                setShowPauseModal(true); 
+              }}><span>⏸</span> Pause/Quit</button>
             )}
           </div>
         </header>
@@ -1478,7 +1501,25 @@ const ChaloMelaChaleGame = () => {
             </div>
 
             <div className="modal-actions-row">
-              <button className="modal-btn modal-btn-cancel" onClick={() => { setShowPauseModal(false); setIsPaused(false); }}>Cancel</button>
+              <button className="modal-btn modal-btn-cancel" onClick={() => { 
+                setShowPauseModal(false); 
+                setIsPaused(false); 
+                // Restart timer if game was in progress
+                if (questionState.gameStarted && !questionState.isComplete) {
+                  clearInterval(timerRef.current);
+                  timerRef.current = setInterval(() => {
+                    setQuestionState(prev => {
+                      if (prev.timeRemaining <= 1) { 
+                        clearInterval(timerRef.current); 
+                        handleResult(false, "Timeout"); 
+                        return { ...prev, timeRemaining: 0 }; 
+                      }
+                      if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
+                      return { ...prev, timeRemaining: prev.timeRemaining - 1 };
+                    });
+                  }, 1000);
+                }
+              }}>Cancel</button>
               <button 
                 className="modal-btn modal-btn-pause" 
                 disabled={!quitReason.trim()}
