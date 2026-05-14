@@ -910,3 +910,21 @@
   50% { transform: scale(1.1); box-shadow: 0 0 30px rgba(16, 185, 129, 0.7); }
   100% { transform: scale(1.05); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
 }
+
+.matrix-cell img.character-token {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  z-index: 5;
+  pointer-events: none;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}

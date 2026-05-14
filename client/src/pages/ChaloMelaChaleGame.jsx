@@ -564,9 +564,7 @@ const ChaloMelaChaleGame = () => {
     setScreen(id);
     setQStartTime(null);
     qStartTimeRef.current = null;
-    if (!id.startsWith('tq')) {
-      setTimeout(() => startTrial(1), 500);
-    }
+    setTimeout(() => startTrial(1), 500);
   }, [stopAll, startTrial]);
 
   // --- DEMO LOGIC ---
@@ -664,7 +662,7 @@ const ChaloMelaChaleGame = () => {
     if (r === lastPos.row && c === lastPos.col) return;
     const isAdj = Math.abs(r - lastPos.row) <= 1 && Math.abs(c - lastPos.col) <= 1;
     if (!isAdj) return;
-    if (s.matrix[r][c] === "7-T2") { playSoundEffect('buzzer.wav'); handleResult(false, "Hit Weed"); return; }
+    if (s.matrix[r][c] === "7-T2") { playSoundEffect('wrong_move.wav'); handleResult(false, "Hit Weed"); return; }
     
     const newPath = [...s.path, { row: r, col: c }];
     const cellType = s.matrix[r][c];
@@ -1201,17 +1199,17 @@ const ChaloMelaChaleGame = () => {
           </div>
         </div>
         <div className="pattern-controls">
-          {!isTQ && refreshCount < 1 && (
-            <button className="pattern-btn pattern-btn-secondary" onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
+          {!isTQ && (
+            <button className={`pattern-btn ${refreshCount >= 1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
           )}
-          {isTQ && retakeCount < 2 && (
-            <button className="pattern-btn pattern-btn-secondary" onClick={handleRetake}>↺ Retake ({2 - retakeCount}/2)</button>
+          {isTQ && (
+            <button className={`pattern-btn ${retakeCount >= 2 ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2} onClick={handleRetake}>↺ Retake ({Math.max(0, 2 - retakeCount)}/2)</button>
           )}
           {isTQ && (
             <>
-              <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} onClick={() => startTrial(1)}>Trial 1</button>
+              <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} style={{ cursor: 'default' }}>Trial 1</button>
               {!questionState.trial2Hidden && (
-                <button className={`pattern-btn ${isT2Active ? 'pattern-btn-primary' : (isT2Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT2Disabled} onClick={() => startTrial(2)}>Trial 2</button>
+                <button className={`pattern-btn ${isT2Active ? 'pattern-btn-primary' : (isT2Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT2Disabled} style={{ cursor: 'default' }}>Trial 2</button>
               )}
             </>
           )}
@@ -1273,7 +1271,12 @@ const ChaloMelaChaleGame = () => {
                 else if (isLast && isEP) highClass = "cell-end";
                 else highClass = "cell-path";
               }
-              return <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}><img src={IMG_MAPPING[type]} alt={type}/></div>;
+              return (
+                <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
+                  <img src={IMG_MAPPING[type]} alt={type}/>
+                  {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                </div>
+              );
             })}
           </div>
         </div>
@@ -1362,6 +1365,7 @@ const ChaloMelaChaleGame = () => {
                   {MATRIX_P1.flat().map((type, idx) => {
                     const row = Math.floor(idx / 4) + 1, col = (idx % 4) + 1, rc = `R${row}C${col}`;
                     let highClass = "";
+                    let isCurrent = false;
                     if (activePath) {
                       const seq = activePath === 'p1' ? PATH1_SEQ : activePath === 'p2' ? PATH2_SEQ : PATH3_SEQ;
                       const sIdx = seq.indexOf(rc);
@@ -1370,8 +1374,16 @@ const ChaloMelaChaleGame = () => {
                         else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
                         else highClass = "cell-path";
                       }
+                      if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+                        isCurrent = true;
+                      }
                     }
-                    return <div key={idx} className={`matrix-cell ${highClass}`}><img src={IMG_MAPPING[type]} alt={type}/></div>;
+                    return (
+                      <div key={idx} className={`matrix-cell ${highClass}`}>
+                        <img src={IMG_MAPPING[type]} alt={type}/>
+                        {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                      </div>
+                    );
                   })}
                 </div>
               </div>
@@ -1407,6 +1419,7 @@ const ChaloMelaChaleGame = () => {
                     const cols = MATRIX_SB[0].length;
                     const row = Math.floor(idx / cols) + 1, col = (idx % cols) + 1, rc = `R${row}C${col}`;
                     let highClass = "";
+                    let isCurrent = false;
                     if (activePath) {
                       const seq = activePath === 'sbP1' ? SB_PATH1_SEQ : SB_PATH2_SEQ;
                       const sIdx = seq.indexOf(rc);
@@ -1415,8 +1428,16 @@ const ChaloMelaChaleGame = () => {
                         else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
                         else highClass = "cell-path";
                       }
+                      if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+                        isCurrent = true;
+                      }
                     }
-                    return <div key={idx} className={`matrix-cell ${highClass}`}><img src={IMG_MAPPING[type]} alt={type}/></div>;
+                    return (
+                      <div key={idx} className={`matrix-cell ${highClass}`}>
+                        <img src={IMG_MAPPING[type]} alt={type}/>
+                        {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                      </div>
+                    );
                   })}
                 </div>
               </div>
