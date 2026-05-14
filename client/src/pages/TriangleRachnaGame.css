@@ -314,7 +314,7 @@
 
 .rg-splash-img-wrap {
   width: 100%;
-  max-width: 480px;
+  max-width: 640px;
   margin: 0 auto 18px;
   border-radius: 20px;
   overflow: hidden;
@@ -323,8 +323,8 @@
 
 .rg-splash-img  { width: 100%; display: block; }
 .rg-splash-title { font-size: 1.45rem; font-weight: 700; margin-top: 6px; }
-.rg-splash-sub   { font-size: 0.92rem; color: var(--rg-muted); margin-top: 6px; max-width: 420px; }
-.rg-splash-footer { margin-top: 18px; width: 100%; max-width: 420px; }
+.rg-splash-sub   { font-size: 0.92rem; color: var(--rg-muted); margin-top: 6px; max-width: 640px; }
+.rg-splash-footer { margin-top: 18px; width: 100%; max-width: 640px; }
 .rg-splash-hint  { font-size: 0.88rem; color: var(--rg-muted); margin-top: 12px; line-height: 1.5; }
 .rg-accent-text  { color: var(--rg-primary); font-weight: 600; }
 
@@ -333,7 +333,7 @@
   display: flex;
   gap: 14px;
   flex: 1;
-  min-height: 280px;
+  min-height: 360px;
 }
 
 .rg-game-controls-row {
@@ -819,7 +819,7 @@
 /* ─── Loading ──────────────────────────────────────────────── */
 .rg-loading {
   display: flex; align-items: center; justify-content: center;
-  min-height: 200px; font-size: 1rem; color: var(--rg-muted);
+  min-height: 360px; font-size: 1rem; color: var(--rg-muted);
 }
 
 /* ─── Responsive ───────────────────────────────────────────── */

@@ -511,7 +511,7 @@ const ReadingSkillGame = () => {
               <div className="rs-splash-image-wrapper">
                 <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-image" onError={e => e.target.style.display='none'} />
               </div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
                 Welcome to Padh ke batao
               </h2>
 

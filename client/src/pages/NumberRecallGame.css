@@ -217,7 +217,7 @@
 
 .nr-splash-image-wrapper {
   width: 100%;
-  max-width: 420px;
+  max-width: 640px;
   margin: 0 auto 16px;
   border-radius: 20px;
   overflow: hidden;
@@ -225,7 +225,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 360px;
   background: linear-gradient(135deg, #1e3a5f, #0f2c4a);
 }
 
@@ -240,7 +240,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 200px;
+  min-height: 360px;
 }
 
 .nr-splash-title {
@@ -254,7 +254,7 @@
   font-size: 0.9rem;
   color: var(--nr-muted);
   margin-top: 6px;
-  max-width: 420px;
+  max-width: 640px;
   line-height: 1.5;
 }
 
@@ -262,7 +262,7 @@
   font-size: 0.82rem;
   color: var(--nr-muted);
   margin-top: 12px;
-  max-width: 420px;
+  max-width: 640px;
   line-height: 1.4;
 }
 
@@ -621,7 +621,7 @@
   background: white;
   border-radius: 20px;
   padding: 28px 24px;
-  max-width: 420px;
+  max-width: 640px;
   width: 100%;
   box-shadow: 0 24px 60px rgba(0,0,0,0.2);
 }

@@ -759,7 +759,7 @@ const HerPherGame = () => {
                   />
                 </div>
 
-                <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
                   Welcome to Her Pher
                 </h2>
                 
@@ -768,7 +768,7 @@ const HerPherGame = () => {
                 <div className="hp-btn-row">
                   <button
                     className={`hp-btn hp-btn-primary ${audioFinished ? 'hp-btn-highlight' : ''}`}
-                    style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
+                    style={{ fontSize: '1.2rem', padding: '16px 40px', opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                     disabled={!audioFinished}
                     onClick={startNewGame}
                   >

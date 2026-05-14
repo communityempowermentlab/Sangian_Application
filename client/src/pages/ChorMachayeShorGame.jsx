@@ -1098,11 +1098,11 @@ const ChorMachayeShorGame = () => {
                     <button 
                       className={`chor-btn chor-btn-primary chor-btn-highlight`} 
                       onClick={startGame} 
-                    >Start Now</button>
+                     style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Start Now</button>
                   </div>
                 </div>
 
-                <h2 className="chor-welcome-text" style={{ marginTop: '30px' }}>Welcome to Chor Machaye Shor</h2>
+                <h2 className="chor-welcome-text" style={{ marginTop: '30px', fontSize: '2.4rem' }}>Welcome to Chor Machaye Shor</h2>
               </div>
             </div>
           </main>

@@ -806,7 +806,7 @@ const NumberRecallGame = () => {
                 />
               </div>
 
-              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
                 Welcome to Lottery Ka Ticket
               </h2>
               
@@ -817,7 +817,7 @@ const NumberRecallGame = () => {
                   className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
-                >
+                 style={{ fontSize: '1.2rem', padding: '16px 40px' }}>
                   Start Now
                 </button>
                 <button

@@ -930,7 +930,7 @@ const TriangleRachnaGame = () => {
         <div className="rg-splash-img-wrap">
           <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
         </div>
-        <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
           Welcome to Rachna
         </h2>
         

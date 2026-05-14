@@ -204,7 +204,7 @@ const MATRIX_Q18 = [
 
 const QUESTION_CONFIG = {
   tq1: { time: 60 },
-  tq2: { time: 10 },
+  tq2: { time: 60 },
   tq3: { time: 10 },
   tq4: { time: 10 },
   q1: { time: 60, t2: 3, t1: 4 },
@@ -262,6 +262,8 @@ const ChaloMelaChaleGame = () => {
   const [childData, setChildData] = useState(null);
   const [screen, setScreen] = useState('splash');
   const [allScores, setAllScores] = useState([]);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [retakeCount, setRetakeCount] = useState(0);
   const [audioFinished, setAudioFinished] = useState(false);
   const totalScore = allScores.reduce((acc, s) => acc + s.score, 0);
   const [gameSessionId, setGameSessionId] = useState(null);
@@ -512,8 +514,34 @@ const ChaloMelaChaleGame = () => {
     }, 1000);
   }, [stopAll, playSoundEffect]);
 
+  const handleRefresh = useCallback((trialNum) => {
+    if (refreshCount >= 1) return;
+    setRefreshCount(prev => prev + 1);
+    startTrial(trialNum);
+  }, [refreshCount, startTrial]);
+
+  const handleRetake = useCallback(() => {
+    if (retakeCount >= 2) return;
+    setRetakeCount(prev => prev + 1);
+    
+    let spPos = {r:0, c:0};
+    questionStateRef.current.matrix.forEach((row, ri) => row.forEach((cell, ci) => {
+      if(cell === "7-SP") spPos = {r:ri, c:ci};
+    }));
+    
+    setQuestionState(prev => ({
+      ...prev,
+      path: [{ row: spPos.r, col: spPos.c }],
+      moveCount: 0,
+      isComplete: false
+    }));
+    playSoundEffect('start_trial.wav');
+  }, [retakeCount, playSoundEffect]);
+
   const initQuestion = useCallback((id, matrix) => {
     stopAll();
+    setRefreshCount(0);
+    setRetakeCount(0);
     const timeLimit = QUESTION_CONFIG[id]?.time || 10;
     const newState = {
       id,
@@ -1173,8 +1201,12 @@ const ChaloMelaChaleGame = () => {
           </div>
         </div>
         <div className="pattern-controls">
-          <button className="pattern-btn pattern-btn-secondary" onClick={() => startTrial(questionState.currentTrial)}>🔄 Refresh</button>
-          <button className="pattern-btn pattern-btn-secondary" onClick={() => startTrial(questionState.currentTrial)}>↺ Retake</button>
+          {!isTQ && refreshCount < 1 && (
+            <button className="pattern-btn pattern-btn-secondary" onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
+          )}
+          {isTQ && retakeCount < 2 && (
+            <button className="pattern-btn pattern-btn-secondary" onClick={handleRetake}>↺ Retake ({2 - retakeCount}/2)</button>
+          )}
           {isTQ && (
             <>
               <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} onClick={() => startTrial(1)}>Trial 1</button>
@@ -1288,13 +1320,13 @@ const ChaloMelaChaleGame = () => {
               </div>
               <div className="card splash-card">
                 <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-image" /></div>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
                   Welcome to Chalo Mela Chalen
                 </h2>
 
                 <div className="btn-row">
-                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')}>Start Now</button>
-                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }}>Replay Audio</button>
+                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Start Now</button>
+                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Replay Audio</button>
                 </div>
 
               </div>

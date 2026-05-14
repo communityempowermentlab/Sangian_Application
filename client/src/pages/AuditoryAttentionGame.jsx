@@ -855,14 +855,14 @@ const AuditoryAttentionGame = () => {
                  <div className="aa-splash-image-wrapper">
                     <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-image" />
                  </div>
-                 <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '28px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+                 <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '28px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
                    Welcome to Dhyan Kahan Hai
                  </h2>
 
                   <button
                     className={`aa-btn aa-btn-primary ${canStartQ ? 'aa-btn-highlight' : ''}`}
                     disabled={!canStartQ}
-                    style={{ opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
+                    style={{ fontSize: '1.2rem', padding: '16px 40px', opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
                     onClick={startNewGameSession}
                   >
                     Start Now

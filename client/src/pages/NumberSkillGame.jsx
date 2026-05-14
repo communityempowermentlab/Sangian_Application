@@ -502,7 +502,7 @@ const NumberSkillGame = () => {
               <div className="ns-splash-image-wrapper">
                 <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
                 Welcome to Ankganit
               </h2>
               

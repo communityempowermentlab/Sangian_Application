@@ -178,8 +178,8 @@
 
 .ab-splash-img-box {
   width: 100%;
-  max-width: 420px;
-  min-height: 240px;
+  max-width: 640px;
+  min-height: 360px;
   margin: 0 auto 16px;
   border-radius: 20px;
   overflow: hidden;

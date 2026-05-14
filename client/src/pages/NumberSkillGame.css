@@ -122,7 +122,7 @@
 }
 
 .ns-splash-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.ns-splash-image-wrapper { width: 100%; max-width: 500px; margin: 0 auto 24px; border-radius: 20px; overflow: hidden; }
+.ns-splash-image-wrapper { width: 100%; max-width: 640px; margin: 0 auto 24px; border-radius: 20px; overflow: hidden; }
 .ns-splash-image { width: 100%; display: block; filter: saturate(1.1); }
 
 .ns-btn-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 18px; justify-content: center; }
@@ -139,7 +139,7 @@
 .ns-question-label { font-size: 2rem; font-weight: 700; text-align: center; padding: 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 16px; min-width: 300px; }
 .ns-manual-buttons { display: flex; gap: 24px; justify-content: center; }
 
-.ns-auto-inputs { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-width: 400px; }
+.ns-auto-inputs { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-width: 640px; }
 .ns-input-group label { font-size: 0.9rem; font-weight: 600; color: #6b7280; }
 .ns-input-group input { font-size: 1.5rem; font-weight: 700; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center; }
 

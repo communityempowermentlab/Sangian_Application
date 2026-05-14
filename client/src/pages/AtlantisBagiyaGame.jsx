@@ -837,7 +837,7 @@ const AtlantisBagiyaGame = () => {
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               </div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
                 Welcome to Bagiya
               </h2>
               
@@ -847,6 +847,7 @@ const AtlantisBagiyaGame = () => {
                   className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ' ab-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
+                  style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
                   Start Now
                 </button>
@@ -859,6 +860,7 @@ const AtlantisBagiyaGame = () => {
                       splashAudioRef.current.play().catch(() => setAudioFinished(true));
                     }
                   }}
+                  style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
                   Replay Audio
                 </button>
