@@ -499,7 +499,8 @@ const ChaloMelaChaleGame = () => {
       path: [{ row: spPos.r, col: spPos.c }],
       moveCount: 0,
       timeRemaining: timeLimit,
-      isComplete: false
+      isComplete: false,
+      wrongMovePos: null
     }));
     const now = Date.now();
     setQStartTime(now);
@@ -558,7 +559,8 @@ const ChaloMelaChaleGame = () => {
       trial2Unlocked: false,
       trial2Hidden: false,
       isComplete: false,
-      nextUnlocked: false
+      nextUnlocked: false,
+      wrongMovePos: null
     };
     setQuestionState(newState);
     setScreen(id);
@@ -662,7 +664,12 @@ const ChaloMelaChaleGame = () => {
     if (r === lastPos.row && c === lastPos.col) return;
     const isAdj = Math.abs(r - lastPos.row) <= 1 && Math.abs(c - lastPos.col) <= 1;
     if (!isAdj) return;
-    if (s.matrix[r][c] === "7-T2") { playSoundEffect('wrong_move.wav'); handleResult(false, "Hit Weed"); return; }
+    if (s.matrix[r][c] === "7-T2") { 
+      playSoundEffect('wrong_move.wav'); 
+      setQuestionState(prev => ({ ...prev, wrongMovePos: { row: r, col: c } }));
+      handleResult(false, "Hit Weed"); 
+      return; 
+    }
     
     const newPath = [...s.path, { row: r, col: c }];
     const cellType = s.matrix[r][c];
@@ -1271,10 +1278,13 @@ const ChaloMelaChaleGame = () => {
                 else if (isLast && isEP) highClass = "cell-end";
                 else highClass = "cell-path";
               }
+              const isWrongMove = questionState.wrongMovePos && questionState.wrongMovePos.row === r && questionState.wrongMovePos.col === c;
+              
               return (
                 <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
                   <img src={IMG_MAPPING[type]} alt={type}/>
                   {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                  {isWrongMove && <div className="cross-mark">❌</div>}
                 </div>
               );
             })}
