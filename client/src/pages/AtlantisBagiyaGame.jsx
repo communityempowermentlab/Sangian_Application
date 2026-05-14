@@ -553,6 +553,7 @@ const AtlantisBagiyaGame = () => {
   }, [screen, practiceItem]);
 
   const handlePracticeAnswer = (chosenItem) => {
+    if (!practiceResponseAudioDone) return;
     if (practiceAnswered) return;
     setPracticeAnswered(true);
     if (chosenItem.id === practiceItem.id) {
@@ -587,6 +588,7 @@ const AtlantisBagiyaGame = () => {
 
   // ─── Main game answer handler ─────────────────────────────
   const handleMainAnswer = useCallback((chosenItem) => {
+    if (!subQAudioDone) return;
     const cfg = SCREEN_CONFIGS.find(c => c.num === mainScreenNumRef.current);
     if (!cfg) return;
     const sqIdx = subQIndexRef.current;
@@ -599,7 +601,9 @@ const AtlantisBagiyaGame = () => {
     const pts = scoreAnswer(chosenItem, target);
 
     if (pts === 2) {
-      playAudio(`${AUD}/bilkul_sahi.wav`);
+      if (!(mainScreenNumRef.current === 13 && sqIdx === 5)) {
+        playAudio(`${AUD}/bilkul_sahi.wav`);
+      }
     }
 
     // Record score
@@ -624,7 +628,7 @@ const AtlantisBagiyaGame = () => {
     const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
     subQAnsweredRef.current = updAnswered;
     setSubQAnswered(updAnswered);
-  }, []);
+  }, [subQAudioDone]);
 
   const advanceToNextScreen = useCallback(() => {
     const currentNum = mainScreenNumRef.current;
@@ -781,11 +785,11 @@ const AtlantisBagiyaGame = () => {
 
   // ─── Score screen helpers ─────────────────────────────────
   const totalPts = allScores.reduce((s, a) => s + a.score, 0);
-  const maxPts = allScores.length * 2;
+  const maxPts = 108;
   const correctCount = allScores.filter(s => s.score === 2).length;
   const partialCount = allScores.filter(s => s.score === 1).length;
   const wrongCount   = allScores.filter(s => s.score === 0).length;
-  const accuracyPct  = allScores.length > 0 ? ((correctCount / allScores.length) * 100).toFixed(1) : '0.0';
+  const accuracyPct  = ((totalPts / 108) * 100).toFixed(1);
   const totalTimeSec = allScores.reduce((acc, s) => acc + (s.timeTaken || 0), 0);
 
   // ─── RENDER ──────────────────────────────────────────────
@@ -1072,14 +1076,14 @@ const AtlantisBagiyaGame = () => {
                     </div>
 
                     {/* Response grid */}
-                    <div className="ab-grid">
+                    <div className="ab-grid ab-grid-large">
                       {responseItems.map(item => (
                         <div
                           key={item.id}
                           className={`ab-grid-item${subQAnswered[subQIndex] ? ' locked' : ''}`}
                           onClick={() => handleMainAnswer(item)}
                         >
-                          <img src={item.img} alt={item.name} className="ab-grid-item-img" />
+                          <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
                         </div>
                       ))}
                     </div>
