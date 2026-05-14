@@ -205,8 +205,8 @@ const MATRIX_Q18 = [
 const QUESTION_CONFIG = {
   tq1: { time: 60 },
   tq2: { time: 60 },
-  tq3: { time: 10 },
-  tq4: { time: 10 },
+  tq3: { time: 60 },
+  tq4: { time: 60 },
   q1: { time: 60, t2: 3, t1: 4 },
   q2: { time: 60, t2: 3, t1: 4 },
   q3: { time: 60, t2: 4, t1: 5 },
