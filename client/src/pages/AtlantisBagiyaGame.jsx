@@ -553,7 +553,6 @@ const AtlantisBagiyaGame = () => {
   }, [screen, practiceItem]);
 
   const handlePracticeAnswer = (chosenItem) => {
-    if (!practiceResponseAudioDone) return;
     if (practiceAnswered) return;
     setPracticeAnswered(true);
     if (chosenItem.id === practiceItem.id) {
@@ -588,7 +587,6 @@ const AtlantisBagiyaGame = () => {
 
   // ─── Main game answer handler ─────────────────────────────
   const handleMainAnswer = useCallback((chosenItem) => {
-    if (!subQAudioDone) return;
     const cfg = SCREEN_CONFIGS.find(c => c.num === mainScreenNumRef.current);
     if (!cfg) return;
     const sqIdx = subQIndexRef.current;
@@ -628,7 +626,7 @@ const AtlantisBagiyaGame = () => {
     const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
     subQAnsweredRef.current = updAnswered;
     setSubQAnswered(updAnswered);
-  }, [subQAudioDone]);
+  }, []);
 
   const advanceToNextScreen = useCallback(() => {
     const currentNum = mainScreenNumRef.current;
@@ -945,8 +943,10 @@ const AtlantisBagiyaGame = () => {
                 {practiceResponseSet.map(item => (
                   <div
                     key={item.id}
-                    className={`ab-grid-item${practiceAnswered ? ' locked' : ''}`}
-                    onClick={() => handlePracticeAnswer(item)}
+                    className={`ab-grid-item${(practiceAnswered || !practiceResponseAudioDone) ? ' locked' : ''}`}
+                    onClick={() => {
+                      if (practiceResponseAudioDone) handlePracticeAnswer(item);
+                    }}
                   >
                     <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
                   </div>
@@ -1080,8 +1080,10 @@ const AtlantisBagiyaGame = () => {
                       {responseItems.map(item => (
                         <div
                           key={item.id}
-                          className={`ab-grid-item${subQAnswered[subQIndex] ? ' locked' : ''}`}
-                          onClick={() => handleMainAnswer(item)}
+                          className={`ab-grid-item${(subQAnswered[subQIndex] || !subQAudioDone) ? ' locked' : ''}`}
+                          onClick={() => {
+                            if (subQAudioDone) handleMainAnswer(item);
+                          }}
                         >
                           <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
                         </div>
