@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './ReadingSkillGame.css';
 
 const CONFIG = {
@@ -645,26 +646,23 @@ const ReadingSkillGame = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {QUESTIONS.map((q, idx) => {
+                        {QUESTIONS.filter(q => allScores.some(s => s.qId === q.id)).map((q, idx) => {
                           const scoreObj = allScores.find(s => s.qId === q.id);
                           const isAttempted = !!scoreObj;
                           const hasSSR = q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH;
 
                           return (
                             <React.Fragment key={q.id}>
-                              <tr 
-                                className={!isAttempted ? 'row-skipped' : ''} 
-                                style={{ cursor: 'default' }}
-                              >
-                                <td>{q.order}</td>
+                              <tr style={{ cursor: 'default' }}>
+                                <td>{idx + 1}</td>
                                 <td>{q.categoryName}</td>
                                 <td className="col-text" title={q.text}>{q.text}</td>
                                 <td>{hasSSR ? 'All Criteria Met' : q.text}</td>
-                                <td style={{ fontWeight: 'bold' }}>{isAttempted ? scoreObj.score : 0}</td>
-                                <td>{isAttempted ? scoreObj.timeTaken + 's' : '—'}</td>
+                                <td style={{ fontWeight: 'bold' }}>{scoreObj.score}</td>
+                                <td>{scoreObj.timeTaken}s</td>
                                 <td>
-                                  <span className={`status-badge status-${isAttempted ? 'attempted' : 'skipped'}`}>
-                                    {isAttempted ? 'Attempted' : 'Skipped'}
+                                  <span className="status-badge status-attempted">
+                                    Attempted
                                   </span>
                                 </td>
                               </tr>
@@ -709,83 +707,22 @@ const ReadingSkillGame = () => {
                 </div>
 
               {/* Assessment Form Segment */}
-              <div className="shared-assessment-section">
-                <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-                
-                {[
-                  { key: 'q1', label: t('game.q1Label') },
-                  { key: 'q2', label: t('game.q2Label') },
-                  { key: 'q3', label: t('game.q3Label') },
-                  { key: 'q4', label: t('game.q4Label') }
-                ].map((q) => (
-                  <div key={q.key} className="shared-form-group">
-                    <label className="shared-form-label">{q.label}</label>
-                    <div className="shared-radio-group">
-                      {[
-                        { val: 'Yes, a lot', str: t('game.optYes') },
-                        { val: 'A little', str: t('game.optLittle') },
-                        { val: 'Not much', str: t('game.optNotMuch') }
-                      ].map(opt => (
-                        <label key={opt.val} className="shared-radio-item">
-                          <input type="radio" name={q.key} disabled={assessmentSubmitted} checked={assessment[q.key] === opt.val} onChange={() => setAssessment({...assessment, [q.key]: opt.val})} />
-                          {opt.str}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="shared-form-group">
-                  <label className="shared-form-label">{t('game.q5Label')}</label>
-                  <div className="shared-checkbox-grid">
-                    {[
-                      { val: 'Difficulty sustaining attention', str: t('game.b1') },
-                      { val: 'Impulsive or random responding', str: t('game.b2') },
-                      { val: 'Negative reaction to correction', str: t('game.b3') },
-                      { val: 'Hesitation in responding', str: t('game.b4') },
-                      { val: 'High focus or persistence', str: t('game.b5') },
-                      { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
-                      { val: 'Needed frequent reassurance', str: t('game.b7') },
-                      { val: 'Calm and engaged throughout', str: t('game.b8') }
-                    ].map(bhv => (
-                       <label key={bhv.val} className="shared-checkbox-item">
-                         <input type="checkbox" disabled={assessmentSubmitted} checked={assessment.behaviors.includes(bhv.val)} onChange={(e) => {
-                            if(e.target.checked) setAssessment({...assessment, behaviors:[...assessment.behaviors, bhv.val]});
-                            else setAssessment({...assessment, behaviors: assessment.behaviors.filter(b=>b!==bhv.val)});
-                         }} />
-                         {bhv.str}
-                       </label>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="shared-form-group">
-                   <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <span>{t('game.extraNotes')}</span>
-                     <button 
-                       type="button"
-                       className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-                       onClick={() => toggleRecording('assessmentNotes')} 
-                     >
-                       🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-                     </button>
-                   </label>
-                   <textarea className="shared-textarea" disabled={assessmentSubmitted} placeholder={t('game.dictatePlaceholder')} value={assessment.notes} onChange={(e) => setAssessment({...assessment, notes: e.target.value})}></textarea>
-                </div>
-
-                <div className="shared-final-actions">
-                  {assessmentSubmitted ? (
-                    <>
-                      <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="rs-btn rs-btn-primary">{t('game.retest')}</button>
-                      <button onClick={() => navigate('/')} className="rs-btn rs-btn-secondary">{t('game.home')}</button>
-                    </>
-                  ) : (
-                    <button onClick={submitAssessmentForm} disabled={isAssessmentSubmitting} className="shared-submit-btn">
-                      {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                    </button>
-                  )}
-                </div>
-              </div>
+              <SessionAssessmentForm
+                assessment={assessment}
+                setAssessment={setAssessment}
+                assessmentSubmitted={assessmentSubmitted}
+                isAssessmentSubmitting={isAssessmentSubmitting}
+                submitAssessmentForm={submitAssessmentForm}
+                isRecording={isRecording}
+                recordingTarget={recordingTarget}
+                toggleRecording={toggleRecording}
+                t={t}
+              >
+                <>
+                  <button onClick={() => { resetInternalState(); setScreen('splash'); }} className="rs-btn rs-btn-primary">{t('game.retest')}</button>
+                  <button onClick={() => navigate('/')} className="rs-btn rs-btn-secondary">{t('game.home')}</button>
+                </>
+              </SessionAssessmentForm>
             </div>
           </div>
         )}

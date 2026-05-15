@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './HerPherGame.css';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -249,6 +250,9 @@ const HerPherGame = () => {
     
     // Prevent reset if we are resuming an exact paused state
     if (isResumingRef.current) {
+      // We keep the ref true until the screen has fully transitioned to 'game'
+      // and the state has settled. The first execution that sees screen==='game'
+      // will clear it.
       isResumingRef.current = false;
       return;
     }
@@ -388,7 +392,8 @@ const HerPherGame = () => {
         },
       });
     } catch (e) { console.error('Save to server error', e); }
-  }, [currentQuestion, currentAttempt, scoreHistory, totalScore, totalTime]); // eslint-disable-line
+  }, [currentQuestion, currentAttempt, scoreHistory, totalScore, totalTime, clickedImages, responses, selectedOrder, questionTime, imageLayout, GAME_DATA]); 
+
 
   // ──── Image click handler ────────────────────────────────────────────────────
   const handleImageClick = useCallback((imageId) => {
@@ -579,7 +584,7 @@ const HerPherGame = () => {
         return hist;
       });
     }
-  }, []); // eslint-disable-line
+  }, [totalScore, scoreHistory]);
 
   // ──── Quit/Pause ─────────────────────────────────────────────────────────────
   const handleQuit = async (status) => {
@@ -1029,120 +1034,34 @@ const HerPherGame = () => {
                 </div>
 
                 {/* Assessment Form */}
-                <div className="shared-assessment-section">
-                  <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-
-                  {[
-                    { key: 'q1', label: t('game.q1Label') },
-                    { key: 'q2', label: t('game.q2Label') },
-                    { key: 'q3', label: t('game.q3Label') },
-                    { key: 'q4', label: t('game.q4Label') },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="shared-form-group">
-                      <label className="shared-form-label">{label}</label>
-                      <div className="shared-radio-group">
-                        {[
-                          { val: 'Yes, a lot', str: t('game.optYes') },
-                          { val: 'A little', str: t('game.optLittle') },
-                          { val: 'Not much', str: t('game.optNotMuch') }
-                        ].map(opt => (
-                          <label key={opt.val} className="shared-radio-item">
-                            <input
-                              type="radio"
-                              name={key}
-                              disabled={assessmentSubmitted}
-                              checked={assessment[key] === opt.val}
-                              onChange={() => setAssessment(a => ({ ...a, [key]: opt.val }))}
-                            />
-                            {opt.str}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="shared-form-group">
-                    <label className="shared-form-label">{t('game.q5Label')}</label>
-                    <div className="shared-checkbox-grid">
-                      {[
-                        { val: 'Difficulty sustaining attention', str: t('game.b1') },
-                        { val: 'Impulsive or random responding', str: t('game.b2') },
-                        { val: 'Negative reaction to correction', str: t('game.b3') },
-                        { val: 'Hesitation in responding', str: t('game.b4') },
-                        { val: 'High focus or persistence', str: t('game.b5') },
-                        { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
-                        { val: 'Needed frequent reassurance', str: t('game.b7') },
-                        { val: 'Calm and engaged throughout', str: t('game.b8') }
-                      ].map(bhv => (
-                        <label key={bhv.val} className="shared-checkbox-item">
-                          <input
-                            type="checkbox"
-                            disabled={assessmentSubmitted}
-                            checked={assessment.behaviors.includes(bhv.val)}
-                            onChange={(e) => {
-                              setAssessment(a => ({
-                                ...a,
-                                behaviors: e.target.checked
-                                  ? [...a.behaviors, bhv.val]
-                                  : a.behaviors.filter(b => b !== bhv.val),
-                              }));
-                            }}
-                          />
-                          {bhv.str}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="shared-form-group">
-                    <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{t('game.extraNotes')}</span>
-                      <button
-                        type="button"
-                        className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-                        onClick={() => toggleRecording('assessmentNotes')}
-                      >
-                        🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-                      </button>
-                    </label>
-                    <textarea
-                      className="shared-textarea"
-                      disabled={assessmentSubmitted}
-                      placeholder={t('game.dictatePlaceholder')}
-                      value={assessment.notes}
-                      onChange={(e) => setAssessment(a => ({ ...a, notes: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="shared-final-actions">
-                    {assessmentSubmitted ? (
-                      <>
-                        <button
-                          className="hp-btn hp-btn-primary"
-                          onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
-                          style={{ minWidth: '160px' }}
-                        >
-                          {t('game.retest')}
-                        </button>
-                        <button 
-                          className="hp-btn hp-btn-secondary" 
-                          onClick={() => navigate('/')}
-                          style={{ minWidth: '160px' }}
-                        >
-                          {t('game.home')}
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="shared-submit-btn"
-                        disabled={assessmentSubmitting}
-                        onClick={submitAssessment}
-                      >
-                        {assessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <SessionAssessmentForm
+                  assessment={assessment}
+                  setAssessment={setAssessment}
+                  assessmentSubmitted={assessmentSubmitted}
+                  isAssessmentSubmitting={assessmentSubmitting}
+                  submitAssessmentForm={submitAssessment}
+                  isRecording={isRecording}
+                  recordingTarget={recordingTarget}
+                  toggleRecording={toggleRecording}
+                  t={t}
+                >
+                  <>
+                    <button
+                      className="hp-btn hp-btn-primary"
+                      onClick={() => { resetGameState(); setScreen('splash'); setAudioFinished(false); }}
+                      style={{ minWidth: '160px' }}
+                    >
+                      {t('game.retest')}
+                    </button>
+                    <button 
+                      className="hp-btn hp-btn-secondary" 
+                      onClick={() => navigate('/')}
+                      style={{ minWidth: '160px' }}
+                    >
+                      {t('game.home')}
+                    </button>
+                  </>
+                </SessionAssessmentForm>
               </div>
             </div>
           )}

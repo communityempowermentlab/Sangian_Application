@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './AtlantisBagiyaGame.css';
 
 // ─── Constants ───────────────────────────────────────────
@@ -1198,93 +1199,22 @@ const AtlantisBagiyaGame = () => {
               </div>
 
               {/* Assessment Form */}
-              <div className="shared-assessment-section">
-                <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-                {[
-                  { key: 'q1', label: t('game.q1Label') },
-                  { key: 'q2', label: t('game.q2Label') },
-                  { key: 'q3', label: t('game.q3Label') },
-                  { key: 'q4', label: t('game.q4Label') },
-                ].map(q => (
-                  <div key={q.key} className="shared-form-group">
-                    <label className="shared-form-label">{q.label}</label>
-                    <div className="shared-radio-group">
-                      {[
-                        { val: 'Yes, a lot', label: t('game.optYes') },
-                        { val: 'A little', label: t('game.optLittle') },
-                        { val: 'Not much', label: t('game.optNotMuch') }
-                      ].map(opt => (
-                        <label key={opt.val} className="shared-radio-item">
-                          <input type="radio" name={q.key} disabled={assessmentSubmitted}
-                            checked={assessment[q.key] === opt.val}
-                            onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })}
-                          />
-                          {opt.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="shared-form-group">
-                  <label className="shared-form-label">{t('game.q5Label')}</label>
-                  <div className="shared-checkbox-grid">
-                    {[
-                      { val: 'Difficulty sustaining attention', label: t('game.b1') },
-                      { val: 'Impulsive or random responding', label: t('game.b2') },
-                      { val: 'Negative reaction to correction', label: t('game.b3') },
-                      { val: 'Hesitation in responding', label: t('game.b4') },
-                      { val: 'High focus or persistence', label: t('game.b5') },
-                      { val: 'Verbalisation of a memory strategy', label: t('game.b6') },
-                      { val: 'Needed frequent reassurance', label: t('game.b7') },
-                      { val: 'Calm and engaged throughout', label: t('game.b8') }
-                    ].map(bhv => (
-                      <label key={bhv.val} className="shared-checkbox-item">
-                        <input type="checkbox" disabled={assessmentSubmitted}
-                          checked={assessment.behaviors.includes(bhv.val)}
-                          onChange={e => {
-                            if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
-                            else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
-                          }}
-                        />
-                        {bhv.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="shared-form-group">
-                  <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{t('game.extraNotes')}</span>
-                    <button
-                      type="button"
-                      className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-                      onClick={() => toggleRecording('assessmentNotes')}
-                    >
-                      🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-                    </button>
-                  </label>
-                  <textarea className="shared-textarea" disabled={assessmentSubmitted}
-                    placeholder={t('game.dictatePlaceholder')}
-                    value={assessment.notes}
-                    onChange={e => setAssessment({ ...assessment, notes: e.target.value })}
-                  />
-                </div>
-
-                <div className="shared-final-actions">
-                  {assessmentSubmitted ? (
-                    <>
-                      <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="ab-btn ab-btn-primary">{t('game.retest')}</button>
-                      <button onClick={() => navigate('/')} className="ab-btn ab-btn-secondary">{t('game.home')}</button>
-                    </>
-                  ) : (
-                    <button onClick={submitAssessmentForm} disabled={isAssessmentSubmitting}
-                      className="shared-submit-btn">
-                      {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                    </button>
-                  )}
-                </div>
-              </div>
+              <SessionAssessmentForm
+                assessment={assessment}
+                setAssessment={setAssessment}
+                assessmentSubmitted={assessmentSubmitted}
+                isAssessmentSubmitting={isAssessmentSubmitting}
+                submitAssessmentForm={submitAssessmentForm}
+                isRecording={isRecording}
+                recordingTarget={recordingTarget}
+                toggleRecording={toggleRecording}
+                t={t}
+              >
+                <>
+                  <button onClick={() => { resetInternalState(); setScreen('splash'); setAudioFinished(false); }} className="ab-btn ab-btn-primary">{t('game.retest')}</button>
+                  <button onClick={() => navigate('/')} className="ab-btn ab-btn-secondary">{t('game.home')}</button>
+                </>
+              </SessionAssessmentForm>
             </div>
           </div>
         )}

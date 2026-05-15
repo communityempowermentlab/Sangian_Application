@@ -6,8 +6,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useLanguage } from '../contexts/LanguageContext';
 import { API_URL } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
+import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './TriangleRachnaGame.css';
 
 const GAME_NAME  = 'triangle_rachna';
@@ -1264,90 +1265,24 @@ const TriangleRachnaGame = () => {
           </div>
 
           {/* Assessment Form */}
-          <div className="shared-assessment-section">
-            <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-
-            {[
-              {k:'q1',l:t('game.q1Label')},
-              {k:'q2',l:t('game.q2Label')},
-              {k:'q3',l:t('game.q3Label')},
-              {k:'q4',l:t('game.q4Label')}
-            ].map(({k,l}) => (
-              <div key={k} className="shared-form-group">
-                <label className="shared-form-label">{l}</label>
-                <div className="shared-radio-group">
-                  {[
-                    { val: 'Yes, a lot', label: t('game.optYes') },
-                    { val: 'A little', label: t('game.optLittle') },
-                    { val: 'Not much', label: t('game.optNotMuch') }
-                  ].map(opt => (
-                    <label key={opt.val} className="shared-radio-item">
-                      <input type="radio" name={k} value={opt.val} disabled={assessmentSubmitted}
-                        checked={assessment[k] === opt.val}
-                        onChange={() => setAssessment(a => ({...a,[k]:opt.val}))} />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <div className="shared-form-group">
-              <label className="shared-form-label">{t('game.q5Label')}</label>
-              <div className="shared-checkbox-grid">
-                {[
-                  { val: 'Difficulty sustaining attention', label: t('game.b1') },
-                  { val: 'Impulsive or random responding', label: t('game.b2') },
-                  { val: 'Negative reaction to correction', label: t('game.b3') },
-                  { val: 'Hesitation in responding', label: t('game.b4') },
-                  { val: 'High focus or persistence', label: t('game.b5') },
-                  { val: 'Verbalisation of a memory strategy', label: t('game.b6') },
-                  { val: 'Needed frequent reassurance', label: t('game.b7') },
-                  { val: 'Calm and engaged throughout', label: t('game.b8') }
-                ].map(b => (
-                  <label key={b.val} className="shared-checkbox-item">
-                    <input type="checkbox" disabled={assessmentSubmitted}
-                      checked={assessment.behaviors.includes(b.val)}
-                      onChange={e => setAssessment(a => ({
-                        ...a, behaviors: e.target.checked ? [...a.behaviors,b.val] : a.behaviors.filter(x=>x!==b.val)
-                      }))} />
-                    {b.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="shared-form-group">
-               <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <span>{t('game.extraNotes')}</span>
-                 <button 
-                   type="button"
-                   className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-                   onClick={() => toggleRecording('assessmentNotes')} 
-                 >
-                   🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-                 </button>
-               </label>
-               <textarea className="shared-textarea" disabled={assessmentSubmitted}
-                 placeholder={t('game.dictatePlaceholder')} value={assessment.notes}
-                 onChange={e => setAssessment(a => ({...a,notes:e.target.value}))} />
-            </div>
-
-            <div className="shared-final-actions">
-              {assessmentSubmitted ? (
-                <>
-                  <button className="rg-btn rg-btn-primary"
-                    onClick={() => { setScreen('splash'); setCurrentKey('sampleA'); setTotalScore(0); setQuestionScores({}); setQuestionTimes({}); setAssDone(false); setAssSub(false); setAssessment({q1:'',q2:'',q3:'',q4:'',behaviors:[],notes:''}); sessionIdRef.current=null; }}
-                  >{t('game.retest')}</button>
-                  <button className="rg-btn rg-btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
-                </>
-              ) : (
-                <button className="shared-submit-btn" disabled={assessmentSubmitting} onClick={submitAssessment}>
-                  {assessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                </button>
-              )}
-            </div>
-          </div>
+          <SessionAssessmentForm
+            assessment={assessment}
+            setAssessment={setAssessment}
+            assessmentSubmitted={assessmentSubmitted}
+            isAssessmentSubmitting={assessmentSubmitting}
+            submitAssessmentForm={submitAssessment}
+            isRecording={isRecording}
+            recordingTarget={recordingTarget}
+            toggleRecording={toggleRecording}
+            t={t}
+          >
+            <>
+              <button className="rg-btn rg-btn-primary"
+                onClick={() => { setScreen('splash'); setCurrentKey('sampleA'); setTotalScore(0); setQuestionScores({}); setQuestionTimes({}); setAssDone(false); setAssSub(false); setAssessment({q1:'',q2:'',q3:'',q4:'',behaviors:[],notes:''}); sessionIdRef.current=null; }}
+              >{t('game.retest')}</button>
+              <button className="rg-btn rg-btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
+            </>
+          </SessionAssessmentForm>
         </div>
       </div>
     );

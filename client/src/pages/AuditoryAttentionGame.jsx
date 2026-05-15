@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './AuditoryAttentionGame.css';
 
 // ─── Constants & Configurations ─────────────────────────────────────────
@@ -143,7 +144,7 @@ const AuditoryAttentionGame = () => {
 
   // Q Landing 
   const [landingAudioPlaying, setLandingAudioPlaying] = useState(false);
-  const [canStartQ, setCanStartQ] = useState(false);
+  const [canStartQ, setCanStartQ] = useState(true);
 
   // Assessment 
   const [assessment, setAssessment] = useState({ behaviors: [], notes: '' });
@@ -337,7 +338,7 @@ const AuditoryAttentionGame = () => {
     setCurrentQIndex(0);
     setAssessment({ behaviors: [], notes: '', q1: '', q2: '', q3: '', q4: '' });
     setAssessmentSubmitted(false);
-    setCanStartQ(false);
+    setCanStartQ(true);
     setLandingAudioPlaying(false);
     setSampleClicked([]);
   };
@@ -427,17 +428,7 @@ const AuditoryAttentionGame = () => {
     setCurrentQIndex(qIndex);
     setScreen(`question${qIndex}-landing`);
   };
-
   useEffect(() => {
-    if (screen === 'splash' && audioRef.current && !canStartQ) {
-      setLandingAudioPlaying(true);
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        setCanStartQ(true);
-        setLandingAudioPlaying(false);
-      });
-    }
-
     if (!canStartQ) {
       if (screen === 'sampleA') {
         playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
@@ -823,6 +814,9 @@ const AuditoryAttentionGame = () => {
               <button 
                 className="btn-pause-quit" 
                 onClick={() => {
+                  if (isGameRunning) {
+                    setIsPaused(true);
+                  }
                   cleanupAudio();
                   clearAllTimers();
                   setQuitReason('');
@@ -890,7 +884,10 @@ const AuditoryAttentionGame = () => {
                    </div>
                  </div>
                  <div className="aa-btn-row">
-                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={() => playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION)}>↻ Replay</button>
+                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={() => {
+                      setSampleClicked([]);
+                      playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
+                    }}>↻ Replay</button>
                     <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={stopInstructionAudio}>■ Stop</button>
                  </div>
                </div>
@@ -1032,7 +1029,7 @@ const AuditoryAttentionGame = () => {
                <div className="aa-card" style={{ background: 'white', padding: 24, borderRadius: 16, marginBottom: 20 }}>
                  <h3 className="nr-form-title" style={{ marginBottom: 16, textAlign: 'center' }}>Question-wise Summary</h3>
                  <div style={{ overflowX: 'auto' }}>
-                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', minWidth: 500 }}>
+                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
                      <thead>
                        <tr style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.85rem' }}>
                          <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}></th>
@@ -1066,16 +1063,16 @@ const AuditoryAttentionGame = () => {
                <div className="aa-card" style={{ background: 'white', padding: 24, borderRadius: 16, marginBottom: 20 }}>
                  <h3 className="nr-form-title" style={{ marginBottom: 16, textAlign: 'center' }}>Analytical Action Dashboard</h3>
                  <div style={{ overflowX: 'auto' }}>
-                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800, fontSize: '0.8rem' }}>
-                     <thead>
-                       <tr style={{ background: '#f8fafc', color: '#475569' }}>
-                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '40px' }}>Q#</th>
-                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>Requested Words</th>
-                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>User Responses</th>
-                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '300px' }}>Result Type</th>
-                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '60px' }}>Time</th>
-                       </tr>
-                     </thead>
+                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', color: '#475569' }}>
+                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '50px' }}>Q#</th>
+                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Requested Words</th>
+                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>User Responses</th>
+                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Result Type</th>
+                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '80px' }}>Time</th>
+                        </tr>
+                      </thead>
                      <tbody>
                        {[1, 2, 3, 4].map(q => {
                          const qs = questionScores[q];
@@ -1107,104 +1104,22 @@ const AuditoryAttentionGame = () => {
                  </div>
                </div>
 
-               <div className="shared-assessment-section">
-                 <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-
-                 {[
-                   { key: 'q1', label: t('game.q1Label') },
-                   { key: 'q2', label: t('game.q2Label') },
-                   { key: 'q3', label: t('game.q3Label') },
-                   { key: 'q4', label: t('game.q4Label') }
-                 ].map(q => (
-                   <div key={q.key} className="shared-form-group">
-                     <label className="shared-form-label">{q.label}</label>
-                     <div className="shared-radio-group">
-                       {[
-                         { val: 'Yes, a lot', str: t('game.optYes') },
-                         { val: 'A little', str: t('game.optLittle') },
-                         { val: 'Not much', str: t('game.optNotMuch') }
-                       ].map(opt => (
-                         <label key={opt.val} className="shared-radio-item">
-                           <input
-                             type="radio"
-                             name={q.key}
-                             disabled={assessmentSubmitted}
-                             checked={assessment[q.key] === opt.val}
-                             onChange={() => setAssessment({ ...assessment, [q.key]: opt.val })}
-                           />
-                           {opt.str}
-                         </label>
-                       ))}
-                     </div>
-                   </div>
-                 ))}
-
-                 <div className="shared-form-group">
-                   <label className="shared-form-label">{t('game.q5Label')}</label>
-                   <div className="shared-checkbox-grid">
-                     {[
-                       { val: 'Difficulty sustaining attention', str: t('game.b1') },
-                       { val: 'Impulsive or random responding', str: t('game.b2') },
-                       { val: 'Negative reaction to correction', str: t('game.b3') },
-                       { val: 'Hesitation in responding', str: t('game.b4') },
-                       { val: 'High focus or persistence', str: t('game.b5') },
-                       { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
-                       { val: 'Needed frequent reassurance', str: t('game.b7') },
-                       { val: 'Calm and engaged throughout', str: t('game.b8') }
-                     ].map(bhv => (
-                       <label key={bhv.val} className="shared-checkbox-item">
-                         <input
-                           type="checkbox"
-                           disabled={assessmentSubmitted}
-                           checked={assessment.behaviors.includes(bhv.val)}
-                           onChange={e => {
-                             if (e.target.checked) setAssessment({ ...assessment, behaviors: [...assessment.behaviors, bhv.val] });
-                             else setAssessment({ ...assessment, behaviors: assessment.behaviors.filter(b => b !== bhv.val) });
-                           }}
-                         />
-                         {bhv.str}
-                       </label>
-                     ))}
-                   </div>
+               <SessionAssessmentForm
+                 assessment={assessment}
+                 setAssessment={setAssessment}
+                 assessmentSubmitted={assessmentSubmitted}
+                 isAssessmentSubmitting={isAssessmentSubmitting}
+                 submitAssessmentForm={submitAssessmentForm}
+                 isRecording={isRecording}
+                 recordingTarget={recordingTarget}
+                 toggleRecording={toggleRecording}
+                 t={t}
+               >
+                 <div style={{ display: 'flex', gap: 16 }}>
+                    <button onClick={() => handleRestartFresh()} className="aa-btn aa-btn-primary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.retest')}</button>
+                   <button onClick={() => navigate('/')} className="aa-btn aa-btn-secondary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.home')}</button>
                  </div>
-
-                 <div className="shared-form-group">
-                   <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <span>{t('game.extraNotes')}</span>
-                     <button
-                       type="button"
-                       className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-                       onClick={() => toggleRecording('assessmentNotes')}
-                     >
-                       🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-                     </button>
-                   </label>
-                   <textarea
-                     className="shared-textarea"
-                     disabled={assessmentSubmitted}
-                     placeholder={t('game.dictatePlaceholder')}
-                     value={assessment.notes}
-                     onChange={e => setAssessment({ ...assessment, notes: e.target.value })}
-                   />
-                 </div>
-
-                 <div className="shared-final-actions">
-                   {assessmentSubmitted ? (
-                     <div style={{ display: 'flex', gap: 16 }}>
-                        <button onClick={() => handleRestartFresh()} className="aa-btn aa-btn-primary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.retest')}</button>
-                       <button onClick={() => navigate('/')} className="aa-btn aa-btn-secondary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.home')}</button>
-                     </div>
-                   ) : (
-                     <button
-                       className="shared-submit-btn"
-                       onClick={submitAssessmentForm}
-                       disabled={isAssessmentSubmitting}
-                     >
-                       {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
-                     </button>
-                   )}
-                 </div>
-               </div>
+               </SessionAssessmentForm>
             </div>
           )}
 
@@ -1245,7 +1160,12 @@ const AuditoryAttentionGame = () => {
               </button>
             </div>
             <div className="aa-btn-row">
-              <button className="aa-btn aa-btn-secondary" onClick={() => setShowQuitModal(false)}>Cancel</button>
+              <button className="aa-btn aa-btn-secondary" onClick={() => {
+                setShowQuitModal(false);
+                if (isPaused) {
+                  togglePause();
+                }
+              }}>Cancel</button>
               <button className="aa-btn" style={{ background: '#fef08a' }} onClick={() => handleQuitRequest('paused')}>Pause & Save</button>
               <button className="aa-btn" style={{ background: '#fee2e2', color: 'red' }} onClick={() => handleQuitRequest('quit')}>Quit & End</button>
             </div>
@@ -1255,7 +1175,7 @@ const AuditoryAttentionGame = () => {
 
       <audio 
         ref={audioRef} 
-        src={screen === 'splash' ? `${CONFIG.IMAGE_PATH}/aa_instruction.wav` : undefined} // Using sample instruction as splash audio if needed, or specific splash audio
+        src={undefined} // No audio on splash, other screens handle audio via playInstructionAudio
         onEnded={() => { setCanStartQ(true); setLandingAudioPlaying(false); }}
         onError={() => { setCanStartQ(true); setLandingAudioPlaying(false); }}
       />
