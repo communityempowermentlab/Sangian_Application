@@ -201,12 +201,13 @@
   width: 100%;
 }
 
+.rs-question-content [style*="font-size: 140px"],
 .rs-question-content [style*="font-size: 74px"],
 .rs-question-content [style*="font-size: 64px"] {
-  line-height: 1.4 !important;
+  line-height: 1.3 !important;
   padding: 0 20px;
-  text-align: justify;
-  text-align-last: center;
+  text-align: center;
+  word-wrap: break-word;
 }
 
 .rs-response-buttons {
@@ -672,10 +673,11 @@
 }
 
 .col-text {
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 300px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 0.9rem;
 }
 
 .status-badge {

@@ -237,7 +237,7 @@
 .aa-image-item.incorrect-flash { animation: aa-incorrectFlash 0.5s ease; }
 @keyframes aa-incorrectFlash { 0%, 100% { background: linear-gradient(135deg, #f8fafc, #f1f5f9); } 50% { background: linear-gradient(135deg, #fee2e2, #fecaca); } }
 
-.aa-selectable-image { width: 90px; height: 90px; object-fit: contain; transition: transform 0.2s ease; }
+.aa-selectable-image { width: 130px; height: 130px; object-fit: contain; transition: transform 0.2s ease; }
 .aa-image-label { font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .aa-image-item .aa-check-mark {

@@ -186,12 +186,19 @@ const AdminReports = () => {
                     qHeaders.push(`${colLabel} SSR 3 Score`);
                 }
             });
+        } else if (isChorCSV) {
+            detail.columns.forEach((c) => {
+                const colLabel = chorColLabel(c);
+                qHeaders.push(colLabel);
+                qHeaders.push(`${colLabel} Moves`);
+                qHeaders.push(`${colLabel} Time(s)`);
+            });
         } else {
             detail.columns.forEach((c, idx) => {
                 const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
-                const colLabel = isChorCSV ? chorColLabel(c) : c.toUpperCase();
+                const colLabel = c.toUpperCase();
                 qHeaders.push(colLabel);
-                if (isRover || isChorCSV) qHeaders.push(`${colLabel} Moves`);
+                if (isRover) qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
                 qHeaders.push(`${colLabel} Replays`);
             });
@@ -264,11 +271,17 @@ const AdminReports = () => {
                         rowArr.push(ssr[2]?.answer || '', ssr[2]?.score ?? '');
                     }
                 });
+            } else if (isChorCSV) {
+                detail?.columns?.forEach(c => {
+                    rowArr.push(r.question_scores?.[c] ?? '');
+                    rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
+                    rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
+                });
             } else {
                 const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                 detail?.columns?.forEach(c => {
                     rowArr.push(r.question_scores?.[c] ?? '');
-                    if (isRoverCSV || isChorCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
+                    if (isRoverCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
                     rowArr.push(r.question_scores?.[`${c}_replays`] ?? '');
                 });
@@ -410,6 +423,7 @@ const AdminReports = () => {
                                     <th style={S.th}>#</th>
                                     <th style={S.th} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
+                                    <th style={{ ...S.th, textAlign: 'center' }}>Att. #</th>
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Date <SortIcon field="start_time"/></th>
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Time</th>
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Date <SortIcon field="end_time"/></th>
@@ -532,7 +546,8 @@ const AdminReports = () => {
                             <tbody>
                                 {sortedRows.map((row, i) => {
                                     const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
-                                    const isChor = activeGame?.key === 'cognitive_flex_chor';
+                                    const isChor = activeGame?.key === 'cognitive_flex_chor' || activeGame?.title?.includes('Chor Machaye');
+                                    const isHerPher = activeGame?.key === 'working_memory_herpher';
                                     
                                     return (
                                         <React.Fragment key={row.session_id}>
@@ -587,12 +602,12 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : (isRover || isChor) ? (
+                                            ) : isRover ? (
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
                                                     <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
-                                                    {detail?.columns?.map(c => {
-                                                        const qs = row.question_scores;
+                                                    {(detail?.columns || []).map(c => {
+                                                        const qs = row.question_scores || {};
                                                         const score = qs[c];
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
@@ -600,6 +615,22 @@ const AdminReports = () => {
                                                                 <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </>
+                                            ) : isChor ? (
+                                                <>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    {(detail?.columns || []).map(c => {
+                                                        const qs = row.question_scores || {};
+                                                        const score = qs[c];
+                                                        return (
+                                                            <React.Fragment key={`chor-${c}`}>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -671,7 +702,7 @@ const AdminReports = () => {
                                                     )
                                                 }
                                             </td>
-                                            {activeGame?.key === 'working_memory_herpher' && (
+                                            {isHerPher && (
                                                 <td style={S.tdCenter}>
                                                     <button 
                                                         onClick={() => setHpDataModal({ show: true, rowData: row })}

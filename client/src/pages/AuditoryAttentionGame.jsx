@@ -18,7 +18,7 @@ const CONFIG = {
     FEEDBACK_DURATION: 600
   },
   
-  RESPONSE_WINDOW_WORDS: 2,
+  RESPONSE_WINDOW_WORDS: 0,
   
   IMAGES: [
     { id: 'suraj', name: 'Suraj', normal: 'suraj.png', highlighted: 'suraj_over.png' },
@@ -131,8 +131,11 @@ const AuditoryAttentionGame = () => {
   const wordsListRef = useRef([]);
   const wordIndexRef = useRef(-1);
   const pendingTargetsRef = useRef([]);
+  const currentQIndexRef = useRef(0);
   const actionLogRef = useRef([]);
   const levelTimeRef = useRef(0);
+
+  useEffect(() => { currentQIndexRef.current = currentQIndex; }, [currentQIndex]);
 
   // Toast
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
@@ -318,13 +321,25 @@ const AuditoryAttentionGame = () => {
     setQuestionScores(qs);
     setQuestionTimes(qt);
     
-    // Auto jump to first uncompleted question
     setCanStartQ(false);
-    if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); }
-    else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); }
-    else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); }
-    else if (!qs[4]) { setScreen('question4-landing'); setCurrentQIndex(4); }
-    else setScreen('score');
+
+    if (saved.activeQuestion) {
+      const aq = saved.activeQuestion;
+      setCurrentQIndex(aq.qIndex);
+      
+      if (aq.screen && aq.screen.endsWith('-game')) {
+        startGameForLevel(aq);
+      } else {
+        setScreen(aq.screen || 'splash');
+      }
+    } else {
+      // Auto jump to first uncompleted question
+      if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); }
+      else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); }
+      else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); }
+      else if (!qs[4]) { setScreen('question4-landing'); setCurrentQIndex(4); }
+      else setScreen('score');
+    }
   };
 
   const handleRestartFresh = () => {
@@ -359,7 +374,20 @@ const AuditoryAttentionGame = () => {
         });
       }
     });
-    return { allScores };
+    
+    const state = { allScores };
+    if (isGameRunning || isPaused) {
+      state.activeQuestion = {
+        qIndex: currentQIndex,
+        wordIndex: wordIndexRef.current,
+        levelScores,
+        levelTime: levelTimeRef.current,
+        actionLog: actionLogRef.current,
+        pendingTargets: pendingTargetsRef.current,
+        screen
+      };
+    }
+    return state;
   };
 
   const syncSessionProgress = async (status, quitRsn = null, p_qs = questionScores, p_qt = questionTimes) => {
@@ -426,6 +454,7 @@ const AuditoryAttentionGame = () => {
     cleanupAudio();
     setCanStartQ(false);
     setCurrentQIndex(qIndex);
+    currentQIndexRef.current = qIndex;
     setScreen(`question${qIndex}-landing`);
   };
   useEffect(() => {
@@ -445,11 +474,11 @@ const AuditoryAttentionGame = () => {
   }, [screen, canStartQ]);
 
   // -- Word playing loop --
-  const getQConfig = () => {
-    if (currentQIndex===1) return CONFIG.QUESTION1;
-    if (currentQIndex===2) return CONFIG.QUESTION2;
-    if (currentQIndex===3) return CONFIG.QUESTION3;
-    if (currentQIndex===4) return CONFIG.QUESTION4;
+  const getQConfig = (idx = currentQIndexRef.current) => {
+    if (idx===1) return CONFIG.QUESTION1;
+    if (idx===2) return CONFIG.QUESTION2;
+    if (idx===3) return CONFIG.QUESTION3;
+    if (idx===4) return CONFIG.QUESTION4;
     return null;
   };
 
@@ -462,6 +491,7 @@ const AuditoryAttentionGame = () => {
     setWordIndex(nextIndex);
 
     const config = getQConfig();
+    if (!config) return;
 
     // Check pending targets for EOO (expired)
     let eooCount = 0;
@@ -547,26 +577,51 @@ const AuditoryAttentionGame = () => {
 
   }, [currentQIndex]);
 
-  const startGameForLevel = () => {
+  const startGameForLevel = (resumeState = null) => {
     cleanupAudio();
     clearAllTimers();
     
-    const config = getQConfig();
+    const qIdx = resumeState ? resumeState.qIndex : currentQIndex;
+    currentQIndexRef.current = qIdx;
+    const config = getQConfig(qIdx);
+    
+    if (!config) {
+      setScreen('splash');
+      return;
+    }
     setWordsList([...config.WORDS]);
+    wordsListRef.current = [...config.WORDS];
     
-    wordIndexRef.current = -1;
-    pendingTargetsRef.current = [];
-    actionLogRef.current = [];
-    levelTimeRef.current = 0;
-    clickLockedRef.current = false;
-    setWordIndex(-1);
-    setPendingTargets([]);
-    setLevelScores({ correct: 0, eoc: 0, eoi: 0, eoo: 0 });
-    setLevelTime(0);
-    
+    if (resumeState) {
+      wordIndexRef.current = resumeState.wordIndex ?? -1;
+      setWordIndex(resumeState.wordIndex ?? -1);
+      
+      const pts = Array.isArray(resumeState.pendingTargets) ? resumeState.pendingTargets : [];
+      pendingTargetsRef.current = [...pts];
+      setPendingTargets([...pts]);
+      
+      const logs = Array.isArray(resumeState.actionLog) ? resumeState.actionLog : [];
+      actionLogRef.current = [...logs];
+      
+      levelTimeRef.current = resumeState.levelTime || 0;
+      setLevelTime(resumeState.levelTime || 0);
+      setLevelScores(resumeState.levelScores || { correct: 0, eoc: 0, eoi: 0, eoo: 0 });
+      setScreen(resumeState.screen || `question${currentQIndex}-game`);
+    } else {
+      wordIndexRef.current = -1;
+      setWordIndex(-1);
+      pendingTargetsRef.current = [];
+      setPendingTargets([]);
+      actionLogRef.current = [];
+      levelTimeRef.current = 0;
+      setLevelTime(0);
+      setLevelScores({ correct: 0, eoc: 0, eoi: 0, eoo: 0 });
+      setScreen(`question${currentQIndex}-game`);
+    }
+
     setIsGameRunning(true);
     setIsPaused(false);
-    setScreen(`question${currentQIndex}-game`);
+    clickLockedRef.current = false;
 
     // Timer setup
     timerIntervalRef.current = setInterval(() => {
@@ -577,7 +632,7 @@ const AuditoryAttentionGame = () => {
       });
     }, 100);
 
-    setTimeout(() => playNextWord(), 1500); // Intro delay
+    setTimeout(() => playNextWord(), resumeState ? 500 : 1500);
   };
 
   const completeCurrentQuestion = (finalWordLen) => {
@@ -650,58 +705,49 @@ const AuditoryAttentionGame = () => {
     
     const config = getQConfig();
     const currentWord = wordsList[wordIndexRef.current];
-    
-    const isTargetWord = config.TARGET_WORDS.includes(currentWord);
-    const isTargetImage = config.TARGET_IMAGES.includes(imageId);
+    const targetIdx = config.TARGET_WORDS.indexOf(currentWord);
+    const isTargetWord = targetIdx !== -1;
 
-    // Flash animation via direct DOM wrapper
-    const el = document.getElementById(`game-item-${imageId}`);
-    
-    const matchingPendingIndex = pendingTargetsRef.current.findIndex(pt => 
-      !pt.responded && 
-      pt.targetImage === imageId && 
-      wordIndexRef.current <= pt.wordIndex + CONFIG.RESPONSE_WINDOW_WORDS
-    );
-
-    if (matchingPendingIndex !== -1) {
-      // CORRECT
-      setLevelScores(prev => ({...prev, correct: prev.correct + 1 }));
-      pendingTargetsRef.current[matchingPendingIndex].responded = true;
+    // SCORING DECISION TREE IMPLEMENTATION
+    if (isTargetWord) {
+      // 2. Target Word (Key Component)
+      const expectedImage = config.TARGET_IMAGES[targetIdx];
       
-      const targetIndex = pendingTargetsRef.current[matchingPendingIndex].wordIndex;
-      const logE = actionLogRef.current.find(l => l.id === targetIndex);
-      if (logE) {
-        logE.response = 'Tap';
-        logE.result = 'Correct Response';
+      if (imageId === expectedImage) {
+        // 2.A.i: Correct Response
+        setLevelScores(prev => ({...prev, correct: prev.correct + 1 }));
+        
+        const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
+        if (logE) {
+          logE.response = 'Tap';
+          logE.result = 'Correct Response';
+        }
+      } else {
+        // 2.A.ii: Error of Inhibition (EOI)
+        setLevelScores(prev => ({...prev, eoi: prev.eoi + 1 }));
+        
+        const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
+        if (logE) {
+          logE.response = 'Wrong Tap';
+          logE.result = 'EOI';
+        }
       }
 
-      setPendingTargets([...pendingTargetsRef.current]);
-    } else if (isTargetWord && !isTargetImage) {
-      // EOI
-      const expectedImage = config.TARGET_IMAGES[config.TARGET_WORDS.indexOf(currentWord)];
-      if (imageId !== expectedImage) {
-         setLevelScores(prev => ({...prev, eoi: prev.eoi + 1 }));
-         
-         const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
-         if (logE) {
-           logE.response = 'Wrong Tap';
-           logE.result = 'EOI';
-         }
+      // Mark as responded so EOO (Error of Omission) doesn't trigger later for this stimulus
+      const pendingIndex = pendingTargetsRef.current.findIndex(pt => !pt.responded && pt.wordIndex === wordIndexRef.current);
+      if (pendingIndex !== -1) {
+        pendingTargetsRef.current[pendingIndex].responded = true;
+        setPendingTargets([...pendingTargetsRef.current]);
       }
-    } else if (!isTargetWord) {
-      // EOC
+
+    } else {
+      // 3. Non-Target Word
+      // 3.A: Error of Commission (EOC)
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
+      
       const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
       if (logE) {
         logE.response = 'Wrong Tap';
-        logE.result = 'EOC';
-      }
-    } else {
-      // EOC timing mismatch
-      setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
-      const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
-      if (logE) {
-        logE.response = 'Tap';
         logE.result = 'EOC';
       }
     }
@@ -917,7 +963,7 @@ const AuditoryAttentionGame = () => {
           )}
 
           {/* LANDING SCREENS */}
-          {screen.endsWith('-landing') && (
+          {screen && screen.endsWith('-landing') && (
             <div className="aa-screen">
                <div className="aa-header">
                  <div>
@@ -961,7 +1007,7 @@ const AuditoryAttentionGame = () => {
           )}
 
           {/* GAMEPLAY SCREENS */}
-          {screen.endsWith('-game') && (
+          {screen && screen.endsWith('-game') && (
             <div className="aa-screen">
                <div className="aa-header">
                  <div>
@@ -1116,8 +1162,8 @@ const AuditoryAttentionGame = () => {
                  t={t}
                >
                  <div style={{ display: 'flex', gap: 16 }}>
-                    <button onClick={() => handleRestartFresh()} className="aa-btn aa-btn-primary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.retest')}</button>
-                   <button onClick={() => navigate('/')} className="aa-btn aa-btn-secondary" style={{ padding: '12px 32px', borderRadius: 999 }}>{t('game.home')}</button>
+                    <button onClick={() => handleRestartFresh()} className="aa-btn aa-btn-primary" style={{ padding: '12px 32px', borderRadius: 999, background: 'linear-gradient(135deg, #4f46e5, #3730a3)', border: 'none', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>↻ Retest</button>
+                    <button onClick={() => navigate('/')} className="aa-btn" style={{ padding: '12px 32px', borderRadius: 999, background: '#e0e7ff', border: 'none', color: '#3730a3', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>🏠 Home</button>
                  </div>
                </SessionAssessmentForm>
             </div>

@@ -286,6 +286,10 @@ const ChaloMelaChaleGame = () => {
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
   const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(isPaused);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  const pauseStartTimeRef = useRef(null);
+
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [pendingResumeData, setPendingResumeData] = useState(null);
   const [attemptNo, setAttemptNo] = useState(1);
@@ -322,6 +326,19 @@ const ChaloMelaChaleGame = () => {
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
   
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
+
+  const safeSetTimeout = useCallback((cb, delay) => {
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      if (!isPausedRef.current) {
+        elapsed += 50;
+        if (elapsed >= delay) {
+          clearInterval(interval);
+          cb();
+        }
+      }
+    }, 50);
+  }, []);
 
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
@@ -385,11 +402,14 @@ const ChaloMelaChaleGame = () => {
     if (ss.unlockedPaths) setUnlockedPaths(ss.unlockedPaths);
     if (ss.completedPaths) setCompletedPaths(ss.completedPaths);
     if (ss.screen) setScreen(ss.screen);
+    if (ss.refreshCount !== undefined) setRefreshCount(ss.refreshCount);
+    if (ss.retakeCount !== undefined) setRetakeCount(ss.retakeCount);
     if (ss.questionState) {
       setQuestionState(ss.questionState);
       if (ss.questionState.gameStarted && !ss.questionState.isComplete) {
         clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
+          if (isPausedRef.current) return;
           setQuestionState(prev => {
             if (prev.timeRemaining <= 1) { 
               clearInterval(timerRef.current); 
@@ -460,7 +480,9 @@ const ChaloMelaChaleGame = () => {
           completedPaths,
           screen,
           questionState,
-          isDropped: isDroppedOverride || isDropped
+          isDropped: isDroppedOverride || isDropped,
+          refreshCount,
+          retakeCount
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -489,16 +511,16 @@ const ChaloMelaChaleGame = () => {
 
     audio.play().catch(e => {
       console.log('Audio play failed', e);
-      setTimeout(safeOnEnded, 1000); // Trigger fallback if play fails
+      safeSetTimeout(safeOnEnded, 1000); // Trigger fallback if play fails
     });
     
     audio.onended = safeOnEnded;
     
     // Absolute safety timeout if audio is longer than expected but never ends
-    setTimeout(safeOnEnded, 20000); 
+    safeSetTimeout(safeOnEnded, 20000); 
 
     return audio;
-  }, [stopAudio]);
+  }, [stopAudio, safeSetTimeout]);
 
   const playSoundEffect = useCallback((file) => {
     const sfx = new Audio(`${AUDIO_DIR}/${file}`);
@@ -527,6 +549,7 @@ const ChaloMelaChaleGame = () => {
     qStartTimeRef.current = now;
     playSoundEffect('start_trial.wav');
     timerRef.current = setInterval(() => {
+      if (isPausedRef.current) return;
       setQuestionState(prev => {
         if (prev.timeRemaining <= 1) { clearInterval(timerRef.current); handleResult(false, "Timeout"); return { ...prev, timeRemaining: 0 }; }
         if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
@@ -586,8 +609,8 @@ const ChaloMelaChaleGame = () => {
     setScreen(id);
     setQStartTime(null);
     qStartTimeRef.current = null;
-    setTimeout(() => startTrial(1), 500);
-  }, [stopAll, startTrial]);
+    safeSetTimeout(() => startTrial(1), 500);
+  }, [stopAll, startTrial, safeSetTimeout]);
 
   // --- DEMO LOGIC ---
   const runPathSequence = useCallback(async (seq, pathKey, nextPathKey = null) => {
@@ -595,7 +618,11 @@ const ChaloMelaChaleGame = () => {
     setPathProgress(-1);
     setIsAnimating(true);
     
-    await new Promise(r => setTimeout(r, 500));
+    let elapsed1 = 0;
+    while(elapsed1 < 500) {
+      await new Promise(r => setTimeout(r, 50));
+      if (!isPausedRef.current) elapsed1 += 50;
+    }
     
     let audioFile = '';
     if (pathKey.startsWith('sb')) {
@@ -608,7 +635,14 @@ const ChaloMelaChaleGame = () => {
     const totalMs = pathKey.startsWith('sb') ? 9000 : (pathKey === 'p1' ? 11000 : 8000);
     const stepDelay = Math.round(totalMs / seq.length);
     for (let i = 0; i < seq.length; i++) {
-      setPathProgress(i); await new Promise(r => setTimeout(r, stepDelay));
+      while(isPausedRef.current) await new Promise(r => setTimeout(r, 100));
+      setPathProgress(i); 
+      
+      let elapsed2 = 0;
+      while(elapsed2 < stepDelay) {
+        await new Promise(r => setTimeout(r, 50));
+        if (!isPausedRef.current) elapsed2 += 50;
+      }
     }
     
     let resultFile = '';
@@ -630,14 +664,14 @@ const ChaloMelaChaleGame = () => {
           setActivePath(null);
         }
 
-        setTimeout(() => {
+        safeSetTimeout(() => {
           if (nextPathKey === 'p2') runPathSequence(PATH2_SEQ, 'p2', 'p3');
           else if (nextPathKey === 'p3') runPathSequence(PATH3_SEQ, 'p3', 'tq1');
           else if (nextPathKey === 'sbP2') runPathSequence(SB_PATH2_SEQ, 'sbP2', 'tq3');
         }, 1000);
       }
     });
-  }, [playAudio]);
+  }, [playAudio, safeSetTimeout]);
 
   const startAutoDemoA = useCallback(() => {
     setUnlockedPaths(prev => ({ ...prev, p2: false, p3: false, tq1: false }));
@@ -649,9 +683,9 @@ const ChaloMelaChaleGame = () => {
     setUnlockedPaths(prev => ({ ...prev, sbP2: false, tq3: false }));
     setCompletedPaths(prev => ({ ...prev, sbP1: false, sbP2: false }));
     playAudio('SB_splash2.wav', () => {
-      setTimeout(() => runPathSequence(SB_PATH1_SEQ, 'sbP1', 'sbP2'), 500);
+      safeSetTimeout(() => runPathSequence(SB_PATH1_SEQ, 'sbP1', 'sbP2'), 500);
     });
-  }, [playAudio, runPathSequence]);
+  }, [playAudio, runPathSequence, safeSetTimeout]);
 
   // Handle auto-start on screen change
   useEffect(() => {
@@ -770,7 +804,7 @@ const ChaloMelaChaleGame = () => {
       if (isTQ) {
         if (prev.currentTrial === 1) {
           if (score === 2) { newState.nextUnlocked = true; newState.trial2Hidden = true; }
-          else { newState.trial2Unlocked = true; setTimeout(() => startTrial(2), 1500); }
+          else { newState.trial2Unlocked = true; safeSetTimeout(() => startTrial(2), 1500); }
         } else { newState.nextUnlocked = true; }
       } else { newState.nextUnlocked = true; }
       return newState;
@@ -800,7 +834,7 @@ const ChaloMelaChaleGame = () => {
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
       setAssessmentSubmitted(true);
-      setTimeout(() => {
+      safeSetTimeout(() => {
         generateAndUploadPDF();
       }, 1000);
       alert('Assessment successfully saved!');
@@ -875,6 +909,8 @@ const ChaloMelaChaleGame = () => {
     setCompletedPaths({ p1: false, p2: false, p3: false, sbP1: false, sbP2: false });
     setIsDropped(false);
     setAudioFinished(false);
+    setRefreshCount(0);
+    setRetakeCount(0);
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setQuitReason('');
     setAssessmentSubmitted(false);
@@ -1146,10 +1182,10 @@ const ChaloMelaChaleGame = () => {
         </div>
         <div className="pattern-controls">
           {!isTQ && (
-            <button className={`pattern-btn ${refreshCount >= 1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
+            <button className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1 || questionState.nextUnlocked} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
           )}
           {isTQ && (
-            <button className={`pattern-btn ${retakeCount >= 2 ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2} onClick={handleRetake}>↺ Retake ({Math.max(0, 2 - retakeCount)}/2)</button>
+            <button className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2 || questionState.nextUnlocked} onClick={handleRetake}>↺ Retake ({Math.max(0, 2 - retakeCount)}/2)</button>
           )}
           {isTQ && (
             <>
@@ -1259,9 +1295,14 @@ const ChaloMelaChaleGame = () => {
             <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
-                clearInterval(timerRef.current);
                 setQuitReason(''); 
                 setShowPauseModal(true); 
+                setIsPaused(true);
+                pauseStartTimeRef.current = Date.now();
+                if (audioRef.current && !audioRef.current.paused) {
+                  audioRef.current.pause();
+                  audioRef.current.wasPlayingBeforePause = true;
+                }
               }}><span>⏸</span> Pause/Quit</button>
             )}
           </div>
@@ -1424,20 +1465,17 @@ const ChaloMelaChaleGame = () => {
               <button className="modal-btn modal-btn-cancel" onClick={() => { 
                 setShowPauseModal(false); 
                 setIsPaused(false); 
-                // Restart timer if game was in progress
-                if (questionState.gameStarted && !questionState.isComplete) {
-                  clearInterval(timerRef.current);
-                  timerRef.current = setInterval(() => {
-                    setQuestionState(prev => {
-                      if (prev.timeRemaining <= 1) { 
-                        clearInterval(timerRef.current); 
-                        handleResult(false, "Timeout"); 
-                        return { ...prev, timeRemaining: 0 }; 
-                      }
-                      if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
-                      return { ...prev, timeRemaining: prev.timeRemaining - 1 };
-                    });
-                  }, 1000);
+                if (pauseStartTimeRef.current) {
+                  const pauseDuration = Date.now() - pauseStartTimeRef.current;
+                  if (qStartTimeRef.current) {
+                    setQStartTime(prev => prev + pauseDuration);
+                    qStartTimeRef.current += pauseDuration;
+                  }
+                  pauseStartTimeRef.current = null;
+                }
+                if (audioRef.current && audioRef.current.wasPlayingBeforePause) {
+                  audioRef.current.play().catch(e => console.log('resume audio failed', e));
+                  audioRef.current.wasPlayingBeforePause = false;
                 }
               }}>Cancel</button>
               <button 

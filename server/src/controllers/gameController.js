@@ -17,23 +17,37 @@ exports.startGameSession = async (req, res) => {
             normalizedName = 'cognitive_flex_chor';
         }
 
-        const [result] = await pool.query(
-            `INSERT INTO game_sessions 
-            (child_id, game_name, start_time, total_questions, status, progress_level, score) 
-            VALUES (?, ?, NOW(), ?, 'in_progress', 1, 0)`,
-            [child_id, normalizedName, total_questions || 0]
-        );
-
-        // Get attempt number for this session
-        const [[countResult]] = await pool.query(
-            `SELECT COUNT(*) as attempt_no FROM game_sessions WHERE child_id = ? AND game_name = ?`,
+        // Check if an active in_progress session already exists to prevent duplication
+        const [existing] = await pool.query(
+            `SELECT id FROM game_sessions 
+             WHERE child_id = ? AND game_name = ? AND status = 'in_progress' 
+             ORDER BY start_time DESC LIMIT 1`,
             [child_id, normalizedName]
         );
 
-        res.status(201).json({
+        let sessionId;
+        if (existing.length > 0) {
+            sessionId = existing[0].id;
+        } else {
+            const [result] = await pool.query(
+                `INSERT INTO game_sessions 
+                (child_id, game_name, start_time, total_questions, status, progress_level, score) 
+                VALUES (?, ?, NOW(), ?, 'in_progress', 1, 0)`,
+                [child_id, normalizedName, total_questions || 0]
+            );
+            sessionId = result.insertId;
+        }
+
+        // Get attempt number for this session
+        const [[countResult]] = await pool.query(
+            `SELECT COUNT(*) as attempt_no FROM game_sessions WHERE child_id = ? AND game_name = ? AND start_time <= (SELECT start_time FROM game_sessions WHERE id = ?)`,
+            [child_id, normalizedName, sessionId]
+        );
+
+        res.status(existing.length > 0 ? 200 : 201).json({
             success: true,
-            message: 'Game session started',
-            sessionId: result.insertId,
+            message: existing.length > 0 ? 'Active session reused' : 'Game session started',
+            sessionId: sessionId,
             attempt_no: countResult.attempt_no
         });
     } catch (error) {
@@ -183,8 +197,12 @@ exports.getReportOverview = async (req, res) => {
         const [rows] = await pool.query(`
             SELECT
                 CASE
-                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela') THEN 'rover_mela'
+                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game') THEN 'rover_mela'
                     WHEN game_name IN ('chor_machaye_shor', 'cognitive_flex_chor') THEN 'cognitive_flex_chor'
+                    WHEN game_name IN ('literacy_reading_skill', 'reading_skill', 'Padh ke batao') THEN 'literacy_reading_skill'
+                    WHEN game_name IN ('numeracy_number_skill', 'Ankganit') THEN 'numeracy_number_skill'
+                    WHEN game_name IN ('working_memory_herpher', 'Her Pher') THEN 'working_memory_herpher'
+                    WHEN game_name IN ('atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game') THEN 'atlantis_bagiya'
                     ELSE game_name
                 END AS game_name,
                 COUNT(DISTINCT child_id)                        AS total_children,
@@ -466,8 +484,12 @@ exports.getGameSummaries = async (req, res) => {
         const [rows] = await pool.query(
             `SELECT
                 CASE
-                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale') THEN 'rover_mela'
-                    WHEN game_name = 'chor_machaye_shor' THEN 'cognitive_flex_chor'
+                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game') THEN 'rover_mela'
+                    WHEN game_name IN ('chor_machaye_shor', 'cognitive_flex_chor') THEN 'cognitive_flex_chor'
+                    WHEN game_name IN ('literacy_reading_skill', 'reading_skill', 'Padh ke batao') THEN 'literacy_reading_skill'
+                    WHEN game_name IN ('numeracy_number_skill', 'Ankganit') THEN 'numeracy_number_skill'
+                    WHEN game_name IN ('working_memory_herpher', 'Her Pher') THEN 'working_memory_herpher'
+                    WHEN game_name IN ('atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game') THEN 'atlantis_bagiya'
                     ELSE game_name
                 END AS game_name,
                 MAX(start_time) as last_played_at,

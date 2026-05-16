@@ -374,10 +374,16 @@ const ChorMachayeShorGame = () => {
       if (res.data.success && res.data.sessionInfo) {
         const info = res.data.sessionInfo;
         setGameSessionId(info.id);
-        if (info.status === 'paused' && info.saved_state) {
+        setAttemptNo(info.attempt_no || 1);
+        
+        // If it's paused or has saved state, show resume modal
+        if (info.status === 'paused' || (info.status === 'in_progress' && info.saved_state)) {
           setPendingResumeData(info.saved_state);
-          setAttemptNo(info.attempt_no || 1);
           setShowResumeModal(true);
+        } else if (info.status === 'in_progress') {
+          // Just use the existing in_progress session without showing modal if no state yet
+          // This prevents duplication on refresh at the very start
+          console.log("Reusing existing in_progress session", info.id);
         } else {
           startNewSession(childId);
         }
@@ -1017,9 +1023,13 @@ const ChorMachayeShorGame = () => {
   const submitAssessment = async () => {
     setIsAssessmentSubmitting(true);
     try {
-      // Preserve quit/paused status — only mark completed if the game ended naturally
-      const finalStatus = quitReason ? 'quit' : 'completed';
-      await saveToServer(finalStatus);
+      // If we already quit or paused, don't overwrite with 'completed'
+      // The status was already set in handlePauseAction
+      if (quitReason) {
+        await saveToServer('quit');
+      } else {
+        await saveToServer('completed');
+      }
       const config = {};
       const token = localStorage.getItem('token');
       if (token) config.headers = { Authorization: `Bearer ${token}` };
@@ -1034,6 +1044,48 @@ const ChorMachayeShorGame = () => {
         q5_behaviors: assessment.behaviors,
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
+
+      // Generate PDF Dashboard
+      setTimeout(async () => {
+        try {
+          const element = document.getElementById('dashboard-container');
+          if (element) {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(element, { 
+              scale: 1.5, 
+              useCORS: true,
+              windowWidth: element.scrollWidth,
+              windowHeight: element.scrollHeight,
+              logging: false
+            });
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            const pdfWidth = 210; 
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const pdfBlob = pdf.output('blob');
+            
+            const formData = new FormData();
+            const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+            const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+            formData.append('pdf', pdfBlob, `${childNameSafe}_Chor_Machaye_Shor_SES${gameSessionId}_${ts}.pdf`);
+            formData.append('child_id', childData.child_id);
+            formData.append('session_id', gameSessionId);
+            formData.append('game_name', 'chor_machaye_shor');
+            
+            await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
+            console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
+          }
+        } catch (err) {
+          console.error("PDF generation failed:", err);
+        }
+      }, 1000);
+
       setAssessmentSubmitted(true);
       alert('Assessment successfully saved!');
     } catch (e) {
@@ -1094,16 +1146,21 @@ const ChorMachayeShorGame = () => {
                   <img src={`${IMG_DIR}/chor_machaye_shor.jpg`} alt="Chor Machaye Shor" className="chor-splash-image" />
                 </div>
 
+                <h2 className="chor-welcome-text" style={{ fontSize: '2.4rem', textAlign: 'center' }}>
+                  Welcome to Chor Machaye Shor
+                </h2>
+
                 <div className="chor-splash-footer">
                   <div className="chor-btn-row">
                     <button 
-                      className={`chor-btn chor-btn-primary chor-btn-highlight`} 
+                      className="chor-btn chor-btn-primary chor-btn-highlight" 
                       onClick={startGame} 
-                     style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Start Now</button>
+                      style={{ fontSize: '1.2rem', padding: '16px 40px' }}
+                    >
+                      Start Now
+                    </button>
                   </div>
                 </div>
-
-                <h2 className="chor-welcome-text" style={{ marginTop: '30px', fontSize: '2.4rem' }}>Welcome to Chor Machaye Shor</h2>
               </div>
             </div>
           </main>
@@ -1115,14 +1172,23 @@ const ChorMachayeShorGame = () => {
               <h2>Saved Progress Found</h2>
               <p>You have a previously paused game session. Would you like to resume?</p>
               <div className="modal-actions-row">
-                <button className="modal-btn modal-btn-cancel" onClick={() => {
+                <button className="modal-btn modal-btn-cancel" onClick={async () => {
                   setShowResumeModal(false);
+                  // Mark old session as dropped/abandoned before starting fresh
+                  if (gameSessionId) {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+                      await axios.post(`${API_URL}/games/sessions/${gameSessionId}`, { status: 'dropped' }, config);
+                    } catch (err) {
+                      console.error("Failed to mark session as dropped:", err);
+                    }
+                  }
                   resetGameState();
                   setAudioFinished(false);
                   setScreen('splash');
                 }}>Restart Fresh</button>
                 <button className="modal-btn modal-btn-primary" onClick={() => {
-                  setAttemptNo(resumeData.attempt_no || 1);
                   resumeGame();
                 }}>Resume Game</button>
               </div>
@@ -1143,7 +1209,7 @@ const ChorMachayeShorGame = () => {
 
     return (
       <div className="chor-body-shell">
-        <div className="chor-app">
+        <div className="chor-app" id="dashboard-container">
           <header className="chor-topbar">
             <div className="chor-brand">
               <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
@@ -1151,8 +1217,8 @@ const ChorMachayeShorGame = () => {
               <span className="chor-test-title">Chor Machaye Shor</span>
             </div>
             <div className="chor-stats">
+              <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
               <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">SP</span><span className="chor-stat-value">{correctCount}</span></div>
               <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
@@ -1192,59 +1258,48 @@ const ChorMachayeShorGame = () => {
                     <div className="chor-stat-box chor-stat-box-wide"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{avgTime}s</div></div>
                   </div>
                 </div>
-                
-                <div className="chor-banner-success">
-                  Excellent work! Keep it up! 🌟
-                </div>
               </div>
 
-              {/* Cognitive Insights */}
-              <div className="chor-dash-section chor-insights-section">
-                <h4 className="chor-insights-title">Cognitive Insights</h4>
-                <div className="chor-insights-grid">
-                  <div className="chor-insight-item">
-                    <strong>Pattern Recognition:</strong> <span className="chor-stars">★★★★☆</span>
-                  </div>
-                  <div className="chor-insight-item">
-                    <strong>Rule Switching:</strong> <span className="chor-stars">★★★★★</span>
-                  </div>
-                  <div className="chor-insight-item">
-                    <strong>Consistency:</strong> Stable
-                  </div>
-                </div>
-                <p className="chor-insight-text">
-                  User performed well in visual pattern tasks. Strong cognitive flexibility and rapid adaptation to new rules.
-                </p>
-              </div>
-
-              {/* Breakdown Accordion */}
-              <div className="chor-accordion">
-                <div className="chor-q-grid">
-                  {itemResults.map((r, i) => (
-                    <div key={i} className="chor-q-card">
-                      <div className="q-card-top">
-                        <span className="q-id">Item {r.itemId}</span>
-                        <span className={`q-status ${r.completed ? 'pass' : 'fail'}`}>{r.completed ? '✔' : '✘'}</span>
-                      </div>
-                      <div className="q-item-name">{r.itemName}</div>
-                      <div className="q-stats-row">
-                        <span className="q-stat">Score: <strong>{r.score}</strong></span>
-                        <span className="q-stat">Moves: <strong>{r.moves}</strong></span>
-                        <span className="q-stat">Time: <strong>{r.timeTaken}s</strong></span>
-                      </div>
-                      {r.phase2Time > 0 && (
-                        <div className="q-advanced">
-                          <div className="q-adv-title">ADVANCED METRICS</div>
-                          <div className="q-adv-phases">
-                            <span>Phase 1: {r.phase1Time}s</span>
-                            <span>Phase 2: {r.phase2Time}s</span>
-                          </div>
-                          <div className="q-adv-row">Mistakes: {r.mistakes || 0}</div>
-                          <div className="q-adv-row">Rule: <strong>{r.finalRule || 'N/A'}</strong></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              {/* Detailed Breakdown Table */}
+              <div className="chor-dash-section">
+                <h3 className="chor-section-title">Detailed Question Breakdown</h3>
+                <div className="chor-table-wrapper">
+                  <table className="chor-data-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Item Name</th>
+                        <th>Score</th>
+                        <th>Moves</th>
+                        <th>Total Time</th>
+                        <th>Phase 1</th>
+                        <th>Phase 2</th>
+                        <th>Mistakes</th>
+                        <th>Rule</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itemResults.map((r, i) => (
+                        <tr key={i}>
+                          <td><strong>{r.itemId}</strong></td>
+                          <td>
+                            <span className={`q-status-pill ${r.completed ? 'pass' : 'fail'}`}>
+                              {r.completed ? '✔ Passed' : '✘ Failed'}
+                            </span>
+                          </td>
+                          <td>{r.itemName}</td>
+                          <td>{r.score}</td>
+                          <td>{r.moves}</td>
+                          <td>{r.timeTaken}s</td>
+                          <td>{r.phase1Time ? `${r.phase1Time}s` : '—'}</td>
+                          <td>{r.phase2Time ? `${r.phase2Time}s` : '—'}</td>
+                          <td>{r.mistakes || 0}</td>
+                          <td>{r.finalRule || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -1261,14 +1316,14 @@ const ChorMachayeShorGame = () => {
                 t={t}
               >
                 <>
-                  <button className="chor-btn chor-btn-primary" onClick={() => {
+                  <button className="chor-btn chor-btn-primary" style={{ padding: '12px 32px', borderRadius: 999, background: 'linear-gradient(135deg, #4f46e5, #3730a3)', border: 'none', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => {
                     resetGameState();
                     setAudioFinished(true);
                     setScreen('splash');
                     setAssessmentSubmitted(false);
                     setGameSessionId(null);
-                  }}>{t('game.retest')}</button>
-                  <button className="chor-btn chor-btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
+                  }}>↻ Retest</button>
+                  <button className="chor-btn" style={{ padding: '12px 32px', borderRadius: 999, background: '#e0e7ff', border: 'none', color: '#3730a3', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/')}>🏠 Home</button>
                 </>
               </SessionAssessmentForm>
               </div>
@@ -1308,6 +1363,7 @@ const ChorMachayeShorGame = () => {
               <div>
                 <div className="chor-screen-title" style={{display:'flex', gap:'10px', alignItems:'center'}}>
                   {currentItem.name}
+                  {currentItem.hasTrials && <div className="chor-chip chor-chip-game" style={{ background: '#4f46e5', color: '#fff', borderColor: '#4338ca' }}>Trial {currentTrial}</div>}
                   {phaseLabel && <div className="chor-chip chor-chip-splash">{phaseLabel}</div>}
                 </div>
                 <div className="chor-screen-subtitle">Move: {currentMove} of {maxAtt}</div>
