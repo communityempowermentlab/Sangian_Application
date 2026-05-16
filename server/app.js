@@ -9,7 +9,36 @@ const adminRoutes = require('./src/routes/adminRoutes');
 const gameRoutes = require('./src/routes/gameRoutes');
 const docsRoutes = require('./src/routes/docsRoutes');
 
+const helmet  = require('helmet');
 const app = express();
+
+// Security Headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            "default-src": ["'self'"],
+            "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+            "img-src": ["'self'", "data:", "blob:"],
+            "connect-src": ["'self'", "http://localhost:3002", "https://sangian.celworld.org"],
+            "media-src": ["'self'", "data:", "blob:"],
+            "frame-src": ["'none'"],
+            "object-src": ["'none'"]
+        }
+    },
+    // Dynamically enable/disable HSTS based on environment
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+        // Only enable HSTS if not on localhost
+        skip: (req) => {
+            const host = req.headers.host || '';
+            return host.includes('localhost') || host.includes('127.0.0.1');
+        }
+    }
+}));
 
 // Middleware
 app.use(cors());
