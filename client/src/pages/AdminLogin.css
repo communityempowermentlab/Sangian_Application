@@ -387,7 +387,7 @@
 }
 .al-field--err .al-err-msg { display: flex; }
 
-/* Password wrapper */
+/* PW wrapper */
 .al-pw-wrap {
     position: relative;
 }

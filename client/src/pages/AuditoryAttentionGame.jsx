@@ -581,7 +581,8 @@ const AuditoryAttentionGame = () => {
     cleanupAudio();
     clearAllTimers();
     
-    const qIdx = resumeState ? resumeState.qIndex : currentQIndex;
+    const isResume = !!(resumeState && resumeState.qIndex !== undefined);
+    const qIdx = isResume ? resumeState.qIndex : currentQIndex;
     currentQIndexRef.current = qIdx;
     const config = getQConfig(qIdx);
     
@@ -592,7 +593,7 @@ const AuditoryAttentionGame = () => {
     setWordsList([...config.WORDS]);
     wordsListRef.current = [...config.WORDS];
     
-    if (resumeState) {
+    if (isResume) {
       wordIndexRef.current = resumeState.wordIndex ?? -1;
       setWordIndex(resumeState.wordIndex ?? -1);
       
@@ -999,7 +1000,7 @@ const AuditoryAttentionGame = () => {
                       );
                     })}
                  </div>
-                 <button disabled={!canStartQ} className={`aa-btn ${canStartQ ? 'aa-btn-success aa-btn-highlight' : 'aa-btn-secondary'}`} onClick={startGameForLevel}>
+                 <button disabled={!canStartQ} className={`aa-btn ${canStartQ ? 'aa-btn-success aa-btn-highlight' : 'aa-btn-secondary'}`} onClick={() => startGameForLevel()}>
                    ▶ Start Question {currentQIndex}
                  </button>
                </div>

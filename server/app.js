@@ -21,12 +21,14 @@ app.use(helmet({
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
             "img-src": ["'self'", "data:", "blob:"],
-            "connect-src": ["'self'", "http://localhost:3002", "https://sangian.celworld.org"],
+            "connect-src": ["'self'", "http://localhost:3002", "https://sangian.celworld.org", "https://sangianapi.celworld.org"],
             "media-src": ["'self'", "data:", "blob:"],
             "frame-src": ["'none'"],
             "object-src": ["'none'"]
         }
     },
+    xContentTypeOptions: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     // Dynamically enable/disable HSTS based on environment
     hsts: {
         maxAge: 31536000,
@@ -39,6 +41,12 @@ app.use(helmet({
         }
     }
 }));
+
+// Permissions-Policy Header Configuration
+app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    next();
+});
 
 // Middleware
 app.use(cors());
