@@ -19,7 +19,7 @@ export const en = {
     heroPill: "🧠 Kauffman-inspired assessment • For supervised use only",
     welcome: "Welcome to the",
     title: "Sangian Test Hub",
-    desc: "A guided, play-based interface for administering seven Kauffman-style cognitive tests, plus Numeracy and Literacy modules – all on one simple, child-friendly screen.",
+    desc: "Select a test module below to start the assessment.",
     bullet1: "✔ Seven core games mapped to culturally adapted names",
     bullet2: "✔ Quick access to Numeracy & Literacy readiness checks",
     bullet3: "✔ Designed for psychologists, teachers & researchers",

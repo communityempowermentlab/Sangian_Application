@@ -156,20 +156,20 @@
    MAIN CONTENT
 ========================= */
 .chor-main {
-  padding: 24px 24px 28px;
+  padding: 12px 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   flex: 1;
 }
 
 .chor-screen {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.97));
   border-radius: var(--chor-radius-xl);
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   border: 1px solid #e5e7eb;
   flex: 1;
 }
@@ -367,11 +367,11 @@
   box-shadow: none;
 }
 
-.chor-btn:not([disabled]):not(:disabled):hover {
+.chor-btn:not([disabled]):not(:disabled):not(.chor-btn-highlight):hover {
   transform: translateY(-2px);
 }
 
-.chor-btn:not([disabled]):not(:disabled):active {
+.chor-btn:not([disabled]):not(:disabled):not(.chor-btn-highlight):active {
   transform: translateY(1px) scale(0.98);
 }
 
@@ -452,38 +452,47 @@
 /* =========================
    HOUSES CONTAINER
 ========================= */
+
+
 .chor-houses-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
   position: relative;
-  padding: 40px 20px;
+  padding: 15px 20px;
+  background: radial-gradient(circle, rgba(248, 250, 252, 1) 0%, rgba(226, 232, 240, 0.4) 100%);
+  border-radius: 24px;
 }
 
 .chor-houses-container {
   position: relative;
-  width: 500px;
-  height: 500px;
+  width: 600px;
+  height: 600px;
   margin: 0 auto;
 }
 
 /* House Positions */
 .chor-house {
   position: absolute;
-  width: 150px;
-  height: 200px;
+  width: 190px;
+  height: 250px;
   cursor: pointer;
-  transition: transform 0.3s ease, filter 0.2s ease;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease, box-shadow 0.3s ease;
+  transform-origin: bottom center;
+}
+
+.chor-house.interaction-locked {
+  pointer-events: none;
+  cursor: default !important;
 }
 
 .chor-house:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
+  transform: scale(1.08) translateY(-5px);
+  filter: brightness(1.05) drop-shadow(0 15px 25px rgba(0, 0, 0, 0.25));
 }
 
 .chor-house:active {
-  transform: scale(0.98);
+  transform: scale(0.95) translateY(2px);
 }
 
 .chor-house.position-0 {
@@ -513,35 +522,35 @@
 /* House Structure */
 .chor-house-roof {
   width: 100%;
-  height: 75px;
+  height: 95px;
   position: relative;
 }
 
 .chor-roof-triangle {
   width: 0;
   height: 0;
-  border-left: 75px solid transparent;
-  border-right: 75px solid transparent;
-  border-bottom: 75px solid var(--chor-color-roof-red);
+  border-left: 95px solid transparent;
+  border-right: 95px solid transparent;
+  border-bottom: 95px solid var(--chor-color-roof-red);
   position: absolute;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .chor-roof-triangle.roof-type-right {
   border-left: none;
-  border-right: 150px solid transparent;
-  border-bottom: 75px solid var(--chor-color-roof-red);
-  transform: translateX(-75px);
+  border-right: 190px solid transparent;
+  border-bottom: 95px solid var(--chor-color-roof-red);
+  transform: translateX(-95px);
 }
 
 .chor-roof-triangle.roof-type-left {
   border-right: none;
-  border-left: 150px solid transparent;
-  border-bottom: 75px solid var(--chor-color-roof-red);
-  transform: translateX(-75px);
+  border-left: 190px solid transparent;
+  border-bottom: 95px solid var(--chor-color-roof-red);
+  transform: translateX(-95px);
 }
 
 .chor-roof-cross {
@@ -553,86 +562,102 @@
 
 /* Base styles for crosses */
 .chor-house-roof.type-equilateral .chor-roof-cross.cross-left {
-  left: 30px;
-  top: 35px;
+  left: 40px;
+  top: 45px;
 }
 .chor-house-roof.type-equilateral .chor-roof-cross.cross-right {
-  right: 30px;
-  top: 35px;
+  right: 40px;
+  top: 45px;
 }
 
 .chor-house-roof.type-right .chor-roof-cross.cross-left {
-  left: 20px;
-  top: 15px;
+  left: 25px;
+  top: 20px;
 }
 .chor-house-roof.type-right .chor-roof-cross.cross-right {
-  right: 20px;
-  top: 45px;
+  right: 25px;
+  top: 55px;
 }
 
 .chor-house-roof.type-left .chor-roof-cross.cross-left {
-  left: 20px;
-  top: 45px;
+  left: 25px;
+  top: 55px;
 }
 .chor-house-roof.type-left .chor-roof-cross.cross-right {
-  right: 20px;
-  top: 15px;
+  right: 25px;
+  top: 20px;
 }
 
 .chor-roof-cross::before,
 .chor-roof-cross::after {
   content: '';
   position: absolute;
-  background: white;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  background: #1e293b;
+  border: 1px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .chor-roof-cross::before {
-  width: 4px;
+  width: 6px;
   height: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .chor-roof-cross::after {
-  height: 4px;
+  height: 6px;
   width: 100%;
   top: 50%;
   transform: translateY(-50%);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .chor-house-base {
   width: 100%;
-  height: 125px;
+  height: 155px;
   background: var(--chor-color-wall-white);
-  border: 2px solid var(--chor-color-border);
-  border-radius: 0 0 8px 8px;
+  border: 3.5px solid #4a3525; /* Thicker rustic clay/mud trim */
+  border-radius: 0 0 16px 16px;
   position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 -8px 16px rgba(0, 0, 0, 0.12), 0 6px 12px rgba(0, 0, 0, 0.18);
 }
 
 .chor-house-window {
   position: absolute;
-  width: 24px;
-  height: 24px;
-  background: rgba(135, 206, 235, 0.6);
-  border: 2px solid var(--chor-color-border);
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  background: #7dd3fc;
+  border: 4.5px solid #4a3728; /* Dark brown wooden frame styling */
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 3px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+/* Glass pane sheen effect */
+.chor-house-window::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
 }
 
 .chor-house-window.window-small {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
+  border-width: 3.5px;
 }
 
 .chor-house-window.window-split::before {
   content: '';
   position: absolute;
-  width: 2px;
+  width: 4px;
   height: 100%;
-  background: var(--chor-color-border);
+  background: #4a3728;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -640,17 +665,17 @@
 .chor-house-window.window-split-horizontal::before {
   content: '';
   position: absolute;
-  height: 2px;
+  height: 4px;
   width: 100%;
-  background: var(--chor-color-border);
+  background: #4a3728;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.chor-window-tl { top: 16px; left: 16px; }
-.chor-window-tr { top: 16px; right: 16px; }
-.chor-window-bl { bottom: 16px; left: 16px; }
-.chor-window-br { bottom: 16px; right: 16px; }
+.chor-window-tl { top: 20px; left: 20px; }
+.chor-window-tr { top: 20px; right: 20px; }
+.chor-window-bl { bottom: 20px; left: 20px; }
+.chor-window-br { bottom: 20px; right: 20px; }
 
 /* =========================
    FEEDBACK MESSAGE
@@ -660,41 +685,46 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 24px 40px;
+  padding: 20px 40px;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.2);
-  font-size: 1.5rem;
-  font-weight: 700;
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  font-size: 1.6rem;
+  font-weight: 800;
   text-align: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
   z-index: 100;
-  border: 2px solid #e5e7eb;
+  border: 3px solid #e2e8f0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .chor-feedback-overlay.show {
   opacity: 1;
-  animation: chorFeedbackPop 0.5s ease;
+  animation: chorFeedbackPopBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-@keyframes chorFeedbackPop {
-  0% { transform: translate(-50%, -50%) scale(0.5); }
+@keyframes chorFeedbackPopBounce {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
   50% { transform: translate(-50%, -50%) scale(1.1); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  75% { transform: translate(-50%, -50%) scale(0.95); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .chor-feedback-overlay.correct {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-  border-color: #86efac;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-color: #34d399;
+  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.3), 0 0 30px rgba(16, 185, 129, 0.4);
+  text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.2);
 }
 
 .chor-feedback-overlay.incorrect {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #991b1b;
-  border-color: #fca5a5;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-color: #f87171;
+  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.3), 0 0 30px rgba(239, 68, 68, 0.4);
+  text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* =========================
@@ -1145,6 +1175,158 @@
   .chor-item-grid {
     grid-template-columns: 1fr;
   }
+  .chor-houses-wrapper {
+    min-height: 520px;
+    padding: 30px 15px;
+  }
+  .chor-houses-container {
+    width: 480px;
+    height: 480px;
+  }
+  .chor-house {
+    width: 140px;
+    height: 185px;
+  }
+  .chor-house-roof {
+    height: 70px;
+  }
+  .chor-roof-triangle {
+    border-left-width: 70px;
+    border-right-width: 70px;
+    border-bottom-width: 70px;
+  }
+  .chor-roof-triangle.roof-type-right {
+    border-right-width: 140px;
+    border-bottom-width: 70px;
+    transform: translateX(-70px);
+  }
+  .chor-roof-triangle.roof-type-left {
+    border-left-width: 140px;
+    border-bottom-width: 70px;
+    transform: translateX(-70px);
+  }
+  .chor-house-base {
+    height: 115px;
+    border-width: 2.5px;
+  }
+  .chor-house-window {
+    width: 26px;
+    height: 26px;
+    border-width: 3px;
+  }
+  .chor-house-window.window-small {
+    width: 18px;
+    height: 18px;
+    border-width: 2.5px;
+  }
+  .chor-window-tl { top: 14px; left: 14px; }
+  .chor-window-tr { top: 14px; right: 14px; }
+  .chor-window-bl { bottom: 14px; left: 14px; }
+  .chor-window-br { bottom: 14px; right: 14px; }
+  
+  .chor-roof-cross {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Positions scaled for 480px container */
+  .chor-house.position-0 {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .chor-house.position-1 {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+  }
+  .chor-house.position-2 {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .chor-house.position-3 {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+  }
+
+  .chor-house-roof.type-equilateral .chor-roof-cross.cross-left { left: 30px; top: 30px; }
+  .chor-house-roof.type-equilateral .chor-roof-cross.cross-right { right: 30px; top: 30px; }
+  .chor-house-roof.type-right .chor-roof-cross.cross-left { left: 18px; top: 15px; }
+  .chor-house-roof.type-right .chor-roof-cross.cross-right { right: 18px; top: 40px; }
+  .chor-house-roof.type-left .chor-roof-cross.cross-left { left: 18px; top: 40px; }
+  .chor-house-roof.type-left .chor-roof-cross.cross-right { right: 18px; top: 15px; }
+}
+
+@media (max-width: 480px) {
+  .chor-houses-wrapper {
+    min-height: 380px;
+    padding: 20px 10px;
+  }
+  .chor-houses-container {
+    width: 320px;
+    height: 320px;
+  }
+  .chor-house {
+    width: 90px;
+    height: 120px;
+  }
+  .chor-house-roof {
+    height: 45px;
+  }
+  .chor-roof-triangle {
+    border-left-width: 45px;
+    border-right-width: 45px;
+    border-bottom-width: 45px;
+  }
+  .chor-roof-triangle.roof-type-right {
+    border-right-width: 90px;
+    border-bottom-width: 45px;
+    transform: translateX(-45px);
+  }
+  .chor-roof-triangle.roof-type-left {
+    border-left-width: 90px;
+    border-bottom-width: 45px;
+    transform: translateX(-45px);
+  }
+  .chor-house-base {
+    height: 75px;
+    border-width: 2px;
+    border-radius: 0 0 10px 10px;
+  }
+  .chor-house-window {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+  .chor-house-window.window-small {
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+  }
+  .chor-window-tl { top: 10px; left: 10px; }
+  .chor-window-tr { top: 10px; right: 10px; }
+  .chor-window-bl { bottom: 10px; left: 10px; }
+  .chor-window-br { bottom: 10px; right: 10px; }
+  
+  .chor-roof-cross {
+    width: 12px;
+    height: 12px;
+  }
+  
+  /* Positions scaled for 320px container */
+  .chor-house.position-0 { top: 0; }
+  .chor-house.position-1 { right: 0; }
+  .chor-house.position-2 { bottom: 0; }
+  .chor-house.position-3 { left: 0; }
+
+  .chor-house-roof.type-equilateral .chor-roof-cross.cross-left { left: 18px; top: 20px; }
+  .chor-house-roof.type-equilateral .chor-roof-cross.cross-right { right: 18px; top: 20px; }
+  .chor-house-roof.type-right .chor-roof-cross.cross-left { left: 12px; top: 10px; }
+  .chor-house-roof.type-right .chor-roof-cross.cross-right { right: 12px; top: 25px; }
+  .chor-house-roof.type-left .chor-roof-cross.cross-left { left: 12px; top: 25px; }
+  .chor-house-roof.type-left .chor-roof-cross.cross-right { right: 12px; top: 10px; }
 }
 
 /* =========================
@@ -1374,3 +1556,20 @@
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* Phase 1 Completion Banner styling */
+.phase1-complete-banner {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #047857;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 2px solid #6ee7b7;
+  padding: 12px 24px;
+  border-radius: 14px;
+  margin: 15px auto 5px;
+  max-width: 500px;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+  animation: chor-pulsate 2s infinite ease-in-out;
+}
+

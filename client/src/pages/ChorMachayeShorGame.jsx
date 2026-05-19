@@ -76,7 +76,7 @@ const GAME_DATA = {
     },
     // Item 6: Blue Roof OR 4 Windows
     {
-      id: 6, name: "Item 6: Blue Roof or 4 Windows", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 6, name: "Item 6: Blue Roof or 4 Windows", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 7, score: 5 }, { minMoves: 8, maxMoves: 9, score: 4 }, { minMoves: 10, maxMoves: 12, score: 3 }, { minMoves: 13, maxMoves: 15, score: 2 }, { minMoves: 16, maxMoves: 18, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: false, roof: { type: 'equilateral', color: { r: 249, g: 37, b: 0 } }, base: { color: { r: 255, g: 255, b: 255 } }, windows: [{ position: 'tl', type: 'normal' }] },
@@ -87,7 +87,7 @@ const GAME_DATA = {
     },
     // Item 7: 3 Windows OR Split Windows
     {
-      id: 7, name: "Item 7: 3 Windows or Split", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 7, name: "Item 7: 3 Windows or Split", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 7, score: 5 }, { minMoves: 8, maxMoves: 9, score: 4 }, { minMoves: 10, maxMoves: 12, score: 3 }, { minMoves: 13, maxMoves: 15, score: 2 }, { minMoves: 16, maxMoves: 18, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: false, roof: { type: 'equilateral', color: { r: 249, g: 37, b: 0 } }, base: { color: { r: 255, g: 255, b: 255 } }, windows: [{ position: 'tl', type: 'normal' }] },
@@ -98,7 +98,7 @@ const GAME_DATA = {
     },
     // Item 8: Slanted Roof OR Anticlockwise
     {
-      id: 8, name: "Item 8: Slanted or Anticlockwise", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 8, name: "Item 8: Slanted or Anticlockwise", maxAttempts: 18, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 7, score: 5 }, { minMoves: 8, maxMoves: 9, score: 4 }, { minMoves: 10, maxMoves: 12, score: 3 }, { minMoves: 13, maxMoves: 15, score: 2 }, { minMoves: 16, maxMoves: 18, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: false, roof: { type: 'equilateral', color: { r: 249, g: 37, b: 0 } }, base: { color: { r: 255, g: 255, b: 255 } }, windows: [{ position: 'tl', type: 'normal' }, { position: 'tr', type: 'normal' }] },
@@ -109,7 +109,7 @@ const GAME_DATA = {
     },
     // Item 9: Red Roof OR Clockwise OR Small Window
     {
-      id: 9, name: "Item 9: Red or Clockwise or Small", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 9, name: "Item 9: Red or Clockwise or Small", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 8, score: 5 }, { minMoves: 9, maxMoves: 12, score: 4 }, { minMoves: 13, maxMoves: 15, score: 3 }, { minMoves: 16, maxMoves: 18, score: 2 }, { minMoves: 19, maxMoves: 21, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: false, roof: { type: 'equilateral', color: { r: 32, g: 53, b: 251 } }, base: { color: { r: 255, g: 255, b: 255 } }, windows: [{ position: 'tl', type: 'normal' }, { position: 'tr', type: 'normal' }] },
@@ -120,7 +120,7 @@ const GAME_DATA = {
     },
     // Item 10: Yellow Walls OR 2 Crosses OR Right-Slant
     {
-      id: 10, name: "Item 10: Yellow or Crosses or Right-Slant", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 10, name: "Item 10: Yellow or Crosses or Right-Slant", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 8, score: 5 }, { minMoves: 9, maxMoves: 12, score: 4 }, { minMoves: 13, maxMoves: 15, score: 3 }, { minMoves: 16, maxMoves: 18, score: 2 }, { minMoves: 19, maxMoves: 21, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: true, roof: { type: 'right', color: { r: 249, g: 37, b: 0 }, crosses: ['left', 'right'] }, base: { color: { r: 255, g: 251, b: 0 } }, windows: [{ position: 'tl', type: 'normal' }, { position: 'tr', type: 'normal' }] },
@@ -131,7 +131,7 @@ const GAME_DATA = {
     },
     // Item 11: Blue Walls OR Opposite Cross OR Orange Windows
     {
-      id: 11, name: "Item 11: Blue or Opposite or Orange", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [2, 3],
+      id: 11, name: "Item 11: Blue or Opposite or Orange", maxAttempts: 21, maxPhases: 2, consecutiveRequired: [3, 3],
       scoring: [{ minMoves: 6, maxMoves: 8, score: 5 }, { minMoves: 9, maxMoves: 12, score: 4 }, { minMoves: 13, maxMoves: 15, score: 3 }, { minMoves: 16, maxMoves: 18, score: 2 }, { minMoves: 19, maxMoves: 21, score: 1 }],
       houses: [
         { initialPosition: 0, isResponseHouse: false, roof: { type: 'right', color: { r: 255, g: 251, b: 0 }, crosses: ['right'] }, base: { color: { r: 255, g: 251, b: 0 } }, windows: [{ position: 'tl', type: 'normal', color: { r: 255, g: 127, b: 80 } }, { position: 'tr', type: 'normal', color: { r: 255, g: 127, b: 80 } }] },
@@ -263,6 +263,16 @@ const calculateScore = (itemData, moves, trial = 1) => {
   return 0;
 };
 
+const getRuralSolidColor = (rgb) => {
+  if (!rgb) return 'rgb(255, 255, 255)';
+  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+};
+
+const getRuralGradient = (rgb, isWindow = false) => {
+  if (!rgb) return isWindow ? 'rgb(135, 206, 235)' : 'rgb(255, 255, 255)';
+  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+};
+
 // =========================
 // REACT SUB-COMPONENTS
 // =========================
@@ -270,22 +280,22 @@ const House = ({ house, onClick, interactionLocked }) => {
   const { currentPosition, roof, base, windows, animationClass } = house;
   
   return (
-    <div className={`chor-house position-${currentPosition} ${animationClass || ''}`} onClick={() => !interactionLocked && onClick(house)}>
+    <div className={`chor-house position-${currentPosition} ${animationClass || ''} ${interactionLocked ? 'interaction-locked' : ''}`} onClick={() => !interactionLocked && onClick(house)}>
       <div className={`chor-house-roof type-${roof.type}`}>
         <div 
           className={`chor-roof-triangle roof-type-${roof.type}`} 
-          style={{ borderBottomColor: rgbToString(roof.color) }}
+          style={{ borderBottomColor: getRuralSolidColor(roof.color) }}
         ></div>
         {(roof.crosses || []).map((side, i) => (
           <div key={i} className={`chor-roof-cross cross-${side}`} style={{ color: 'white' }}></div>
         ))}
       </div>
-      <div className="chor-house-base" style={{ background: rgbToString(base.color) }}>
+      <div className="chor-house-base" style={{ background: getRuralGradient(base.color) }}>
         {windows.map((w, i) => (
           <div 
             key={i} 
             className={`chor-house-window chor-window-${w.position} ${w.type === 'small' ? 'window-small' : ''} ${w.type === 'split' ? 'window-split' : ''} ${w.type === 'split-horizontal' ? 'window-split-horizontal' : ''}`}
-            style={w.color ? { background: rgbToColor(w.color, 0.6) } : {}}
+            style={w.color ? { background: getRuralGradient(w.color, true) } : {}}
           ></div>
         ))}
       </div>
@@ -329,6 +339,8 @@ const ChorMachayeShorGame = () => {
   const [currentMistakes, setCurrentMistakes] = useState(0);
   const [currentConsecutiveBreaks, setCurrentConsecutiveBreaks] = useState(0);
   const [phase1TimeTaken, setPhase1TimeTaken] = useState(0);
+  const [phase1CompletedPending, setPhase1CompletedPending] = useState(false);
+  const [nextButtonReady, setNextButtonReady] = useState(false);
   
   // UI State
   const [houses, setHouses] = useState([]);
@@ -349,9 +361,20 @@ const ChorMachayeShorGame = () => {
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+  const feedbackTimeoutRef = useRef(null);
 
   // Splash Audio Logic removed as this test has no splash audio file
   
+  useEffect(() => {
+    const item = GAME_DATA.items[currentItemIndex];
+    if (item && (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) && currentPhase === 1 && correctTouchCount >= 3) {
+      setPhase1CompletedPending(true);
+      setInteractionLocked(true);
+    } else {
+      setPhase1CompletedPending(false);
+    }
+  }, [currentItemIndex, currentPhase, correctTouchCount]);
+
   // Load User
   useEffect(() => {
     const data = localStorage.getItem('currentChild');
@@ -527,9 +550,18 @@ const ChorMachayeShorGame = () => {
     });
   }, []);
 
-  const showFeedbackMsg = (message, type) => {
+  const showFeedbackMsg = (message, type, duration = 2000) => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
     setFeedback({ message, type });
-    setTimeout(() => setFeedback(null), 2000);
+    if (duration > 0) {
+      feedbackTimeoutRef.current = setTimeout(() => {
+        setFeedback(null);
+        feedbackTimeoutRef.current = null;
+      }, duration);
+    }
   };
 
   const startTimer = () => {
@@ -560,6 +592,7 @@ const ChorMachayeShorGame = () => {
     setInteractionLocked(false);
     setPhaseLabel('');
     setTargetLabel('');
+    setNextButtonReady(false);
     
     startTimer();
     generateAndSetHouses(itemIdx, 0, 1, null, false, null);
@@ -750,13 +783,42 @@ const ChorMachayeShorGame = () => {
       cOpp = nonB.filter(i=>i!==oWin)[Math.floor(Math.random()*2)];
     } else { oWin=Math.floor(Math.random()*4); cOpp=Math.floor(Math.random()*4); }
     
+    // Assign distinct non-orange window colors to the other 3 houses
+    const nonOrangeIndices = [0, 1, 2, 3].filter(idx => idx !== oWin);
+    let assignedColors = {};
+    const colorsPool = [
+      {r:249,g:37,b:0}, // Red
+      {r:255,g:251,b:0}, // Yellow
+      {r:32,g:53,b:251}, // Blue
+      {r:34,g:139,b:34}  // Green
+    ];
+    colorsPool.sort(() => Math.random() - 0.5);
+
+    const assign = (k) => {
+      if (k === nonOrangeIndices.length) return true;
+      const idx = nonOrangeIndices[k];
+      const wallColor = walls[idx];
+      for (let i = 0; i < colorsPool.length; i++) {
+        const color = colorsPool[i];
+        if (color.used) continue;
+        if (!(color.r === wallColor.r && color.g === wallColor.g && color.b === wallColor.b)) {
+          color.used = true;
+          assignedColors[idx] = color;
+          if (assign(k + 1)) return true;
+          color.used = false;
+        }
+      }
+      return false;
+    };
+    assign(0);
+    
     hs.forEach((h, i) => {
       const isR = Math.random()>0.5;
       h.roof.type = isR ? 'right':'left';
       h.roof.color = Math.random()>0.5 ? {r:249,g:37,b:0}:{r:255,g:251,b:0};
       h.roof.crosses = i===cOpp ? (isR?['left']:['right']) : (isR?['right']:['left']);
       h.base.color = walls[i];
-      const wCol = i===oWin ? {r:255,g:127,b:80} : {r:135,g:206,b:235};
+      const wCol = i===oWin ? {r:255,g:127,b:80} : assignedColors[i];
       h.windows = [{position:'tl',type:'normal',color:wCol},{position:'tr',type:'normal',color:wCol}];
     });
   };
@@ -874,6 +936,10 @@ const ChorMachayeShorGame = () => {
 
   const handleMilestone = async (item) => {
     if (currentPhase < item.maxPhases) {
+      if (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) {
+        showFeedbackMsg('Phase 1 Completed! Click Phase 2 to continue.', 'correct');
+        return;
+      }
       setPhase1TimeTaken(timerSeconds);
       const nextPhase = currentPhase + 1;
       setCurrentPhase(nextPhase);
@@ -896,11 +962,9 @@ const ChorMachayeShorGame = () => {
         setTotalScore(prev => prev + score);
         
         saveToServer('in_progress', newResults);
-        showFeedbackMsg('🎊 Thief Caught!', 'correct');
+        showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
         await playAudio('cm_thief_caught.wav');
-        await new Promise(r => setTimeout(r, 500));
-        
-        // Wait for user to click Next for trial 2
+        setNextButtonReady(true);
       } else {
         await finalizeItem(true);
       }
@@ -914,10 +978,28 @@ const ChorMachayeShorGame = () => {
       const newResults = [...itemResults, result];
       setItemResults(newResults);
       saveToServer('in_progress', newResults);
-      // Wait for Next
+      setNextButtonReady(true);
     } else {
       await finalizeItem(false);
     }
+  };
+
+  const checkDropCondition = (results) => {
+    const distinctScores = [];
+    const seenIds = [];
+    for (const r of results) {
+      const idx = seenIds.indexOf(r.itemId);
+      if (idx === -1) {
+        seenIds.push(r.itemId);
+        distinctScores.push({ itemId: r.itemId, score: r.score });
+      } else {
+        distinctScores[idx].score = Math.max(distinctScores[idx].score, r.score);
+      }
+    }
+    if (distinctScores.length < 2) return false;
+    const last1 = distinctScores[distinctScores.length - 1];
+    const last2 = distinctScores[distinctScores.length - 2];
+    return last1.score === 0 && last2.score === 0;
   };
 
   const finalizeItem = async (success) => {
@@ -941,14 +1023,42 @@ const ChorMachayeShorGame = () => {
     setItemResults(newResults);
     setTotalScore(prev => prev + score);
     
-    saveToServer(currentItemIndex === TOTAL_QUESTIONS - 1 ? 'completed' : 'in_progress', newResults);
+    const hasDropped = checkDropCondition(newResults);
+    const status = (currentItemIndex === TOTAL_QUESTIONS - 1 || hasDropped) ? 'completed' : 'in_progress';
+    saveToServer(status, newResults);
     
-    if (success) {
-      showFeedbackMsg('🎊 Thief Caught!', 'correct');
+    if (hasDropped) {
+      showFeedbackMsg('🏁 Assessment Finished', 'correct', 0);
+      setInteractionLocked(true);
+      setNextButtonReady(true);
+    } else if (success) {
+      showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
       await playAudio('cm_thief_caught.wav');
-      await new Promise(r => setTimeout(r, 500));
+      setNextButtonReady(true);
+    } else {
+      setNextButtonReady(true);
     }
-    // Wait for Next click
+  };
+
+  const handlePhase2Transition = async () => {
+    if (!phase1CompletedPending) return;
+    setPhase1CompletedPending(false);
+    setInteractionLocked(false);
+    
+    const item = getCurrentItem();
+    setPhase1TimeTaken(timerSeconds);
+    const nextPhase = currentPhase + 1;
+    setCurrentPhase(nextPhase);
+    setCorrectTouchCount(0);
+    setIsRuleSelection(true);
+    
+    showFeedbackMsg('✅ Great! You found the pattern', 'correct');
+    setPhaseLabel(`Phase ${nextPhase}: Rule Changed`);
+    setTargetLabel(`Phase ${nextPhase} Target: ${Array.isArray(item.consecutiveRequired) ? item.consecutiveRequired[nextPhase - 1] : item.consecutiveRequired} Correct in a row`);
+    
+    await new Promise(r => setTimeout(r, 2000));
+    await shuffleHouses(currentMove, nextPhase, lastCorrectPosition, true, phase2Rule);
+    setInteractionLocked(false);
   };
 
   const shuffleHouses = async (move, phase, lastCorr, isRuleSel, p2Rule) => {
@@ -960,10 +1070,17 @@ const ChorMachayeShorGame = () => {
   };
 
   const handleNextClick = () => {
-    if (currentItemIndex === 0 && currentTrial === 1) {
-      startTrial2();
-    } else if (currentItemIndex + 1 >= TOTAL_QUESTIONS) {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
+    setFeedback(null);
+    setNextButtonReady(false);
+    
+    if (checkDropCondition(itemResults) || currentItemIndex + 1 >= TOTAL_QUESTIONS) {
       setScreen('results');
+    } else if (currentItemIndex === 0 && currentTrial === 1) {
+      startTrial2();
     } else {
       startItem(currentItemIndex + 1);
     }
@@ -1337,8 +1454,7 @@ const ChorMachayeShorGame = () => {
   // GAME SCREEN
   const currentItem = getCurrentItem();
   const maxAtt = getMaxAttempts();
-  const isComplete = currentAttempts.length >= maxAtt || correctTouchCount >= getConsecutiveRequired();
-  const canNext = isComplete || (currentItemIndex === 0 && currentTrial === 1 && itemResults.some(r => r.itemId === 1 && r.trial === 1));
+  const canNext = nextButtonReady;
 
   return (
     <div className="chor-body-shell">
@@ -1359,28 +1475,32 @@ const ChorMachayeShorGame = () => {
 
         <main className="chor-main">
           <div className="chor-screen">
-            <div className="chor-screen-header">
+            <div className="chor-screen-header" style={{ alignItems: 'center' }}>
               <div>
                 <div className="chor-screen-title" style={{display:'flex', gap:'10px', alignItems:'center'}}>
-                  {currentItem.name}
+                  Question {currentItemIndex + 1}
                   {currentItem.hasTrials && <div className="chor-chip chor-chip-game" style={{ background: '#4f46e5', color: '#fff', borderColor: '#4338ca' }}>Trial {currentTrial}</div>}
                   {phaseLabel && <div className="chor-chip chor-chip-splash">{phaseLabel}</div>}
                 </div>
                 <div className="chor-screen-subtitle">Move: {currentMove} of {maxAtt}</div>
               </div>
-              <div className="chor-chips"></div>
-            </div>
-
-            <div className="chor-progress">
-              <span className="chor-progress-label">Consecutive Correct:</span>
-              <div className="chor-progress-dots">
-                {Array(getConsecutiveRequired()).fill(0).map((_, i) => (
-                  <span key={i} className={`chor-dot ${i < correctTouchCount ? 'active' : ''}`}></span>
-                ))}
+              <div className="chor-progress" style={{ margin: 0 }}>
+                <span className="chor-progress-label">Consecutive Correct:</span>
+                <div className="chor-progress-dots">
+                  {Array(getConsecutiveRequired()).fill(0).map((_, i) => (
+                    <span key={i} className={`chor-dot ${i < correctTouchCount ? 'active' : ''}`}></span>
+                  ))}
+                </div>
               </div>
             </div>
 
             {targetLabel && <div style={{textAlign:'center', fontWeight:600, color:'#3b82f6', marginTop:'5px'}}>{targetLabel}</div>}
+
+            {phase1CompletedPending && (
+              <div className="phase1-complete-banner">
+                🎉 Phase 1 Completed! Click Phase 2 to continue.
+              </div>
+            )}
 
             <div className="chor-houses-wrapper">
               <div className="chor-houses-container">
@@ -1396,12 +1516,31 @@ const ChorMachayeShorGame = () => {
                   }}>💎</div>
                 )}
               </div>
-              {feedback && <div className={`chor-feedback-overlay ${feedback.type} show`}>{feedback.message}</div>}
+              {feedback && (
+                <div className={`chor-feedback-overlay ${feedback.type} show`}>
+                  {feedback.message}
+                </div>
+              )}
             </div>
 
             <div className="chor-btn-row">
               {currentItemIndex === 0 && <button className="chor-btn chor-btn-warning" onClick={handleRetake} disabled={interactionLocked}>Retake</button>}
-              <button className="chor-btn chor-btn-success" onClick={handleNextClick} disabled={!canNext}>Next Question</button>
+              {(currentItem.id === 6 || currentItem.id === 7 || currentItem.id === 8 || currentItem.id === 9 || currentItem.id === 10 || currentItem.id === 11) && currentPhase === 1 && (
+                <button 
+                  className={`chor-btn ${phase1CompletedPending ? 'chor-btn-highlight' : 'chor-btn-secondary'}`}
+                  disabled={!phase1CompletedPending}
+                  onClick={handlePhase2Transition}
+                >
+                  Phase 2
+                </button>
+              )}
+              <button 
+                className={`chor-btn ${canNext ? 'chor-btn-highlight' : 'chor-btn-success'}`} 
+                onClick={handleNextClick} 
+                disabled={!canNext}
+              >
+                {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? '🏁 Complete Game' : 'Next Question'}
+              </button>
             </div>
           </div>
         </main>

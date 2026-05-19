@@ -202,112 +202,90 @@ const Home = () => {
 
     return (
         <main className="main-shell">
-            <section className="hero-shell">
-                <div className="hero-left">
-                    <div className="hero-pill">{t('home.heroPill')}</div>
+            <div className="dashboard-container">
+                {/* Full-width Responsive Banner */}
+                <header className="dashboard-hero-banner">
+                    <div className="banner-content">
+                        <h1 className="hero-heading-main">
+                            {t('home.welcome')} <span>{t('home.title')}</span>
+                        </h1>
+                        <p className="hero-text-main">
+                            {t('home.desc')}
+                        </p>
+                        
 
-                    <h1 className="hero-heading">
-                        {t('home.welcome')}<br />
-                        <span>{t('home.title')}</span>
-                    </h1>
 
-                    <p className="hero-text">
-                        {t('home.desc')}
-                    </p>
-
-                    <ul className="hero-bullets">
-                        <li>{t('home.bullet1')}</li>
-                        <li>{t('home.bullet2')}</li>
-                        <li>{t('home.bullet3')}</li>
-                    </ul>
-
-                    {/* Logged-in child banner */}
-                    {isLoggedIn && childData && (
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '14px',
-                            background: 'linear-gradient(135deg, #ede9fe, #e0f2fe)',
-                            border: '1.5px solid #c7d2fe',
-                            borderRadius: '16px',
-                            padding: '12px 18px',
-                            marginBottom: '16px',
-                            maxWidth: '420px',
-                        }}>
-                            <img
-                                src={getChildPhotoOrDefault(childData.photo)}
-                                alt={childData.name}
-                                style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1', flexShrink: 0 }}
-                                onError={(e) => { e.target.src = getChildPhotoOrDefault(null); }}
-                            />
-                            <div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Welcome back</div>
-                                <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1e1b4b' }}>{childData.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '1px' }}>ID: {childData.child_id}</div>
+                        {!isLoggedIn && (
+                            <div className="hero-actions-main">
+                                <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
+                                <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
                             </div>
-                        </div>
-                    )}
-
-                    {!isLoggedIn && (
-                        <div className="hero-actions">
-                            <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
-                            <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
-                        </div>
-                    )}
-
-                    <p className="hero-note">
-                        {t('home.warningNote')}
-                    </p>
-                </div>
-
-                <div className="hero-right">
-                    <div className="tests-card">
-                        <div className="tests-card-header">
-                            <div>
-                                <h2>{t('home.modulesHeader')}</h2>
-                                <p>{t('home.modulesSub')}</p>
-                            </div>
-                            <span className="tests-badge">{testModules.length} {t('home.modulesBadge')}</span>
-                        </div>
-
-                        <div className="tests-grid">
-                            {testModules.map((test) => (
-                                <article
-                                    key={test.id}
-                                    className="test-tile"
-                                    onClick={() => openModal(test)}
-                                >
-                                    <div className="test-image-wrap">
-                                        {/* Fallback pattern in case image is missing until it's loaded */}
-                                        <img src={test.image} alt={`${test.shortTitle} – ${test.local}`} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 24px;">🧩</span>'; }} />
-                                    </div>
-                                    <div className="test-info">
-                                        <h3>{test.shortTitle}</h3>
-                                        <p className="test-local">{test.local}</p>
-                                        
-                                        {isLoggedIn && (
-                                            <div className="test-activity">
-                                                <div className="activity-item">
-                                                    <span>Last Attempt:</span> {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : (
-                                                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Never Played</span>
-                                                    )}
-                                                </div>
-                                                <div className="activity-item">
-                                                    <span>History:</span> {summaries[test.gameKey]?.total_attempts || 0} session{summaries[test.gameKey]?.total_attempts !== 1 ? 's' : ''}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
+                        )}
                     </div>
-                </div>
-            </section>
+                </header>
+
+                {/* Full-Width Game Cards Grid Section */}
+                <section className="games-showcase-section">
+                    <div className="showcase-header">
+                        <div className="showcase-title-area">
+                            <h2>{t('home.modulesHeader')}</h2>
+                            <p>{t('home.modulesSub')}</p>
+                        </div>
+                        <span className="showcase-badge">{testModules.length} {t('home.modulesBadge')}</span>
+                    </div>
+
+                    <div className="games-grid-layout">
+                        {testModules.map((test) => (
+                            <article
+                                key={test.id}
+                                className="game-card-item"
+                                onClick={() => openModal(test)}
+                            >
+                                <div className="game-card-image-wrap">
+                                    <img 
+                                        src={test.image} 
+                                        alt={`${test.shortTitle} – ${test.local}`} 
+                                        onError={(e) => { 
+                                            e.target.style.display = 'none'; 
+                                            e.target.parentElement.innerHTML = '<div class="fallback-icon">🧩</div>'; 
+                                        }} 
+                                    />
+                                    <span className={`game-card-tag-badge ${test.tagClass}`}>
+                                        {test.tag}
+                                    </span>
+                                </div>
+                                <div className="game-card-details">
+                                    <h3 className="game-card-title">{test.shortTitle}</h3>
+                                    <p className="game-card-local">{test.local}</p>
+                                    <p className="game-card-desc">{test.desc}</p>
+                                    
+                                    {isLoggedIn && (
+                                        <div className="game-card-activity">
+                                            <div className="card-activity-item">
+                                                <span className="activity-label">Last Played:</span> 
+                                                <span className="activity-value">
+                                                    {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                                </span>
+                                            </div>
+                                            <div className="card-activity-item">
+                                                <span className="activity-label">Total Sessions:</span> 
+                                                <span className="activity-value">
+                                                    {summaries[test.gameKey]?.total_attempts || 0}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            </div>
 
             <TestModal
                 {...modalData}
                 onClose={closeModal}
             />
-
         </main>
     );
 };
