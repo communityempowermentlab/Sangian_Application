@@ -24,6 +24,7 @@ const getReport = async (req, res) => {
                     { name: 'bounceRate' },
                     { name: 'averageSessionDuration' },
                 ],
+                metricAggregations: ['TOTAL'],
             },
             { headers: { Authorization: `Bearer ${accessToken}` } }
         );

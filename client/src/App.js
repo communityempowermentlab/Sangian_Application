@@ -31,6 +31,7 @@ import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 
 import { LanguageProvider } from './contexts/LanguageContext';
+import { GoogleAnalyticsProvider } from './contexts/GoogleAnalyticsContext';
 import './index.css';
 
 const ROUTE_TITLES = {
@@ -81,6 +82,7 @@ const PublicLayout = () => (
 function App() {
     return (
         <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ''}>
+        <GoogleAnalyticsProvider>
         <LanguageProvider>
             <Router>
                 <PageTitle />
@@ -134,6 +136,7 @@ function App() {
                 </div>
             </Router>
         </LanguageProvider>
+        </GoogleAnalyticsProvider>
         </GoogleOAuthProvider>
     );
 }

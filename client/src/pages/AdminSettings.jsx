@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axiosAdmin from '../services/axiosAdmin';
+import { useGoogleAnalytics } from '../contexts/GoogleAnalyticsContext';
 
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
@@ -45,7 +46,6 @@ const MetricCard = ({ label, value, icon, color, sub }) => (
 
 const GA_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 const GA_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
-const PROPERTY_ID_KEY = 'ga_property_id';
 const DATE_RANGES = [
     { label: 'Last 7 days',  startDate: '7daysAgo',  endDate: 'today' },
     { label: 'Last 30 days', startDate: '30daysAgo', endDate: 'today' },
@@ -53,21 +53,24 @@ const DATE_RANGES = [
 ];
 
 const GoogleAnalyticsTab = () => {
-    const [accessToken, setAccessToken]   = useState(null);
-    const [propertyId, setPropertyId]     = useState(() => localStorage.getItem(PROPERTY_ID_KEY) || '');
-    const [propertyInput, setPropertyInput] = useState(() => localStorage.getItem(PROPERTY_ID_KEY) || '');
-    const [metrics, setMetrics]           = useState(null);
-    const [topPages, setTopPages]         = useState(null);
-    const [activeUsers, setActiveUsers]   = useState(null);
-    const [isLoading, setIsLoading]       = useState(false);
-    const [error, setError]               = useState('');
-    const [dateRange, setDateRange]       = useState(DATE_RANGES[1]);
+    // ── Persistent global state (survives tab navigation) ──────────────────
+    const { accessToken, propertyId, gaLogin, gaLogout, setPropertyId } = useGoogleAnalytics();
+
+    // ── Local UI state (ok to reset on mount) ──────────────────────────────
+    const [propertyInput, setPropertyInput] = useState(propertyId || '');
+    const [metrics, setMetrics]             = useState(null);
+    const [topPages, setTopPages]           = useState(null);
+    const [activeUsers, setActiveUsers]     = useState(null);
+    const [isLoading, setIsLoading]         = useState(false);
+    const [error, setError]                 = useState('');
+    const [dateRange, setDateRange]         = useState(DATE_RANGES[1]);
     const realtimeTimer = useRef(null);
 
-    const login = useGoogleLogin({
+    const triggerGoogleLogin = useGoogleLogin({
         scope: GA_SCOPE,
         onSuccess: (tokenResponse) => {
-            setAccessToken(tokenResponse.access_token);
+            // Store in global context + sessionStorage — persists across navigation
+            gaLogin(tokenResponse.access_token, tokenResponse.expires_in);
             setError('');
         },
         onError: () => setError('Google sign-in failed. Please try again.'),
@@ -97,7 +100,7 @@ const GoogleAnalyticsTab = () => {
         } catch (e) {
             const msg = e.response?.data?.error || e.message;
             if (msg?.includes('Token has been expired') || msg?.includes('invalid_grant') || e.response?.status === 401) {
-                setAccessToken(null);
+                gaLogout();
                 setError('Your Google session expired. Please sign in again.');
             } else {
                 setError(`Failed to load analytics: ${msg}`);
@@ -105,7 +108,7 @@ const GoogleAnalyticsTab = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [gaLogout]);
 
     const fetchRealtime = useCallback(async (token, pid) => {
         if (!token || !pid) return;
@@ -117,7 +120,7 @@ const GoogleAnalyticsTab = () => {
         }
     }, []);
 
-    // Fetch on login / date range change
+    // Fetch data on mount (when already logged in) and on date range change
     useEffect(() => {
         if (accessToken && propertyId) {
             fetchData(accessToken, propertyId, dateRange);
@@ -137,20 +140,21 @@ const GoogleAnalyticsTab = () => {
         const pid = propertyInput.trim();
         if (!pid) { setError('Please enter your GA4 Property ID.'); return; }
         setPropertyId(pid);
-        localStorage.setItem(PROPERTY_ID_KEY, pid);
-        login();
+        triggerGoogleLogin();
     };
 
     const handleDisconnect = () => {
-        setAccessToken(null);
+        gaLogout();
         setMetrics(null);
         setTopPages(null);
         setActiveUsers(null);
         setError('');
     };
 
-    // Extract summary row values
-    const summary = metrics?.totals?.[0]?.metricValues || [];
+    // Extract summary — prefer totals (requires metricAggregations:TOTAL), fall back to first row
+    const summary = (metrics?.totals?.[0]?.metricValues?.length
+        ? metrics.totals[0].metricValues
+        : metrics?.rows?.[0]?.metricValues) || [];
     const [totalUsers, sessions, newUsers, pageViews, bounceRate, avgDuration] =
         summary.map(v => v?.value);
 
@@ -183,15 +187,11 @@ const GoogleAnalyticsTab = () => {
     if (!accessToken) {
         return (
             <div style={{ padding: '48px 40px', maxWidth: '520px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '2.5rem' }}>📊</span>
-                    <div>
-                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827' }}>Google Analytics</div>
-                        <div style={{ fontSize: '0.82rem', color: '#9ca3af' }}>Connect your GA4 account to view analytics inside the admin panel</div>
-                    </div>
+                <div style={{ fontSize: '0.88rem', color: '#6b7280', marginBottom: '20px' }}>
+                    Connect your GA4 account to view analytics inside the admin panel.
                 </div>
 
-                <div style={{ background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
                         <label style={labelStyle}>GA4 Property ID</label>
                         <input
@@ -235,14 +235,10 @@ const GoogleAnalyticsTab = () => {
     return (
         <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
 
-            {/* Header */}
+            {/* Controls bar */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '1.6rem' }}>📊</span>
-                    <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827' }}>Google Analytics</div>
-                        <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Property ID: {propertyId}</div>
-                    </div>
+                <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                    Property ID: <strong style={{ color: '#374151' }}>{propertyId}</strong>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {/* Date range selector */}
