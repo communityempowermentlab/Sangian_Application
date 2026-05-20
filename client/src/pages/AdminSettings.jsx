@@ -827,10 +827,11 @@ const AutomatedTestingTab = () => {
         setLoadErr('');
         try {
             const params = { page: pg, limit: 25 };
-            if (activeSuite !== 'all') params.suite   = activeSuite;
-            if (statusFilter !== 'all') params.status = statusFilter;
+            if (activeSuite !== 'all') params.suite      = activeSuite;
+            if (statusFilter !== 'all') params.status    = statusFilter;
             if (devFilter !== 'all')    params.dev_status = devFilter;
-            if (runId)                  params.run_id  = runId;
+            // Only send run_id for "All Suites" view — suite-specific views span all runs
+            if (runId && activeSuite === 'all') params.run_id = runId;
             const r = await axiosAdmin.get('/testing/results', { params });
             setResults(r.data.results || []);
             setTotal(r.data.total || 0);

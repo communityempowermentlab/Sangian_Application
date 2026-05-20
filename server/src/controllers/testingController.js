@@ -10,6 +10,7 @@ const makeRunId = () => {
 // ── GET /api/testing/summary ─────────────────────────────────────────────────
 const getSummary = async (req, res) => {
     try {
+        // Totals from the latest completed run for consistency with the table
         const [[totals]] = await pool.query(`
             SELECT
                 COUNT(*)                          AS total_results,
@@ -21,6 +22,10 @@ const getSummary = async (req, res) => {
                 SUM(dev_status = 'open' AND status IN ('failed','warning','error')) AS open_issues,
                 SUM(dev_status = 'completed')     AS resolved
             FROM test_results
+            WHERE run_id = (
+                SELECT run_id FROM test_runs WHERE status = 'completed'
+                ORDER BY started_at DESC LIMIT 1
+            )
         `);
 
         const [[latestRun]] = await pool.query(`
@@ -69,16 +74,21 @@ const getResults = async (req, res) => {
         const params = [];
         let where = 'WHERE 1=1';
 
-        // Default to latest COMPLETED run (ignore pending runs with no results)
-        let resolvedRunId = run_id;
-        if (!resolvedRunId) {
+        const suiteSelected = suite && suite !== 'all';
+
+        if (run_id) {
+            // Explicit run_id requested
+            where += ' AND run_id = ?'; params.push(run_id);
+        } else if (!suiteSelected) {
+            // All Suites view: show latest completed run only
             const [[latest]] = await pool.query(
                 `SELECT run_id FROM test_runs WHERE status = 'completed' ORDER BY started_at DESC LIMIT 1`
             );
-            resolvedRunId = latest?.run_id;
+            if (latest?.run_id) { where += ' AND run_id = ?'; params.push(latest.run_id); }
         }
-        if (resolvedRunId) { where += ' AND run_id = ?'; params.push(resolvedRunId); }
-        if (suite && suite !== 'all')           { where += ' AND suite = ?';       params.push(suite); }
+        // When a specific suite is selected with no run_id: show all results for that suite across all runs
+
+        if (suiteSelected)                      { where += ' AND suite = ?';       params.push(suite); }
         if (status && status !== 'all')         { where += ' AND status = ?';      params.push(status); }
         if (severity && severity !== 'all')     { where += ' AND severity = ?';    params.push(severity); }
         if (dev_status && dev_status !== 'all') { where += ' AND dev_status = ?';  params.push(dev_status); }
