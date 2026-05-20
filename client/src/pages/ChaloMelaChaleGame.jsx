@@ -321,14 +321,17 @@ const ChaloMelaChaleGame = () => {
     nextUnlocked: false
   });
   
-  const audioRef = useRef(null);
-  const playingAudiosRef = useRef([]); // tracks every Audio object ever created
-  const timerRef = useRef(null);
+  const audioRef        = useRef(null);
+  const timerRef        = useRef(null);
+  const allIntervalsRef = useRef([]);   // every safeSetTimeout interval
+  const playingAudiosRef= useRef([]);   // every new Audio() object created
+  const isMountedRef    = useRef(true); // guards callbacks after unmount
   const questionStateRef = useRef(questionState);
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
-  
+
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
 
+  // Track every interval created by safeSetTimeout so stopAll can kill them all
   const safeSetTimeout = useCallback((cb, delay) => {
     let elapsed = 0;
     const interval = setInterval(() => {
@@ -336,40 +339,48 @@ const ChaloMelaChaleGame = () => {
         elapsed += 50;
         if (elapsed >= delay) {
           clearInterval(interval);
-          cb();
+          allIntervalsRef.current = allIntervalsRef.current.filter(id => id !== interval);
+          if (isMountedRef.current) cb();
         }
       }
     }, 50);
+    allIntervalsRef.current.push(interval);
+    return interval;
   }, []);
 
+  // Stop every Audio object ever created
   const stopAudio = useCallback(() => {
-    // Stop all tracked detached Audio objects
     playingAudiosRef.current.forEach(a => {
-      try { a.pause(); a.src = ''; } catch { /* ignore */ }
+      try { a.pause(); a.currentTime = 0; a.src = ''; } catch { /* ignore */ }
     });
     playingAudiosRef.current = [];
-    // Stop DOM audio element
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch { /* ignore */ }
     }
   }, []);
 
+  // Kill every interval + audio + animation timer
   const stopAll = useCallback(() => {
     stopAudio();
+    allIntervalsRef.current.forEach(id => { try { clearInterval(id); } catch { /* ignore */ } });
+    allIntervalsRef.current = [];
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setIsAnimating(false);
   }, [stopAudio]);
 
-  // Cleanup all audio on component unmount (navigating away)
+  // Cleanup on unmount — prevents audio playing after navigation
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       playingAudiosRef.current.forEach(a => {
-        try { a.pause(); a.src = ''; } catch { /* ignore */ }
+        try { a.pause(); a.currentTime = 0; a.src = ''; } catch { /* ignore */ }
       });
       playingAudiosRef.current = [];
-      if (audioRef.current) {
-        try { audioRef.current.pause(); } catch { /* ignore */ }
-      }
+      allIntervalsRef.current.forEach(id => { try { clearInterval(id); } catch { /* ignore */ } });
+      allIntervalsRef.current = [];
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      if (audioRef.current) { try { audioRef.current.pause(); } catch { /* ignore */ } }
     };
   }, []);
 
@@ -531,7 +542,7 @@ const ChaloMelaChaleGame = () => {
     stopAudio();
     const audio = new Audio(`${AUDIO_DIR}/${file}`);
     audioRef.current = audio;
-    playingAudiosRef.current.push(audio); // track so unmount/stopAll can kill it
+    playingAudiosRef.current.push(audio); // track so stopAll/unmount can kill it
     
     // Safety fallback for onEnded
     let called = false;
