@@ -323,24 +323,27 @@ const ChaloMelaChaleGame = () => {
   
   const audioRef        = useRef(null);
   const timerRef        = useRef(null);
-  const allIntervalsRef = useRef([]);   // every safeSetTimeout interval
-  const playingAudiosRef= useRef([]);   // every new Audio() object created
-  const isMountedRef    = useRef(true); // guards callbacks after unmount
+  const allIntervalsRef = useRef([]);
+  const playingAudiosRef= useRef([]);
+  const isStoppedRef    = useRef(false); // set true by stopAll; blocks ALL new audio/intervals
   const questionStateRef = useRef(questionState);
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
+  const isMountedRef    = useRef(false);
 
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
 
-  // Track every interval created by safeSetTimeout so stopAll can kill them all
+  // safeSetTimeout — respects pause state AND the isStoppedRef kill-switch
   const safeSetTimeout = useCallback((cb, delay) => {
+    if (isStoppedRef.current) return; // game already stopped — don't schedule anything
     let elapsed = 0;
     const interval = setInterval(() => {
+      if (isStoppedRef.current) { clearInterval(interval); return; } // killed mid-flight
       if (!isPausedRef.current) {
         elapsed += 50;
         if (elapsed >= delay) {
           clearInterval(interval);
           allIntervalsRef.current = allIntervalsRef.current.filter(id => id !== interval);
-          if (isMountedRef.current) cb();
+          if (!isStoppedRef.current) cb();
         }
       }
     }, 50);
@@ -348,32 +351,23 @@ const ChaloMelaChaleGame = () => {
     return interval;
   }, []);
 
-  // Stop every Audio object ever created.
-  // IMPORTANT: detach onended/onerror BEFORE setting src='' to prevent the browser
-  // firing onended which would trigger the onEnded callback and restart the audio chain.
   const stopAudio = useCallback(() => {
+    // Detach handlers BEFORE pausing to prevent browser firing onended → new audio chain
     playingAudiosRef.current.forEach(a => {
       try {
-        a.onended  = null;
-        a.onerror  = null;
-        a.onabort  = null;
-        a.pause();
-        a.currentTime = 0;
-        a.src = '';
+        a.onended = null; a.onerror = null; a.onabort = null;
+        a.pause(); a.currentTime = 0; a.src = '';
       } catch { /* ignore */ }
     });
     playingAudiosRef.current = [];
     if (audioRef.current) {
-      try {
-        audioRef.current.onended = null;
-        audioRef.current.onerror = null;
-        audioRef.current.pause();
-      } catch { /* ignore */ }
+      try { audioRef.current.onended = null; audioRef.current.pause(); } catch { /* ignore */ }
     }
   }, []);
 
-  // Kill every interval + audio + animation timer
+  // stopAll — sets isStoppedRef immediately so nothing new can start
   const stopAll = useCallback(() => {
+    isStoppedRef.current = true; // must be first — blocks any in-flight callbacks
     stopAudio();
     allIntervalsRef.current.forEach(id => { try { clearInterval(id); } catch { /* ignore */ } });
     allIntervalsRef.current = [];
@@ -558,6 +552,7 @@ const ChaloMelaChaleGame = () => {
   }, [screen, gameSessionId]);
 
   const playAudio = useCallback((file, onEnded) => {
+    if (isStoppedRef.current) return; // don't start new audio after stopAll
     stopAudio();
     const audio = new Audio(`${AUDIO_DIR}/${file}`);
     audioRef.current = audio;
@@ -684,30 +679,34 @@ const ChaloMelaChaleGame = () => {
     let elapsed1 = 0;
     while(elapsed1 < 500) {
       await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
       if (!isPausedRef.current) elapsed1 += 50;
     }
-    
+
     let audioFile = '';
     if (pathKey.startsWith('sb')) {
       audioFile = pathKey === 'sbP1' ? 'SB_path1.wav' : 'SB_path2.wav';
     } else {
       audioFile = pathKey === 'p1' ? 'path1.wav' : pathKey === 'p2' ? 'path2.wav' : 'path3.wav';
     }
-    
+
     playAudio(audioFile);
     const totalMs = pathKey.startsWith('sb') ? 9000 : (pathKey === 'p1' ? 11000 : 8000);
     const stepDelay = Math.round(totalMs / seq.length);
     for (let i = 0; i < seq.length; i++) {
       while(isPausedRef.current) await new Promise(r => setTimeout(r, 100));
-      setPathProgress(i); 
-      
+      if (isStoppedRef.current) return;
+      setPathProgress(i);
+
       let elapsed2 = 0;
       while(elapsed2 < stepDelay) {
         await new Promise(r => setTimeout(r, 50));
+        if (isStoppedRef.current) return;
         if (!isPausedRef.current) elapsed2 += 50;
       }
     }
-    
+
+    if (isStoppedRef.current) return;
     let resultFile = '';
     if (pathKey.startsWith('sb')) {
       resultFile = pathKey === 'sbP1' ? 'SB_path1_result.wav' : 'SB_path2_result.wav';

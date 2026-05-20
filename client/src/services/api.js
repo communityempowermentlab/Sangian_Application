@@ -8,7 +8,9 @@ const isLocalhost = Boolean(
     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-const API_URL = isLocalhost
+const LOCAL_BACKEND = process.env.REACT_APP_LOCAL_BACKEND === 'true';
+
+const API_URL = (isLocalhost && LOCAL_BACKEND)
     ? 'http://localhost:5000/api'
     : 'https://sangianapi.celworld.org/api';
 
