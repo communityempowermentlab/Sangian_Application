@@ -809,6 +809,7 @@ const AutomatedTestingTab = () => {
         try {
             const r = await axiosAdmin.get('/testing/summary');
             setSummary(r.data);
+            // Use latest completed run's ID for results table
             if (r.data.latestRun?.run_id && !runId) setRunId(r.data.latestRun.run_id);
         } catch { /* skip */ }
         finally { setIsSumLoading(false); }
@@ -867,7 +868,8 @@ const AutomatedTestingTab = () => {
     };
 
     const s = summary?.totals || {};
-    const latest = summary?.latestRun;
+    const latest  = summary?.latestRun;    // latest completed run
+    const pending = summary?.pendingRun;   // pending run (queued but not yet executed)
     const suiteBreak = summary?.suiteBreakdown || [];
 
     // ── Detail View ───────────────────────────────────────────────────────────
@@ -979,10 +981,17 @@ const AutomatedTestingTab = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         {latest && (
-                            <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>
-                                Latest run: <strong style={{ color: '#374151' }}>{latest.suite}</strong>
-                                <span style={{ marginLeft: '8px', background: latest.status === 'completed' ? '#f0fdf4' : '#fef2f2', color: latest.status === 'completed' ? '#16a34a' : '#dc2626', padding: '1px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>{latest.status}</span>
-                                <span style={{ marginLeft: '8px', color: '#9ca3af' }}>{fmtTime(latest.started_at)}</span>
+                            <div style={{ fontSize: '0.78rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span>Last completed:</span>
+                                <strong style={{ color: '#374151' }}>{latest.suite}</strong>
+                                <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '1px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>✅ completed</span>
+                                <span style={{ color: '#9ca3af' }}>{fmtTime(latest.started_at)}</span>
+                                <span style={{ color: '#9ca3af' }}>· {latest.passed}/{latest.total} passed</span>
+                            </div>
+                        )}
+                        {pending && (
+                            <div style={{ fontSize: '0.75rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '4px 10px', color: '#d97706', fontWeight: 600 }}>
+                                ⏳ Pending run queued — run Python engine to execute
                             </div>
                         )}
                         <button onClick={() => { setShowRuns(v=>!v); if (!showRuns) loadRuns(); }}
@@ -1161,27 +1170,25 @@ const AutomatedTestingTab = () => {
                     )}
                 </div>
 
-                {/* Quick start box */}
-                <div style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3d)', borderRadius: '14px', padding: '20px 24px', color: '#fff' }}>
-                    <div style={{ fontWeight: 700, marginBottom: '10px', fontSize: '0.95rem' }}>🚀 Quick Start — Run Tests Locally</div>
-                    <pre style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '14px', fontSize: '0.75rem', color: '#e2e8f0', lineHeight: 1.8, margin: 0, overflowX: 'auto' }}>{`# 1. Install dependencies
-cd testing-engine
-pip install -r requirements.txt
+                {/* Quick start box — only show when no results yet */}
+                {total === 0 && !isLoading && (
+                    <div style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3d)', borderRadius: '14px', padding: '20px 24px', color: '#fff' }}>
+                        <div style={{ fontWeight: 700, marginBottom: '10px', fontSize: '0.95rem' }}>🚀 Quick Start — Run Tests on Server</div>
+                        <pre style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '14px', fontSize: '0.75rem', color: '#e2e8f0', lineHeight: 1.8, margin: 0, overflowX: 'auto' }}>{`# SSH into your server, then:
+cd /var/www/html/sangian/testing-engine
+source venv/bin/activate
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your local DB credentials
-
-# 3. Run all test suites
+# Run all suites
 python run_tests.py
 
-# 4. Run specific suite
+# Or run a specific suite
 python run_tests.py --suite api
 python run_tests.py --suite security
 python run_tests.py --suite db
 python run_tests.py --suite code_quality
 python run_tests.py --suite performance`}</pre>
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );

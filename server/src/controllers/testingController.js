@@ -24,7 +24,15 @@ const getSummary = async (req, res) => {
         `);
 
         const [[latestRun]] = await pool.query(`
-            SELECT * FROM test_runs ORDER BY started_at DESC LIMIT 1
+            SELECT * FROM test_runs
+            WHERE status = 'completed'
+            ORDER BY started_at DESC LIMIT 1
+        `);
+
+        const [[pendingRun]] = await pool.query(`
+            SELECT * FROM test_runs
+            WHERE status = 'pending'
+            ORDER BY started_at DESC LIMIT 1
         `);
 
         const [suiteBreakdown] = await pool.query(`
@@ -34,7 +42,11 @@ const getSummary = async (req, res) => {
                    SUM(status='failed')    AS failed,
                    SUM(status='warning')   AS warnings
             FROM test_results
-            WHERE run_id = (SELECT run_id FROM test_runs ORDER BY started_at DESC LIMIT 1)
+            WHERE run_id = (
+                SELECT run_id FROM test_runs
+                WHERE status = 'completed'
+                ORDER BY started_at DESC LIMIT 1
+            )
             GROUP BY suite
         `);
 
@@ -44,7 +56,7 @@ const getSummary = async (req, res) => {
             FROM test_runs ORDER BY started_at DESC LIMIT 10
         `);
 
-        res.json({ totals, latestRun, suiteBreakdown, runHistory });
+        res.json({ totals, latestRun, pendingRun, suiteBreakdown, runHistory });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -57,10 +69,12 @@ const getResults = async (req, res) => {
         const params = [];
         let where = 'WHERE 1=1';
 
-        // Default to latest run if no run_id specified
+        // Default to latest COMPLETED run (ignore pending runs with no results)
         let resolvedRunId = run_id;
         if (!resolvedRunId) {
-            const [[latest]] = await pool.query(`SELECT run_id FROM test_runs ORDER BY started_at DESC LIMIT 1`);
+            const [[latest]] = await pool.query(
+                `SELECT run_id FROM test_runs WHERE status = 'completed' ORDER BY started_at DESC LIMIT 1`
+            );
             resolvedRunId = latest?.run_id;
         }
         if (resolvedRunId) { where += ' AND run_id = ?'; params.push(resolvedRunId); }
