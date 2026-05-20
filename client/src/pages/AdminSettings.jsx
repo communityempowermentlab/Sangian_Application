@@ -9,9 +9,10 @@ import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
 const SETTINGS_MENU = [
     { key: 'google_analytics',  icon: '📊', label: 'Google Analytics',  color: '#e37400', available: true  },
     { key: 'crash_analytics',   icon: '🔥', label: 'Crash Analytics',   color: '#dc2626', available: true  },
+    { key: 'automated_testing', icon: '🧪', label: 'Automated Testing', color: '#7c3aed', available: true  },
     { key: 'integrations',      icon: '🔗', label: 'Integrations',      color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
-    { key: 'security',          icon: '🔒', label: 'Security',          color: '#7c3aed', available: false },
+    { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
     { key: 'notifications',     icon: '🔔', label: 'Notifications',     color: '#f59e0b', available: false },
     { key: 'api_keys',          icon: '🔑', label: 'API Keys',          color: '#10b981', available: false },
 ];
@@ -748,11 +749,450 @@ const btnStyle = (bg, color) => ({
 const thStyle = { padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' };
 const tdStyle = { padding: '10px 12px', verticalAlign: 'top' };
 
+// ─── Automated Testing Tab ───────────────────────────────────────────────────
+
+const TEST_SUITES = [
+    { key: 'all',          icon: '🧪', label: 'All Suites'       },
+    { key: 'api_tests',    icon: '🌐', label: 'API Tests'        },
+    { key: 'security_tests',icon:'🔒', label: 'Security'         },
+    { key: 'db_tests',     icon: '🗄️', label: 'Database'         },
+    { key: 'code_quality', icon: '🧹', label: 'Code Quality'     },
+    { key: 'performance_tests',icon:'⚡',label:'Performance'     },
+];
+
+const DEV_STATUS = {
+    open:        { bg: '#fef2f2', text: '#dc2626', label: 'Open'        },
+    in_progress: { bg: '#fffbeb', text: '#d97706', label: 'In Progress' },
+    completed:   { bg: '#f0fdf4', text: '#16a34a', label: 'Completed'   },
+    blocked:     { bg: '#f5f3ff', text: '#7c3aed', label: 'Blocked'     },
+};
+
+const TEST_STATUS = {
+    passed:  { bg: '#f0fdf4', text: '#16a34a', dot: '#22c55e' },
+    failed:  { bg: '#fef2f2', text: '#dc2626', dot: '#ef4444' },
+    warning: { bg: '#fffbeb', text: '#d97706', dot: '#f59e0b' },
+    error:   { bg: '#fdf4ff', text: '#7c3aed', dot: '#a855f7' },
+    skipped: { bg: '#f9fafb', text: '#6b7280', dot: '#9ca3af' },
+};
+
+const SEVERITY_BADGE = {
+    critical: { bg: '#fef2f2', text: '#dc2626' },
+    high:     { bg: '#fff7ed', text: '#c2410c' },
+    medium:   { bg: '#fffbeb', text: '#d97706' },
+    low:      { bg: '#eff6ff', text: '#2563eb' },
+    info:     { bg: '#f0fdf4', text: '#16a34a' },
+};
+
+const AutomatedTestingTab = () => {
+    const [summary, setSummary]           = useState(null);
+    const [runs, setRuns]                 = useState([]);
+    const [results, setResults]           = useState([]);
+    const [total, setTotal]               = useState(0);
+    const [pages, setPages]               = useState(1);
+    const [page, setPage]                 = useState(1);
+    const [selectedResult, setSelectedResult] = useState(null);
+    const [activeSuite, setActiveSuite]   = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [devFilter, setDevFilter]       = useState('all');
+    const [isLoading, setIsLoading]       = useState(false);
+    const [isSumLoading, setIsSumLoading] = useState(true);
+    const [runId, setRunId]               = useState(null);
+    const [showRuns, setShowRuns]         = useState(false);
+    const [loadErr, setLoadErr]           = useState('');
+    const [triggering, setTriggering]     = useState(false);
+    const [triggerMsg, setTriggerMsg]     = useState('');
+
+    const fmtTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN',{ day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const fmtMs   = (ms) => ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`;
+
+    const loadSummary = useCallback(async () => {
+        try {
+            const r = await axiosAdmin.get('/testing/summary');
+            setSummary(r.data);
+            if (r.data.latestRun?.run_id && !runId) setRunId(r.data.latestRun.run_id);
+        } catch { /* skip */ }
+        finally { setIsSumLoading(false); }
+    }, [runId]);
+
+    const loadRuns = useCallback(async () => {
+        try {
+            const r = await axiosAdmin.get('/testing/runs');
+            setRuns(r.data.runs || []);
+        } catch { /* skip */ }
+    }, []);
+
+    const loadResults = useCallback(async (pg = 1) => {
+        setIsLoading(true);
+        setLoadErr('');
+        try {
+            const params = { page: pg, limit: 25 };
+            if (activeSuite !== 'all') params.suite   = activeSuite;
+            if (statusFilter !== 'all') params.status = statusFilter;
+            if (devFilter !== 'all')    params.dev_status = devFilter;
+            if (runId)                  params.run_id  = runId;
+            const r = await axiosAdmin.get('/testing/results', { params });
+            setResults(r.data.results || []);
+            setTotal(r.data.total || 0);
+            setPages(r.data.pages || 1);
+            setPage(pg);
+        } catch (e) {
+            setLoadErr(e.response?.data?.error || e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [activeSuite, statusFilter, devFilter, runId]);
+
+    useEffect(() => { loadSummary(); loadRuns(); }, [loadSummary, loadRuns]);
+    useEffect(() => { loadResults(1); }, [loadResults]);
+
+    const triggerRun = async (suite = 'all') => {
+        setTriggering(true);
+        setTriggerMsg('');
+        try {
+            const r = await axiosAdmin.post('/testing/trigger', { suite });
+            const rid = r.data.run_id;
+            setTriggerMsg(`✅ Run queued (ID: ${rid}). Now run the Python engine:\n\ncd testing-engine\npython run_tests.py --suite ${suite} --run-id ${rid}`);
+        } catch (e) {
+            setTriggerMsg(`❌ ${e.response?.data?.error || e.message}`);
+        } finally {
+            setTriggering(false);
+        }
+    };
+
+    const updateDevStatus = async (id, dev_status, dev_note = '') => {
+        await axiosAdmin.patch(`/testing/results/${id}/status`, { dev_status, dev_note });
+        setResults(prev => prev.map(r => r.id === id ? { ...r, dev_status } : r));
+        if (selectedResult?.id === id) setSelectedResult(prev => ({ ...prev, dev_status }));
+        loadSummary();
+    };
+
+    const s = summary?.totals || {};
+    const latest = summary?.latestRun;
+    const suiteBreak = summary?.suiteBreakdown || [];
+
+    // ── Detail View ───────────────────────────────────────────────────────────
+    if (selectedResult) {
+        const r = selectedResult;
+        const ts = TEST_STATUS[r.status] || TEST_STATUS.passed;
+        const sv = SEVERITY_BADGE[r.severity] || SEVERITY_BADGE.info;
+        const dv = DEV_STATUS[r.dev_status] || DEV_STATUS.open;
+        return (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+                <button onClick={() => setSelectedResult(null)} style={{ ...btnStyle('#f1f5f9','#374151'), marginBottom: '20px' }}>
+                    ← Back to Results
+                </button>
+
+                {/* Header */}
+                <div style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3d)', borderRadius: '16px', padding: '24px', marginBottom: '16px', color: '#fff' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ background: ts.bg, color: ts.text, padding: '3px 12px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800 }}>
+                            <span style={{ width:'6px',height:'6px',borderRadius:'50%',background:ts.dot,display:'inline-block',marginRight:'5px' }}/>
+                            {r.status?.toUpperCase()}
+                        </span>
+                        <span style={{ background: sv.bg, color: sv.text, padding: '3px 12px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>{r.severity?.toUpperCase()}</span>
+                        <span style={{ background: dv.bg, color: dv.text, padding: '3px 12px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>{dv.label}</span>
+                        <span style={{ background: 'rgba(255,255,255,0.12)', color: '#a5b4fc', padding: '3px 12px', borderRadius: '999px', fontSize: '0.7rem' }}>{r.suite}</span>
+                    </div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.4, marginBottom: '6px' }}>{r.test_name}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{r.category} · {fmtTime(r.created_at)} · {fmtMs(r.duration_ms)}</div>
+                </div>
+
+                {/* Message */}
+                {r.message && (
+                    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', marginBottom: '14px', fontSize: '0.88rem', color: '#374151', lineHeight: 1.6 }}>
+                        {r.message}
+                    </div>
+                )}
+
+                {/* Details / stack */}
+                {r.details && (
+                    <div style={{ marginBottom: '14px' }}>
+                        <div style={{ fontWeight: 700, color: '#111827', marginBottom: '8px', fontSize: '0.85rem' }}>📋 Details</div>
+                        <pre style={{ background: '#0f172a', color: '#e2e8f0', borderRadius: '12px', padding: '18px', fontSize: '0.75rem', overflowX: 'auto', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {r.details}
+                        </pre>
+                    </div>
+                )}
+
+                {/* Dev note */}
+                {r.dev_note && (
+                    <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: '10px', padding: '12px 16px', marginBottom: '14px', fontSize: '0.82rem', color: '#713f12' }}>
+                        <strong>Developer Note:</strong> {r.dev_note}
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151' }}>Developer Action:</span>
+                    {r.dev_status !== 'in_progress' && <button onClick={() => updateDevStatus(r.id,'in_progress')} style={btnStyle('#fffbeb','#d97706')}>🔧 Start Working</button>}
+                    {r.dev_status !== 'completed'   && <button onClick={() => updateDevStatus(r.id,'completed')}   style={btnStyle('#f0fdf4','#16a34a')}>✅ Mark Resolved</button>}
+                    {r.dev_status !== 'blocked'     && <button onClick={() => updateDevStatus(r.id,'blocked')}     style={btnStyle('#f5f3ff','#7c3aed')}>🚧 Mark Blocked</button>}
+                    {r.dev_status !== 'open'        && <button onClick={() => updateDevStatus(r.id,'open')}        style={btnStyle('#fef2f2','#dc2626')}>🔴 Reopen</button>}
+                </div>
+            </div>
+        );
+    }
+
+    // ── Main Dashboard ─────────────────────────────────────────────────────────
+    return (
+        <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+
+            {/* Inner left sidebar — test suites */}
+            <div style={{ width: '180px', minWidth: '180px', background: '#fafafa', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                <div style={{ padding: '12px 14px', borderBottom: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Test Suites</div>
+                </div>
+                {TEST_SUITES.map(s => (
+                    <button key={s.key} onClick={() => setActiveSuite(s.key)} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+                        background: activeSuite === s.key ? '#f0f4ff' : 'transparent',
+                        borderLeft: activeSuite === s.key ? '3px solid #7c3aed' : '3px solid transparent',
+                        transition: 'all 0.12s',
+                    }}>
+                        <span style={{ fontSize: '1rem' }}>{s.icon}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: activeSuite === s.key ? '#7c3aed' : '#374151' }}>{s.label}</span>
+                    </button>
+                ))}
+
+                {/* Suite breakdown */}
+                {suiteBreak.length > 0 && (
+                    <div style={{ marginTop: '8px', padding: '8px 14px', borderTop: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Last Run</div>
+                        {suiteBreak.map(sb => (
+                            <div key={sb.suite} style={{ marginBottom: '6px' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '2px' }}>{sb.suite}</div>
+                                <div style={{ height: '4px', background: '#e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${sb.total > 0 ? (sb.passed/sb.total*100) : 0}%`, background: sb.failed > 0 ? '#ef4444' : '#22c55e', borderRadius: '2px' }} />
+                                </div>
+                                <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: '1px' }}>{sb.passed}/{sb.total} passed</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Main content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* Run info bar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        {latest && (
+                            <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                                Latest run: <strong style={{ color: '#374151' }}>{latest.suite}</strong>
+                                <span style={{ marginLeft: '8px', background: latest.status === 'completed' ? '#f0fdf4' : '#fef2f2', color: latest.status === 'completed' ? '#16a34a' : '#dc2626', padding: '1px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>{latest.status}</span>
+                                <span style={{ marginLeft: '8px', color: '#9ca3af' }}>{fmtTime(latest.started_at)}</span>
+                            </div>
+                        )}
+                        <button onClick={() => { setShowRuns(v=>!v); if (!showRuns) loadRuns(); }}
+                            style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem' }}>
+                            📋 {showRuns ? 'Hide' : 'View'} History
+                        </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button onClick={() => { loadSummary(); loadResults(1); }} style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem' }}>↻ Refresh</button>
+                        <button onClick={() => triggerRun(activeSuite)} disabled={triggering}
+                            style={{ ...btnStyle('#7c3aed','#fff'), opacity: triggering ? 0.6 : 1 }}>
+                            {triggering ? '⏳ Queuing…' : '▶ Run Tests'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Trigger message */}
+                {triggerMsg && (
+                    <div style={{ background: triggerMsg.startsWith('✅') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${triggerMsg.startsWith('✅') ? '#86efac' : '#fca5a5'}`, borderRadius: '10px', padding: '14px 16px', fontSize: '0.8rem', color: '#374151', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                        {triggerMsg}
+                        <button onClick={() => setTriggerMsg('')} style={{ float: 'right', ...btnStyle('#f1f5f9','#374151'), fontSize: '0.7rem' }}>✕</button>
+                    </div>
+                )}
+
+                {/* Run history */}
+                {showRuns && runs.length > 0 && (
+                    <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #f3f4f6', fontWeight: 700, fontSize: '0.85rem', color: '#111827' }}>📋 Run History</div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                            <thead><tr style={{ background: '#f9fafb' }}>
+                                {['Suite','Status','Passed','Failed','Warnings','Duration','Started',''].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                            </tr></thead>
+                            <tbody>
+                                {runs.map(r => (
+                                    <tr key={r.run_id} style={{ borderTop: '1px solid #f3f4f6', cursor: 'pointer' }}
+                                        onClick={() => { setRunId(r.run_id); loadResults(1); setShowRuns(false); }}>
+                                        <td style={tdStyle}>{r.suite}</td>
+                                        <td style={tdStyle}><span style={{ background: r.status==='completed'?'#f0fdf4':'#fef2f2', color: r.status==='completed'?'#16a34a':'#dc2626', padding:'2px 8px', borderRadius:'999px', fontSize:'0.7rem', fontWeight:700 }}>{r.status}</span></td>
+                                        <td style={{ ...tdStyle, color:'#16a34a', fontWeight:700 }}>{r.passed}</td>
+                                        <td style={{ ...tdStyle, color:'#dc2626', fontWeight:700 }}>{r.failed}</td>
+                                        <td style={{ ...tdStyle, color:'#d97706' }}>{r.warnings}</td>
+                                        <td style={{ ...tdStyle, color:'#6b7280' }}>{fmtMs(r.duration_ms)}</td>
+                                        <td style={{ ...tdStyle, color:'#9ca3af', whiteSpace:'nowrap' }}>{fmtTime(r.started_at)}</td>
+                                        <td style={tdStyle}><button style={{ ...btnStyle('#f1f5f9','#374151'), fontSize:'0.72rem', padding:'3px 10px' }}>Load →</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* Summary cards */}
+                {!isSumLoading && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '12px' }}>
+                        {[
+                            { label:'Total Tests',   val:s.total_results, icon:'🧪', g:'linear-gradient(135deg,#7c3aed,#8b5cf6)', l:'#f5f3ff' },
+                            { label:'Passed',        val:s.passed,        icon:'✅', g:'linear-gradient(135deg,#059669,#10b981)', l:'#ecfdf5' },
+                            { label:'Failed',        val:s.failed,        icon:'❌', g:'linear-gradient(135deg,#dc2626,#ef4444)', l:'#fef2f2' },
+                            { label:'Warnings',      val:s.warnings,      icon:'⚠️', g:'linear-gradient(135deg,#d97706,#f59e0b)', l:'#fffbeb' },
+                            { label:'Critical',      val:s.critical,      icon:'☠️', g:'linear-gradient(135deg,#7f1d1d,#dc2626)', l:'#fef2f2' },
+                            { label:'Open Issues',   val:s.open_issues,   icon:'🔴', g:'linear-gradient(135deg,#0891b2,#06b6d4)', l:'#ecfeff' },
+                        ].map(c => (
+                            <div key={c.label} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
+                                <div style={{ background: c.g, padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</div>
+                                    <span style={{ fontSize: '1.1rem' }}>{c.icon}</span>
+                                </div>
+                                <div style={{ background: c.l, padding: '8px 14px 12px' }}>
+                                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#111827', lineHeight: 1 }}>{fmt(c.val)}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Filters */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', background: '#fff', borderRadius: '10px', padding: '10px 14px', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '3px', gap: '2px' }}>
+                        {['all','passed','failed','warning','error'].map(s => (
+                            <button key={s} onClick={() => setStatusFilter(s)} style={{
+                                padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.72rem', fontWeight: 600, textTransform: 'capitalize',
+                                background: statusFilter === s ? '#fff' : 'transparent',
+                                color: statusFilter === s ? '#111827' : '#6b7280',
+                                boxShadow: statusFilter === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            }}>{s}</button>
+                        ))}
+                    </div>
+                    <select value={devFilter} onChange={e => setDevFilter(e.target.value)}
+                        style={{ padding: '6px 10px', borderRadius: '7px', border: '1px solid #e5e7eb', fontSize: '0.78rem', color: '#374151', background: '#f9fafb', cursor: 'pointer' }}>
+                        <option value="all">All Dev Status</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                    <span style={{ fontSize: '0.78rem', color: '#9ca3af', marginLeft: 'auto' }}>{fmt(total)} results</span>
+                </div>
+
+                {loadErr && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', fontSize: '0.82rem', color: '#b91c1c' }}>{loadErr}</div>}
+
+                {/* Results table */}
+                <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+                    {isLoading ? (
+                        <div style={{ padding: '50px', textAlign: 'center', color: '#9ca3af' }}>Loading test results…</div>
+                    ) : results.length === 0 ? (
+                        <div style={{ padding: '60px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🧪</div>
+                            <div style={{ fontWeight: 700, color: '#374151' }}>No test results yet</div>
+                            <div style={{ color: '#9ca3af', fontSize: '0.82rem', marginTop: '6px' }}>
+                                Click <strong>▶ Run Tests</strong> then execute the Python engine to populate results.
+                            </div>
+                            <div style={{ marginTop: '14px', background: '#0f172a', color: '#e2e8f0', borderRadius: '10px', padding: '14px 18px', fontFamily: 'monospace', fontSize: '0.78rem', textAlign: 'left', maxWidth: '420px', margin: '14px auto 0' }}>
+                                cd testing-engine<br/>
+                                pip install -r requirements.txt<br/>
+                                cp .env.example .env<br/>
+                                python run_tests.py
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                                <thead>
+                                    <tr style={{ background: '#f9fafb' }}>
+                                        {['Status','Severity','Test Name','Suite','Dev Status','Duration',''].map(h => (
+                                            <th key={h} style={thStyle}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.map(r => {
+                                        const ts = TEST_STATUS[r.status]   || TEST_STATUS.passed;
+                                        const sv = SEVERITY_BADGE[r.severity] || SEVERITY_BADGE.info;
+                                        const dv = DEV_STATUS[r.dev_status]   || DEV_STATUS.open;
+                                        return (
+                                            <tr key={r.id} style={{ borderTop: '1px solid #f3f4f6', cursor: 'pointer' }}
+                                                onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <td style={tdStyle}>
+                                                    <span style={{ background: ts.bg, color: ts.text, padding: '2px 9px', borderRadius: '999px', fontSize: '0.67rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                                                        <span style={{ width:'5px',height:'5px',borderRadius:'50%',background:ts.dot,display:'inline-block' }}/>
+                                                        {r.status?.toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td style={tdStyle}>
+                                                    <span style={{ background: sv.bg, color: sv.text, padding: '2px 8px', borderRadius: '999px', fontSize: '0.67rem', fontWeight: 700 }}>{r.severity}</span>
+                                                </td>
+                                                <td style={{ ...tdStyle, maxWidth: '260px' }}>
+                                                    <div style={{ fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.test_name}>{r.test_name}</div>
+                                                    {r.message && <div style={{ color: '#9ca3af', fontSize: '0.72rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.message}</div>}
+                                                </td>
+                                                <td style={{ ...tdStyle, color: '#6b7280', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{r.suite}</td>
+                                                <td style={tdStyle}>
+                                                    <span style={{ background: dv.bg, color: dv.text, padding: '2px 8px', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700 }}>{dv.label}</span>
+                                                </td>
+                                                <td style={{ ...tdStyle, color: '#9ca3af', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{fmtMs(r.duration_ms)}</td>
+                                                <td style={tdStyle}>
+                                                    <button onClick={() => setSelectedResult(r)} style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.72rem', padding: '4px 10px' }}>View →</button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                            {pages > 1 && (
+                                <div style={{ padding: '12px 16px', borderTop: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Page {page} of {pages}</span>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <button disabled={page<=1}    onClick={() => loadResults(page-1)} style={{ ...btnStyle('#f1f5f9','#374151'), opacity: page<=1?0.4:1 }}>← Prev</button>
+                                        <button disabled={page>=pages} onClick={() => loadResults(page+1)} style={{ ...btnStyle('#7c3aed','#fff'), opacity: page>=pages?0.4:1 }}>Next →</button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Quick start box */}
+                <div style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3d)', borderRadius: '14px', padding: '20px 24px', color: '#fff' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '10px', fontSize: '0.95rem' }}>🚀 Quick Start — Run Tests Locally</div>
+                    <pre style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '14px', fontSize: '0.75rem', color: '#e2e8f0', lineHeight: 1.8, margin: 0, overflowX: 'auto' }}>{`# 1. Install dependencies
+cd testing-engine
+pip install -r requirements.txt
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with your local DB credentials
+
+# 3. Run all test suites
+python run_tests.py
+
+# 4. Run specific suite
+python run_tests.py --suite api
+python run_tests.py --suite security
+python run_tests.py --suite db
+python run_tests.py --suite code_quality
+python run_tests.py --suite performance`}</pre>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ─── Main AdminSettings page ──────────────────────────────────────────────────
 
 const CONTENT_MAP = {
-    google_analytics: <GoogleAnalyticsTab />,
-    crash_analytics:  <CrashAnalyticsTab />,
+    google_analytics:  <GoogleAnalyticsTab />,
+    crash_analytics:   <CrashAnalyticsTab />,
+    automated_testing: <AutomatedTestingTab />,
 };
 
 const AdminSettings = () => {

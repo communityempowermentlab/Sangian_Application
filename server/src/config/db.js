@@ -196,6 +196,50 @@ const initDb = async () => {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
     }
 
+    // ── Automated Testing ──────────────────────────────────────────────────────
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS test_runs (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        run_id       VARCHAR(64)  UNIQUE NOT NULL,
+        suite        VARCHAR(100) NOT NULL DEFAULT 'all',
+        triggered_by VARCHAR(100) DEFAULT 'manual',
+        status       ENUM('pending','running','completed','failed') DEFAULT 'pending',
+        total        INT DEFAULT 0,
+        passed       INT DEFAULT 0,
+        failed       INT DEFAULT 0,
+        warnings     INT DEFAULT 0,
+        skipped      INT DEFAULT 0,
+        duration_ms  INT DEFAULT 0,
+        started_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP NULL,
+        INDEX idx_status (status),
+        INDEX idx_started_at (started_at)
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS test_results (
+        id             INT AUTO_INCREMENT PRIMARY KEY,
+        run_id         VARCHAR(64)  NOT NULL,
+        suite          VARCHAR(100) NOT NULL,
+        test_name      VARCHAR(500) NOT NULL,
+        category       VARCHAR(100),
+        status         ENUM('passed','failed','warning','skipped','error') DEFAULT 'passed',
+        severity       ENUM('critical','high','medium','low','info') DEFAULT 'info',
+        message        TEXT,
+        details        LONGTEXT,
+        duration_ms    INT DEFAULT 0,
+        dev_status     ENUM('open','in_progress','completed','blocked') DEFAULT 'open',
+        dev_note       TEXT,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_run_id  (run_id),
+        INDEX idx_suite   (suite),
+        INDEX idx_status  (status),
+        INDEX idx_dev_status (dev_status)
+      )
+    `);
+
     // Create crash_logs table for custom web error tracking
     await connection.query(`
       CREATE TABLE IF NOT EXISTS crash_logs (
