@@ -278,6 +278,7 @@ const ChaloMelaChaleGame = () => {
   const [assessment, setAssessment] = useState({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   const [isAssessmentSubmitting, setIsAssessmentSubmitting] = useState(false);
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
+  const [assessmentSaveMsg, setAssessmentSaveMsg] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
   const [isDropped, setIsDropped] = useState(false);
@@ -491,6 +492,13 @@ const ChaloMelaChaleGame = () => {
       }, config);
     } catch (e) { console.error('Save error', e); }
   };
+
+  // Stop all audio/timers when results screen is shown
+  useEffect(() => {
+    if (screen === 'results') {
+      stopAll();
+    }
+  }, [screen, stopAll]);
 
   // Sync state on screen change to ensure real-time "In Progress" tracking
   useEffect(() => {
@@ -838,13 +846,13 @@ const ChaloMelaChaleGame = () => {
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
       setAssessmentSubmitted(true);
+      setAssessmentSaveMsg('✅ Assessment saved successfully!');
       safeSetTimeout(() => {
         generateAndUploadPDF();
       }, 1000);
-      alert('Assessment successfully saved!');
     } catch (e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      setAssessmentSaveMsg('❌ Failed to save assessment. Please try again.');
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -946,7 +954,8 @@ const ChaloMelaChaleGame = () => {
     }
     
     if (actionStatus === 'quit') {
-      await saveToServer('quit', null, null, quitReason); 
+      await saveToServer('quit', null, null, quitReason);
+      stopAll(); // stop all audio and timers before going to results
       setShowPauseModal(false);
       setIsPaused(false);
       setScreen('results');
@@ -1142,6 +1151,18 @@ const ChaloMelaChaleGame = () => {
           </div>
         </div>
 
+        {assessmentSaveMsg && (
+          <div style={{
+            margin: '12px 0', padding: '12px 18px', borderRadius: '10px',
+            background: assessmentSaveMsg.startsWith('✅') ? '#f0fdf4' : '#fef2f2',
+            border: `1px solid ${assessmentSaveMsg.startsWith('✅') ? '#86efac' : '#fca5a5'}`,
+            color: assessmentSaveMsg.startsWith('✅') ? '#16a34a' : '#dc2626',
+            fontWeight: 600, fontSize: '0.9rem', textAlign: 'center',
+          }}>
+            {assessmentSaveMsg}
+          </div>
+        )}
+
         <SessionAssessmentForm
           assessment={assessment}
           setAssessment={setAssessment}
@@ -1154,9 +1175,9 @@ const ChaloMelaChaleGame = () => {
           t={t}
         >
           <>
-            <button 
-                className="btn btn-primary" 
-                onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); }}
+            <button
+                className="btn btn-primary"
+                onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); setAssessmentSaveMsg(''); }}
               >{t('game.retest')}</button>
             <button className="btn btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
           </>
