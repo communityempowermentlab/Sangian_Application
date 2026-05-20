@@ -1171,7 +1171,7 @@ const AutomatedTestingTab = () => {
                 </div>
 
                 {/* Quick start box — only show when no results yet */}
-                {total === 0 && !isLoading && (
+                {!latest && !isLoading && (
                     <div style={{ background: 'linear-gradient(135deg,#1e1e2e,#2d1f3d)', borderRadius: '14px', padding: '20px 24px', color: '#fff' }}>
                         <div style={{ fontWeight: 700, marginBottom: '10px', fontSize: '0.95rem' }}>🚀 Quick Start — Run Tests on Server</div>
                         <pre style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '14px', fontSize: '0.75rem', color: '#e2e8f0', lineHeight: 1.8, margin: 0, overflowX: 'auto' }}>{`# SSH into your server, then:
