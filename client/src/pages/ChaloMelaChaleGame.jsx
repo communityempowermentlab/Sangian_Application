@@ -348,14 +348,27 @@ const ChaloMelaChaleGame = () => {
     return interval;
   }, []);
 
-  // Stop every Audio object ever created
+  // Stop every Audio object ever created.
+  // IMPORTANT: detach onended/onerror BEFORE setting src='' to prevent the browser
+  // firing onended which would trigger the onEnded callback and restart the audio chain.
   const stopAudio = useCallback(() => {
     playingAudiosRef.current.forEach(a => {
-      try { a.pause(); a.currentTime = 0; a.src = ''; } catch { /* ignore */ }
+      try {
+        a.onended  = null;
+        a.onerror  = null;
+        a.onabort  = null;
+        a.pause();
+        a.currentTime = 0;
+        a.src = '';
+      } catch { /* ignore */ }
     });
     playingAudiosRef.current = [];
     if (audioRef.current) {
-      try { audioRef.current.pause(); } catch { /* ignore */ }
+      try {
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
+        audioRef.current.pause();
+      } catch { /* ignore */ }
     }
   }, []);
 
@@ -373,14 +386,20 @@ const ChaloMelaChaleGame = () => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      // Detach handlers first so stopping audio cannot trigger onEnded chains
       playingAudiosRef.current.forEach(a => {
-        try { a.pause(); a.currentTime = 0; a.src = ''; } catch { /* ignore */ }
+        try {
+          a.onended = null; a.onerror = null; a.onabort = null;
+          a.pause(); a.currentTime = 0; a.src = '';
+        } catch { /* ignore */ }
       });
       playingAudiosRef.current = [];
       allIntervalsRef.current.forEach(id => { try { clearInterval(id); } catch { /* ignore */ } });
       allIntervalsRef.current = [];
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-      if (audioRef.current) { try { audioRef.current.pause(); } catch { /* ignore */ } }
+      if (audioRef.current) {
+        try { audioRef.current.onended = null; audioRef.current.pause(); } catch { /* ignore */ }
+      }
     };
   }, []);
 
