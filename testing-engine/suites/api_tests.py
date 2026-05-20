@@ -10,7 +10,7 @@ SUITE = "api_tests"
 def get_admin_token():
     try:
         r = requests.post(f"{BASE_URL}/admin/login",
-                          json={"email": ADMIN_EMAIL, "passcode": ADMIN_PASS}, timeout=10)
+                          json={"email": ADMIN_EMAIL, "password": ADMIN_PASS}, timeout=10)
         return r.json().get("token")
     except:
         return None
@@ -41,7 +41,7 @@ def run(rep: Reporter):
 
     # ── Admin login ────────────────────────────────────────────────────────────
     try:
-        r, ms = _post(f"{BASE_URL}/admin/login", {"email": ADMIN_EMAIL, "passcode": ADMIN_PASS})
+        r, ms = _post(f"{BASE_URL}/admin/login", {"email": ADMIN_EMAIL, "password": ADMIN_PASS})
         if r.status_code == 200 and "token" in r.json():
             token = r.json()["token"]
             auth = {"Authorization": f"Bearer {token}"}
@@ -99,13 +99,13 @@ def run(rep: Reporter):
 
     # ── Reports API ───────────────────────────────────────────────────────────
     try:
-        r, ms = _get(f"{BASE_URL}/admin/reports", headers=auth)
+        r, ms = _get(f"{BASE_URL}/games/reports/overview", headers=auth)
         if r.status_code == 200:
-            rep.passed("GET /admin/reports", f"Status 200 in {ms}ms", category="reports", duration_ms=ms)
+            rep.passed("GET /games/reports/overview", f"Status 200 in {ms}ms", category="reports", duration_ms=ms)
         else:
-            rep.warning("GET /admin/reports", f"Status {r.status_code}", duration_ms=ms)
+            rep.warning("GET /games/reports/overview", f"Status {r.status_code}", duration_ms=ms)
     except Exception as e:
-        rep.error("GET /admin/reports", str(e))
+        rep.error("GET /games/reports/overview", str(e))
 
     # ── Sessions API ──────────────────────────────────────────────────────────
     try:

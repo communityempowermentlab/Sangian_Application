@@ -52,6 +52,11 @@ def main():
         print(f"Available: {', '.join(SUITES.keys())}{Style.RESET_ALL}")
         sys.exit(1)
 
+    # Generate ONE shared run_id for all suites so they appear together in the dashboard
+    import uuid
+    shared_run_id = args.run_id or str(uuid.uuid4())
+    print(f"  Run ID : {Fore.YELLOW}{shared_run_id}{Style.RESET_ALL}\n")
+
     all_results = []
     total_passed = total_failed = total_warnings = 0
 
@@ -61,7 +66,7 @@ def main():
         print(f"  {label}")
         print(f"{'═'*60}{Style.RESET_ALL}")
 
-        rep = Reporter(suite=suite_key, run_id=args.run_id)
+        rep = Reporter(suite=suite_key, run_id=shared_run_id)
         try:
             import importlib
             module = importlib.import_module(module_path)

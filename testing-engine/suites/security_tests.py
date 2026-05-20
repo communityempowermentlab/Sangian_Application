@@ -80,11 +80,11 @@ def run(rep: Reporter):
 
     # ── API endpoint auth protection ──────────────────────────────────────────
     protected = [
-        ("/admin/children", "GET"),
-        ("/admin/assessors", "GET"),
-        ("/admin/reports", "GET"),
-        ("/testing/summary", "GET"),
-        ("/errors/list", "GET"),
+        ("/admin/children",           "GET"),
+        ("/admin/assessors",          "GET"),
+        ("/games/reports/overview",   "GET"),
+        ("/testing/summary",          "GET"),
+        ("/errors/list",              "GET"),
     ]
     for path, method in protected:
         try:
