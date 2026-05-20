@@ -8,7 +8,9 @@ const sessionRoutes = require('./src/routes/sessionRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const gameRoutes = require('./src/routes/gameRoutes');
 const docsRoutes = require('./src/routes/docsRoutes');
-const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const analyticsRoutes      = require('./src/routes/analyticsRoutes');
+const crashAnalyticsRoutes = require('./src/routes/crashAnalyticsRoutes');
+const crashLogRoutes       = require('./src/routes/crashLogRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -38,7 +40,9 @@ app.use(helmet({
                             "https://oauth2.googleapis.com",
                             "https://analyticsdata.googleapis.com",
                             "https://www.google-analytics.com",
-                            "https://www.googletagmanager.com"],
+                            "https://www.googletagmanager.com",
+                            "https://firebasecrashlytics.googleapis.com",
+                            "https://firebase.googleapis.com"],
             "media-src":   ["'self'", "data:", "blob:"],
             "frame-src":   ["https://accounts.google.com"],
             "object-src":  ["'none'"]
@@ -81,7 +85,9 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/docs', docsRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/analytics',       analyticsRoutes);
+app.use('/api/crash-analytics', crashAnalyticsRoutes);
+app.use('/api/errors',          crashLogRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

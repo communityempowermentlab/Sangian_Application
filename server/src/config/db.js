@@ -196,6 +196,32 @@ const initDb = async () => {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
     }
 
+    // Create crash_logs table for custom web error tracking
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS crash_logs (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        fingerprint VARCHAR(16)   NOT NULL,
+        message     TEXT          NOT NULL,
+        stack       TEXT,
+        error_type  VARCHAR(100)  DEFAULT 'Error',
+        source_type VARCHAR(50)   DEFAULT 'window_error',
+        severity    ENUM('fatal','error','warning','info') DEFAULT 'error',
+        page_url    VARCHAR(1000),
+        page_title  VARCHAR(500),
+        browser     VARCHAR(150),
+        os          VARCHAR(150),
+        device_type VARCHAR(50),
+        app_version VARCHAR(50),
+        status      ENUM('open','resolved','ignored') DEFAULT 'open',
+        session_id  VARCHAR(100),
+        created_at  TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_fingerprint (fingerprint),
+        INDEX idx_status      (status),
+        INDEX idx_severity    (severity),
+        INDEX idx_created_at  (created_at)
+      )
+    `);
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {
