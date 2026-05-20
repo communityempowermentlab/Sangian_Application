@@ -483,6 +483,7 @@ const ChorMachayeShorGame = () => {
     setQuitReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setAssessmentSubmitted(false);
+    setIsPaused(false);
   };
 
   const handleRestart = async () => {
@@ -1130,9 +1131,11 @@ const ChorMachayeShorGame = () => {
     if (actionStatus === 'quit') {
       await saveToServer('quit', quitReason);
       setShowPauseModal(false);
+      setIsPaused(false);
       setScreen('results');
     } else {
       await saveToServer(actionStatus);
+      setIsPaused(false);
       navigate('/');
     }
   };

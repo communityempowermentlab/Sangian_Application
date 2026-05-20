@@ -38,11 +38,7 @@ const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) 
                 <div className="modal-body" id="modalBody">
                     {description}
                 </div>
-                <div className="modal-footer">
-                    <p>
-                        {t('modal.disclaimer')}
-                    </p>
-                    <br />
+                <div className="modal-footer" style={{ justifyContent: 'flex-end' }}>
                     <div className="modal-actions">
                         <button type="button" className="btn modal-btn-secondary" onClick={onClose}>
                             {t('modal.close')}

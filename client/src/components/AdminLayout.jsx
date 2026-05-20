@@ -25,6 +25,7 @@ const AdminLayout = () => {
         location.pathname.includes('/admin/children') ? 'children' :
         location.pathname.includes('/admin/reports')  ? 'reports'  :
         location.pathname.includes('/admin/docs')     ? 'docs'     :
+        location.pathname.includes('/admin/settings') ? 'settings' :
             'dashboard';
 
     const adminUserStr = localStorage.getItem('adminUser');
@@ -145,7 +146,12 @@ const AdminLayout = () => {
                         >
                             📄 Documents
                         </Link>
-                        <a href="#" className="admin-menu-item">⚙️ Settings</a>
+                        <Link
+                            to="/admin/settings"
+                            className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}
+                        >
+                            ⚙️ Settings
+                        </Link>
                     </div>
 
                     <div className="admin-search">

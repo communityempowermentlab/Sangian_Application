@@ -8,6 +8,7 @@ const sessionRoutes = require('./src/routes/sessionRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const gameRoutes = require('./src/routes/gameRoutes');
 const docsRoutes = require('./src/routes/docsRoutes');
+const analyticsRoutes = require('./src/routes/analyticsRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -17,14 +18,30 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             "default-src": ["'self'"],
-            "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
-            "img-src": ["'self'", "data:", "blob:"],
-            "connect-src": ["'self'", "http://localhost:3002", "https://sangian.celworld.org", "https://sangianapi.celworld.org"],
-            "media-src": ["'self'", "data:", "blob:"],
-            "frame-src": ["'none'"],
-            "object-src": ["'none'"]
+            "script-src":  ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                            "https://accounts.google.com",
+                            "https://www.googletagmanager.com",
+                            "https://www.google-analytics.com"],
+            "style-src":   ["'self'", "'unsafe-inline'",
+                            "https://fonts.googleapis.com",
+                            "https://accounts.google.com"],
+            "font-src":    ["'self'", "https://fonts.gstatic.com", "data:"],
+            "img-src":     ["'self'", "data:", "blob:",
+                            "https://www.google-analytics.com",
+                            "https://www.googletagmanager.com",
+                            "https://*.googleusercontent.com"],
+            "connect-src": ["'self'",
+                            "http://localhost:3002",
+                            "https://sangian.celworld.org",
+                            "https://sangianapi.celworld.org",
+                            "https://accounts.google.com",
+                            "https://oauth2.googleapis.com",
+                            "https://analyticsdata.googleapis.com",
+                            "https://www.google-analytics.com",
+                            "https://www.googletagmanager.com"],
+            "media-src":   ["'self'", "data:", "blob:"],
+            "frame-src":   ["https://accounts.google.com"],
+            "object-src":  ["'none'"]
         }
     },
     xContentTypeOptions: true,
@@ -64,6 +81,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/docs', docsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

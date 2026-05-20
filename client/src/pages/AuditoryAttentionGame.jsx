@@ -323,9 +323,10 @@ const AuditoryAttentionGame = () => {
     
     setCanStartQ(false);
 
-    if (saved.activeQuestion) {
+     if (saved.activeQuestion) {
       const aq = saved.activeQuestion;
       setCurrentQIndex(aq.qIndex);
+      currentQIndexRef.current = aq.qIndex;
       
       if (aq.screen && aq.screen.endsWith('-game')) {
         startGameForLevel(aq);
@@ -334,10 +335,10 @@ const AuditoryAttentionGame = () => {
       }
     } else {
       // Auto jump to first uncompleted question
-      if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); }
-      else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); }
-      else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); }
-      else if (!qs[4]) { setScreen('question4-landing'); setCurrentQIndex(4); }
+      if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); currentQIndexRef.current = 1; }
+      else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); currentQIndexRef.current = 2; }
+      else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); currentQIndexRef.current = 3; }
+      else if (!qs[4]) { setScreen('question4-landing'); setCurrentQIndex(4); currentQIndexRef.current = 4; }
       else setScreen('score');
     }
   };
@@ -474,12 +475,17 @@ const AuditoryAttentionGame = () => {
   }, [screen, canStartQ]);
 
   // -- Word playing loop --
-  const getQConfig = (idx = currentQIndexRef.current) => {
+  const getQConfig = (idx = currentQIndex) => {
     if (idx===1) return CONFIG.QUESTION1;
     if (idx===2) return CONFIG.QUESTION2;
     if (idx===3) return CONFIG.QUESTION3;
     if (idx===4) return CONFIG.QUESTION4;
-    return null;
+    return {
+      INSTRUCTION_AUDIO: '',
+      TARGET_WORDS: [],
+      TARGET_IMAGES: [],
+      WORDS: []
+    };
   };
 
   const playNextWord = useCallback(() => {
@@ -586,7 +592,7 @@ const AuditoryAttentionGame = () => {
     currentQIndexRef.current = qIdx;
     const config = getQConfig(qIdx);
     
-    if (!config) {
+    if (!config || !config.WORDS || config.WORDS.length === 0) {
       setScreen('splash');
       return;
     }

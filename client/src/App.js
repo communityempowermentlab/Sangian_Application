@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -20,6 +21,7 @@ import TriangleRachnaGame from './pages/TriangleRachnaGame';
 import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
+import AdminSettings from './pages/AdminSettings';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
 import AdminAssessorsList from './pages/AdminAssessorsList';
@@ -52,6 +54,7 @@ const ROUTE_TITLES = {
     '/admin/assessors/add':     'Add Assessor | Admin Panel | Community Empowerment Lab',
     '/admin/reports':           'Reports | Admin Panel | Community Empowerment Lab',
     '/admin/docs':              'Documentation | Admin Panel | Community Empowerment Lab',
+    '/admin/settings':          'Settings | Admin Panel | Community Empowerment Lab',
 };
 
 const PageTitle = () => {
@@ -77,6 +80,7 @@ const PublicLayout = () => (
 
 function App() {
     return (
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ''}>
         <LanguageProvider>
             <Router>
                 <PageTitle />
@@ -119,6 +123,7 @@ function App() {
                                 <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />
+                                <Route path="settings"               element={<AdminSettings />} />
                             </Route>
                         </Route>
 
@@ -129,6 +134,7 @@ function App() {
                 </div>
             </Router>
         </LanguageProvider>
+        </GoogleOAuthProvider>
     );
 }
 

@@ -914,6 +914,7 @@ const ChaloMelaChaleGame = () => {
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setQuitReason('');
     setAssessmentSubmitted(false);
+    setIsPaused(false);
     hasAutoStarted.current = { sampleA: false, sampleB: false };
     setQuestionState({
       id: '',
@@ -943,9 +944,11 @@ const ChaloMelaChaleGame = () => {
     if (actionStatus === 'quit') {
       await saveToServer('quit', null, null, quitReason); 
       setShowPauseModal(false);
+      setIsPaused(false);
       setScreen('results');
     } else {
       await saveToServer(actionStatus);
+      setIsPaused(false);
       navigate('/');
     }
   };
