@@ -102,6 +102,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
   const [refreshedAt, setRefreshedAt] = useState(null);
+  const [liveSessions, setLiveSessions] = useState([]);
+  const [liveUpdatedAt, setLiveUpdatedAt] = useState(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -118,11 +120,23 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const fetchLiveSessions = useCallback(async () => {
+    try {
+      const res = await axiosAdmin.get('/admin/dashboard/live-sessions');
+      if (res.data.success) {
+        setLiveSessions(res.data.sessions || []);
+        setLiveUpdatedAt(new Date());
+      }
+    } catch { /* silently skip */ }
+  }, []);
+
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 60000);
-    return () => clearInterval(interval);
-  }, [fetchStats]);
+    fetchLiveSessions();
+    const slowInterval = setInterval(fetchStats, 60000);
+    const fastInterval = setInterval(fetchLiveSessions, 15000); // every 15s
+    return () => { clearInterval(slowInterval); clearInterval(fastInterval); };
+  }, [fetchStats, fetchLiveSessions]);
 
   const kpi = stats?.kpi || {};
 
@@ -155,6 +169,52 @@ const AdminDashboard = () => {
           <button onClick={fetchStats}>Retry</button>
         </div>
       )}
+
+      {/* ── Live Sessions Banner ── */}
+      <div style={{
+        background: liveSessions.length > 0
+          ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)'
+          : 'linear-gradient(135deg, #f9fafb, #f3f4f6)',
+        border: `1px solid ${liveSessions.length > 0 ? '#6ee7b7' : '#e5e7eb'}`,
+        borderRadius: '14px', padding: '14px 20px', marginBottom: '16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {liveSessions.length > 0 && (
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981',
+                display: 'inline-block', boxShadow: '0 0 0 3px rgba(16,185,129,0.3)',
+                animation: 'pulse 2s infinite' }} />
+            )}
+            <span style={{ fontWeight: 700, fontSize: '0.92rem',
+              color: liveSessions.length > 0 ? '#065f46' : '#374151' }}>
+              {liveSessions.length > 0
+                ? `${liveSessions.length} Active Game Session${liveSessions.length > 1 ? 's' : ''} Right Now`
+                : 'No active game sessions'}
+            </span>
+          </div>
+          {liveSessions.map(s => (
+            <span key={s.id} style={{
+              background: '#fff', border: '1px solid #6ee7b7', borderRadius: '999px',
+              padding: '3px 12px', fontSize: '0.75rem', color: '#065f46', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+              🎮 {s.child_name}
+              <span style={{ color: '#9ca3af', fontWeight: 400 }}>
+                · {GAME_LABELS[s.game_name] || s.game_name}
+                · {s.elapsed_minutes}m
+              </span>
+            </span>
+          ))}
+        </div>
+        <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>
+          {liveUpdatedAt
+            ? `Updated ${liveUpdatedAt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`
+            : ''}
+          {' · auto-refreshes every 15s'}
+        </span>
+      </div>
 
       {/* ── KPI Row ── */}
       <section className="db-kpi-grid">

@@ -10,7 +10,8 @@ const { upload }           = require('../middleware/upload');
 router.post('/login', adminController.loginAdmin);
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-router.get('/dashboard/stats', adminAuth, adminController.getDashboardStats);
+router.get('/dashboard/stats',         adminAuth, adminController.getDashboardStats);
+router.get('/dashboard/live-sessions', adminAuth, adminController.getLiveSessions);
 
 // ── Protected routes (valid admin JWT required) ───────────────────────────────
 router.post('/logout/:sessionId', adminAuth, adminController.logoutAdmin);

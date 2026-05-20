@@ -212,8 +212,29 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// GET /api/admin/live-sessions — returns currently active in_progress sessions
+const getLiveSessions = async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT gs.id, gs.child_id, gs.game_name, gs.score, gs.progress_level,
+                   gs.start_time, gs.updated_at,
+                   TIMESTAMPDIFF(MINUTE, gs.start_time, NOW()) AS elapsed_minutes,
+                   c.name AS child_name
+            FROM game_sessions gs
+            JOIN children c ON gs.child_id = c.child_id
+            WHERE gs.status = 'in_progress'
+            ORDER BY gs.updated_at DESC
+            LIMIT 20
+        `);
+        res.json({ success: true, sessions: rows, timestamp: new Date().toISOString() });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to load live sessions' });
+    }
+};
+
 module.exports = {
     loginAdmin,
     logoutAdmin,
     getDashboardStats,
+    getLiveSessions,
 };

@@ -448,11 +448,15 @@ const ChaloMelaChaleGame = () => {
       setAttemptNo(res.data.attempt_no || 1);
       setStartTime(Date.now());
       setQStartTime(null);
-      
-      // Initialize saved_state immediately so it's visible as In Progress
-      setTimeout(() => {
-        saveToServer('in_progress', [], 0);
-      }, 500);
+
+      // Save initial in_progress state using newSessionId directly
+      // (avoids React state closure issue — gameSessionId isn't updated yet in this render)
+      const config2 = {};
+      if (token) config2.headers = { Authorization: `Bearer ${token}` };
+      await axios.put(`${API_URL}/games/sessions/update/${newSessionId}`, {
+        score: 0, progress_level: 1, status: 'in_progress',
+        saved_state: { allScores: [], totalScore: 0, screen: 'game' },
+      }, config2);
     } catch (e) {
       console.error('Failed to start session', e);
     }
@@ -792,7 +796,7 @@ const ChaloMelaChaleGame = () => {
       
       // Auto-mark as completed if this is the final question (q18)
       const isFinalQ = s.id === 'q18';
-      saveToServer(isFinalQ ? 'completed' : 'in_progress', newArr, latestTotal);
+      await saveToServer(isFinalQ ? 'completed' : 'in_progress', newArr, latestTotal);
       
       return newArr;
     });
@@ -1234,7 +1238,7 @@ const ChaloMelaChaleGame = () => {
             else if (questionState.id === 'q17') initQuestion('q18', MATRIX_Q18);
             else {
               setScreen('results');
-              saveToServer('completed', allScores, totalScore);
+              await saveToServer('completed', allScores, totalScore);
             }
           }}>
             {questionState.id === 'tq1' ? 'Teaching Question 2' : questionState.id === 'tq2' ? 'Question 1' : questionState.id === 'q1' ? 'Sample B' : questionState.id === 'tq3' ? 'Teaching Question 4' : questionState.id === 'tq4' ? 'Question 2' : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `Question ${parseInt(questionState.id.substring(1)) + 1}` : 'Next Question'}
