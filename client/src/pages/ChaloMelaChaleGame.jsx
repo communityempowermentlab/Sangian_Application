@@ -786,6 +786,7 @@ const ChaloMelaChaleGame = () => {
     const timeTaken = startTimeToUse ? ((now - startTimeToUse) / 1000).toFixed(1) : "0.0";
     const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: s.path, failReason: isSuccess ? null : reason };
     
+    // Compute new scores array synchronously outside setState
     setAllScores(prev => {
       const existingIdx = prev.findIndex(e => e.id === s.id);
       let newArr;
@@ -799,15 +800,26 @@ const ChaloMelaChaleGame = () => {
       } else {
         newArr = [...prev, scoreEntry];
       }
-      
-      const latestTotal = newArr.reduce((acc, item) => acc + item.score, 0);
-      
-      // Auto-mark as completed if this is the final question (q18)
-      const isFinalQ = s.id === 'q18';
-      await saveToServer(isFinalQ ? 'completed' : 'in_progress', newArr, latestTotal);
-      
       return newArr;
     });
+
+    // Save to server outside setState (cannot use await inside setState callback)
+    const currentScores = allScores;
+    const existingIdx = currentScores.findIndex(e => e.id === s.id);
+    let computedArr;
+    if (existingIdx !== -1) {
+      computedArr = [...currentScores];
+      if (score >= computedArr[existingIdx].score) {
+        computedArr[existingIdx] = { ...scoreEntry, timeTaken: (parseFloat(computedArr[existingIdx].timeTaken) + parseFloat(timeTaken)).toFixed(1) };
+      } else {
+        computedArr[existingIdx].timeTaken = (parseFloat(computedArr[existingIdx].timeTaken) + parseFloat(timeTaken)).toFixed(1);
+      }
+    } else {
+      computedArr = [...currentScores, scoreEntry];
+    }
+    const latestTotal = computedArr.reduce((acc, item) => acc + item.score, 0);
+    const isFinalQ = s.id === 'q18';
+    saveToServer(isFinalQ ? 'completed' : 'in_progress', computedArr, latestTotal);
     
     setQStartTime(Date.now()); // Reset for next trial/question
     
