@@ -322,6 +322,7 @@ const ChaloMelaChaleGame = () => {
   });
   
   const audioRef = useRef(null);
+  const playingAudiosRef = useRef([]); // tracks every Audio object ever created
   const timerRef = useRef(null);
   const questionStateRef = useRef(questionState);
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
@@ -342,8 +343,14 @@ const ChaloMelaChaleGame = () => {
   }, []);
 
   const stopAudio = useCallback(() => {
+    // Stop all tracked detached Audio objects
+    playingAudiosRef.current.forEach(a => {
+      try { a.pause(); a.src = ''; } catch { /* ignore */ }
+    });
+    playingAudiosRef.current = [];
+    // Stop DOM audio element
     if (audioRef.current) {
-      audioRef.current.pause();
+      try { audioRef.current.pause(); } catch { /* ignore */ }
     }
   }, []);
 
@@ -352,6 +359,19 @@ const ChaloMelaChaleGame = () => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setIsAnimating(false);
   }, [stopAudio]);
+
+  // Cleanup all audio on component unmount (navigating away)
+  useEffect(() => {
+    return () => {
+      playingAudiosRef.current.forEach(a => {
+        try { a.pause(); a.src = ''; } catch { /* ignore */ }
+      });
+      playingAudiosRef.current = [];
+      if (audioRef.current) {
+        try { audioRef.current.pause(); } catch { /* ignore */ }
+      }
+    };
+  }, []);
 
   const sessionCheckRef = useRef(false);
 
@@ -511,6 +531,7 @@ const ChaloMelaChaleGame = () => {
     stopAudio();
     const audio = new Audio(`${AUDIO_DIR}/${file}`);
     audioRef.current = audio;
+    playingAudiosRef.current.push(audio); // track so unmount/stopAll can kill it
     
     // Safety fallback for onEnded
     let called = false;
@@ -973,6 +994,7 @@ const ChaloMelaChaleGame = () => {
       setScreen('results');
     } else {
       await saveToServer(actionStatus);
+      stopAll();
       setIsPaused(false);
       navigate('/');
     }
@@ -1191,7 +1213,7 @@ const ChaloMelaChaleGame = () => {
                 className="btn btn-primary"
                 onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); setAssessmentSaveMsg(''); }}
               >{t('game.retest')}</button>
-            <button className="btn btn-secondary" onClick={() => navigate('/')}>{t('game.home')}</button>
+            <button className="btn btn-secondary" onClick={() => { stopAll(); navigate('/'); }}>{t('game.home')}</button>
           </>
         </SessionAssessmentForm>
       </div>
