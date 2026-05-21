@@ -997,6 +997,9 @@ const AutomatedTestingTab = () => {
     const [loadErr, setLoadErr]           = useState('');
     const [triggering, setTriggering]     = useState(false);
     const [triggerMsg, setTriggerMsg]     = useState('');
+    const [showAbout, setShowAbout]       = useState(false);
+    const [activeKpiTest, setActiveKpiTest] = useState(null);
+    const [sevFilter, setSevFilter]         = useState('all');
 
     const fmtTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN',{ day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const fmtMs   = (ms) => ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`;
@@ -1022,10 +1025,11 @@ const AutomatedTestingTab = () => {
         setIsLoading(true);
         setLoadErr('');
         try {
-            const params = { page: pg, limit: 25 };
+            const params = { page: pg, limit: 100 };
             if (activeSuite !== 'all') params.suite      = activeSuite;
             if (statusFilter !== 'all') params.status    = statusFilter;
             if (devFilter !== 'all')    params.dev_status = devFilter;
+            if (sevFilter !== 'all')    params.severity   = sevFilter;
             // Only send run_id for "All Suites" view — suite-specific views span all runs
             if (runId && activeSuite === 'all') params.run_id = runId;
             const r = await axiosAdmin.get('/testing/results', { params });
@@ -1034,11 +1038,19 @@ const AutomatedTestingTab = () => {
             setPages(r.data.pages || 1);
             setPage(pg);
         } catch (e) {
-            setLoadErr(e.response?.data?.error || e.message);
+            const raw = e.response?.data?.error || e.message || '';
+            const friendly = /not defined|undefined|cannot read|reference/i.test(raw)
+                ? 'Failed to load results — server encountered an initialization error. Please refresh and try again.'
+                : /connect|ECONNREF|network|timeout/i.test(raw)
+                ? 'Cannot connect to the testing service. Please verify the server is running.'
+                : /403|401|unauthorized|forbidden/i.test(raw)
+                ? 'Session expired. Please log out and back in.'
+                : raw || 'An unexpected error occurred. Please refresh.';
+            setLoadErr(friendly);
         } finally {
             setIsLoading(false);
         }
-    }, [activeSuite, statusFilter, devFilter, runId]);
+    }, [activeSuite, statusFilter, devFilter, sevFilter, runId]);
 
     useEffect(() => { loadSummary(); loadRuns(); }, [loadSummary, loadRuns]);
     useEffect(() => { loadResults(1); }, [loadResults]);
@@ -1051,7 +1063,17 @@ const AutomatedTestingTab = () => {
             const rid = r.data.run_id;
             setTriggerMsg(`✅ Run queued (ID: ${rid}). Now run the Python engine:\n\ncd testing-engine\npython run_tests.py --suite ${suite} --run-id ${rid}`);
         } catch (e) {
-            setTriggerMsg(`❌ ${e.response?.data?.error || e.message}`);
+            const raw = e.response?.data?.error || e.message || '';
+            const friendly = /not defined|undefined|cannot read|reference/i.test(raw)
+                ? 'Testing session initialization failed. Please retry or contact the administrator.'
+                : /duplicate|already exists/i.test(raw)
+                ? 'A pending run already exists. Check run history before triggering a new one.'
+                : /connect|ECONNREF|network|timeout/i.test(raw)
+                ? 'Cannot connect to the testing service. Please verify the server is running.'
+                : /403|401|unauthorized|forbidden/i.test(raw)
+                ? 'Session expired. Please log out and back in.'
+                : raw || 'An unexpected error occurred. Please try again.';
+            setTriggerMsg(`❌ ${friendly}`);
         } finally {
             setTriggering(false);
         }
@@ -1063,6 +1085,18 @@ const AutomatedTestingTab = () => {
         if (selectedResult?.id === id) setSelectedResult(prev => ({ ...prev, dev_status }));
         loadSummary();
     };
+
+    const handleKpiClickTest = useCallback((kpiKey, filterStatus, filterDev, filterSev) => {
+        if (activeKpiTest === kpiKey) {
+            setActiveKpiTest(null); setStatusFilter('all'); setDevFilter('all'); setSevFilter('all');
+        } else {
+            setActiveKpiTest(kpiKey); setStatusFilter(filterStatus); setDevFilter(filterDev); setSevFilter(filterSev);
+        }
+    }, [activeKpiTest]);
+
+    const clearKpiTestFilter = useCallback(() => {
+        setActiveKpiTest(null); setStatusFilter('all'); setDevFilter('all'); setSevFilter('all');
+    }, []);
 
     const s = summary?.totals || {};
     const latest  = summary?.latestRun;    // latest completed run
@@ -1174,32 +1208,129 @@ const AutomatedTestingTab = () => {
             {/* Main content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
+                {/* ── About This Module ── */}
+                <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '14px', overflow: 'hidden' }}>
+                    <button
+                        onClick={() => setShowAbout(v => !v)}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: 'transparent', border: 'none', cursor: 'pointer', gap: '10px' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '1.1rem' }}>🧪</span>
+                            <span style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.9rem' }}>About This Module — AI Automated Testing</span>
+                            <span style={{ fontSize: '0.72rem', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '999px', fontWeight: 600 }}>Python Engine · Multi-Suite</span>
+                        </div>
+                        <span style={{ color: '#7c3aed', fontSize: '0.78rem', fontWeight: 700, flexShrink: 0 }}>{showAbout ? '▲ Hide' : '▼ How it works'}</span>
+                    </button>
+                    {showAbout && (
+                        <div style={{ padding: '0 18px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {/* Overview */}
+                            <div style={{ color: '#3b0764', fontSize: '0.82rem', lineHeight: 1.7 }}>
+                                The AI Automated Testing module runs a <strong>Python-based multi-suite testing engine</strong> that validates APIs, database integrity, security, code quality, and performance. Results are ingested into this dashboard in real time, classified by severity, and tracked by developer status.
+                            </div>
+
+                            {/* Testing Workflow */}
+                            <div>
+                                <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.8rem', marginBottom: '10px' }}>⚙️ Testing Workflow</div>
+                                <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', gap: '0' }}>
+                                    {[
+                                        ['1', 'Admin triggers run'],
+                                        ['2', 'Python engine executes'],
+                                        ['3', 'API & DB validation'],
+                                        ['4', 'Logic & security scan'],
+                                        ['5', 'Performance checks'],
+                                        ['6', 'Issues classified'],
+                                        ['7', 'Results ingested'],
+                                        ['8', 'Dashboard updated'],
+                                    ].map(([num, step], i, arr) => (
+                                        <React.Fragment key={step}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fff', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '5px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                                <span style={{ background: '#7c3aed', color: '#fff', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>{num}</span>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#5b21b6' }}>{step}</span>
+                                            </div>
+                                            {i < arr.length - 1 && <span style={{ color: '#a78bfa', fontSize: '0.8rem', margin: '0 3px', flexShrink: 0 }}>→</span>}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Test suites + classification side by side */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '10px' }}>
+                                {[
+                                    { cat: '🌐 API Tests',      items: ['Endpoint health checks', 'Auth token validation', 'Request/response format', 'Status code verification'] },
+                                    { cat: '🔒 Security',       items: ['Hardcoded secret scan', 'SQL injection patterns', 'Exposed credentials', 'Console.log audit'] },
+                                    { cat: '🗄️ Database',        items: ['Schema validation', 'Data integrity checks', 'Orphaned record detection', 'Index verification'] },
+                                    { cat: '🧹 Code Quality',   items: ['Linting & style checks', 'Dead code detection', 'TODO / FIXME audit', 'Complexity analysis'] },
+                                    { cat: '⚡ Performance',    items: ['API response time', 'Load & concurrency', 'Memory usage checks', 'Slow query detection'] },
+                                ].map(({ cat, items }) => (
+                                    <div key={cat} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #ddd6fe' }}>
+                                        <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.78rem', marginBottom: '8px' }}>{cat}</div>
+                                        {items.map(item => (
+                                            <div key={item} style={{ display: 'flex', gap: '6px', fontSize: '0.75rem', color: '#5b21b6', marginBottom: '4px', lineHeight: 1.4 }}>
+                                                <span style={{ color: '#a78bfa', flexShrink: 0 }}>•</span>{item}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                                <div style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #ddd6fe' }}>
+                                    <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.78rem', marginBottom: '8px' }}>🏷️ Issue Classification</div>
+                                    {[
+                                        ['critical', '#dc2626', 'Immediate action required'],
+                                        ['high',     '#c2410c', 'Fix before next release'],
+                                        ['medium',   '#d97706', 'Address in next sprint'],
+                                        ['low',      '#2563eb', 'Minor, low priority'],
+                                        ['info',     '#16a34a', 'Informational only'],
+                                    ].map(([sev, color, desc]) => (
+                                        <div key={sev} style={{ display: 'flex', gap: '6px', fontSize: '0.74rem', marginBottom: '4px', alignItems: 'center' }}>
+                                            <span style={{ background: color + '18', color, padding: '1px 6px', borderRadius: '999px', fontWeight: 700, fontSize: '0.65rem', flexShrink: 0 }}>{sev}</span>
+                                            <span style={{ color: '#6b7280' }}>{desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Quick notes */}
+                            <div style={{ background: '#ede9fe', borderRadius: '8px', padding: '10px 14px', fontSize: '0.78rem', color: '#3b0764', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                <span>💡 <strong>Run tests:</strong> Click <strong>▶ Run Tests</strong> to queue a run ID, then execute <code style={{ background: '#fff', padding: '1px 5px', borderRadius: '3px' }}>python run_tests.py --run-id &lt;id&gt;</code> on the server.</span>
+                                <span>📊 <strong>Dev tracking:</strong> Use <em>Open → In Progress → Completed</em> workflow on each failed/warning result to track resolution.</span>
+                                <span>🔄 <strong>Auto-refresh:</strong> Results update automatically when the Python engine pushes data to <code style={{ background: '#fff', padding: '1px 5px', borderRadius: '3px' }}>POST /api/testing/ingest</code>.</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Run info bar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        {latest && (
-                            <div style={{ fontSize: '0.78rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                <span>Last completed:</span>
-                                <strong style={{ color: '#374151' }}>{latest.suite}</strong>
-                                <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '1px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>✅ completed</span>
-                                <span style={{ color: '#9ca3af' }}>{fmtTime(latest.started_at)}</span>
-                                <span style={{ color: '#9ca3af' }}>· {latest.passed}/{latest.total} passed</span>
-                            </div>
-                        )}
-                        {pending && (
-                            <div style={{ fontSize: '0.75rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '4px 10px', color: '#d97706', fontWeight: 600 }}>
-                                ⏳ Pending run queued — run Python engine to execute
-                            </div>
-                        )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Status info — only shown when there is data */}
+                    {(latest || pending) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#6b7280' }}>
+                            {latest && (
+                                <>
+                                    <span>Last completed:</span>
+                                    <strong style={{ color: '#374151' }}>{latest.suite}</strong>
+                                    <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '1px 8px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700 }}>✅ completed</span>
+                                    <span style={{ color: '#9ca3af' }}>{fmtTime(latest.started_at)}</span>
+                                    <span style={{ color: '#9ca3af' }}>· {latest.passed}/{latest.total} passed</span>
+                                </>
+                            )}
+                            {pending && (
+                                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '3px 10px', color: '#d97706', fontWeight: 600, fontSize: '0.75rem' }}>
+                                    ⏳ Pending run queued — run Python engine to execute
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {/* Action buttons — always one row, no wrapping */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'nowrap' }}>
                         <button onClick={() => { setShowRuns(v=>!v); if (!showRuns) loadRuns(); }}
-                            style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem' }}>
+                            style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                             📋 {showRuns ? 'Hide' : 'View'} History
                         </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => { loadSummary(); loadResults(1); }} style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem' }}>↻ Refresh</button>
+                        <button onClick={() => { loadSummary(); loadResults(1); }}
+                            style={{ ...btnStyle('#f1f5f9','#374151'), fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                            ↻ Refresh
+                        </button>
                         <button onClick={() => triggerRun(activeSuite)} disabled={triggering}
-                            style={{ ...btnStyle('#7c3aed','#fff'), opacity: triggering ? 0.6 : 1 }}>
+                            style={{ ...btnStyle('#7c3aed','#fff'), opacity: triggering ? 0.6 : 1, whiteSpace: 'nowrap' }}>
                             {triggering ? '⏳ Queuing…' : '▶ Run Tests'}
                         </button>
                     </div>
@@ -1240,27 +1371,61 @@ const AutomatedTestingTab = () => {
                     </div>
                 )}
 
-                {/* Summary cards */}
+                {/* Summary KPI cards (interactive filters) */}
                 {!isSumLoading && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '12px' }}>
-                        {[
-                            { label:'Total Tests',   val:s.total_results, icon:'🧪', g:'linear-gradient(135deg,#7c3aed,#8b5cf6)', l:'#f5f3ff' },
-                            { label:'Passed',        val:s.passed,        icon:'✅', g:'linear-gradient(135deg,#059669,#10b981)', l:'#ecfdf5' },
-                            { label:'Failed',        val:s.failed,        icon:'❌', g:'linear-gradient(135deg,#dc2626,#ef4444)', l:'#fef2f2' },
-                            { label:'Warnings',      val:s.warnings,      icon:'⚠️', g:'linear-gradient(135deg,#d97706,#f59e0b)', l:'#fffbeb' },
-                            { label:'Critical',      val:s.critical,      icon:'☠️', g:'linear-gradient(135deg,#7f1d1d,#dc2626)', l:'#fef2f2' },
-                            { label:'Open Issues',   val:s.open_issues,   icon:'🔴', g:'linear-gradient(135deg,#0891b2,#06b6d4)', l:'#ecfeff' },
-                        ].map(c => (
-                            <div key={c.label} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
-                                <div style={{ background: c.g, padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</div>
-                                    <span style={{ fontSize: '1.1rem' }}>{c.icon}</span>
-                                </div>
-                                <div style={{ background: c.l, padding: '8px 14px 12px' }}>
-                                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#111827', lineHeight: 1 }}>{fmt(c.val)}</div>
-                                </div>
-                            </div>
-                        ))}
+                    <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '12px' }}>
+                            {[
+                                { label:'Total Tests', kpiKey:'total',    val:s.total_results, icon:'🧪', g:'linear-gradient(135deg,#7c3aed,#8b5cf6)', l:'#f5f3ff', accent:'#7c3aed', fStatus:'all',     fDev:'all',  fSev:'all'      },
+                                { label:'Passed',      kpiKey:'passed',   val:s.passed,        icon:'✅', g:'linear-gradient(135deg,#059669,#10b981)', l:'#ecfdf5', accent:'#059669', fStatus:'passed',  fDev:'all',  fSev:'all'      },
+                                { label:'Failed',      kpiKey:'failed',   val:s.failed,        icon:'❌', g:'linear-gradient(135deg,#dc2626,#ef4444)', l:'#fef2f2', accent:'#dc2626', fStatus:'failed',  fDev:'all',  fSev:'all'      },
+                                { label:'Warnings',    kpiKey:'warnings', val:s.warnings,      icon:'⚠️', g:'linear-gradient(135deg,#d97706,#f59e0b)', l:'#fffbeb', accent:'#d97706', fStatus:'warning', fDev:'all',  fSev:'all'      },
+                                { label:'Critical',    kpiKey:'critical', val:s.critical,      icon:'☠️', g:'linear-gradient(135deg,#7f1d1d,#dc2626)', l:'#fef2f2', accent:'#7f1d1d', fStatus:'all',     fDev:'all',  fSev:'critical' },
+                                { label:'Open Issues', kpiKey:'open',     val:s.open_issues,   icon:'🔴', g:'linear-gradient(135deg,#0891b2,#06b6d4)', l:'#ecfeff', accent:'#0891b2', fStatus:'all',     fDev:'open', fSev:'all'      },
+                            ].map(c => {
+                                const isActive = activeKpiTest === c.kpiKey;
+                                return (
+                                    <div
+                                        key={c.kpiKey}
+                                        role="button" tabIndex={0} aria-pressed={isActive}
+                                        title={isActive ? `Remove filter: ${c.label}` : `Filter by: ${c.label}`}
+                                        onClick={() => handleKpiClickTest(c.kpiKey, c.fStatus, c.fDev, c.fSev)}
+                                        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleKpiClickTest(c.kpiKey, c.fStatus, c.fDev, c.fSev)}
+                                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.transform = 'none'; }}
+                                        style={{
+                                            borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', outline: 'none', position: 'relative',
+                                            boxShadow: isActive ? `0 0 0 3px ${c.accent}, 0 8px 20px rgba(0,0,0,0.13)` : '0 2px 8px rgba(0,0,0,0.07)',
+                                            transform: isActive ? 'translateY(-3px)' : 'none',
+                                            transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+                                        }}
+                                    >
+                                        <div style={{ background: c.g, padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</div>
+                                            <span style={{ fontSize: '1.1rem' }}>{c.icon}</span>
+                                            {isActive && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.96)', color: c.accent, fontSize: '0.52rem', fontWeight: 900, padding: '2px 7px', borderRadius: '999px 999px 0 0', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>
+                                                    ● ACTIVE
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ background: c.l, padding: '8px 14px 12px', borderTop: `2px solid ${isActive ? c.accent : 'transparent'}`, transition: 'border-color 0.18s' }}>
+                                            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#111827', lineHeight: 1 }}>{isSumLoading ? '…' : fmt(c.val)}</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontStyle: 'italic' }}>
+                                💡 Click any card to filter results — click again to reset.
+                            </span>
+                            {activeKpiTest !== null && (
+                                <button onClick={clearKpiTestFilter} style={{ ...btnStyle('#fef2f2','#dc2626'), border: '1px solid #fca5a5', fontSize: '0.72rem', padding: '4px 12px' }}>
+                                    ✕ Clear Filter
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

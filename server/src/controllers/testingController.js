@@ -73,6 +73,7 @@ const getResults = async (req, res) => {
         const { run_id, suite, status, severity, dev_status, page = 1, limit = 30 } = req.query;
         const params = [];
         let where = 'WHERE 1=1';
+        let resolvedRunId = run_id || null;
 
         const suiteSelected = suite && suite !== 'all';
 
@@ -84,7 +85,11 @@ const getResults = async (req, res) => {
             const [[latest]] = await pool.query(
                 `SELECT run_id FROM test_runs WHERE status = 'completed' ORDER BY started_at DESC LIMIT 1`
             );
-            if (latest?.run_id) { where += ' AND run_id = ?'; params.push(latest.run_id); }
+            if (latest?.run_id) {
+                where += ' AND run_id = ?';
+                params.push(latest.run_id);
+                resolvedRunId = latest.run_id;
+            }
         }
         // When a specific suite is selected with no run_id: show all results for that suite across all runs
 
@@ -104,7 +109,7 @@ const getResults = async (req, res) => {
             [...params, Number(limit), offset]
         );
 
-        res.json({ results: rows, total, page: Number(page), pages: Math.ceil(total / Number(limit)), runId: resolvedRunId });
+        res.json({ results: rows, total, page: Number(page), pages: Math.ceil(total / Number(limit)), resolvedRunId });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
