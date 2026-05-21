@@ -22,8 +22,10 @@ const CATEGORY = {
 const RULES = {
   MIN_CORRECT_SINGLE: 4,
   MIN_CORRECT_DOUBLE: 4,
+  MIN_CORRECT_SENTENCE: 1,
   TOTAL_SINGLE: 10,
-  TOTAL_DOUBLE: 8
+  TOTAL_DOUBLE: 8,
+  TOTAL_SENTENCE: 2
 };
 
 const QUESTIONS = [
@@ -79,6 +81,7 @@ const ReadingSkillGame = () => {
   
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
+  const [dropReason, setDropReason] = useState('');
   const [audioFinished, setAudioFinished] = useState(false);
   
   const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -170,11 +173,16 @@ const ReadingSkillGame = () => {
     try {
       const res = await axios.get(`${API_URL}/games/sessions/resume/${childId}/literacy_reading_skill`);
       if (res.data.sessionInfo) {
-        setResumeData(res.data.sessionInfo);
-        setShowResumeModal(true);
+        const info = res.data.sessionInfo;
+        const resumable = ['in_progress', 'paused'];
+        // Only offer resume for genuinely incomplete sessions; ignore completed/dropped/quit ones
+        if (resumable.includes(info.status) && !info.saved_state?.assessmentSubmitted) {
+          setResumeData(info);
+          setShowResumeModal(true);
+        }
       }
     } catch (e) {
-      console.error('Resume info fetch error', e); 
+      console.error('Resume info fetch error', e);
     } finally {
       setIsCheckingSession(false);
     }
@@ -216,6 +224,7 @@ const ReadingSkillGame = () => {
     setAssessmentSubmitted(false);
     setAudioFinished(false);
     setQuitReason('');
+    setDropReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
   };
 
@@ -356,46 +365,70 @@ const ReadingSkillGame = () => {
     const newScoreRec = {
       qId: q.id,
       questionNumber: questionIndex + 1,
-      score: score, // 0, 0.5, or 1
+      score: score,
       timeTaken: qTimer,
       ssrAnswers: ssrAnswers
     };
-    
+
     const upScores = [...allScores, newScoreRec];
     setAllScores(upScores);
-    
-    // Check Drop Rules
-    let shouldDrop = false;
 
-    // Single Letter Drop
+    let shouldDrop = false;
+    let localDropReason = '';
+
+    // Single Letter Drop: < 4 correct out of 10
     if (upScores.length === RULES.TOTAL_SINGLE) {
-      const correctCount = upScores.slice(0, RULES.TOTAL_SINGLE).filter(s => s.score === 1).length;
-      if (correctCount < RULES.MIN_CORRECT_SINGLE) shouldDrop = true;
+      const correct = upScores.slice(0, RULES.TOTAL_SINGLE).filter(s => s.score === 1).length;
+      if (correct < RULES.MIN_CORRECT_SINGLE) {
+        shouldDrop = true;
+        localDropReason = `Single Letter Drop: ${correct}/${RULES.TOTAL_SINGLE} correct (minimum ${RULES.MIN_CORRECT_SINGLE} required).`;
+      }
     }
-    
-    // Double Letter Drop
+
+    // Double Letter Drop: < 4 correct out of 8
     const totalDoubleSoFar = RULES.TOTAL_SINGLE + RULES.TOTAL_DOUBLE;
     if (!shouldDrop && upScores.length === totalDoubleSoFar) {
-      const correctCount = upScores.slice(RULES.TOTAL_SINGLE, totalDoubleSoFar).filter(s => s.score === 1).length;
-      if (correctCount < RULES.MIN_CORRECT_DOUBLE) shouldDrop = true;
+      const correct = upScores.slice(RULES.TOTAL_SINGLE, totalDoubleSoFar).filter(s => s.score === 1).length;
+      if (correct < RULES.MIN_CORRECT_DOUBLE) {
+        shouldDrop = true;
+        localDropReason = `Double Letter Drop: ${correct}/${RULES.TOTAL_DOUBLE} correct (minimum ${RULES.MIN_CORRECT_DOUBLE} required).`;
+      }
     }
 
-    // Assessment Drop (Story/Paragraph)
-    if (!shouldDrop && (q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH)) {
-      if (score === 0) shouldDrop = true;
+    // Sentence Drop: 0 correct out of 2
+    const totalSentenceSoFar = RULES.TOTAL_SINGLE + RULES.TOTAL_DOUBLE + RULES.TOTAL_SENTENCE;
+    if (!shouldDrop && upScores.length === totalSentenceSoFar) {
+      const sentenceScores = upScores.slice(RULES.TOTAL_SINGLE + RULES.TOTAL_DOUBLE, totalSentenceSoFar);
+      const correct = sentenceScores.filter(s => s.score === 1).length;
+      if (correct < RULES.MIN_CORRECT_SENTENCE) {
+        shouldDrop = true;
+        localDropReason = `Sentence Category Drop: ${correct}/${RULES.TOTAL_SENTENCE} correct — at least ${RULES.MIN_CORRECT_SENTENCE} correct answer required to continue.`;
+      }
     }
+
+    // Story / Paragraph Drop: score = 0
+    if (!shouldDrop && (q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH)) {
+      if (score === 0) {
+        shouldDrop = true;
+        localDropReason = `${q.categoryName} Drop: Score 0 — child did not meet reading criteria.`;
+      }
+    }
+
+    if (localDropReason) setDropReason(localDropReason);
 
     if (shouldDrop || questionIndex + 1 >= QUESTIONS.length) {
       setScreen('score');
       if (gameSessionId) {
+        const finalStatus = localDropReason ? 'dropped' : 'completed';
         axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
           score: upScores.reduce((sum, s) => sum + s.score, 0),
           progress_level: questionIndex + 1,
-          status: 'completed',
+          status: finalStatus,
+          quit_reason: localDropReason || null,
           saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
         }).then(() => {
-            setTimeout(generateAndUploadPDF, 1500);
-        }).catch(e=>console.log(e));
+          setTimeout(generateAndUploadPDF, 1500);
+        }).catch(e => console.log(e));
       }
     } else {
       setQuestionIndex(i => i + 1);
@@ -441,6 +474,7 @@ const ReadingSkillGame = () => {
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
     try {
+      // 1. Submit the assessment form
       await axios.post(`${API_URL}/games/assessments`, {
         session_id: gameSessionId,
         child_id: childData.child_id,
@@ -449,11 +483,31 @@ const ReadingSkillGame = () => {
         q3_tiredness: assessment.q3,
         q4_play_again: assessment.q4,
         q5_behaviors: assessment.behaviors,
-        additional_notes: assessment.notes
+        additional_notes: (assessment.notes || '') + (dropReason ? `\n[Drop Reason: ${dropReason}]` : '')
       });
+
+      // 2. Guarantee the session is marked completed in the DB so the admin panel
+      //    reflects the final state and the resume popup never shows again.
+      if (gameSessionId) {
+        const finalStatus = dropReason ? 'dropped' : quitReason ? 'quit' : 'completed';
+        await axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
+          score: allScores.reduce((acc, s) => acc + s.score, 0),
+          progress_level: allScores.length,
+          status: finalStatus,
+          quit_reason: dropReason || quitReason || null,
+          saved_state: {
+            questionIndex: allScores.length,
+            allScores,
+            timerSeconds,
+            qTimer,
+            pauses,
+            assessmentSubmitted: true  // prevents resume popup on next visit
+          }
+        });
+      }
+
       setAssessmentSubmitted(true);
       setTimeout(generateAndUploadPDF, 1000);
-      alert('Assessment successfully saved!');
     } catch(e) {
       console.error(e);
       alert('Failed to save assessment. Please try again.');
@@ -579,22 +633,29 @@ const ReadingSkillGame = () => {
           <div className="rs-screen" id="dashboard-capture-area" style={{ backgroundColor: '#fff', padding: '20px' }}>
             <div className="rs-screen-header">
               <div>
-                <div className="rs-screen-title">Assessment Complete</div>
-                <div className="rs-screen-subtitle">Test finished successfully</div>
+                <div className="rs-screen-title">
+                  {dropReason ? 'Session Dropped (Clinical Rule)' : quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete'}
+                </div>
+                <div className="rs-screen-subtitle">
+                  {dropReason ? dropReason : quitReason ? `Assessor stopped: ${quitReason}` : 'Test finished successfully'}
+                </div>
               </div>
               <div className="rs-chips">
                 <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
-                <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
+                {dropReason
+                  ? <span className="rs-chip" style={{ color: '#fff', background: '#dc2626', border: '1px solid #b91c1c' }}>⛔ Dropped</span>
+                  : <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
+                }
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   Time: {totalTimeDisp}
                 </span>
               </div>
             </div>
-            
+
             <div className="rs-card rs-result-card">
               <div className="rs-result-header">
-                <h2>{quitReason ? 'Assessment Terminated' : 'Performance'}</h2>
-                <p>{quitReason ? `Reason: ${quitReason}` : 'Assessment Completed'}</p>
+                <h2>{dropReason ? 'Session Dropped (Clinical Rule)' : quitReason ? 'Assessment Terminated' : 'Performance'}</h2>
+                <p>{dropReason || (quitReason ? `Reason: ${quitReason}` : 'Assessment Completed')}</p>
               </div>
 
               <div className="rs-score-top">
