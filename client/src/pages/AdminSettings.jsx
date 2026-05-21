@@ -1210,89 +1210,80 @@ const AutomatedTestingTab = () => {
 
                 {/* ── About This Module ── */}
                 <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '14px', overflow: 'hidden' }}>
+                    {/* Header row */}
                     <button
                         onClick={() => setShowAbout(v => !v)}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: 'transparent', border: 'none', cursor: 'pointer', gap: '10px' }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer', gap: '12px' }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontSize: '1.1rem' }}>🧪</span>
-                            <span style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.9rem' }}>About This Module — AI Automated Testing</span>
-                            <span style={{ fontSize: '0.72rem', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '999px', fontWeight: 600 }}>Python Engine · Multi-Suite</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                            <span style={{ fontSize: '1rem', lineHeight: '1', flexShrink: 0 }}>🧪</span>
+                            <span style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>About This Module</span>
+                            <span style={{ color: '#c4b5fd', fontWeight: 400, fontSize: '0.85rem', flexShrink: 0 }}>—</span>
+                            <span style={{ fontWeight: 600, color: '#5b21b6', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>AI Automated Testing</span>
+                            <span style={{ fontSize: '0.7rem', color: '#7c3aed', background: '#ede9fe', padding: '2px 9px', borderRadius: '999px', fontWeight: 600, border: '1px solid #c4b5fd', flexShrink: 0, whiteSpace: 'nowrap' }}>Python Engine · Multi-Suite</span>
                         </div>
-                        <span style={{ color: '#7c3aed', fontSize: '0.78rem', fontWeight: 700, flexShrink: 0 }}>{showAbout ? '▲ Hide' : '▼ How it works'}</span>
+                        <span style={{ color: '#7c3aed', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>{showAbout ? '▲ Hide' : '▼ How it works'}</span>
                     </button>
+
+                    {/* Expanded content — no internal scroll, compact layout avoids scrollbar width-shift */}
                     {showAbout && (
-                        <div style={{ padding: '0 18px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ borderTop: '1px solid #ddd6fe', padding: '14px 18px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
                             {/* Overview */}
-                            <div style={{ color: '#3b0764', fontSize: '0.82rem', lineHeight: 1.7 }}>
-                                The AI Automated Testing module runs a <strong>Python-based multi-suite testing engine</strong> that validates APIs, database integrity, security, code quality, and performance. Results are ingested into this dashboard in real time, classified by severity, and tracked by developer status.
+                            <div style={{ color: '#5b21b6', fontSize: '0.8rem', lineHeight: 1.6 }}>
+                                Python-based multi-suite engine that validates <strong>APIs, database integrity, security, code quality & performance</strong>. Results are ingested in real time, classified by severity, and tracked per developer.
                             </div>
 
-                            {/* Testing Workflow */}
-                            <div>
-                                <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.8rem', marginBottom: '10px' }}>⚙️ Testing Workflow</div>
-                                <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', gap: '0' }}>
-                                    {[
-                                        ['1', 'Admin triggers run'],
-                                        ['2', 'Python engine executes'],
-                                        ['3', 'API & DB validation'],
-                                        ['4', 'Logic & security scan'],
-                                        ['5', 'Performance checks'],
-                                        ['6', 'Issues classified'],
-                                        ['7', 'Results ingested'],
-                                        ['8', 'Dashboard updated'],
-                                    ].map(([num, step], i, arr) => (
-                                        <React.Fragment key={step}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fff', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '5px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                                <span style={{ background: '#7c3aed', color: '#fff', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, flexShrink: 0 }}>{num}</span>
-                                                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#5b21b6' }}>{step}</span>
-                                            </div>
-                                            {i < arr.length - 1 && <span style={{ color: '#a78bfa', fontSize: '0.8rem', margin: '0 3px', flexShrink: 0 }}>→</span>}
-                                        </React.Fragment>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Test suites + classification side by side */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '10px' }}>
+                            {/* Workflow — horizontal scrollable row, no wrapping */}
+                            <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', gap: '0', paddingBottom: '2px' }}>
                                 {[
-                                    { cat: '🌐 API Tests',      items: ['Endpoint health checks', 'Auth token validation', 'Request/response format', 'Status code verification'] },
-                                    { cat: '🔒 Security',       items: ['Hardcoded secret scan', 'SQL injection patterns', 'Exposed credentials', 'Console.log audit'] },
-                                    { cat: '🗄️ Database',        items: ['Schema validation', 'Data integrity checks', 'Orphaned record detection', 'Index verification'] },
-                                    { cat: '🧹 Code Quality',   items: ['Linting & style checks', 'Dead code detection', 'TODO / FIXME audit', 'Complexity analysis'] },
-                                    { cat: '⚡ Performance',    items: ['API response time', 'Load & concurrency', 'Memory usage checks', 'Slow query detection'] },
+                                    ['1','Trigger run'],['2','Engine executes'],['3','API & DB'],
+                                    ['4','Security scan'],['5','Performance'],['6','Classify issues'],
+                                    ['7','Ingest results'],['8','Dashboard live'],
+                                ].map(([num, step], i, arr) => (
+                                    <React.Fragment key={step}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #ddd6fe', borderRadius: '6px', padding: '3px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                            <span style={{ background: '#7c3aed', color: '#fff', borderRadius: '50%', width: '14px', height: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, flexShrink: 0 }}>{num}</span>
+                                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#5b21b6' }}>{step}</span>
+                                        </div>
+                                        {i < arr.length - 1 && <span style={{ color: '#a78bfa', fontSize: '0.75rem', margin: '0 2px', flexShrink: 0 }}>→</span>}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+
+                            {/* Suite cards — 3 columns, compact */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                                {[
+                                    { cat: '🌐 API',         items: ['Endpoint health', 'Auth validation', 'Response format'] },
+                                    { cat: '🔒 Security',    items: ['Secret scanning', 'SQL patterns', 'Credential audit'] },
+                                    { cat: '🗄️ Database',     items: ['Schema checks', 'Data integrity', 'Orphaned records'] },
+                                    { cat: '🧹 Code Quality',items: ['Linting', 'Dead code', 'TODO audit'] },
+                                    { cat: '⚡ Performance', items: ['Response time', 'Load testing', 'Slow queries'] },
+                                    { cat: '🏷️ Severity',    items: ['critical → fix now', 'high → next release', 'medium → sprint', 'low → backlog', 'info → monitor'] },
                                 ].map(({ cat, items }) => (
-                                    <div key={cat} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #ddd6fe' }}>
-                                        <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.78rem', marginBottom: '8px' }}>{cat}</div>
+                                    <div key={cat} style={{ background: '#fff', borderRadius: '8px', padding: '9px 11px', border: '1px solid #ddd6fe' }}>
+                                        <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.74rem', marginBottom: '5px' }}>{cat}</div>
                                         {items.map(item => (
-                                            <div key={item} style={{ display: 'flex', gap: '6px', fontSize: '0.75rem', color: '#5b21b6', marginBottom: '4px', lineHeight: 1.4 }}>
-                                                <span style={{ color: '#a78bfa', flexShrink: 0 }}>•</span>{item}
+                                            <div key={item} style={{ fontSize: '0.71rem', color: '#6b7280', marginBottom: '2px', paddingLeft: '8px', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: 0, color: '#a78bfa' }}>·</span>{item}
                                             </div>
                                         ))}
                                     </div>
                                 ))}
-                                <div style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #ddd6fe' }}>
-                                    <div style={{ fontWeight: 700, color: '#4c1d95', fontSize: '0.78rem', marginBottom: '8px' }}>🏷️ Issue Classification</div>
-                                    {[
-                                        ['critical', '#dc2626', 'Immediate action required'],
-                                        ['high',     '#c2410c', 'Fix before next release'],
-                                        ['medium',   '#d97706', 'Address in next sprint'],
-                                        ['low',      '#2563eb', 'Minor, low priority'],
-                                        ['info',     '#16a34a', 'Informational only'],
-                                    ].map(([sev, color, desc]) => (
-                                        <div key={sev} style={{ display: 'flex', gap: '6px', fontSize: '0.74rem', marginBottom: '4px', alignItems: 'center' }}>
-                                            <span style={{ background: color + '18', color, padding: '1px 6px', borderRadius: '999px', fontWeight: 700, fontSize: '0.65rem', flexShrink: 0 }}>{sev}</span>
-                                            <span style={{ color: '#6b7280' }}>{desc}</span>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
 
-                            {/* Quick notes */}
-                            <div style={{ background: '#ede9fe', borderRadius: '8px', padding: '10px 14px', fontSize: '0.78rem', color: '#3b0764', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                <span>💡 <strong>Run tests:</strong> Click <strong>▶ Run Tests</strong> to queue a run ID, then execute <code style={{ background: '#fff', padding: '1px 5px', borderRadius: '3px' }}>python run_tests.py --run-id &lt;id&gt;</code> on the server.</span>
-                                <span>📊 <strong>Dev tracking:</strong> Use <em>Open → In Progress → Completed</em> workflow on each failed/warning result to track resolution.</span>
-                                <span>🔄 <strong>Auto-refresh:</strong> Results update automatically when the Python engine pushes data to <code style={{ background: '#fff', padding: '1px 5px', borderRadius: '3px' }}>POST /api/testing/ingest</code>.</span>
+                            {/* Quick notes — 3 pills in a row */}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                {[
+                                    ['💡', 'Click ▶ Run Tests → copy run ID → run python3 run_tests.py --run-id <id> on server'],
+                                    ['📊', 'Track each issue: Open → In Progress → Completed via Dev Status'],
+                                    ['🔄', 'Results auto-appear once engine pushes to POST /api/testing/ingest'],
+                                ].map(([icon, text]) => (
+                                    <div key={icon} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: '7px', padding: '6px 10px', fontSize: '0.74rem', color: '#3b0764', flex: '1 1 200px' }}>
+                                        <span style={{ flexShrink: 0 }}>{icon}</span>
+                                        <span style={{ lineHeight: 1.5 }}>{text}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -1374,7 +1365,7 @@ const AutomatedTestingTab = () => {
                 {/* Summary KPI cards (interactive filters) */}
                 {!isSumLoading && (
                     <div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '10px' }}>
                             {[
                                 { label:'Total Tests', kpiKey:'total',    val:s.total_results, icon:'🧪', g:'linear-gradient(135deg,#7c3aed,#8b5cf6)', l:'#f5f3ff', accent:'#7c3aed', fStatus:'all',     fDev:'all',  fSev:'all'      },
                                 { label:'Passed',      kpiKey:'passed',   val:s.passed,        icon:'✅', g:'linear-gradient(135deg,#059669,#10b981)', l:'#ecfdf5', accent:'#059669', fStatus:'passed',  fDev:'all',  fSev:'all'      },
