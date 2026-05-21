@@ -364,6 +364,28 @@ const STATUS_STYLES = {
     ignored:  { bg: '#f9fafb', text: '#9ca3af' },
 };
 
+const Sparkline = ({ data = [] }) => {
+    if (!data || data.length < 2) return null;
+    const counts = data.map(d => Number(d.count));
+    const max = Math.max(...counts, 1);
+    const W = 180, H = 32;
+    const pts = counts.map((c, i) => {
+        const x = ((i / (counts.length - 1)) * W).toFixed(1);
+        const y = (H - 4 - ((c / max) * (H - 8))).toFixed(1);
+        return `${x},${y}`;
+    }).join(' ');
+    return (
+        <svg width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
+            <polyline fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round" points={pts} />
+            {counts.map((c, i) => {
+                const x = ((i / (counts.length - 1)) * W).toFixed(1);
+                const y = (H - 4 - ((c / max) * (H - 8))).toFixed(1);
+                return <circle key={i} cx={x} cy={y} r="3" fill="#ef4444" stroke="#fff" strokeWidth="1.5" />;
+            })}
+        </svg>
+    );
+};
+
 const CrashAnalyticsTab = () => {
     const [summary, setSummary]           = useState(null);
     const [errors, setErrors]             = useState([]);
@@ -381,6 +403,9 @@ const CrashAnalyticsTab = () => {
     const [searchInput, setSearchInput]   = useState('');
     const [autoRefresh, setAutoRefresh]   = useState(true);
     const autoRefreshTimer                = useRef(null);
+    const [showInfo, setShowInfo]         = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [activeKpi, setActiveKpi]       = useState(null);
 
     const fmtTime = (iso) => iso
         ? new Date(iso).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
@@ -453,6 +478,38 @@ const CrashAnalyticsTab = () => {
         await axiosAdmin.delete('/errors/purge');
         loadErrors(1); loadSummary();
     }, [loadErrors, loadSummary]);
+
+    const generateSamples = useCallback(async () => {
+        if (!window.confirm('Insert 15 sample crash records for QA testing?\nThis cannot be undone.')) return;
+        setIsGenerating(true);
+        try {
+            await axiosAdmin.post('/errors/generate-samples');
+            loadErrors(1); loadSummary();
+        } catch (e) {
+            alert('Failed to generate samples: ' + (e.response?.data?.error || e.message));
+        } finally {
+            setIsGenerating(false);
+        }
+    }, [loadErrors, loadSummary]);
+
+    const handleKpiClick = useCallback((kpiKey, filterStatus, filterSeverity) => {
+        if (activeKpi === kpiKey) {
+            // Toggle off — reset to default view
+            setActiveKpi(null);
+            setStatusFilter('open');
+            setSeverityFilter('all');
+        } else {
+            setActiveKpi(kpiKey);
+            setStatusFilter(filterStatus);
+            setSeverityFilter(filterSeverity);
+        }
+    }, [activeKpi]);
+
+    const clearKpiFilter = useCallback(() => {
+        setActiveKpi(null);
+        setStatusFilter('open');
+        setSeverityFilter('all');
+    }, []);
 
     const toggleId = (id) => setSelectedIds(prev =>
         prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -545,36 +602,143 @@ const CrashAnalyticsTab = () => {
     return (
         <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-            {/* ── Summary cards ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '12px' }}>
-                {[
-                    { label: 'Total Errors',    val: s.total,            icon: '💥', grad: 'linear-gradient(135deg,#dc2626,#ef4444)', light: '#fef2f2' },
-                    { label: 'Open',            val: s.open,             icon: '🔴', grad: 'linear-gradient(135deg,#d97706,#f59e0b)', light: '#fffbeb' },
-                    { label: 'Fatal',           val: s.fatal,            icon: '☠️', grad: 'linear-gradient(135deg,#7c3aed,#8b5cf6)', light: '#f5f3ff' },
-                    { label: 'Errors',          val: s.errors,           icon: '⚠️', grad: 'linear-gradient(135deg,#0891b2,#06b6d4)', light: '#ecfeff' },
-                    { label: 'Warnings',        val: s.warnings,         icon: '🟡', grad: 'linear-gradient(135deg,#2563eb,#3b82f6)', light: '#eff6ff' },
-                    { label: 'Resolved',        val: s.resolved,         icon: '✅', grad: 'linear-gradient(135deg,#059669,#10b981)', light: '#ecfdf5' },
-                ].map(c => (
-                    <div key={c.label} style={{ borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                        <div style={{ background: c.grad, padding: '14px 16px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</div>
-                            <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
+            {/* ── Info Banner ── */}
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '14px', overflow: 'hidden' }}>
+                <button
+                    onClick={() => setShowInfo(v => !v)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: 'transparent', border: 'none', cursor: 'pointer', gap: '10px' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>ℹ️</span>
+                        <span style={{ fontWeight: 700, color: '#92400e', fontSize: '0.9rem' }}>What is Crash Analytics?</span>
+                        <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: '999px', fontWeight: 600 }}>Web Error Tracker · Live</span>
+                    </div>
+                    <span style={{ color: '#b45309', fontSize: '0.78rem', fontWeight: 700, flexShrink: 0 }}>{showInfo ? '▲ Hide' : '▼ Learn more'}</span>
+                </button>
+                {showInfo && (
+                    <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ color: '#78350f', fontSize: '0.82rem', lineHeight: 1.7 }}>
+                            This module automatically records <strong>application failures, runtime exceptions, API failures, media errors,</strong> and unexpected user-flow interruptions during gameplay or admin usage.
+                            All errors are captured via global <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '3px', fontSize: '0.8em' }}>window.onerror</code> and <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '3px', fontSize: '0.8em' }}>unhandledrejection</code> handlers and sent to the server in real-time.
                         </div>
-                        <div style={{ background: c.light, padding: '10px 16px 14px' }}>
-                            <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#111827', lineHeight: 1 }}>{isSummaryLoading ? '…' : fmt(c.val)}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '10px' }}>
+                            {[
+                                { cat: '⚛️ Frontend', items: ['React rendering crash', 'Undefined variables / JS exceptions', 'Failed component mount', 'Broken route navigation'] },
+                                { cat: '🎮 Game Errors', items: ['Question loading failure', 'Timer malfunction', 'Audio not stopping / leak', 'Resume state failure', 'Score calculation mismatch'] },
+                                { cat: '🌐 API Errors', items: ['500 server error', 'Request timeout', 'Authentication failure', 'Missing or invalid response'] },
+                                { cat: '📱 Device / Browser', items: ['Media autoplay restriction', 'Mobile asset load failure', 'Low memory crash', 'Blank screen after reload'] },
+                            ].map(({ cat, items }) => (
+                                <div key={cat} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', border: '1px solid #fde68a' }}>
+                                    <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.78rem', marginBottom: '8px' }}>{cat}</div>
+                                    {items.map(item => (
+                                        <div key={item} style={{ display: 'flex', gap: '6px', fontSize: '0.76rem', color: '#78350f', marginBottom: '4px', lineHeight: 1.4 }}>
+                                            <span style={{ color: '#d97706', flexShrink: 0 }}>•</span>{item}
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ background: '#fef3c7', borderRadius: '8px', padding: '10px 14px', fontSize: '0.78rem', color: '#78350f', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <span>💡 <strong>Note:</strong> Only unexpected failures are recorded. Normal user exits (Pause/Quit with reason) are not treated as crashes.</span>
+                            <span>🔧 <strong>Dev tip:</strong> Ensure <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px' }}>initErrorTracker()</code> is called in <code style={{ background: '#fff', padding: '1px 4px', borderRadius: '3px' }}>App.js</code> for accurate reporting.</span>
                         </div>
                     </div>
-                ))}
+                )}
             </div>
 
-            {/* ── 24h trend ── */}
-            {!isSummaryLoading && s.last_24h !== undefined && (
-                <div style={{ background: trendUp ? '#fef2f2' : '#f0fdf4', border: `1px solid ${trendUp ? '#fca5a5' : '#86efac'}`, borderRadius: '12px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.82rem' }}>
-                    <span style={{ fontSize: '1.3rem' }}>{trendUp ? '📈' : '📉'}</span>
-                    <span style={{ fontWeight: 700, color: trendUp ? '#dc2626' : '#16a34a' }}>
-                        {fmt(s.last_24h)} errors in last 24h
+            {/* ── Summary KPI cards (interactive filters) ── */}
+            <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '12px' }}>
+                    {[
+                        { label: 'Total Errors', val: s.total,    icon: '💥', grad: 'linear-gradient(135deg,#dc2626,#ef4444)', light: '#fef2f2', accent: '#dc2626', kpiKey: 'total',    filterStatus: 'all',      filterSeverity: 'all'     },
+                        { label: 'Open',         val: s.open,     icon: '🔴', grad: 'linear-gradient(135deg,#d97706,#f59e0b)', light: '#fffbeb', accent: '#d97706', kpiKey: 'open',     filterStatus: 'open',     filterSeverity: 'all'     },
+                        { label: 'Fatal',        val: s.fatal,    icon: '☠️', grad: 'linear-gradient(135deg,#7c3aed,#8b5cf6)', light: '#f5f3ff', accent: '#7c3aed', kpiKey: 'fatal',    filterStatus: 'all',      filterSeverity: 'fatal'   },
+                        { label: 'Errors',       val: s.errors,   icon: '⚠️', grad: 'linear-gradient(135deg,#0891b2,#06b6d4)', light: '#ecfeff', accent: '#0891b2', kpiKey: 'errors',   filterStatus: 'all',      filterSeverity: 'error'   },
+                        { label: 'Warnings',     val: s.warnings, icon: '🟡', grad: 'linear-gradient(135deg,#2563eb,#3b82f6)', light: '#eff6ff', accent: '#2563eb', kpiKey: 'warnings', filterStatus: 'all',      filterSeverity: 'warning' },
+                        { label: 'Resolved',     val: s.resolved, icon: '✅', grad: 'linear-gradient(135deg,#059669,#10b981)', light: '#ecfdf5', accent: '#059669', kpiKey: 'resolved', filterStatus: 'resolved', filterSeverity: 'all'     },
+                    ].map(c => {
+                        const isActive = activeKpi === c.kpiKey;
+                        return (
+                            <div
+                                key={c.kpiKey}
+                                role="button"
+                                tabIndex={0}
+                                aria-pressed={isActive}
+                                title={isActive ? `Remove filter: ${c.label}` : `Filter by: ${c.label}`}
+                                onClick={() => handleKpiClick(c.kpiKey, c.filterStatus, c.filterSeverity)}
+                                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleKpiClick(c.kpiKey, c.filterStatus, c.filterSeverity)}
+                                onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                onMouseLeave={e => { if (!isActive) e.currentTarget.style.transform = 'none'; }}
+                                style={{
+                                    borderRadius: '14px', overflow: 'hidden', cursor: 'pointer',
+                                    outline: 'none', position: 'relative',
+                                    boxShadow: isActive
+                                        ? `0 0 0 3px ${c.accent}, 0 8px 20px rgba(0,0,0,0.14)`
+                                        : '0 2px 8px rgba(0,0,0,0.08)',
+                                    transform: isActive ? 'translateY(-3px)' : 'none',
+                                    transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+                                }}
+                            >
+                                <div style={{ background: c.grad, padding: '14px 16px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{c.label}</div>
+                                    <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
+                                    {isActive && (
+                                        <div style={{
+                                            position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                                            background: 'rgba(255,255,255,0.96)', color: c.accent,
+                                            fontSize: '0.54rem', fontWeight: 900, padding: '2px 8px',
+                                            borderRadius: '999px 999px 0 0', letterSpacing: '0.07em', whiteSpace: 'nowrap',
+                                        }}>
+                                            ● ACTIVE FILTER
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{
+                                    background: c.light, padding: '10px 16px 14px',
+                                    borderTop: `2px solid ${isActive ? c.accent : 'transparent'}`,
+                                    transition: 'border-color 0.18s ease',
+                                }}>
+                                    <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#111827', lineHeight: 1 }}>
+                                        {isSummaryLoading ? '…' : fmt(c.val)}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* helper text + clear filter row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontStyle: 'italic' }}>
+                        💡 Click any card to filter crash records — click again to reset.
                     </span>
-                    <span style={{ color: '#6b7280' }}>vs {fmt(s.prev_24h)} previous 24h</span>
+                    {activeKpi !== null && (
+                        <button
+                            onClick={clearKpiFilter}
+                            style={{ ...btnStyle('#fef2f2', '#dc2626'), border: '1px solid #fca5a5', fontSize: '0.72rem', padding: '4px 12px' }}
+                        >
+                            ✕ Clear Filter
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* ── 24h trend + 7-day sparkline ── */}
+            {!isSummaryLoading && s.last_24h !== undefined && (
+                <div style={{ background: trendUp ? '#fef2f2' : '#f0fdf4', border: `1px solid ${trendUp ? '#fca5a5' : '#86efac'}`, borderRadius: '12px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '1.3rem' }}>{trendUp ? '📈' : '📉'}</span>
+                    <div>
+                        <span style={{ fontWeight: 700, color: trendUp ? '#dc2626' : '#16a34a' }}>
+                            {fmt(s.last_24h)} errors in last 24h
+                        </span>
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>vs {fmt(s.prev_24h)} previous 24h</span>
+                    </div>
+                    {s.daily && s.daily.length >= 2 && (
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 700, letterSpacing: '0.05em' }}>7-DAY TREND</span>
+                            <Sparkline data={s.daily} />
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -593,7 +757,7 @@ const CrashAnalyticsTab = () => {
                 </div>
 
                 {/* Severity filter */}
-                <select value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); }} style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem', cursor: 'pointer', color: '#374151', background: '#f9fafb' }}>
+                <select value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); setActiveKpi(null); }} style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '0.82rem', cursor: 'pointer', color: '#374151', background: '#f9fafb' }}>
                     <option value="all">All Severities</option>
                     <option value="fatal">Fatal</option>
                     <option value="error">Error</option>
@@ -604,7 +768,7 @@ const CrashAnalyticsTab = () => {
                 {/* Status tabs */}
                 <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '3px', gap: '2px' }}>
                     {['open','resolved','ignored','all'].map(s => (
-                        <button key={s} onClick={() => setStatusFilter(s)} style={{
+                        <button key={s} onClick={() => { setStatusFilter(s); setActiveKpi(null); }} style={{
                             padding: '5px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer',
                             fontSize: '0.73rem', fontWeight: 600, textTransform: 'capitalize',
                             background: statusFilter === s ? '#fff' : 'transparent',
@@ -623,6 +787,9 @@ const CrashAnalyticsTab = () => {
                 </button>
                 <button onClick={() => { loadSummary(); loadErrors(page); }} disabled={isLoading} style={{ ...btnStyle('#4f46e5','#fff'), opacity: isLoading ? 0.6 : 1 }}>
                     {isLoading ? 'Loading…' : '↻ Refresh'}
+                </button>
+                <button onClick={generateSamples} disabled={isGenerating} title="Insert 15 sample crash records for QA testing" style={{ ...btnStyle('#f9fafb','#374151'), border: '1px solid #e5e7eb', fontSize: '0.75rem', opacity: isGenerating ? 0.6 : 1 }}>
+                    {isGenerating ? '⏳ Generating…' : '🧪 Sample Logs'}
                 </button>
             </div>
 
@@ -653,10 +820,19 @@ const CrashAnalyticsTab = () => {
                 {isLoading ? (
                     <div style={{ padding: '50px', textAlign: 'center', color: '#9ca3af' }}>Loading errors…</div>
                 ) : errors.length === 0 ? (
-                    <div style={{ padding: '60px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
-                        <div style={{ fontWeight: 700, color: '#374151', fontSize: '1rem' }}>No errors found</div>
-                        <div style={{ color: '#9ca3af', fontSize: '0.82rem', marginTop: '4px' }}>Your web app is running cleanly.</div>
+                    <div style={{ padding: '60px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ fontSize: '3.5rem' }}>✅</div>
+                        <div style={{ fontWeight: 700, color: '#374151', fontSize: '1.05rem' }}>No crash events recorded yet</div>
+                        <div style={{ color: '#9ca3af', fontSize: '0.82rem', maxWidth: '380px', lineHeight: 1.7 }}>
+                            Start gameplay or run automated tests to generate analytics data.
+                            You can also insert sample records to verify logging, filtering, severity classification, and dashboard visibility.
+                        </div>
+                        <button
+                            onClick={generateSamples} disabled={isGenerating}
+                            style={{ ...btnStyle('#f59e0b', '#fff'), marginTop: '8px', padding: '10px 24px', fontSize: '0.85rem', opacity: isGenerating ? 0.6 : 1 }}
+                        >
+                            {isGenerating ? '⏳ Generating…' : '🧪 Generate Sample Crash Logs'}
+                        </button>
                     </div>
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
@@ -725,6 +901,26 @@ const CrashAnalyticsTab = () => {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* ── Developer Notes ── */}
+            <div style={{ background: '#1e1e2e', borderRadius: '14px', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '1rem' }}>🛠️</span>
+                    <span style={{ fontWeight: 700, color: '#e2e8f0', fontSize: '0.88rem' }}>Developer Notes</span>
+                </div>
+                {[
+                    { icon: '⚡', text: 'Crash analytics only records unexpected failures. Normal user exits (Pause/Quit with a reason) are not treated as crashes.' },
+                    { icon: '🔧', text: 'For accurate reporting, ensure initErrorTracker() is called in App.js and global error handlers are enabled in both frontend and backend.' },
+                    { icon: '📡', text: 'Frontend errors are sent via sendBeacon (fire-and-forget) to POST /api/errors/log — no auth token required for error reporting.' },
+                    { icon: '🔁', text: 'Rate limiting: max 15 errors/minute, 60s deduplication window per fingerprint to prevent log flooding from rapid-fire crashes.' },
+                    { icon: '🏷️', text: 'Severity levels: fatal (uncaught window exceptions) → error (promise rejections / API failures) → warning (manual reports) → info.' },
+                ].map(({ icon, text }) => (
+                    <div key={icon} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.6 }}>
+                        <span style={{ flexShrink: 0 }}>{icon}</span>
+                        <span>{text}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );

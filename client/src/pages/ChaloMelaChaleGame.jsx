@@ -587,6 +587,7 @@ const ChaloMelaChaleGame = () => {
 
   const startTrial = useCallback((trialNum) => {
     stopAll();
+    isStoppedRef.current = false; // reset: starting a new trial, not a permanent stop
     let spPos = {r:0, c:0};
     questionStateRef.current.matrix.forEach((row, ri) => row.forEach((cell, ci) => {
       if(cell === "7-SP") spPos = {r:ri, c:ci};
@@ -642,6 +643,7 @@ const ChaloMelaChaleGame = () => {
 
   const initQuestion = useCallback((id, matrix) => {
     stopAll();
+    isStoppedRef.current = false; // reset: starting a new question, not a permanent stop
     setRefreshCount(0);
     setRetakeCount(0);
     const timeLimit = QUESTION_CONFIG[id]?.time || 10;
@@ -977,6 +979,7 @@ const ChaloMelaChaleGame = () => {
     setShowResumeModal(false);
     setScreen('splash');
     stopAll();
+    isStoppedRef.current = false; // reset: restarting fresh, not a permanent stop
     // Reset all game state
     setAllScores([]);
     setUnlockedPaths({ p2: false, p3: false, tq1: false, sbP2: false, tq3: false });

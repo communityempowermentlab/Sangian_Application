@@ -90,7 +90,6 @@ const AdminLogin = () => {
                                             <span className="al-card-label-icon">{g.icon}</span>
                                             <div>
                                                 <div className="al-card-label-name">{g.title}</div>
-                                                <div className="al-card-label-tag" style={{ color: g.color }}>{g.tag}</div>
                                             </div>
                                         </div>
                                     </div>

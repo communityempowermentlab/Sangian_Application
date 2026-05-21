@@ -250,9 +250,6 @@ const Home = () => {
                                             e.target.parentElement.innerHTML = '<div class="fallback-icon">🧩</div>'; 
                                         }} 
                                     />
-                                    <span className={`game-card-tag-badge ${test.tagClass}`}>
-                                        {test.tag}
-                                    </span>
                                 </div>
                                 <div className="game-card-details">
                                     <h3 className="game-card-title">{test.shortTitle}</h3>
