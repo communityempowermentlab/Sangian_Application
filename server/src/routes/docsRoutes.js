@@ -5,6 +5,9 @@ const authMiddleware = require('../middleware/auth');
 
 router.use(authMiddleware);
 
+// List audio assets for a game folder (no admin JWT needed — child session is fine)
+router.get('/audio-assets/:folder', docsController.getAudioAssets);
+
 // Get a specific historical version (must come BEFORE /:gameKey to avoid param conflict)
 router.get('/version/:versionId', docsController.getVersion);
 

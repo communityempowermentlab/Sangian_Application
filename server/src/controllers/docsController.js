@@ -1,4 +1,27 @@
 const { pool } = require('../config/db');
+const path = require('path');
+const fs   = require('fs');
+
+const AUDIO_ROOT = path.join(__dirname, '../../../client/public/assets/audios');
+
+// ─── List audio files for a game folder ──────────────────────────────────────
+exports.getAudioAssets = (req, res) => {
+    const { folder } = req.params;
+    // Sanitise: allow only alphanumeric, underscore, hyphen, space
+    const safe = folder.replace(/[^a-zA-Z0-9_\- ]/g, '');
+    const dir  = path.join(AUDIO_ROOT, safe);
+    try {
+        if (!fs.existsSync(dir)) {
+            return res.json({ success: true, folder: safe, files: [] });
+        }
+        const files = fs.readdirSync(dir)
+            .filter(f => /\.(wav|mp3|m4a|ogg|aac)$/i.test(f) && !f.startsWith('.'))
+            .sort();
+        res.json({ success: true, folder: safe, files });
+    } catch {
+        res.json({ success: true, folder: safe, files: [] });
+    }
+};
 
 // ─── Get current document for a game key ─────────────────────────────────────
 exports.getDoc = async (req, res) => {

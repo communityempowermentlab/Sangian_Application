@@ -9,7 +9,29 @@
       "Bash(git add *)",
       "Bash(git check-ignore *)",
       "Bash(git config *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npx playwright *)",
+      "Bash(node verify.js)",
+      "Read(//tmp/verify-admindocs/**)",
+      "Read(//private/tmp/verify-admindocs/**)",
+      "Bash(node -e \"const p=require\\('path'\\); console.log\\(p.resolve\\('/Users/mohammad/Documents/sangian/server/src/routes/../../..', 'client/public/assets/audios/bagiya'\\)\\)\")",
+      "Bash(curl -s -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.fake-sig\" \"http://localhost:5000/api/docs/audio-assets/bagiya\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('Files:', len\\(d.get\\('files',[]\\)\\), '\\\\n', '\\\\n '.join\\(d.get\\('files',[]\\)[:8]\\), '...'\\)\")",
+      "Bash(node -e \"const p=require\\('path'\\); console.log\\(p.join\\('/Users/mohammad/Documents/sangian/server/src/controllers','../../../client/public/assets/audios'\\)\\)\")",
+      "Bash(pkill -f \"node.*server\")",
+      "Bash(node app.js)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); files=d.get\\('files',[]\\); print\\(f'Total files: {len\\(files\\)}'\\); [print\\(' ',f\\) for f in files]\")",
+      "Bash(curl -s \"http://localhost:5000/api/docs/audio-assets/bagiya\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.fake-sig\")",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('OK, files:', len\\(d['files']\\)\\)\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(node server.js)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('Files:', len\\(d['files']\\), '| First 5:', d['files'][:5]\\)\")",
+      "Bash(curl -s http://localhost:5000/api/docs/audio-assets/__TRACKED_VAR__ -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjo5OTk5OTk5OTk5fQ.fake-sig')",
+      "Bash(grep -rn \"alert\\('Please enter a reason\\\\|alert\\('Failed to save assessment\\\\|alert\\('Failed to start\\\\|alert\\(\\\\\"Your browser does not support Speech\\\\|alert\\('Assessment successfully\\\\|Attempt #\" \\\\ *)",
+      "Read(//Users/mongodb/Documents/sangian/client/src/pages/**)",
+      "Bash(python3)"
     ]
   }
 }

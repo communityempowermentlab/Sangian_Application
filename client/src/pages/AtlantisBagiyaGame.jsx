@@ -666,7 +666,7 @@ const AtlantisBagiyaGame = () => {
   }, [completeGame, saveToServer]);
 
   const handleQuit = async (status) => {
-    if (!quitReason.trim()) { alert('Please enter a reason'); return; }
+    if (!quitReason.trim()) { alert(t('common.enterReason')); return; }
     await saveToServer(status, quitReason);
     if (status === 'quit') {
       setShowQuitModal(false);
@@ -773,10 +773,10 @@ const AtlantisBagiyaGame = () => {
         generateAndUploadPDF();
       }, 500);
       
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -1128,7 +1128,7 @@ const AtlantisBagiyaGame = () => {
                 <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Bagiya · Final Results'}</div>
               </div>
               <div className="ab-chips">
-                <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
+                <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
                 <span className="ab-chip">Final Results</span>
                 <span className="ab-chip">Time: {formatTime(totalTimeSec)}</span>
               </div>

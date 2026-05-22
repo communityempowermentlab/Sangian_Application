@@ -53,13 +53,13 @@ const QUESTIONS = [
     id: 21, order: 21, category: CATEGORY.STORY, 
     text: "एक बार की बात है। एक छोटा सा लड़का था। उसका नाम राम था। वह रोज स्कूल जाता था। वह बहुत मेहनती था। उसे किताबें पढ़ना बहुत पसंद था। एक दिन उसने एक बड़ी किताब पढ़ी। उस किताब में बहुत सारी अच्छी कहानियाँ थीं। राम बहुत खुश हुआ।", 
     categoryName: "Story",
-    assessmentCriteria: ["Did the child skip any words?", "Did the child make pronunciation errors?", "Did the child need help reading?"]
+    assessmentCriteria: ["skipWords", "pronunciation", "neededHelp"]
   },
   { 
     id: 22, order: 22, category: CATEGORY.PARAGRAPH, 
     text: "भारत एक विशाल देश है। यहाँ विभिन्न संस्कृतियाँ और भाषाएँ हैं। हमारे देश में अनेक त्योहार मनाए जाते हैं। दिवाली, होली, ईद और क्रिसमस प्रमुख त्योहार हैं। सभी लोग मिलजुलकर रहते हैं। हमें अपने देश पर गर्व है।", 
     categoryName: "Paragraph",
-    assessmentCriteria: ["Did the child skip any words?", "Did the child make pronunciation errors?", "Did the child need help reading?"]
+    assessmentCriteria: ["skipWords", "pronunciation", "neededHelp"]
   }
 ];
 
@@ -199,7 +199,7 @@ const ReadingSkillGame = () => {
       setAttemptNo(res.data.attempt_no || 1);
       resetInternalState();
       setScreen('game');
-    } catch (e) { alert('Failed to start session on server.'); setScreen('game'); }
+    } catch (e) { alert(t('common.failedToStart')); setScreen('game'); }
   };
 
   const resumeGame = () => {
@@ -248,7 +248,7 @@ const ReadingSkillGame = () => {
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Your browser does not support Speech Recognition. Please type manually.");
+      alert(t('common.speechNotSupported'));
       return;
     }
 
@@ -460,7 +460,7 @@ const ReadingSkillGame = () => {
   };
 
   const handleQuit = async (status) => {
-    if (!quitReason.trim()) return alert('Please enter a reason');
+    if (!quitReason.trim()) return alert(t('common.enterReason'));
     await saveToServer(status, quitReason);
     if (status === 'quit') {
       setShowQuitModal(false);
@@ -510,7 +510,7 @@ const ReadingSkillGame = () => {
       setTimeout(generateAndUploadPDF, 1000);
     } catch(e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -746,7 +746,7 @@ const ReadingSkillGame = () => {
                                             const isCorrect = answer === 'no';
                                             return (
                                               <tr key={cIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                <td style={{ padding: '8px' }}>{criterion}</td>
+                                                <td style={{ padding: '8px' }}>{t(`game.readingCriteria.${criterion}`)}</td>
                                                 <td style={{ padding: '8px', textTransform: 'capitalize' }}>{answer}</td>
                                                 <td style={{ padding: '8px' }}>No</td>
                                                 <td style={{ padding: '8px', fontWeight: 'bold' }}>{isCorrect ? 1 : 0}</td>
@@ -805,13 +805,13 @@ const ReadingSkillGame = () => {
           <div className="rs-modal" style={{ maxWidth: '600px' }}>
             <div className="rs-modal-header" style={{ marginBottom: '20px' }}>
               <h3>Assessment</h3>
-              <p>Please answer all criteria:</p>
+              <p>{t('game.assessmentComplete')}</p>
             </div>
             
             <div className="rs-assessment-criteria" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {(currentQuestion.assessmentCriteria || []).map((criterion, index) => (
                 <div key={index} className={`rs-criterion-row ${midTestAnswers[index] ? 'complete' : ''}`}>
-                  <div className="rs-criterion-text">{criterion}</div>
+                  <div className="rs-criterion-text">{t(`game.readingCriteria.${criterion}`)}</div>
                   <div className="rs-criterion-buttons">
                     <button 
                       className={`rs-criterion-btn rs-btn-yes ${midTestAnswers[index] === 'yes' ? 'selected' : ''}`}

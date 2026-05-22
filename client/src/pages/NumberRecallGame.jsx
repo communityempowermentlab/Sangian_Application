@@ -511,7 +511,7 @@ const NumberRecallGame = () => {
       resetInternalState();
       setScreen('practice');
     } catch (e) {
-      alert('Failed to start session on server.');
+      alert(t('common.failedToStart'));
       resetInternalState();
       setScreen('practice');
     }
@@ -631,7 +631,7 @@ const NumberRecallGame = () => {
   }, []);
 
   const handleQuit = async (status) => {
-    if (!quitReason.trim()) { alert('Please enter a reason'); return; }
+    if (!quitReason.trim()) { alert(t('common.enterReason')); return; }
     await saveToServer(status, quitReason);
     if (status === 'quit') {
       setShowQuitModal(false);
@@ -694,10 +694,10 @@ const NumberRecallGame = () => {
         generateAndUploadPDF();
       }, 1000);
       
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -922,7 +922,7 @@ const NumberRecallGame = () => {
                 </div>
               </div>
               <div className="nr-chips">
-                <span className="nr-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
+                <span className="nr-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
                 <span className="nr-chip">Final Results</span>
                 <span className="nr-chip">Time: {formatDurationMs(totalTimeMs)}</span>
               </div>

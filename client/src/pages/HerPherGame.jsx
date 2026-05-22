@@ -588,7 +588,7 @@ const HerPherGame = () => {
 
   // ──── Quit/Pause ─────────────────────────────────────────────────────────────
   const handleQuit = async (status) => {
-    if (!quitReason.trim()) { alert('Please enter a reason'); return; }
+    if (!quitReason.trim()) { alert(t('common.enterReason')); return; }
     await saveToServer(status, quitReason);
     if (status === 'quit') {
       setShowQuitModal(false);
@@ -616,10 +616,10 @@ const HerPherGame = () => {
       });
       setAssessmentSubmitted(true);
       await generateAndUploadPDF();
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setAssessmentSubmitting(false);
     }
@@ -891,7 +891,7 @@ const HerPherGame = () => {
                   <div className="hp-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'All questions completed'}</div>
                 </div>
                 <div className="hp-chips">
-                  <span className="hp-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
+                  <span className="hp-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
                     Time: {Math.floor(totalTime / 60)}m {totalTime % 60}s

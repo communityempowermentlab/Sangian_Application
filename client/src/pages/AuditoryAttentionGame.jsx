@@ -293,7 +293,7 @@ const AuditoryAttentionGame = () => {
       setAssessmentSubmitted(false);
       setScreen('sampleA');
     } catch (e) {
-      alert('Failed to start session on server. Progress won\'t be saved.');
+      alert(t('common.failedToStart'));
       setCanStartQ(false);
       setScreen('sampleA');
     }
@@ -815,9 +815,9 @@ const AuditoryAttentionGame = () => {
       }, 1000);
 
       setAssessmentSubmitted(true);
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) {
-      alert('Failed to save assessment');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -1075,7 +1075,7 @@ const AuditoryAttentionGame = () => {
                    <p className="aa-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Final Results'}</p>
                  </div>
                  <div style={{ background: '#4f46e5', color: '#fff', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem' }}>
-                   Attempt #{attemptNo}
+                   {t('game.attemptLabel')}{attemptNo}
                  </div>
                </div>
 

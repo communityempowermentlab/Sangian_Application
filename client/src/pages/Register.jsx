@@ -2,97 +2,68 @@ import { API_URL } from '../services/api';
 import React, { useState } from 'react';
 import axios from 'axios';
 import ChildPhotoUpload from '../components/ChildPhotoUpload';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Register = () => {
+    const { t } = useLanguage();
     const [photoFile, setPhotoFile] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        dob: '',
-        gender: '',
-        mobile: ''
-    });
+    const [formData, setFormData] = useState({ name: '', dob: '', gender: '', mobile: '' });
     const [errors, setErrors] = useState({});
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Calculate min and max selectable dates
     const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 8,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const minDate = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate()).toISOString().split('T')[0];
 
-    // Max selectable date (child exactly 8 years old today)
-    const maxDateObj = new Date(today.getFullYear() - 8, today.getMonth(), today.getDate());
-    const maxDate = maxDateObj.toISOString().split('T')[0];
-
-    // Min selectable date (child exactly 10 years old today)
-    const minDateObj = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
-    const minDate = minDateObj.toISOString().split('T')[0];
-
-    // Handle Input Changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear field-specific error when user starts typing
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
-    // Validate form inputs
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = "Child's name is required.";
+        if (!formData.name.trim()) newErrors.name = t('register.errName');
         if (!formData.dob) {
-            newErrors.dob = "Date of Birth is required.";
+            newErrors.dob = t('register.errDobRequired');
         } else {
             const dobDate = new Date(formData.dob);
-            const today = new Date();
             let age = today.getFullYear() - dobDate.getFullYear();
-            const monthDiff = today.getMonth() - dobDate.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
-                age--;
-            }
-            if (age < 8 || age >= 11) { // Up to 10 years and 364 days is mathematically 10
-                newErrors.dob = "Child's age must be between 8 and 10 years.";
-            }
+            const m = today.getMonth() - dobDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+            if (age < 8 || age >= 11) newErrors.dob = t('register.errDobAge');
         }
-
-        if (!formData.gender) newErrors.gender = "Please select a gender.";
-
-        const mobileRegex = /^[0-9]{10}$/;
+        if (!formData.gender) newErrors.gender = t('register.errGender');
         if (!formData.mobile) {
-            newErrors.mobile = "Mobile number is required.";
-        } else if (!mobileRegex.test(formData.mobile)) {
-            newErrors.mobile = "Enter a valid 10-digit mobile number.";
+            newErrors.mobile = t('register.errMobileRequired');
+        } else if (!/^[0-9]{10}$/.test(formData.mobile)) {
+            newErrors.mobile = t('register.errMobileInvalid');
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle Form Submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
-
         setIsSubmitting(true);
         setStatusMsg({ type: '', text: '' });
-
         try {
-            // Use FormData so the optional photo file is sent as multipart
             const data = new FormData();
             data.append('name',   formData.name.trim());
             data.append('dob',    formData.dob);
             data.append('gender', formData.gender);
             data.append('mobile', formData.mobile);
             if (photoFile) data.append('photo', photoFile);
-
             const response = await axios.post(API_URL + '/children/register', data);
             const generatedId = response.data.childId;
-            setStatusMsg({ type: 'success', text: `Child registered successfully! Child ID: ${generatedId}` });
+            setStatusMsg({ type: 'success', text: t('register.successMsg').replace('{id}', generatedId) });
             setFormData({ name: '', dob: '', gender: '', mobile: '' });
             setPhotoFile(null);
         } catch (err) {
-            const errorText = err.response?.data?.message || 'An error occurred during registration. Please try again.';
-            setStatusMsg({ type: 'error', text: errorText });
+            const msg = err.response?.data?.message || t('register.errGeneral');
+            setStatusMsg({ type: 'error', text: msg });
         } finally {
             setIsSubmitting(false);
         }
@@ -102,131 +73,96 @@ const Register = () => {
         <main className="main-shell">
             <section className="register-shell">
                 <div className="register-card">
-                    {/* LEFT SIDE: TEXT */}
                     <div className="register-left">
-                        <div className="register-pill">Child registration module</div>
+                        <div className="register-pill">{t('register.pill')}</div>
                         <h1 className="register-heading">
-                            Register the child<br />
-                            <span>for Sangian assessment</span>
+                            {t('register.heading')}<br />
+                            <span>{t('register.headingSub')}</span>
                         </h1>
-                        <p className="register-text">
-                            Please enter the details of the child whose cognitive assessment will be done using
-                            the Sangian (Kauffman-inspired) test modules. These details help you identify and
-                            track the child across sessions.
-                        </p>
+                        <p className="register-text">{t('register.description')}</p>
                         <ul className="register-bullets">
-                            <li>Use the child’s full official name wherever possible</li>
-                            <li>Confirm date of birth with records before starting the assessment</li>
-                            <li>Mobile number can be parent / guardian’s primary contact</li>
+                            <li>{t('register.bullet1')}</li>
+                            <li>{t('register.bullet2')}</li>
+                            <li>{t('register.bullet3')}</li>
                         </ul>
                     </div>
 
-                    {/* RIGHT SIDE: FORM */}
                     <div className="register-right">
-                        {/* STATUS MESSAGE BOX */}
                         {statusMsg.text && (
-                            <div
-                                className="form-success"
-                                style={{
-                                    display: 'block',
-                                    backgroundColor: statusMsg.type === 'error' ? '#fef2f2' : '#ecfdf3',
-                                    borderColor: statusMsg.type === 'error' ? '#ef4444' : '#22c55e',
-                                    color: statusMsg.type === 'error' ? '#991b1b' : '#166534'
-                                }}
-                            >
+                            <div className="form-success" style={{
+                                display: 'block',
+                                backgroundColor: statusMsg.type === 'error' ? '#fef2f2' : '#ecfdf3',
+                                borderColor:     statusMsg.type === 'error' ? '#ef4444' : '#22c55e',
+                                color:           statusMsg.type === 'error' ? '#991b1b' : '#166534',
+                            }}>
                                 {statusMsg.text}
                             </div>
                         )}
 
                         <form className="register-form" onSubmit={handleSubmit} noValidate encType="multipart/form-data">
-                            {/* Photo Upload */}
                             <div className="form-group">
-                                <ChildPhotoUpload onChange={setPhotoFile} label="Child Photo" />
+                                <ChildPhotoUpload onChange={setPhotoFile} label={t('register.photoLabel')} />
                             </div>
 
-                            {/* Name */}
                             <div className="form-group">
-                                <label htmlFor="name">Child's Full Name<span className="required">*</span></label>
+                                <label htmlFor="name">{t('register.nameLabel')}<span className="required">*</span></label>
                                 <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    placeholder="Enter child's full name"
-                                    className={errors.name ? 'input-error' : ''}
-                                    required
+                                    type="text" id="name" name="name"
+                                    value={formData.name} onChange={handleChange}
+                                    placeholder={t('register.namePlaceholder')}
+                                    className={errors.name ? 'input-error' : ''} required
                                 />
                                 <p className="field-error">{errors.name}</p>
                             </div>
 
-                            {/* Date of Birth */}
                             <div className="form-group">
-                                <label htmlFor="dob">Date of Birth<span className="required">*</span></label>
+                                <label htmlFor="dob">{t('register.dobLabel')}<span className="required">*</span></label>
                                 <input
-                                    type="date"
-                                    id="dob"
-                                    name="dob"
-                                    value={formData.dob}
-                                    onChange={handleChange}
-                                    min={minDate}
-                                    max={maxDate}
-                                    className={errors.dob ? 'input-error' : ''}
-                                    required
+                                    type="date" id="dob" name="dob"
+                                    value={formData.dob} onChange={handleChange}
+                                    min={minDate} max={maxDate}
+                                    className={errors.dob ? 'input-error' : ''} required
                                 />
                                 <p className="field-error">{errors.dob}</p>
                             </div>
 
-                            {/* Gender */}
                             <div className="form-group">
-                                <label htmlFor="gender">Gender<span className="required">*</span></label>
+                                <label htmlFor="gender">{t('register.genderLabel')}<span className="required">*</span></label>
                                 <select
-                                    id="gender"
-                                    name="gender"
-                                    value={formData.gender}
-                                    onChange={handleChange}
-                                    className={errors.gender ? 'input-error' : ''}
-                                    required
+                                    id="gender" name="gender"
+                                    value={formData.gender} onChange={handleChange}
+                                    className={errors.gender ? 'input-error' : ''} required
                                 >
-                                    <option value="">Select gender</option>
-                                    <option value="female">Female</option>
-                                    <option value="male">Male</option>
-                                    <option value="other">Other</option>
-                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                    <option value="">{t('register.genderDefault')}</option>
+                                    <option value="female">{t('register.genderFemale')}</option>
+                                    <option value="male">{t('register.genderMale')}</option>
+                                    <option value="other">{t('register.genderOther')}</option>
+                                    <option value="prefer_not_to_say">{t('register.genderPrefer')}</option>
                                 </select>
                                 <p className="field-error">{errors.gender}</p>
                             </div>
 
-                            {/* Mobile Number */}
                             <div className="form-group">
-                                <label htmlFor="mobile">Mobile Number<span className="required">*</span></label>
+                                <label htmlFor="mobile">{t('register.mobileLabel')}<span className="required">*</span></label>
                                 <input
-                                    type="tel"
-                                    id="mobile"
-                                    name="mobile"
-                                    value={formData.mobile}
-                                    onChange={handleChange}
-                                    placeholder="Parent / guardian 10-digit mobile number"
+                                    type="tel" id="mobile" name="mobile"
+                                    value={formData.mobile} onChange={handleChange}
+                                    placeholder={t('register.mobilePlaceholder')}
                                     maxLength="10"
-                                    className={errors.mobile ? 'input-error' : ''}
-                                    required
+                                    className={errors.mobile ? 'input-error' : ''} required
                                 />
-                                <small className="field-hint">Use a valid 10-digit mobile number (India).</small>
+                                <small className="field-hint">{t('register.mobileHint')}</small>
                                 <p className="field-error">{errors.mobile}</p>
                             </div>
 
-                            {/* Submit & Navigation */}
                             <div className="form-actions">
                                 <button type="submit" className="btn form-btn-primary" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Registering...' : 'Register Child'}
+                                    {isSubmitting ? t('register.submittingBtn') : t('register.submitBtn')}
                                 </button>
-                                <a href="/" className="form-link">Back to test hub</a>
+                                <a href="/" className="form-link">{t('common.backToHub')}</a>
                             </div>
 
-                            <p className="form-note">
-                                By registering this child, you confirm that consent has been obtained as per
-                                your institution’s policy and that assessments will be supervised by trained staff.
-                            </p>
+                            <p className="form-note">{t('common.consentNote')}</p>
                         </form>
                     </div>
                 </div>

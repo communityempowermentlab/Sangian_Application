@@ -376,7 +376,7 @@ const TriangleRachnaGame = () => {
 
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("Your browser does not support Speech Recognition. Please type manually."); return; }
+    if (!SpeechRecognition) { alert(t('common.speechNotSupported')); return; }
 
     if (isRecording && recordingTarget === target) {
       if(window.activeRecognition) window.activeRecognition.stop();
@@ -865,7 +865,7 @@ const TriangleRachnaGame = () => {
         generateAndUploadPDF();
       }, 1000);
       
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) { console.error(e); } finally { setAssSub(false); }
   };
 
@@ -1111,7 +1111,7 @@ const TriangleRachnaGame = () => {
             <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Rachna — Final Results'}</div>
           </div>
           <div className="rg-chips">
-            <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
+            <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
             <span className="rg-chip rg-chip-complete">COMPLETE</span>
             <span className="rg-chip">Time: {Math.floor(totalTime/60)}m {totalTime%60}s</span>
           </div>

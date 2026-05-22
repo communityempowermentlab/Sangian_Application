@@ -1207,10 +1207,10 @@ const ChorMachayeShorGame = () => {
       }, 1000);
 
       setAssessmentSubmitted(true);
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -1352,7 +1352,7 @@ const ChorMachayeShorGame = () => {
                   <div className="chor-dash-subtitle">{quitReason ? 'Assessor requested early exit' : 'Test finished successfully'}</div>
                 </div>
                 <div className="chor-dash-badges">
-                  <span className="chor-chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
+                  <span className="chor-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
                   <span className="chor-chip chor-chip-splash">Final Results</span>
                   <span className="chor-chip chor-chip-game">Time: {Math.floor(tTime / 60)}m {tTime % 60}s</span>
                 </div>

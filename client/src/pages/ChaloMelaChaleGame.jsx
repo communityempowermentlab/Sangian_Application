@@ -1077,7 +1077,7 @@ const ChaloMelaChaleGame = () => {
             <div className="screen-subtitle">{isDropped ? 'Q1-Q3 score < 2: System-enforced drop' : (quitReason ? 'Assessor requested early exit' : 'Test finished successfully')}</div>
           </div>
           <div className="chips">
-            <span className="chip" style={{ background: '#4f46e5', color: '#fff' }}>Attempt #{attemptNo}</span>
+            <span className="chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
             <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>Final Results</span>
             <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>Time: {totalTimeMin}m {totalTimeSec}s</span>
           </div>

@@ -183,7 +183,7 @@ const NumberSkillGame = () => {
       setAttemptNo(res.data.attempt_no || 1);
       resetInternalState();
       setScreen('game');
-    } catch (e) { alert('Failed to start session on server.'); setScreen('game'); }
+    } catch (e) { alert(t('common.failedToStart')); setScreen('game'); }
   };
 
   const resumeGame = () => {
@@ -235,7 +235,7 @@ const NumberSkillGame = () => {
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Your browser does not support Speech Recognition. Please type manually.");
+      alert(t('common.speechNotSupported'));
       return;
     }
 
@@ -396,7 +396,7 @@ const NumberSkillGame = () => {
   };
 
   const handleQuit = async (status) => {
-    if (!quitReason.trim()) return alert('Please enter a reason');
+    if (!quitReason.trim()) return alert(t('common.enterReason'));
     await saveToServer(status, quitReason);
     if (status === 'quit') {
       setShowQuitModal(false);
@@ -461,11 +461,11 @@ const NumberSkillGame = () => {
         additional_notes: assessment.notes
       });
       setAssessmentSubmitted(true);
-      alert('Assessment successfully saved!');
+      alert(t('game.assessmentSubmitted'));
       setTimeout(generateAndUploadPDF, 1500);
     } catch(e) {
       console.error(e);
-      alert('Failed to save assessment. Please try again.');
+      alert(t('common.failedToSave'));
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -593,11 +593,11 @@ const NumberSkillGame = () => {
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-screen-header">
               <div>
-                <div className="ns-screen-title">{quitReason ? 'Assessment Terminated' : t('game.assessmentComplete')}</div>
-                <div className="ns-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : t('game.allQuestionsCompleted')}</div>
+                <div className="ns-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
+                <div className="ns-screen-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.allQuestionsCompleted')}</div>
               </div>
               <div className="ns-chips">
-                <span className="ns-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
+                <span className="ns-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   {t('game.time')}: {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
@@ -648,12 +648,12 @@ const NumberSkillGame = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                       <tr>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Question No</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Question</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Correct Answer</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Score</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Time Taken</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Status</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.questionNo')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.question')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.correctAnswer')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.timeTaken')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -670,7 +670,7 @@ const NumberSkillGame = () => {
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{cAnsText}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b' }}>{timeDisp}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score === 1 ? 'Correct' : 'Incorrect'}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score === 1 ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}</td>
                           </tr>
                         );
                       })}
