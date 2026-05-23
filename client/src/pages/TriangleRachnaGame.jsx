@@ -932,7 +932,7 @@ const TriangleRachnaGame = () => {
           <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
         </div>
         <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          Welcome to Rachna
+          {t('game.welcomeRachna')}
         </h2>
         
 
@@ -942,7 +942,7 @@ const TriangleRachnaGame = () => {
               className="rg-btn rg-btn-primary rg-btn-highlight"
               onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
             >
-              ▶ Start Now
+              {`▶ ${t('game.startNow')}`}
             </button>
           </div>
         </div>
@@ -972,7 +972,7 @@ const TriangleRachnaGame = () => {
               </span>
 
               <div className="rg-timer blue-timer">
-                <span className="timer-icon">⏱</span> Timer: 
+                <span className="timer-icon">⏱</span> {t('game.timer')}: 
                 <span className={`rg-timer-val ${timerCls()}`}>
                   {limit === 0 ? '∞' : formatTimerDisplay(timeElapsed)}
                 </span>
@@ -985,8 +985,8 @@ const TriangleRachnaGame = () => {
         <div className="rg-game-main-row">
           <div className="rg-panel rg-target-panel">
             <div className="rg-panel-header">
-              <span className="rg-panel-title">Target Pattern</span>
-              <span className="rg-panel-hint">Build this</span>
+              <span className="rg-panel-title">{t('game.targetPattern')}</span>
+              <span className="rg-panel-hint">{t('game.buildThis')}</span>
             </div>
             <div className="rg-panel-content">
               <img
@@ -1000,7 +1000,7 @@ const TriangleRachnaGame = () => {
 
           <div className="rg-panel rg-workspace-panel">
             <div className="rg-panel-header">
-              <span className="rg-panel-title">Workspace</span>
+              <span className="rg-panel-title">{t('game.workspaceLabel')}</span>
               <span className="rg-panel-hint">
                 {q.sources.some(s => isRotatable(s)) ? 'Drag shapes here · Double-click to rotate 90°' : 'Drag shapes here to build the pattern'}
               </span>
@@ -1014,7 +1014,7 @@ const TriangleRachnaGame = () => {
                 onDrop={onWorkspaceDrop}
               >
                 {workspaceItems.length === 0 && (
-                  <div className="rg-workspace-placeholder">Drop shapes here to build the pattern</div>
+                  <div className="rg-workspace-placeholder">{t('game.dropShapes')}</div>
                 )}
                 {workspaceItems.map((item, index) => {
                   const sz = SHAPE_SIZE_PX[item.size] || 100;
@@ -1046,8 +1046,8 @@ const TriangleRachnaGame = () => {
         <div className="rg-game-controls-row">
           <div className="rg-source-panel">
             <div className="rg-source-header">
-              <span className="rg-source-title">Source Shapes</span>
-              <span className="rg-source-hint">Drag to workspace</span>
+              <span className="rg-source-title">{t('game.sourceShapes')}</span>
+              <span className="rg-source-hint">{t('game.dragToWorkspace')}</span>
             </div>
             <div className="rg-source-items">
               {q.sources.map((src, i) => {
@@ -1107,8 +1107,8 @@ const TriangleRachnaGame = () => {
       <div className="rg-screen" id="dashboard-capture-area">
         <div className="rg-screen-header">
           <div>
-            <div className="rg-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
-            <div className="rg-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Rachna — Final Results'}</div>
+            <div className="rg-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
+            <div className="rg-screen-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.finalResults')}</div>
           </div>
           <div className="rg-chips">
             <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
@@ -1134,7 +1134,7 @@ const TriangleRachnaGame = () => {
             </div>
           </div>
 
-          {pct >= 80 && <div className="rg-banner">Outstanding performance! 🌟</div>}
+          {pct >= 80 && <div className="rg-banner">{t('game.outstandingRachna')}</div>}
 
           {/* Per-question detail */}
           {/* Per-question detail breakdown */}
@@ -1292,11 +1292,11 @@ const TriangleRachnaGame = () => {
   const renderQuitModal = () => (
     <div className="rg-modal-overlay">
       <div className="rg-modal">
-        <h2>Pause or Quit</h2>
+        <h2>{t('game.pauseQuitTitle')}</h2>
         <p>Why are you stopping the game?</p>
         <div style={{ position: 'relative' }}>
           <textarea value={quitReason} onChange={e => setQuitReason(e.target.value)}
-            placeholder="E.g., Child is tired, disconnected, etc." style={{ width: '100%' }} />
+            {...{placeholder: t('game.pausePlaceholder')}} style={{ width: '100%' }} />
           <button 
             onClick={() => toggleRecording('quitReason')} 
             style={{
@@ -1314,8 +1314,8 @@ const TriangleRachnaGame = () => {
         </div>
         <div className="rg-modal-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
           <button className="rg-btn rg-btn-secondary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={() => setShowQuitModal(false)}>Cancel</button>
-          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', background:'#fef08a', color:'#854d0e', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={() => submitQuit('paused')}>Pause & Save</button>
-          <button className="rg-btn rg-btn-danger" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={() => submitQuit('quit')}>Quit & End</button>
+          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', background:'#fef08a', color:'#854d0e', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={() => submitQuit('paused')}>{t('game.pauseSave')}</button>
+          <button className="rg-btn rg-btn-danger" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={() => submitQuit('quit')}>{t('game.quitEnd')}</button>
         </div>
       </div>
     </div>
@@ -1325,11 +1325,11 @@ const TriangleRachnaGame = () => {
   const renderResumeModal = () => (
     <div className="rg-modal-overlay">
       <div className="rg-modal">
-        <h2>Saved Progress Found</h2>
-        <p>You have a previously paused game session.</p>
+        <h2>{t('game.progressFound')}</h2>
+        <p>{t('game.progressDesc')}</p>
         <div className="rg-modal-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', color:'#4b5563', background:'#f3f4f6', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={restartFresh}>Restart Fresh</button>
-          <button className="rg-btn rg-btn-primary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={resumeGame}>Resume Game</button>
+          <button className="rg-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', color:'#4b5563', background:'#f3f4f6', border:'none', borderRadius:'999px', cursor:'pointer'}} onClick={restartFresh}>{t('game.restartFresh')}</button>
+          <button className="rg-btn rg-btn-primary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', borderRadius:'999px'}} onClick={resumeGame}>{t('game.resumeGame')}</button>
         </div>
       </div>
     </div>
@@ -1428,17 +1428,17 @@ const TriangleRachnaGame = () => {
           <div className="rg-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
             <div className="rg-divider"></div>
-            <span className="rg-test-title">Rachna</span>
+            <span className="rg-test-title">{t('home.games.rachna.title')}</span>
           </div>
           <div className="rg-stats">
             {childData?.child_id && (
               <div className="rg-stat-pill">
-                <span className="rg-stat-label">CHILD ID</span>
+                <span className="rg-stat-label">{t('game.childId')}</span>
                 <span className="rg-stat-value">{childData.child_id}</span>
               </div>
             )}
             <div className="rg-stat-pill">
-              <span className="rg-stat-label">SCORE</span>
+              <span className="rg-stat-label">{t('game.score')}</span>
               <span className="rg-stat-value">{totalScore}</span>
             </div>
             {screen === 'game' && (

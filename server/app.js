@@ -12,6 +12,7 @@ const analyticsRoutes      = require('./src/routes/analyticsRoutes');
 const crashAnalyticsRoutes = require('./src/routes/crashAnalyticsRoutes');
 const crashLogRoutes       = require('./src/routes/crashLogRoutes');
 const testingRoutes        = require('./src/routes/testingRoutes');
+const screenshotRoutes     = require('./src/routes/screenshotRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -74,10 +75,14 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded child photos publicly
-// __dirname = server/  →  uploads lives at server/uploads/
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/dashboard_pdfs', express.static(path.join(__dirname, 'dashboard_pdfs')));
+// Serve uploaded files publicly — override CORP header set by Helmet so that
+// pages at localhost:3000 (or any frontend origin) can load these static assets.
+const allowCrossOrigin = (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+};
+app.use('/uploads',        allowCrossOrigin, express.static(path.join(__dirname, 'uploads')));
+app.use('/dashboard_pdfs', allowCrossOrigin, express.static(path.join(__dirname, 'dashboard_pdfs')));
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -90,6 +95,7 @@ app.use('/api/analytics',       analyticsRoutes);
 app.use('/api/crash-analytics', crashAnalyticsRoutes);
 app.use('/api/errors',          crashLogRoutes);
 app.use('/api/testing',         testingRoutes);
+app.use('/api/screenshots',     screenshotRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

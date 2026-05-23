@@ -698,7 +698,7 @@ const HerPherGame = () => {
   const clickedCount = clickedImages.size;
 
   const questionLabel = qData?.isSample
-    ? 'Sample Question'
+    ? t('game.sampleQuestionLabel')
     : `Question ${currentQuestion - 1}`;
   const attemptLabel  = `Attempt ${currentAttempt}/2`;
 
@@ -717,15 +717,15 @@ const HerPherGame = () => {
           <div className="hp-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />
             <div className="hp-divider"></div>
-            <span className="hp-test-title">Her Pher</span>
+            <span className="hp-test-title">{t('home.games.herpher.title')}</span>
           </div>
           <div className="hp-stats">
             <div className="hp-stat-pill">
-              <span className="hp-stat-label">CHILD ID</span>
+              <span className="hp-stat-label">{t('game.childId')}</span>
               <span className="hp-stat-value">{childData?.child_id || '—'}</span>
             </div>
             <div className="hp-stat-pill">
-              <span className="hp-stat-label">SCORE</span>
+              <span className="hp-stat-label">{t('game.score')}</span>
               <span className="hp-stat-value">{totalScore}</span>
             </div>
 
@@ -734,7 +734,7 @@ const HerPherGame = () => {
                 className="btn-pause-quit"
                 onClick={() => { setQuitReason(''); setShowQuitModal(true); }}
               >
-                <span>⏸</span> Pause/Quit
+                <span>⏸</span> {t('game.pauseQuit')}
               </button>
             )}
           </div>
@@ -765,7 +765,7 @@ const HerPherGame = () => {
                 </div>
 
                 <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  Welcome to Her Pher
+                  {t('game.welcomeHerPher')}
                 </h2>
                 
 
@@ -777,7 +777,7 @@ const HerPherGame = () => {
                     disabled={!audioFinished}
                     onClick={startNewGame}
                   >
-                    Start Now
+                    {t('game.startNow')}
                   </button>
                   <button
                     className="hp-btn hp-btn-secondary"
@@ -789,7 +789,7 @@ const HerPherGame = () => {
                       }
                     }}
                   >
-                    Replay Audio
+                    {t('game.replayAudio')}
                   </button>
                 </div>
 
@@ -802,7 +802,7 @@ const HerPherGame = () => {
             <div className="hp-screen">
               <div className="hp-screen-header">
                 <div>
-                  <div className="hp-screen-title">Her Pher</div>
+                  <div className="hp-screen-title">{t('home.games.herpher.title')}</div>
                   <div className="hp-screen-subtitle">
                     {questionLabel}
                   </div>
@@ -814,7 +814,7 @@ const HerPherGame = () => {
                     </span>
                   )}
                   {currentAttempt === 2 && !qData.isSample && (
-                    <span className="hp-chip hp-chip-success">Scored</span>
+                    <span className="hp-chip hp-chip-success">{t('game.scoredLabel')}</span>
                   )}
                 </div>
               </div>
@@ -822,7 +822,7 @@ const HerPherGame = () => {
               {/* Info Bar */}
               <div className="hp-info-bar">
                 <div className="hp-info-item">
-                  <span className="hp-info-label">⏱ Timer:</span>
+                  <span className="hp-info-label">{t('game.timerLabel')}</span>
                   <span className="hp-info-value">{formatTime(questionTime)}</span>
                 </div>
                 <div className="hp-info-item">
@@ -887,12 +887,12 @@ const HerPherGame = () => {
             <div className="hp-screen">
               <div className="hp-screen-header">
                 <div>
-                  <div className="hp-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
+                  <div className="hp-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
                   <div className="hp-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'All questions completed'}</div>
                 </div>
                 <div className="hp-chips">
                   <span className="hp-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                  <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
+                  <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
                     Time: {Math.floor(totalTime / 60)}m {totalTime % 60}s
                   </span>
@@ -901,7 +901,7 @@ const HerPherGame = () => {
 
               <div className="hp-card hp-result-card" style={{ padding: 30 }} id="dashboard-capture-area">
                 <div className="hp-result-header" style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>Her Pher Performance</h2>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{t('home.games.herpher.title')} {t('game.performanceLabel')}</h2>
                   <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Assessment Completed</p>
                 </div>
 
@@ -942,7 +942,7 @@ const HerPherGame = () => {
                 </div>
 
                 {((totalScore / 25) * 100) > 80 && (
-                   <div className="hp-banner">Outstanding performance! You're a memory star! ⭐</div>
+                   <div className="hp-banner">{t('game.outstandingMemory')}</div>
                 )}
 
                 {/* Detailed Per-Question Integrity Dashboard */}
@@ -962,7 +962,7 @@ const HerPherGame = () => {
                           <div className="hp-q-detailed-title">
                             <span className="hp-q-num">{isPractice ? 'Sample Round' : `Question ${h.question - 1}`}</span>
                             <span className="hp-q-cat" style={{ textTransform: 'capitalize' }}>{cat}</span>
-                            {isPractice && <span className="hp-practice-badge">Practice</span>}
+                            {isPractice && <span className="hp-practice-badge">{t('game.practiceLabel')}</span>}
                           </div>
                           <div className="hp-q-detailed-metrics">
                             <span className="hp-q-time">⏱ {formatTime(h.time)}</span>
@@ -1084,17 +1084,17 @@ const HerPherGame = () => {
       {showResumeModal && (
         <div className="hp-modal-overlay">
           <div className="hp-modal">
-            <h2>Saved Progress Found</h2>
-            <p>You have a previously saved game session. Would you like to resume or start fresh?</p>
+            <h2>{t('game.progressFound')}</h2>
+            <p>{t('game.progressDesc')}</p>
             <div className="hp-btn-row" style={{ marginTop: 0 }}>
               <button
                 className="hp-btn hp-btn-secondary"
                 onClick={() => { setShowResumeModal(false); resetGameState(); setScreen('splash'); setAudioFinished(false); }}
               >
-                Restart Fresh
+                {t('game.restartFresh')}
               </button>
               <button className="hp-btn hp-btn-primary" onClick={resumeGame}>
-                Resume Game
+                {t('game.resumeGame')}
               </button>
             </div>
           </div>
@@ -1105,11 +1105,11 @@ const HerPherGame = () => {
       {showQuitModal && (
         <div className="hp-modal-overlay">
           <div className="hp-modal">
-            <h2>Pause or Quit</h2>
-            <p>Why are you stopping the game?</p>
+            <h2>{t('game.pauseQuitTitle')}</h2>
+            <p>{t('game.pauseDesc')}</p>
             <div style={{ position: 'relative' }}>
               <textarea
-                placeholder="E.g., Child is tired, disconnected, etc."
+                {...{placeholder: t('game.pausePlaceholder')}}
                 value={quitReason}
                 onChange={(e) => setQuitReason(e.target.value)}
               />
@@ -1132,21 +1132,21 @@ const HerPherGame = () => {
                 style={{ padding: '8px 20px', minWidth: 0, fontSize: '0.9rem' }}
                 onClick={() => setShowQuitModal(false)}
               >
-                Cancel
+                {t('game.cancel')}
               </button>
               <button
                 className="hp-btn hp-btn-warning"
                 style={{ padding: '8px 20px', minWidth: 0, fontSize: '0.9rem' }}
                 onClick={() => handleQuit('paused')}
               >
-                Pause & Save
+                {t('game.pauseSave')}
               </button>
               <button
                 className="hp-btn"
                 style={{ padding: '8px 20px', minWidth: 0, fontSize: '0.9rem', background: '#ef4444', color: 'white' }}
                 onClick={() => handleQuit('quit')}
               >
-                Quit & End
+                {t('game.quitEnd')}
               </button>
             </div>
           </div>

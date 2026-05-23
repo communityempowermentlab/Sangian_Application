@@ -37,12 +37,12 @@ const GAME_CATALOG = [
 ];
 
 const GAME_SECTIONS = [
-    { key: 'introduction',       icon: '📖', label: 'Introduction',                  available: false },
+    { key: 'introduction',       icon: '📖', label: 'Introduction',                  available: true  },
     { key: 'technical_docs_2013',icon: '📜', label: 'Technical Documentation 2013',  available: true,  legacy: true  },
     { key: 'technical_docs',     icon: '⚙️', label: 'Technical Documentation',       available: true  },
-    { key: 'gameplay_manual',    icon: '📋', label: 'Gameplay Manual',               available: false },
+    { key: 'gameplay_manual',    icon: '📋', label: 'Gameplay Manual',               available: true  },
     { key: 'workflow_diagram',   icon: '🔀', label: 'Workflow Diagram',               available: true  },
-    { key: 'screenshots',        icon: '🖼️', label: 'Screenshot Library',            available: false },
+    { key: 'screenshots',        icon: '🖼️', label: 'Screenshot Library',            available: true  },
     { key: 'audio_logic',        icon: '🔊', label: 'Audio & Sound Logic',            available: true  },
     { key: 'score_logic',        icon: '🏆', label: 'Score Logic',                   available: true  },
     { key: 'cutoff_calc',        icon: '📊', label: 'Cutoff Calculation',              available: true  },
@@ -53,6 +53,139 @@ const GAME_SECTIONS = [
 ];
 
 const SEC_H = 38; // px per accordion section row
+
+// ─── Bilingual Introduction Defaults ─────────────────────────────────────────
+
+const HINDI_FONT = "'Noto Sans Devanagari', 'Mangal', 'Arial Unicode MS', sans-serif";
+
+const GAME_INTRO_DEFAULTS = {
+    atlantis_bagiya: {
+        en: {
+            skill:       'Long-term Memory & Information Retrieval',
+            objective:   'This test measures long-term storage and retrieval of information learned earlier in the testing session.',
+            description: 'In this activity, children explore and remember different objects, patterns, or information shown during the session. Later, they are encouraged to recall and recognize what they learned earlier. This helps assess memory retention and long-term recall ability in an engaging and playful manner.',
+            guidance:    'Look carefully at everything shown to you. Remember the names and details — you will be asked about them later!',
+        },
+        hi: {
+            skill:       'दीर्घकालिक स्मृति और जानकारी पुनःप्राप्ति',
+            objective:   'इस टेस्ट का उद्देश्य यह समझना है कि बच्चा टेस्ट के दौरान पहले सीखी गई जानकारी को कुछ समय बाद कितनी अच्छी तरह याद रख पाता है और आवश्यकता पड़ने पर उसे सही तरीके से दोबारा बता या पहचान पाता है।',
+            description: 'इस गतिविधि में बच्चों को टेस्ट के दौरान दिखाई गई जानकारी, वस्तुओं या पैटर्न को याद रखना होता है। कुछ समय बाद बच्चे से उन चीज़ों को पहचानने या याद करने के लिए कहा जाता है। यह गतिविधि बच्चे की याद रखने और बाद में सही जानकारी को दोबारा पहचानने की क्षमता को समझने में मदद करती है।',
+            guidance:    'ध्यान से देखो और जो दिखाया जाए उसे अच्छी तरह याद करो। बाद में जब पूछा जाए तो अपनी पूरी कोशिश करो!',
+        },
+    },
+    number_recall_lottery: {
+        en: {
+            skill:       'Sequential Processing & Short-term Auditory Memory',
+            objective:   'This test measures sequential processing and short-term memory within the auditory-vocal modality. In this test, the assessor says a series of numbers, and the child repeats them in the same sequence.',
+            description: 'Listen carefully and remember the numbers in the correct order. This activity checks how well children can hear, remember, and repeat information step by step.',
+            guidance:    'Listen carefully to the numbers. Then repeat them in the same order. Ready? Let\'s go!',
+        },
+        hi: {
+            skill:       'क्रमबद्ध प्रसंस्करण और अल्पकालिक श्रवण स्मृति',
+            objective:   'यह टेस्ट बच्चे की क्रमबद्ध रूप से सुनी गई जानकारी को समझने और थोड़े समय तक याद रखकर उसी क्रम में दोहराने की क्षमता का आकलन करता है।',
+            description: 'इस गतिविधि में बच्चे को ध्यान से संख्याएँ सुनकर उन्हें उसी क्रम में दोहराना होता है। यह बच्चे की सुनने, याद रखने और सही क्रम बनाए रखने की क्षमता को समझने में मदद करता है।',
+            guidance:    'ध्यान से संख्याएँ सुनो और फिर उन्हें उसी क्रम में दोहराओ। तैयार हो? चलो शुरू करते हैं!',
+        },
+    },
+    rover_mela: {
+        en: {
+            skill:       'Visual Processing & Spatial Decision-Making',
+            objective:   'It measures simultaneous or visual processing that requires decision-making to identify the shortest route to a goal.',
+            description: 'Help the character reach the mela using the shortest possible path. This activity encourages smart thinking, planning, and visual problem-solving skills.',
+            guidance:    'Look at the paths carefully and think before you choose. Which is the shortest way to reach the mela?',
+        },
+        hi: {
+            skill:       'दृश्य प्रसंस्करण और स्थानिक निर्णय-निर्माण',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की चित्रात्मक जानकारी को समझने, अलग-अलग रास्तों की तुलना करने और लक्ष्य तक पहुँचने के लिए सबसे छोटे रास्ते का चयन करने की क्षमता का आकलन करना है।',
+            description: 'इस खेल में बच्चे को लड़के को सबसे छोटे रास्ते से मेले तक पहुँचाना होता है। यह गतिविधि सोचने, रास्तों की तुलना करने और सही निर्णय लेने की क्षमता को बढ़ाती है।',
+            guidance:    'रास्तों को ध्यान से देखो और सोच-समझकर चुनो। मेले तक पहुँचने का सबसे छोटा रास्ता कौन सा है?',
+        },
+    },
+    auditory_dhyan: {
+        en: {
+            skill:       'Auditory Attention & Sustained Focus',
+            objective:   'This test assesses how well the child listens to vocally presented words, sustains attention during fixed pauses, and accurately identifies the corresponding object within the given time.',
+            description: 'Carefully listen to the spoken words and quickly identify the correct object. This game helps measure focus, listening ability, and sustained attention.',
+            guidance:    'Listen carefully to what is said and quickly point to or choose the right object. Stay focused!',
+        },
+        hi: {
+            skill:       'श्रवण ध्यान और निरंतर एकाग्रता',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की बोले गए शब्दों को ध्यानपूर्वक सुनने, निश्चित अंतराल के दौरान ध्यान बनाए रखने, और निर्धारित समय में संबंधित वस्तु को सही ढंग से पहचानने की क्षमता का आकलन करना है।',
+            description: 'इस गतिविधि में बच्चे को बोले गए शब्दों को ध्यान से सुनकर सही वस्तु पहचाननी होती है। यह बच्चे की एकाग्रता, ध्यान और सुनने की क्षमता का आकलन करता है।',
+            guidance:    'ध्यान से सुनो और जल्दी से सही वस्तु चुनो। एकाग्र रहो!',
+        },
+    },
+    working_memory_herpher: {
+        en: {
+            skill:       'Working Memory & Mental Processing',
+            objective:   'This test assesses the child\'s ability to temporarily hold information in mind, mentally work with it, and respond accurately without losing track of the task.',
+            description: 'Remember the information, think carefully, and respond correctly. This activity checks how well children can manage and use information in their mind while completing a task.',
+            guidance:    'Remember what you see or hear. Think about it carefully. Then give your answer!',
+        },
+        hi: {
+            skill:       'कार्यशील स्मृति और मानसिक प्रसंस्करण',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की जानकारी को थोड़े समय के लिए मन में रखने, उस पर मानसिक रूप से काम करने, और कार्य पर ध्यान बनाए रखते हुए सही प्रतिक्रिया देने की क्षमता का आकलन करना है।',
+            description: 'इस गतिविधि में बच्चे को जानकारी को याद रखते हुए उस पर सोचकर सही उत्तर देना होता है। यह बच्चे की कार्यशील स्मृति और मानसिक ध्यान बनाए रखने की क्षमता को समझने में मदद करता है।',
+            guidance:    'जो देखो या सुनो उसे याद करो। ध्यान से सोचो। फिर अपना उत्तर दो!',
+        },
+    },
+    numeracy_number_skill: {
+        en: {
+            skill:       'Foundational Numeracy & Mathematical Reasoning',
+            objective:   'This test assesses the child\'s foundational numeracy-related academic ability, including number recognition, understanding of basic arithmetic concepts, and solving simple arithmetic problems.',
+            description: 'Let\'s explore numbers, counting, and simple calculations in a fun way. This activity helps understand how comfortably children work with numbers and basic maths concepts.',
+            guidance:    'Look at the numbers and questions carefully. Think and give your best answer. You\'re great at maths!',
+        },
+        hi: {
+            skill:       'बुनियादी संख्या ज्ञान और गणितीय तर्क',
+            objective:   'इस Test का उद्देश्य बच्चे की बुनियादी गणितीय क्षमता का आकलन करना है।',
+            description: 'इस गतिविधि में बच्चे संख्याओं की पहचान, गिनती और सरल गणितीय सवालों को हल करते हैं। इससे बच्चे की बुनियादी गणितीय समझ का आकलन किया जाता है।',
+            guidance:    'संख्याओं और सवालों को ध्यान से देखो। सोचो और अपना सर्वश्रेष्ठ उत्तर दो। तुम गणित में बहुत अच्छे हो!',
+        },
+    },
+    literacy_reading_skill: {
+        en: {
+            skill:       'Foundational Literacy & Reading Comprehension',
+            objective:   'This test assesses the child\'s foundational literacy-related academic ability, particularly letter recognition, word reading, and reading simple connected text with understanding.',
+            description: 'Read letters, words, and simple sentences carefully. This activity helps evaluate reading ability, understanding, and language development.',
+            guidance:    'Look carefully and read what you see. Take your time. You are a wonderful reader!',
+        },
+        hi: {
+            skill:       'बुनियादी साक्षरता और पठन कौशल',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की बुनियादी पढ़ने की क्षमता का आकलन करना है।',
+            description: 'इस गतिविधि में बच्चे अक्षरों, शब्दों और छोटे वाक्यों को पढ़ते हैं। यह बच्चे की पढ़ने और समझने की क्षमता को जानने में मदद करता है।',
+            guidance:    'ध्यान से देखो और जो दिखे उसे पढ़ो। जल्दी मत करो। तुम एक अच्छे पाठक हो!',
+        },
+    },
+    cognitive_flex_chor: {
+        en: {
+            skill:       'Cognitive Flexibility & Adaptive Thinking',
+            objective:   'This test assesses cognitive flexibility, which means the child\'s ability to quickly shift attention, adapt to changing rules, and respond accurately in changing situations.',
+            description: 'Be alert and ready to adapt! In this activity, rules and situations may change quickly, and the child must respond carefully and accurately. This helps measure flexible thinking and adaptive problem-solving skills.',
+            guidance:    'Pay close attention! The rules might change. Stay alert and respond quickly and correctly!',
+        },
+        hi: {
+            skill:       'संज्ञानात्मक लचीलापन और अनुकूली सोच',
+            objective:   'यह टेस्ट बच्चे की बदलती परिस्थितियों और नियमों के अनुसार जल्दी सोचने, ध्यान बदलने और सही प्रतिक्रिया देने की क्षमता का आकलन करता है।',
+            description: 'इस गतिविधि में बच्चे को बदलते नियमों और परिस्थितियों के अनुसार जल्दी प्रतिक्रिया देनी होती है। यह बच्चे की सोच में लचीलापन, ध्यान बदलने और सही निर्णय लेने की क्षमता को समझने में मदद करता है।',
+            guidance:    'ध्यान रखो! नियम बदल सकते हैं। सतर्क रहो और जल्दी तथा सही प्रतिक्रिया दो!',
+        },
+    },
+    triangle_rachna: {
+        en: {
+            skill:       'Visual Construction & Spatial Reasoning',
+            objective:   'This test assesses the child\'s visual construction ability and understanding of spatial relationships.',
+            description: 'Observe the model carefully and arrange the shapes correctly. This activity helps understand how children recognize patterns, shapes, and spatial relationships.',
+            guidance:    'Look at the model carefully. Try to arrange the shapes just like you see. You can do it!',
+        },
+        hi: {
+            skill:       'दृश्य निर्माण और स्थानिक तर्क',
+            objective:   'यह टेस्ट यह देखने में मदद करता है कि बच्चा दिए गए चित्र या नमूने को देखकर अलग-अलग आकार और रंगों वाली आकृतियों को सही जगह और सही दिशा में व्यवस्थित कर पाता है या नहीं।',
+            description: 'इस गतिविधि में बच्चे को दिए गए चित्र के अनुसार आकृतियों को सही तरीके से व्यवस्थित करना होता है। यह बच्चे की आकृति पहचानने, दिशा समझने और संरचना बनाने की क्षमता का आकलन करता है।',
+            guidance:    'नमूने को ध्यान से देखो। आकृतियों को वैसे ही व्यवस्थित करने की कोशिश करो जैसा दिखाया गया है। तुम यह कर सकते हो!',
+        },
+    },
+};
 
 // ─── Default content ──────────────────────────────────────────────────────────
 
@@ -3832,6 +3965,797 @@ const DynamicDocViewer = ({ game, section, docKey, defaultContent }) => {
     );
 };
 
+// ─── Screenshot Library Viewer ────────────────────────────────────────────────
+
+const SCREEN_TYPES_SS = [
+    { value: 'intro',        label: 'Intro / Splash',   icon: '🎬' },
+    { value: 'instructions', label: 'Instructions',     icon: '📋' },
+    { value: 'gameplay',     label: 'Gameplay',         icon: '▶️' },
+    { value: 'result',       label: 'Result / Score',   icon: '📊' },
+    { value: 'assessment',   label: 'Assessment Form',  icon: '📝' },
+    { value: 'other',        label: 'Other',            icon: '📌' },
+];
+
+const SERVER_BASE_SS = (() => {
+    try { return API_URL.replace(/\/api$/, ''); } catch { return ''; }
+})();
+
+const ScreenshotLibraryViewer = ({ game }) => {
+    const [lang,         setLang]        = useState('en');
+    const [screenshots,  setScreenshots] = useState([]);
+    const [loading,      setLoading]     = useState(false);
+    const [showUpload,   setShowUpload]  = useState(false);
+    const [editTarget,   setEditTarget]  = useState(null);
+    const [form,         setForm]        = useState({ title: '', description: '', screen_type: 'gameplay', sort_order: 0 });
+    const [imageFile,    setImageFile]   = useState(null);
+    const [imgPreview,   setImgPreview]  = useState(null);
+    const [saving,       setSaving]      = useState(false);
+    const [toast,        setToast]       = useState(null);
+    const [lightbox,     setLightbox]    = useState(null);
+    const [manualStatus, setManualStatus]= useState(null);
+    const [dragOver,     setDragOver]    = useState(false);
+    const fileRef = useRef();
+
+    const showToast = (msg, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 3200); };
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [ssRes, stRes] = await Promise.all([
+                axios.get(`${API_URL}/screenshots?game_key=${game.key}&language=${lang}`, authHeader()),
+                axios.get(`${API_URL}/screenshots/manual-status`, authHeader()),
+            ]);
+            setScreenshots(ssRes.data.screenshots || []);
+            const statuses = stRes.data.statuses || [];
+            setManualStatus(statuses.find(s => s.game_key === game.key && s.language === lang) || null);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    }, [game.key, lang]);
+
+    useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (!lightbox) return;
+            if (e.key === 'ArrowLeft')  setLightbox(lb => ({ ...lb, i: (lb.i - 1 + lb.list.length) % lb.list.length }));
+            if (e.key === 'ArrowRight') setLightbox(lb => ({ ...lb, i: (lb.i + 1) % lb.list.length }));
+            if (e.key === 'Escape')     setLightbox(null);
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [lightbox]);
+
+    const handleFileSelect = (file) => {
+        if (!file) return;
+        setImageFile(file);
+        const r = new FileReader(); r.onload = e => setImgPreview(e.target.result); r.readAsDataURL(file);
+    };
+
+    const openUpload = () => { setEditTarget(null); setForm({ title: '', description: '', screen_type: 'gameplay', sort_order: 0 }); setImageFile(null); setImgPreview(null); setShowUpload(true); };
+    const openEdit   = (ss) => { setEditTarget(ss); setForm({ title: ss.title, description: ss.description || '', screen_type: ss.screen_type, sort_order: ss.sort_order }); setImageFile(null); setImgPreview(`${SERVER_BASE_SS}${ss.image_path}`); setShowUpload(true); };
+
+    const handleSave = async () => {
+        if (!form.title.trim()) return showToast('Title is required', false);
+        if (!editTarget && !imageFile) return showToast('Select an image', false);
+        setSaving(true);
+        try {
+            const fd = new FormData();
+            fd.append('game_key', game.key); fd.append('language', lang);
+            fd.append('screen_type', form.screen_type); fd.append('title', form.title.trim());
+            fd.append('description', form.description.trim()); fd.append('sort_order', form.sort_order);
+            if (imageFile) fd.append('image', imageFile);
+            if (editTarget) { await axios.put(`${API_URL}/screenshots/${editTarget.id}`, fd, authHeader()); showToast('Screenshot updated'); }
+            else            { await axios.post(`${API_URL}/screenshots/upload`, fd, authHeader()); showToast('Screenshot uploaded'); }
+            setShowUpload(false); load();
+        } catch (e) { showToast(e?.response?.data?.message || 'Save failed', false); }
+        finally { setSaving(false); }
+    };
+
+    const handleDelete = async (ss) => {
+        if (!window.confirm(`Delete "${ss.title}"?`)) return;
+        try { await axios.delete(`${API_URL}/screenshots/${ss.id}`, authHeader()); showToast('Deleted'); load(); }
+        catch { showToast('Delete failed', false); }
+    };
+
+    const handlePublish = async () => {
+        if (screenshots.length === 0) return showToast('No screenshots to publish', false);
+        if (!window.confirm(`Publish all ${screenshots.length} screenshot(s) for ${game.title} (${lang.toUpperCase()}) and generate the Gameplay Manual?`)) return;
+        try {
+            const res = await axios.post(`${API_URL}/screenshots/publish`, { game_key: game.key, language: lang }, authHeader());
+            showToast(`✓ Manual published — ${res.data.screenshot_count} screenshot(s)`); load();
+        } catch { showToast('Publish failed', false); }
+    };
+
+    const publishBadge = () => {
+        if (!manualStatus) return { label: '● Not Published', bg: '#f1f5f9', color: '#64748b', bd: T.border };
+        if (manualStatus.needs_republish) return { label: '⚠ Needs Republish', bg: '#fffbeb', color: '#92400e', bd: '#fde68a' };
+        const dt = manualStatus.published_at ? new Date(manualStatus.published_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '';
+        return { label: `✓ Published${dt ? ' · ' + dt : ''}`, bg: '#f0fdf4', color: '#166534', bd: '#bbf7d0' };
+    };
+
+    const badge = publishBadge();
+    const btnStyle = { padding: '7px 16px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s' };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font, overflow: 'hidden' }}>
+
+            {/* Banner */}
+            <div style={{ background: 'linear-gradient(135deg,#eef2ff,#f5f3ff)', borderBottom: `1px solid ${T.accentBd}`, padding: '12px 22px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: T.accentBg, border: `1px solid ${T.accentBd}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🖼️</div>
+                        <div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: T.accentText }}>Screenshot Library — {game.title}</div>
+                            <div style={{ fontSize: '0.72rem', color: T.muted }}>Upload, organise, and publish screenshots to auto-generate the Gameplay Manual</div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {/* Publish status */}
+                        <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>{badge.label}</span>
+                        {/* Language toggle */}
+                        <div style={{ display: 'flex', background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                            {[['en','🇬🇧 English'],['hi','🇮🇳 Hindi']].map(([l,lbl]) => (
+                                <button key={l} onClick={() => setLang(l)} style={{ ...btnStyle, background: lang===l ? T.accent : 'transparent', color: lang===l ? '#fff' : T.muted, borderRadius: 0, padding: '5px 14px' }}>{lbl}</button>
+                            ))}
+                        </div>
+                        <button onClick={openUpload} style={{ ...btnStyle, background: T.accent, color: '#fff' }}>+ Upload</button>
+                        <button onClick={handlePublish} disabled={screenshots.length === 0} style={{ ...btnStyle, background: screenshots.length ? '#059669' : '#e2e8f0', color: screenshots.length ? '#fff' : T.faint }}>🚀 Publish Manual</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Gallery */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px' }}>
+                {loading && <div style={{ textAlign: 'center', padding: '60px', color: T.faint }}>Loading…</div>}
+                {!loading && screenshots.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '70px 40px', color: T.faint }}>
+                        <div style={{ fontSize: '3rem', marginBottom: 12 }}>📸</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: T.muted, marginBottom: 6 }}>
+                            {lang === 'hi' ? 'अभी तक कोई स्क्रीनशॉट नहीं' : 'No screenshots yet'}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', marginBottom: 18 }}>
+                            {lang === 'hi'
+                                ? <><strong>{game.title}</strong> के लिए हिंदी में स्क्रीनशॉट अपलोड करें।</>
+                                : <>Upload screenshots for <strong>{game.title}</strong> in English to get started.</>}
+                        </div>
+                        <button onClick={openUpload} style={{ ...btnStyle, background: T.accent, color: '#fff' }}>
+                            {lang === 'hi' ? '+ पहला स्क्रीनशॉट अपलोड करें' : '+ Upload First Screenshot'}
+                        </button>
+                    </div>
+                )}
+                {!loading && screenshots.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 16 }}>
+                        {screenshots.map((ss, idx) => (
+                            <div key={ss.id} style={{ background: T.white, border: `1px solid ${ss.publish_status === 'published' ? '#86efac' : T.border}`, borderLeft: `4px solid ${ss.publish_status === 'published' ? '#10b981' : '#f59e0b'}`, borderRadius: 12, overflow: 'hidden', boxShadow: T.shadow, transition: 'box-shadow 0.18s' }}>
+                                {/* Thumbnail */}
+                                <div style={{ position: 'relative', height: 145, background: '#f8fafc', cursor: 'zoom-in', overflow: 'hidden' }} onClick={() => setLightbox({ list: screenshots, i: idx })}>
+                                    <img src={`${SERVER_BASE_SS}${ss.image_path}`} alt={ss.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <span style={{ position: 'absolute', top: 7, right: 7, fontSize: '0.65rem', fontWeight: 800, padding: '2px 7px', borderRadius: 20, background: ss.publish_status === 'published' ? 'rgba(16,185,129,0.85)' : 'rgba(245,158,11,0.85)', color: ss.publish_status === 'published' ? '#022c22' : '#1c1917', textTransform: 'uppercase' }}>
+                                        {ss.publish_status === 'published' ? '✓ Published' : '✏ Draft'}
+                                    </span>
+                                    <span style={{ position: 'absolute', top: 7, left: 7, fontSize: '0.62rem', fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: 'rgba(79,70,229,0.85)', color: '#fff', textTransform: 'capitalize' }}>
+                                        {SCREEN_TYPES_SS.find(t => t.value === ss.screen_type)?.icon} {ss.screen_type}
+                                    </span>
+                                </div>
+                                {/* Body */}
+                                <div style={{ padding: '10px 13px' }}>
+                                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: T.text, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ss.title}</div>
+                                    {ss.description && <div style={{ fontSize: '0.74rem', color: T.muted, marginBottom: 6, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ss.description}</div>}
+                                    <div style={{ fontSize: '0.68rem', color: T.faint, marginBottom: 9 }}>Order: {ss.sort_order} · {new Date(ss.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        {[{ label: '✏ Edit', fn: () => openEdit(ss), color: T.accent }, { label: '🔍 View', fn: () => setLightbox({ list: screenshots, i: idx }), color: '#0891b2' }, { label: '🗑', fn: () => handleDelete(ss), color: '#dc2626' }].map(b => (
+                                            <button key={b.label} onClick={b.fn} style={{ flex: b.label === '🗑' ? 'none' : 1, padding: '4px 8px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', background: 'transparent', border: `1px solid ${b.color}20`, color: b.color, transition: 'all 0.15s' }}>{b.label}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Upload/Edit Modal */}
+            {showUpload && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={() => setShowUpload(false)}>
+                    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: T.shadowLg }} onClick={e => e.stopPropagation()}>
+                        <h2 style={{ margin: '0 0 20px', fontSize: '1.1rem', fontWeight: 800, color: T.text }}>{editTarget ? '✏ Edit Screenshot' : '📤 Upload Screenshot'}</h2>
+                        {/* Drop zone */}
+                        <div style={{ border: `2px dashed ${dragOver ? T.accent : T.border}`, borderRadius: 10, padding: 20, textAlign: 'center', cursor: 'pointer', background: dragOver ? T.accentBg : '#f8fafc', marginBottom: 16, transition: 'all 0.2s' }}
+                            onClick={() => fileRef.current?.click()}
+                            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                            onDragLeave={() => setDragOver(false)}
+                            onDrop={e => { e.preventDefault(); setDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}>
+                            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleFileSelect(e.target.files[0])} />
+                            {imgPreview ? <img src={imgPreview} alt="preview" style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 8, objectFit: 'contain' }} />
+                                : <><div style={{ fontSize: '2rem', marginBottom: 6 }}>🖼</div><div style={{ fontSize: '0.82rem', color: T.muted }}>Click or drag & drop an image (PNG, JPG, WebP · max 10MB)</div></>}
+                        </div>
+                        {/* Fields */}
+                        {[{ label: 'Title *', key: 'title', type: 'input', ph: 'e.g. Splash Screen — Welcome' }, { label: 'Description (shown in manual)', key: 'description', type: 'textarea', ph: 'Describe what this screen shows…' }].map(f => (
+                            <div key={f.key} style={{ marginBottom: 14 }}>
+                                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: T.muted, marginBottom: 5 }}>{f.label}</label>
+                                {f.type === 'input'
+                                    ? <input value={form[f.key]} onChange={e => setForm(p => ({...p, [f.key]: e.target.value}))} placeholder={f.ph} style={{ width: '100%', padding: '8px 11px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: '0.85rem', color: T.text, boxSizing: 'border-box', background: T.bg }} />
+                                    : <textarea value={form[f.key]} onChange={e => setForm(p => ({...p, [f.key]: e.target.value}))} placeholder={f.ph} rows={3} style={{ width: '100%', padding: '8px 11px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: '0.85rem', color: T.text, boxSizing: 'border-box', background: T.bg, resize: 'vertical' }} />}
+                            </div>
+                        ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: T.muted, marginBottom: 5 }}>Screen Type</label>
+                                <select value={form.screen_type} onChange={e => setForm(p => ({...p, screen_type: e.target.value}))} style={{ width: '100%', padding: '8px 11px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: '0.82rem', color: T.text, background: T.bg }}>
+                                    {SCREEN_TYPES_SS.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: T.muted, marginBottom: 5 }}>Sort Order</label>
+                                <input type="number" value={form.sort_order} onChange={e => setForm(p => ({...p, sort_order: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 11px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: '0.85rem', color: T.text, background: T.bg, boxSizing: 'border-box' }} />
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: T.faint, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+                            Game: <strong style={{ color: T.text }}>{game.title}</strong> · Language: <strong style={{ color: T.text }}>{lang === 'en' ? '🇬🇧 English' : '🇮🇳 Hindi'}</strong>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button onClick={() => setShowUpload(false)} style={{ ...btnStyle, background: T.bg, color: T.muted, border: `1px solid ${T.border}` }}>Cancel</button>
+                            <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, background: T.accent, color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : editTarget ? '✓ Update' : '📤 Upload'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Lightbox */}
+            {lightbox && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.93)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 20 }} onClick={() => setLightbox(null)}>
+                    <button onClick={() => setLightbox(null)} style={{ position: 'fixed', top: 18, right: 22, background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', borderRadius: '50%', width: 38, height: 38, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                    <img src={`${SERVER_BASE_SS}${lightbox.list[lightbox.i].image_path}`} alt={lightbox.list[lightbox.i].title} style={{ maxWidth: '88vw', maxHeight: '76vh', objectFit: 'contain', borderRadius: 8 }} onClick={e => e.stopPropagation()} />
+                    <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.84rem' }}>
+                        <strong style={{ color: '#e2e8f0' }}>{lightbox.list[lightbox.i].title}</strong>
+                        {lightbox.list[lightbox.i].description && <div style={{ marginTop: 3 }}>{lightbox.list[lightbox.i].description}</div>}
+                        <div style={{ marginTop: 5, color: '#475569', fontSize: '0.72rem' }}>{lightbox.i + 1} / {lightbox.list.length}</div>
+                    </div>
+                    {lightbox.list.length > 1 && (
+                        <div style={{ display: 'flex', gap: 10 }} onClick={e => e.stopPropagation()}>
+                            {[['← Prev', () => setLightbox(lb => ({ ...lb, i: (lb.i-1+lb.list.length)%lb.list.length }))],
+                              ['Next →', () => setLightbox(lb => ({ ...lb, i: (lb.i+1)%lb.list.length }))]].map(([lbl,fn]) => (
+                                <button key={lbl} onClick={fn} style={{ background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', borderRadius: 8, padding: '7px 18px', cursor: 'pointer', fontSize: '0.82rem' }}>{lbl}</button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Toast */}
+            {toast && (
+                <div style={{ position: 'fixed', bottom: 22, right: 22, zIndex: 9999, padding: '11px 18px', borderRadius: 10, fontSize: '0.83rem', fontWeight: 600, background: toast.ok ? '#f0fdf4' : '#fef2f2', color: toast.ok ? '#166534' : '#991b1b', border: `1px solid ${toast.ok ? '#86efac' : '#fca5a5'}`, boxShadow: T.shadowMd, display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {toast.ok ? '✓' : '✕'} {toast.msg}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Gameplay Manual Viewer ────────────────────────────────────────────────────
+
+const MANUAL_SECTIONS_DEF = [
+    { type: 'intro',        title: 'Game Introduction',  icon: '🎬', desc: 'Splash screen and welcome — how the game starts.' },
+    { type: 'instructions', title: 'Instructions',       icon: '📋', desc: 'Tutorial screens, teaching questions, and practice rounds.' },
+    { type: 'gameplay',     title: 'Main Gameplay',      icon: '▶️', desc: 'Core question screens and child interaction flow.' },
+    { type: 'result',       title: 'Score & Results',    icon: '📊', desc: 'Score display, metrics, and performance feedback.' },
+    { type: 'assessment',   title: 'Assessment Form',    icon: '📝', desc: 'Post-session behavioral assessment completed by the assessor.' },
+    { type: 'other',        title: 'Additional Screens', icon: '📌', desc: 'Other notable screens and edge-case flows.' },
+];
+
+const GameplayManualViewer = ({ game }) => {
+    const [lang,        setLang]       = useState('en');
+    const [screenshots, setScreenshots]= useState([]);
+    const [loading,     setLoading]    = useState(false);
+    const [status,      setStatus]     = useState(null);
+    const [lightbox,    setLightbox]   = useState(null);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [ssRes, stRes] = await Promise.all([
+                axios.get(`${API_URL}/screenshots?game_key=${game.key}&language=${lang}&publish_status=published`, authHeader()),
+                axios.get(`${API_URL}/screenshots/manual-status`, authHeader()),
+            ]);
+            setScreenshots(ssRes.data.screenshots || []);
+            const st = (stRes.data.statuses || []).find(s => s.game_key === game.key && s.language === lang);
+            setStatus(st || null);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    }, [game.key, lang]);
+
+    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        const handler = (e) => {
+            if (!lightbox) return;
+            if (e.key === 'ArrowLeft')  setLightbox(lb => ({ ...lb, i: (lb.i-1+lb.list.length)%lb.list.length }));
+            if (e.key === 'ArrowRight') setLightbox(lb => ({ ...lb, i: (lb.i+1)%lb.list.length }));
+            if (e.key === 'Escape')     setLightbox(null);
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [lightbox]);
+
+    const handleDownloadPDF = async () => {
+        const el = document.getElementById('manual-pdf-area');
+        if (!el) return;
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+            const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+            const pdf = new jsPDF('p','mm',[210,(canvas.height*210)/canvas.width]);
+            pdf.addImage(canvas.toDataURL('image/jpeg',0.9),'JPEG',0,0,210,(canvas.height*210)/canvas.width);
+            pdf.save(`${game.title}_manual_${lang}.pdf`);
+        } catch (e) { console.error(e); }
+    };
+
+    const btnStyle = { padding: '6px 15px', borderRadius: 8, fontSize: '0.79rem', fontWeight: 700, cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' };
+    const pubDate  = status?.published_at ? new Date(status.published_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : null;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font, overflow: 'hidden' }}>
+
+            {/* Banner */}
+            <div style={{ background: 'linear-gradient(135deg,#eef2ff,#f5f3ff)', borderBottom:`1px solid ${T.accentBd}`, padding:'12px 22px', flexShrink: 0 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div style={{ width:34, height:34, borderRadius:9, background:T.accentBg, border:`1px solid ${T.accentBd}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem' }}>📋</div>
+                        <div>
+                            <div style={{ fontSize:'0.88rem', fontWeight:700, color:T.accentText }}>Gameplay Manual — {game.title}</div>
+                            <div style={{ fontSize:'0.72rem', color:T.muted }}>Auto-generated from published screenshots · {status ? `Published ${pubDate}` : 'Not yet published — go to Screenshot Library first'}</div>
+                        </div>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                        {pubDate && <span style={{ padding:'4px 12px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #bbf7d0' }}>✓ Published · {pubDate}</span>}
+                        <span style={{ padding:'4px 11px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{lang==='en'?'🇬🇧 English':'🇮🇳 Hindi'} · {screenshots.length} screens</span>
+                        {/* Language toggle */}
+                        <div style={{ display:'flex', background:T.white, border:`1px solid ${T.border}`, borderRadius:8, overflow:'hidden' }}>
+                            {[['en','🇬🇧 English'],['hi','🇮🇳 Hindi']].map(([l,lbl])=>(
+                                <button key={l} onClick={()=>setLang(l)} style={{ ...btnStyle, background:lang===l?T.accent:'transparent', color:lang===l?'#fff':T.muted, borderRadius:0, padding:'5px 13px' }}>{lbl}</button>
+                            ))}
+                        </div>
+                        {screenshots.length > 0 && <button onClick={handleDownloadPDF} style={{ ...btnStyle, background:'#0891b2', color:'#fff' }}>⬇ Download PDF</button>}
+                    </div>
+                </div>
+            </div>
+
+            {/* Manual body */}
+            <div style={{ flex:1, overflowY:'auto', padding:'22px 28px' }}>
+                {loading && <div style={{ textAlign:'center', padding:'60px', color:T.faint }}>Loading…</div>}
+
+                {!loading && screenshots.length === 0 && (
+                    <div style={{ textAlign:'center', padding:'70px 40px', color:T.faint }}>
+                        <div style={{ fontSize:'3rem', marginBottom:12 }}>📖</div>
+                        <div style={{ fontSize:'1rem', fontWeight:700, color:T.muted, marginBottom:6 }}>Manual not yet published</div>
+                        <div style={{ fontSize:'0.82rem', lineHeight:1.7 }}>Upload screenshots in the <strong style={{color:T.text}}>Screenshot Library</strong> section, then click <strong style={{color:T.text}}>Publish Manual</strong> to auto-generate this document.</div>
+                    </div>
+                )}
+
+                {!loading && screenshots.length > 0 && (
+                    <div id="manual-pdf-area">
+                        {/* Manual header card */}
+                        <div style={{ background:T.white, border:`1px solid ${T.border}`, borderRadius:14, padding:'24px 28px', marginBottom:24, boxShadow:T.shadow }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                                <div style={{ width:52, height:52, borderRadius:12, background:T.accentBg, border:`1px solid ${T.accentBd}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.6rem' }}>{game.icon}</div>
+                                <div>
+                                    <h2 style={{ margin:0, fontSize:'1.4rem', fontWeight:800, color:T.text }}>{game.title} — Gameplay Manual</h2>
+                                    <div style={{ fontSize:'0.78rem', color:T.muted, marginTop:3 }}>
+                                        {lang==='en'?'🇬🇧 English':'🇮🇳 Hindi'} · {screenshots.length} published screenshot{screenshots.length!==1?'s':''} · SANGIAN Documentation System
+                                        {pubDate && ` · Published ${pubDate}`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sections */}
+                        {MANUAL_SECTIONS_DEF.map(sec => {
+                            const items = screenshots.filter(s => s.screen_type === sec.type);
+                            if (!items.length) return null;
+                            return (
+                                <div key={sec.type} style={{ background:T.white, border:`1px solid ${T.border}`, borderRadius:14, overflow:'hidden', marginBottom:20, boxShadow:T.shadow }}>
+                                    {/* Section header */}
+                                    <div style={{ padding:'14px 22px', borderBottom:`1px solid ${T.border}`, display:'flex', alignItems:'center', gap:10, background:'linear-gradient(90deg,#f8faff,#fff)' }}>
+                                        <span style={{ fontSize:'1.15rem' }}>{sec.icon}</span>
+                                        <div>
+                                            <div style={{ fontSize:'0.92rem', fontWeight:800, color:T.text }}>{sec.title}</div>
+                                            <div style={{ fontSize:'0.72rem', color:T.muted }}>{sec.desc}</div>
+                                        </div>
+                                        <span style={{ marginLeft:'auto', fontSize:'0.72rem', fontWeight:700, padding:'3px 10px', borderRadius:20, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{items.length} screen{items.length!==1?'s':''}</span>
+                                    </div>
+                                    {/* Steps */}
+                                    <div style={{ padding:'18px 22px', display:'flex', flexDirection:'column', gap:22 }}>
+                                        {items.map((ss, idx) => (
+                                            <div key={ss.id} style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
+                                                <div style={{ width:30, height:30, minWidth:30, borderRadius:'50%', background:T.accentBg, color:T.accentText, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.8rem', fontWeight:800, border:`1px solid ${T.accentBd}` }}>{idx+1}</div>
+                                                <div style={{ flex:1 }}>
+                                                    <img src={`${SERVER_BASE_SS}${ss.image_path}`} alt={ss.title}
+                                                        style={{ width:'100%', maxWidth:520, borderRadius:10, border:`1px solid ${T.border}`, marginBottom:9, cursor:'zoom-in', transition:'transform 0.2s' }}
+                                                        onClick={() => setLightbox({ list: items, i: idx })}
+                                                    />
+                                                    <div style={{ fontSize:'0.88rem', fontWeight:700, color:T.text, marginBottom:3 }}>{ss.title}</div>
+                                                    {ss.description && <p style={{ margin:0, fontSize:'0.8rem', color:T.muted, lineHeight:1.65 }}>{ss.description}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Lightbox */}
+            {lightbox && (
+                <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.92)', zIndex:2000, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:20 }} onClick={()=>setLightbox(null)}>
+                    <button onClick={()=>setLightbox(null)} style={{ position:'fixed', top:18, right:22, background:'#1e293b', border:'1px solid #334155', color:'#e2e8f0', borderRadius:'50%', width:38, height:38, fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                    <img src={`${SERVER_BASE_SS}${lightbox.list[lightbox.i].image_path}`} alt={lightbox.list[lightbox.i].title} style={{ maxWidth:'88vw', maxHeight:'76vh', objectFit:'contain', borderRadius:8 }} onClick={e=>e.stopPropagation()} />
+                    <div style={{ textAlign:'center', color:'#94a3b8', fontSize:'0.84rem' }}>
+                        <strong style={{ color:'#e2e8f0' }}>{lightbox.list[lightbox.i].title}</strong>
+                        {lightbox.list[lightbox.i].description && <div style={{ marginTop:3 }}>{lightbox.list[lightbox.i].description}</div>}
+                        <div style={{ marginTop:5, color:'#475569', fontSize:'0.72rem' }}>{lightbox.i+1} / {lightbox.list.length}</div>
+                    </div>
+                    {lightbox.list.length > 1 && (
+                        <div style={{ display:'flex', gap:10 }} onClick={e=>e.stopPropagation()}>
+                            {[['← Prev', ()=>setLightbox(lb=>({...lb,i:(lb.i-1+lb.list.length)%lb.list.length}))],
+                              ['Next →', ()=>setLightbox(lb=>({...lb,i:(lb.i+1)%lb.list.length}))]].map(([lbl,fn])=>(
+                                <button key={lbl} onClick={fn} style={{ background:'#1e293b', border:'1px solid #334155', color:'#e2e8f0', borderRadius:8, padding:'7px 18px', cursor:'pointer', fontSize:'0.82rem' }}>{lbl}</button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Introduction Viewer ─────────────────────────────────────────────────────
+
+const INTRO_FIELD_DEFS = [
+    { key: 'objective',   label: 'Test Objective',  labelHi: 'परीक्षण उद्देश्य',               icon: '🎯', rows: 4 },
+    { key: 'description', label: 'About this Game', labelHi: 'इस खेल के बारे में',              icon: '📘', rows: 5 },
+    { key: 'skill',       label: 'Cognitive Skill', labelHi: 'संज्ञानात्मक कौशल',              icon: '🧠', rows: 1 },
+    { key: 'guidance',    label: 'Child Guidance',  labelHi: 'बच्चों के लिए मार्गदर्शन',      icon: '💡', rows: 2 },
+];
+
+const IntroCard = ({ icon, title, titleHi, game, accent, children }) => (
+    <div style={{
+        background: accent
+            ? `linear-gradient(135deg, ${game.color}12 0%, ${game.color}06 100%)`
+            : T.white,
+        border: `1px solid ${accent ? game.color + '35' : T.border}`,
+        borderRadius: '12px', overflow: 'hidden', boxShadow: T.shadow,
+    }}>
+        <div style={{
+            padding: '12px 20px',
+            borderBottom: `1px solid ${accent ? game.color + '22' : T.border}`,
+            background: accent ? 'transparent' : 'linear-gradient(90deg, #f8faff, #fff)',
+            display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+            <span style={{ fontSize: '1rem' }}>{icon}</span>
+            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: T.text }}>{title}</span>
+            <span style={{ fontSize: '0.72rem', color: T.muted, fontStyle: 'italic', fontFamily: HINDI_FONT }}>/ {titleHi}</span>
+        </div>
+        <div style={{ padding: '16px 20px' }}>{children}</div>
+    </div>
+);
+
+const BilingualBlock = ({ en, hi, fieldKey, expanded, onToggle }) => {
+    const LIMIT = 220;
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+            {[
+                { lang: 'en', label: '🇬🇧 English', text: en, ff: T.font,    accent: '#1d4ed8' },
+                { lang: 'hi', label: '🇮🇳 हिंदी',   text: hi, ff: HINDI_FONT, accent: '#7c3aed' },
+            ].map(({ lang, label, text, ff, accent }) => {
+                const key   = `${fieldKey}_${lang}`;
+                const isLong = (text || '').length > LIMIT;
+                const isExp  = expanded[key];
+                const shown  = isLong && !isExp ? text.slice(0, LIMIT) + '…' : (text || '');
+                return (
+                    <div key={lang} style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            {label}
+                        </div>
+                        <p style={{ margin: 0, fontSize: lang === 'hi' ? '0.97rem' : '0.88rem', lineHeight: 1.8, color: '#374151', fontFamily: ff }}>
+                            {shown || '—'}
+                        </p>
+                        {isLong && (
+                            <button
+                                onClick={() => onToggle(key)}
+                                style={{ marginTop: '8px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: accent, padding: 0, fontFamily: ff }}
+                            >
+                                {isExp ? '▲ Read Less' : '▼ Read More'}
+                            </button>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+const IntroductionViewer = ({ game }) => {
+    const docKey      = `${game.key}__intro`;
+    const defaultData = GAME_INTRO_DEFAULTS[game.key] || { en: {}, hi: {} };
+
+    const [data,      setData]      = useState(null);
+    const [loading,   setLoading]   = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData,  setEditData]  = useState(null);
+    const [isSaving,  setIsSaving]  = useState(false);
+    const [saveMsg,   setSaveMsg]   = useState('');
+    const [updatedAt, setUpdatedAt] = useState(null);
+    const [updatedBy, setUpdatedBy] = useState(null);
+    const [expanded,  setExpanded]  = useState({});
+
+    const loadIntro = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get(`${API_URL}/docs/${docKey}`, authHeader());
+            if (res.data.doc?.content) {
+                try { setData(JSON.parse(res.data.doc.content)); } catch { setData(defaultData); }
+                setUpdatedAt(res.data.doc.updated_at);
+                setUpdatedBy(res.data.doc.updated_by);
+            } else {
+                setData(defaultData); setUpdatedAt(null); setUpdatedBy(null);
+            }
+        } catch { setData(defaultData); }
+        finally  { setLoading(false); }
+    }, [docKey]);
+
+    useEffect(() => { loadIntro(); }, [loadIntro]);
+
+    const handleEdit = () => { setEditData(JSON.parse(JSON.stringify(data))); setIsEditing(true); };
+
+    const handleSave = async () => {
+        setIsSaving(true); setSaveMsg('');
+        const savedBy = (() => { try { return JSON.parse(localStorage.getItem('adminUser')).name; } catch { return 'admin'; } })();
+        try {
+            await axios.put(`${API_URL}/docs/${docKey}`, { content: JSON.stringify(editData, null, 2), saved_by: savedBy }, authHeader());
+            setData(editData); setIsEditing(false);
+            setUpdatedAt(new Date().toISOString()); setUpdatedBy(savedBy);
+            setSaveMsg('✅ Saved!'); setTimeout(() => setSaveMsg(''), 3000);
+        } catch { setSaveMsg('❌ Save failed'); }
+        finally { setIsSaving(false); }
+    };
+
+    const updateField = (lang, key, val) =>
+        setEditData(prev => ({ ...prev, [lang]: { ...prev[lang], [key]: val } }));
+
+    const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+
+    const d = data || defaultData;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
+
+            {/* Toolbar */}
+            <div style={{
+                padding: '12px 22px', background: T.white, borderBottom: `1px solid ${T.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: '8px', flexShrink: 0,
+            }}>
+                <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: T.text }}>📖 Introduction</div>
+                    <div style={{ fontSize: '0.72rem', color: T.faint, marginTop: '1px' }}>
+                        {updatedAt
+                            ? `Last updated ${fmtDt(updatedAt)} · by ${updatedBy}`
+                            : 'Default content — click Edit to customise'}
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {saveMsg && (
+                        <span style={{ fontSize: '0.78rem', color: saveMsg.includes('✅') ? '#059669' : '#dc2626', fontWeight: 600 }}>
+                            {saveMsg}
+                        </span>
+                    )}
+                    {!isEditing ? (
+                        <button onClick={handleEdit} style={btnSm(game.color, '#fff')}>✏️ Edit</button>
+                    ) : (
+                        <>
+                            <button onClick={() => setIsEditing(false)} style={btnSm('rgba(15,23,42,0.04)', T.text, '1px solid rgba(15,23,42,0.08)')}>Cancel</button>
+                            <button onClick={handleSave} disabled={isSaving} style={btnSm(game.color, '#fff')}>
+                                {isSaving ? 'Saving…' : '💾 Save'}
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '22px 24px' }}>
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '60px', color: T.faint, fontSize: '0.88rem' }}>
+                        Loading introduction…
+                    </div>
+                ) : isEditing ? (
+
+                    /* ── Edit Mode ── */
+                    <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{
+                            background: T.accentBg, border: `1px solid ${T.accentBd}`,
+                            borderRadius: '10px', padding: '12px 16px',
+                            fontSize: '0.8rem', color: T.accentText, fontWeight: 600,
+                        }}>
+                            📝 Edit the bilingual introduction content for <strong>{game.title}</strong>.
+                            Content is stored as structured JSON in the database and loaded dynamically.
+                        </div>
+
+                        {INTRO_FIELD_DEFS.map(field => (
+                            <div key={field.key} style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: T.shadow }}>
+                                <div style={{
+                                    padding: '11px 18px', borderBottom: `1px solid ${T.border}`,
+                                    background: 'linear-gradient(90deg, #f8faff, #fff)',
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                }}>
+                                    <span>{field.icon}</span>
+                                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: T.text }}>{field.label}</span>
+                                    <span style={{ fontSize: '0.7rem', color: T.faint, fontStyle: 'italic', fontFamily: HINDI_FONT }}>/ {field.labelHi}</span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+                                    {[
+                                        ['en', '🇬🇧 English', T.font,    '#1d4ed8', false],
+                                        ['hi', '🇮🇳 हिंदी',   HINDI_FONT, '#7c3aed', true],
+                                    ].map(([lang, label, ff, accent, borderRight]) => (
+                                        <div key={lang} style={{ padding: '14px 18px', borderLeft: borderRight ? `1px solid ${T.border}` : 'none' }}>
+                                            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: accent, marginBottom: '6px', letterSpacing: '0.04em' }}>
+                                                {label}
+                                            </label>
+                                            <textarea
+                                                value={editData[lang]?.[field.key] || ''}
+                                                onChange={e => updateField(lang, field.key, e.target.value)}
+                                                rows={field.rows}
+                                                style={{
+                                                    width: '100%', boxSizing: 'border-box',
+                                                    padding: '10px 12px', border: `1.5px solid ${T.border}`,
+                                                    borderRadius: '8px',
+                                                    fontSize: lang === 'hi' ? '0.95rem' : '0.85rem',
+                                                    fontFamily: ff, lineHeight: 1.65,
+                                                    color: T.text, background: T.bg,
+                                                    resize: 'vertical', outline: 'none',
+                                                    transition: 'border-color 0.15s',
+                                                }}
+                                                onFocus={e  => { e.target.style.borderColor = game.color; }}
+                                                onBlur={e   => { e.target.style.borderColor = T.border; }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                ) : (
+
+                    /* ── View Mode ── */
+                    <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+                        {/* Hero header card */}
+                        <div style={{
+                            background: `linear-gradient(135deg, ${game.color}18 0%, ${game.color}08 100%)`,
+                            border: `1.5px solid ${game.color}30`, borderRadius: '14px',
+                            padding: '22px 24px', boxShadow: T.shadow,
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                                <div style={{
+                                    width: 52, height: 52, borderRadius: '13px', flexShrink: 0,
+                                    background: game.color + '22', border: `1.5px solid ${game.color}44`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem',
+                                }}>
+                                    {game.icon}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <h2 style={{ margin: '0 0 3px', fontSize: 'clamp(1rem,2vw,1.3rem)', fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
+                                        {game.title}
+                                    </h2>
+                                    <div style={{ fontSize: '0.82rem', color: T.muted, fontFamily: HINDI_FONT, lineHeight: 1.5 }}>
+                                        {d.hi?.skill || ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    fontSize: '0.75rem', fontWeight: 700, padding: '5px 14px',
+                                    borderRadius: '999px', background: game.color, color: '#fff',
+                                    boxShadow: `0 2px 8px ${game.color}45`,
+                                }}>
+                                    🧠 {d.en?.skill || 'Cognitive Assessment'}
+                                </span>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    fontSize: '0.75rem', fontWeight: 600, padding: '5px 14px',
+                                    borderRadius: '999px', background: 'rgba(255,255,255,0.85)',
+                                    border: `1px solid ${game.color}35`, color: game.color,
+                                }}>
+                                    📊 SANGIAN Assessment
+                                </span>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    fontSize: '0.75rem', fontWeight: 600, padding: '5px 14px',
+                                    borderRadius: '999px', background: 'rgba(255,255,255,0.85)',
+                                    border: `1px solid ${game.color}35`, color: game.color,
+                                }}>
+                                    🌐 EN + हिंदी
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Objective */}
+                        <IntroCard icon="🎯" title="Test Objective" titleHi="परीक्षण उद्देश्य" game={game}>
+                            <BilingualBlock
+                                en={d.en?.objective} hi={d.hi?.objective}
+                                fieldKey="objective" expanded={expanded} onToggle={toggleExpand}
+                            />
+                        </IntroCard>
+
+                        {/* About this Game */}
+                        <IntroCard icon="📘" title="About this Game" titleHi="इस खेल के बारे में" game={game}>
+                            <BilingualBlock
+                                en={d.en?.description} hi={d.hi?.description}
+                                fieldKey="description" expanded={expanded} onToggle={toggleExpand}
+                            />
+                        </IntroCard>
+
+                        {/* Before You Start */}
+                        <IntroCard icon="💡" title="Before You Start" titleHi="शुरू करने से पहले" game={game} accent>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                                {[
+                                    { lang: 'en', label: '🇬🇧 English', ff: T.font,    accent: '#1d4ed8', text: d.en?.guidance },
+                                    { lang: 'hi', label: '🇮🇳 हिंदी',   ff: HINDI_FONT, accent: '#7c3aed', text: d.hi?.guidance },
+                                ].map(({ lang, label, ff, accent, text }) => (
+                                    <div key={lang} style={{
+                                        background: 'rgba(255,255,255,0.75)', borderRadius: '10px',
+                                        padding: '14px 16px', border: `1px solid ${game.color}22`,
+                                    }}>
+                                        <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                            {label}
+                                        </div>
+                                        <p style={{
+                                            margin: 0, fontStyle: 'italic',
+                                            fontSize: lang === 'hi' ? '0.97rem' : '0.87rem',
+                                            lineHeight: 1.75, color: T.text, fontFamily: ff,
+                                        }}>
+                                            "{text || '—'}"
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </IntroCard>
+
+                        {/* Skill tag footer */}
+                        <div style={{
+                            background: T.white, border: `1px solid ${T.border}`, borderRadius: '10px',
+                            padding: '14px 20px', boxShadow: T.shadow,
+                            display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+                        }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: T.faint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                Cognitive Skill Measured
+                            </span>
+                            <span style={{
+                                fontSize: '0.8rem', fontWeight: 700, padding: '4px 14px',
+                                borderRadius: '999px', background: game.color + '12',
+                                border: `1px solid ${game.color}35`, color: game.color,
+                            }}>
+                                🧠 {d.en?.skill || '—'}
+                            </span>
+                            <span style={{
+                                fontSize: '0.88rem', fontFamily: HINDI_FONT, fontWeight: 600, padding: '4px 14px',
+                                borderRadius: '999px', background: 'rgba(124,58,237,0.07)',
+                                border: '1px solid rgba(124,58,237,0.2)', color: '#7c3aed',
+                            }}>
+                                🧠 {d.hi?.skill || '—'}
+                            </span>
+                        </div>
+
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 const AdminDocs = () => {
@@ -3946,6 +4870,20 @@ const AdminDocs = () => {
                         />
                     ) : selectedSection.available && selectedSection.key === 'reports' ? (
                         <ReportsAnalysisViewer
+                            game={selectedGame}
+                            section={selectedSection}
+                        />
+                    ) : selectedSection.available && selectedSection.key === 'screenshots' ? (
+                        <ScreenshotLibraryViewer
+                            game={selectedGame}
+                            section={selectedSection}
+                        />
+                    ) : selectedSection.available && selectedSection.key === 'introduction' ? (
+                        <IntroductionViewer
+                            game={selectedGame}
+                        />
+                    ) : selectedSection.available && selectedSection.key === 'gameplay_manual' ? (
+                        <GameplayManualViewer
                             game={selectedGame}
                             section={selectedSection}
                         />

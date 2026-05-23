@@ -518,6 +518,17 @@ const ReadingSkillGame = () => {
 
   const currentQuestion = QUESTIONS[questionIndex];
 
+  const getCategoryName = (name) => {
+    const map = {
+      'Single Letter': t('game.categories.singleLetter'),
+      'Double Letter': t('game.categories.doubleLetter'),
+      'Sentence': t('game.categories.sentence'),
+      'Story': t('game.categories.story'),
+      'Paragraph': t('game.categories.paragraph'),
+    };
+    return map[name] || name;
+  };
+
   const getStyleForCategory = (cat) => {
     if (cat === CATEGORY.SINGLE_LETTER || cat === CATEGORY.DOUBLE_LETTER) return { fontSize: 200, padding: 15 };
     if (cat === CATEGORY.SENTENCE) return { fontSize: 140, padding: 12 };
@@ -542,14 +553,14 @@ const ReadingSkillGame = () => {
         <div className="rs-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />
           <div className="rs-divider"></div>
-          <span className="rs-test-title">Padh ke batao</span>
+          <span className="rs-test-title">{t('home.games.literacy.title')}</span>
         </div>
         <div className="rs-stats">
           {childData?.child_id && (
-            <div className="rs-stat-pill"><span className="rs-stat-label">CHILD ID</span> <span className="rs-stat-value">{childData.child_id}</span></div>
+            <div className="rs-stat-pill"><span className="rs-stat-label">{t('game.childId')}</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="rs-stat-pill"><span className="rs-stat-label">SCORE</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
-          {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
+          <div className="rs-stat-pill"><span className="rs-stat-label">{t('game.score')}</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
+          {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> {t('game.pauseQuit')}</button>}
         </div>
       </header>
 
@@ -567,18 +578,18 @@ const ReadingSkillGame = () => {
                 <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                Welcome to Padh ke batao
+                {t('game.welcomeLiteracy')}
               </h2>
 
-              
+
               <div className="rs-btn-row">
-                <button 
-                  className={`rs-btn rs-btn-primary ${audioFinished ? 'rs-btn-highlight' : ''}`} 
-                  disabled={!audioFinished} 
+                <button
+                  className={`rs-btn rs-btn-primary ${audioFinished ? 'rs-btn-highlight' : ''}`}
+                  disabled={!audioFinished}
                   style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                   onClick={() => startNewGame()}
                 >
-                  Start Now
+                  {t('game.startNow')}
                 </button>
                 <button className="rs-btn rs-btn-secondary" onClick={() => {
                    if (audioRef.current) {
@@ -586,7 +597,7 @@ const ReadingSkillGame = () => {
                      audioRef.current.currentTime = 0;
                      audioRef.current.play().catch(() => setAudioFinished(true));
                    }
-                }}>Replay Audio</button>
+                }}>{t('game.replayAudio')}</button>
               </div>
             </div>
           </div>
@@ -596,12 +607,12 @@ const ReadingSkillGame = () => {
           <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
             <div className="rs-screen-header">
               <div>
-                <div className="rs-screen-title" style={{fontSize: '1.4rem'}}>{currentQuestion.categoryName} ({questionIndex + 1} of {QUESTIONS.length})</div>
+                <div className="rs-screen-title" style={{fontSize: '1.4rem'}}>{getCategoryName(currentQuestion.categoryName)} ({questionIndex + 1} {t('game.of')} {QUESTIONS.length})</div>
               </div>
               <div className="rs-chips">
 
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
-                  ⏱ Timer: {formatTime(qTimer)}
+                  {t('game.timerLabel')} {formatTime(qTimer)}
                 </span>
               </div>
             </div>
@@ -617,13 +628,13 @@ const ReadingSkillGame = () => {
             { (currentQuestion.category === CATEGORY.STORY || currentQuestion.category === CATEGORY.PARAGRAPH) ? (
               <div className="rs-response-buttons">
                 <button className="rs-response-btn rs-btn-done" onClick={handleDoneReading}>
-                  Done Reading
+                  {t('game.doneReading')}
                 </button>
               </div>
             ) : (
               <div className="rs-response-buttons">
-                <button className="rs-response-btn rs-btn-correct" onClick={() => handleManualScoring(true)}>✓ Correct</button>
-                <button className="rs-response-btn rs-btn-incorrect" onClick={() => handleManualScoring(false)}>✗ Incorrect</button>
+                <button className="rs-response-btn rs-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct2')}</button>
+                <button className="rs-response-btn rs-btn-incorrect" onClick={() => handleManualScoring(false)}>✗ {t('game.incorrect2')}</button>
               </div>
             )}
           </div>
@@ -634,30 +645,25 @@ const ReadingSkillGame = () => {
             <div className="rs-screen-header">
               <div>
                 <div className="rs-screen-title">
-                  {dropReason ? 'Session Dropped (Clinical Rule)' : quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete'}
+                  {dropReason ? t('game.sessionDropped') : quitReason ? t('game.sessionTerminatedPartial') : t('game.assessmentComplete')}
                 </div>
                 <div className="rs-screen-subtitle">
-                  {dropReason ? dropReason : quitReason ? `Assessor stopped: ${quitReason}` : 'Test finished successfully'}
+                  {dropReason ? dropReason : quitReason ? `${t('game.assessorStopped')} ${quitReason}` : t('game.testFinished')}
                 </div>
               </div>
               <div className="rs-chips">
-                <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>Attempt #{attemptNo}</span>
+                <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
                 {dropReason
-                  ? <span className="rs-chip" style={{ color: '#fff', background: '#dc2626', border: '1px solid #b91c1c' }}>⛔ Dropped</span>
-                  : <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>Final Results</span>
+                  ? <span className="rs-chip" style={{ color: '#fff', background: '#dc2626', border: '1px solid #b91c1c' }}>{t('game.droppedChip')}</span>
+                  : <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                 }
                 <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  Time: {totalTimeDisp}
+                  {t('game.timeChip')} {totalTimeDisp}
                 </span>
               </div>
             </div>
 
             <div className="rs-card rs-result-card">
-              <div className="rs-result-header">
-                <h2>{dropReason ? 'Session Dropped (Clinical Rule)' : quitReason ? 'Assessment Terminated' : 'Performance'}</h2>
-                <p>{dropReason || (quitReason ? `Reason: ${quitReason}` : 'Assessment Completed')}</p>
-              </div>
-
               <div className="rs-score-top">
                 <div className="rs-score-dial-container">
                   <div className="rs-score-dial-big">{totalScoreVal}</div>
@@ -666,27 +672,27 @@ const ReadingSkillGame = () => {
 
                 <div className="rs-metric-grid">
                   <div className="rs-metric-box">
-                    <label>Total Score</label>
+                    <label>{t('game.totalScore')}</label>
                     <div className="metric-val">{totalScoreVal} / {totalQuestionsCount}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>Correct</label>
+                    <label>{t('game.correct2')}</label>
                     <div className="metric-val green">{totalScoreVal}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>Incorrect</label>
+                    <label>{t('game.incorrect2')}</label>
                     <div className="metric-val red">{incorrectCount}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>Percentage</label>
+                    <label>{t('game.percentage')}</label>
                     <div className="metric-val">{accuracyPercent}%</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>Total Time</label>
+                    <label>{t('game.totalTime')}</label>
                     <div className="metric-val">{totalTimeDisp}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>Avg Time/Q</label>
+                    <label>{t('game.avgTimeQ')}</label>
                     <div className="metric-val">{avgTimePerQuestion}</div>
                   </div>
                 </div>
@@ -697,59 +703,49 @@ const ReadingSkillGame = () => {
                     <table className="rs-data-table">
                       <thead>
                         <tr>
-                          <th>Question No.</th>
-                          <th>Question Type</th>
-                          <th>Question</th>
-                          <th>Correct Answer</th>
-                          <th>Score</th>
-                          <th>Time Taken</th>
-                          <th>Attempt Status</th>
+                          <th>{t('game.questionNo')}</th>
+                          <th>{t('game.questionType')}</th>
+                          <th>{t('game.scoreTable.question')}</th>
+                          <th>{t('game.scoreTable.correctAnswer')}</th>
+                          <th>{t('game.scoreTable.score')}</th>
+                          <th>{t('game.scoreTable.timeTaken')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {QUESTIONS.filter(q => allScores.some(s => s.qId === q.id)).map((q, idx) => {
                           const scoreObj = allScores.find(s => s.qId === q.id);
-                          const isAttempted = !!scoreObj;
                           const hasSSR = q.category === CATEGORY.STORY || q.category === CATEGORY.PARAGRAPH;
 
                           return (
                             <React.Fragment key={q.id}>
                               <tr style={{ cursor: 'default' }}>
                                 <td>{idx + 1}</td>
-                                <td>{q.categoryName}</td>
+                                <td>{getCategoryName(q.categoryName)}</td>
                                 <td className="col-text" title={q.text}>{q.text}</td>
-                                <td>{hasSSR ? 'All Criteria Met' : q.text}</td>
+                                <td>{hasSSR ? t('game.allCriteriaMet') : q.text}</td>
                                 <td style={{ fontWeight: 'bold' }}>{scoreObj.score}</td>
                                 <td>{scoreObj.timeTaken}s</td>
-                                <td>
-                                  <span className="status-badge status-attempted">
-                                    Attempted
-                                  </span>
-                                </td>
                               </tr>
-                              {hasSSR && isAttempted && (
+                              {hasSSR && (
                                 <tr>
-                                  <td colSpan="7" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
+                                  <td colSpan="6" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
                                     <div style={{ padding: '15px 30px' }}>
                                       <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                                         <thead>
                                           <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                            <th style={{ textAlign: 'left', padding: '8px' }}>SSR Question</th>
-                                            <th style={{ textAlign: 'left', padding: '8px' }}>User Answer</th>
-                                            <th style={{ textAlign: 'left', padding: '8px' }}>Correct Answer</th>
-                                            <th style={{ textAlign: 'left', padding: '8px' }}>Score</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.ssrQuestion')}</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.userAnswer')}</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.scoreTable.correctAnswer')}</th>
                                           </tr>
                                         </thead>
                                         <tbody>
                                           {(q.assessmentCriteria || []).map((criterion, cIdx) => {
                                             const answer = scoreObj.ssrAnswers?.[cIdx] || '—';
-                                            const isCorrect = answer === 'no';
                                             return (
                                               <tr key={cIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '8px' }}>{t(`game.readingCriteria.${criterion}`)}</td>
                                                 <td style={{ padding: '8px', textTransform: 'capitalize' }}>{answer}</td>
-                                                <td style={{ padding: '8px' }}>No</td>
-                                                <td style={{ padding: '8px', fontWeight: 'bold' }}>{isCorrect ? 1 : 0}</td>
+                                                <td style={{ padding: '8px' }}>{t('game.noLabel')}</td>
                                               </tr>
                                             );
                                           })}
@@ -804,7 +800,7 @@ const ReadingSkillGame = () => {
         <div className="rs-modal-overlay">
           <div className="rs-modal" style={{ maxWidth: '600px' }}>
             <div className="rs-modal-header" style={{ marginBottom: '20px' }}>
-              <h3>Assessment</h3>
+              <h3>{t('game.assessmentLabel')}</h3>
               <p>{t('game.assessmentComplete')}</p>
             </div>
             
@@ -813,17 +809,17 @@ const ReadingSkillGame = () => {
                 <div key={index} className={`rs-criterion-row ${midTestAnswers[index] ? 'complete' : ''}`}>
                   <div className="rs-criterion-text">{t(`game.readingCriteria.${criterion}`)}</div>
                   <div className="rs-criterion-buttons">
-                    <button 
+                    <button
                       className={`rs-criterion-btn rs-btn-yes ${midTestAnswers[index] === 'yes' ? 'selected' : ''}`}
                       onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'yes'})}
                     >
-                      Yes
+                      {t('game.yesLabel')}
                     </button>
-                    <button 
+                    <button
                       className={`rs-criterion-btn rs-btn-no ${midTestAnswers[index] === 'no' ? 'selected' : ''}`}
                       onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'no'})}
                     >
-                      No
+                      {t('game.noLabel')}
                     </button>
                   </div>
                 </div>
@@ -836,7 +832,7 @@ const ReadingSkillGame = () => {
                 disabled={Object.keys(midTestAnswers).length !== (currentQuestion.assessmentCriteria?.length || 0)}
                 onClick={handleMidTestAssessmentComplete}
               >
-                Finish Assessment
+                {t('game.finishAssessment')}
               </button>
             </div>
           </div>
@@ -847,11 +843,11 @@ const ReadingSkillGame = () => {
       {showResumeModal && (
         <div className="rs-modal-overlay">
           <div className="rs-modal">
-            <h2>Saved Progress Found</h2>
-            <p>You have a previously paused game session.</p>
+            <h2>{t('game.progressFound')}</h2>
+            <p>{t('game.progressDesc')}</p>
             <div className="rs-btn-row" style={{marginTop:'20px'}}>
-              <button className="rs-btn rs-btn-secondary" onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>Restart Fresh</button>
-              <button className="rs-btn rs-btn-primary" onClick={resumeGame}>Resume Game</button>
+              <button className="rs-btn rs-btn-secondary" onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
+              <button className="rs-btn rs-btn-primary" onClick={resumeGame}>{t('game.resumeGame')}</button>
             </div>
           </div>
         </div>
@@ -860,12 +856,12 @@ const ReadingSkillGame = () => {
       {showQuitModal && (
         <div className="rs-modal-overlay">
           <div className="rs-modal">
-            <h2>Pause or Quit</h2>
-            <p>Why are you stopping the game?</p>
+            <h2>{t('game.pauseQuitTitle')}</h2>
+            <p>{t('game.pauseDesc')}</p>
             
             <div style={{ position: 'relative' }}>
               <textarea 
-                placeholder="E.g., Child is tired, disconnected, etc."
+                {...{placeholder: t('game.pausePlaceholder')}}
                 value={quitReason} 
                 onChange={e => setQuitReason(e.target.value)}
               />
@@ -886,9 +882,9 @@ const ReadingSkillGame = () => {
             </div>
 
             <div className="rs-btn-row">
-              <button className="rs-btn rs-btn-secondary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem'}} onClick={() => setShowQuitModal(false)}>Cancel</button>
-              <button className="rs-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', background:'#fef08a', color:'#854d0e'}} onClick={() => handleQuit('paused')}>Pause & Save</button>
-              <button className="rs-btn rs-btn-incorrect" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem'}} onClick={() => handleQuit('quit')}>Quit & End</button>
+              <button className="rs-btn rs-btn-secondary" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem'}} onClick={() => setShowQuitModal(false)}>{t('game.cancel')}</button>
+              <button className="rs-btn" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem', background:'#fef08a', color:'#854d0e'}} onClick={() => handleQuit('paused')}>{t('game.pauseSave')}</button>
+              <button className="rs-btn rs-btn-incorrect" style={{padding:'8px 20px', minWidth:0, fontSize:'0.9rem'}} onClick={() => handleQuit('quit')}>{t('game.quitEnd')}</button>
             </div>
           </div>
         </div>

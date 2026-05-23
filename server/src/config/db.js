@@ -266,6 +266,40 @@ const initDb = async () => {
       )
     `);
 
+    // Screenshot Library table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS screenshot_library (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        game_key      VARCHAR(100)  NOT NULL,
+        language      VARCHAR(5)    NOT NULL DEFAULT 'en',
+        screen_type   VARCHAR(50)   NOT NULL DEFAULT 'gameplay',
+        title         VARCHAR(255)  NOT NULL,
+        description   TEXT,
+        image_path    VARCHAR(500)  NOT NULL,
+        sort_order    INT           DEFAULT 0,
+        publish_status VARCHAR(20)  DEFAULT 'draft',
+        created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+        updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_game_lang (game_key, language),
+        INDEX idx_publish_status (publish_status)
+      )
+    `);
+
+    // Game manual publish tracking table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS game_manual_publish_status (
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        game_key         VARCHAR(100) NOT NULL,
+        language         VARCHAR(5)   NOT NULL,
+        published_at     TIMESTAMP    NULL,
+        screenshot_count INT          DEFAULT 0,
+        needs_republish  TINYINT(1)   DEFAULT 0,
+        created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_game_lang (game_key, language)
+      )
+    `);
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {

@@ -683,7 +683,7 @@ const AtlantisBagiyaGame = () => {
   // ─── STT ─────────────────────────────────────────────────
   const toggleRecording = (target) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech Recognition not supported. Please type manually.'); return; }
+    if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
       if (window.activeRecognition) window.activeRecognition.stop();
       setIsRecording(false); setRecordingTarget(null); return;
@@ -800,22 +800,22 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
           <div className="ab-divider"></div>
-          <span className="ab-test-title">Bagiya</span>
+          <span className="ab-test-title">{t('home.games.bagiya.title')}</span>
         </div>
         <div className="ab-stats">
           {childData?.child_id && (
             <div className="ab-stat-pill">
-              <span className="ab-stat-label">CHILD ID</span>
+              <span className="ab-stat-label">{t('game.childId')}</span>
               <span className="ab-stat-value">{childData.child_id}</span>
             </div>
           )}
           <div className="ab-stat-pill">
-            <span className="ab-stat-label">SCORE</span>
+            <span className="ab-stat-label">{t('game.score')}</span>
             <span className="ab-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
             <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}>
-              <span>⏸</span> Pause/Quit
+              <span>⏸</span> {t('game.pauseQuit')}
             </button>
           )}
         </div>
@@ -839,7 +839,7 @@ const AtlantisBagiyaGame = () => {
                 />
               </div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                Welcome to Bagiya
+                {t('game.welcomeBagiya')}
               </h2>
               
 
@@ -850,7 +850,7 @@ const AtlantisBagiyaGame = () => {
                   onClick={startNewGame}
                   style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
-                  Start Now
+                  {t('game.startNow')}
                 </button>
                 <button
                   className="ab-btn ab-btn-secondary"
@@ -863,7 +863,7 @@ const AtlantisBagiyaGame = () => {
                   }}
                   style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
-                  Replay Audio
+                  {t('game.replayAudio')}
                 </button>
               </div>
             </div>
@@ -875,11 +875,11 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">Practice · Question</div>
+                <div className="ab-screen-title">{t('game.practiceQuestion')}</div>
               </div>
               <div className="ab-chips">
-                <span className="ab-chip">Practice</span>
-                <span className="ab-chip">Not Scored</span>
+                <span className="ab-chip">{t('game.practiceLabel')}</span>
+                <span className="ab-chip">{t('game.notScored')}</span>
               </div>
             </div>
 
@@ -899,14 +899,14 @@ const AtlantisBagiyaGame = () => {
                     audio.addEventListener('error', () => setPracticeAudioDone(true));
                   }}
                 >
-                  Replay Audio
+                  {t('game.replayAudio')}
                 </button>
                 <button
                   className={`ab-btn ab-btn-primary${!practiceAudioDone ? ' ab-btn-disabled' : ''}`}
                   disabled={!practiceAudioDone}
                   onClick={() => setScreen('practice_r')}
                 >
-                  Answer
+                  {t('game.answer')}
                 </button>
               </div>
             </div>
@@ -918,10 +918,10 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">Practice · Response</div>
+                <div className="ab-screen-title">{t('game.practiceResponse')}</div>
               </div>
               <div className="ab-chips">
-                <span className="ab-chip">Practice</span>
+                <span className="ab-chip">{t('game.practiceLabel')}</span>
               </div>
             </div>
 
@@ -938,7 +938,7 @@ const AtlantisBagiyaGame = () => {
                     audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
                     audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
                   }}>
-                  Replay Audio
+                  {t('game.replayAudio')}
                 </button>
               </div>
 
@@ -962,7 +962,7 @@ const AtlantisBagiyaGame = () => {
                   disabled={feedbackAudioPlaying}
                   onClick={() => { pickPracticeItem(); setScreen('practice_q'); }}
                 >
-                  Try Again
+                  {t('game.tryAgain')}
                 </button>
                 <button
                   className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
@@ -977,7 +977,7 @@ const AtlantisBagiyaGame = () => {
                     setGridFeedback({});
                     setScreen('game');
                   }}>
-                  Start Main Game
+                  {t('game.startMainGame')}
                 </button>
               </div>
             </div>
@@ -991,7 +991,7 @@ const AtlantisBagiyaGame = () => {
               <>
                 <div className="ab-screen-header">
                   <div>
-                    <div className="ab-screen-title">Question {mainScreenNum} of 12</div>
+                    <div className="ab-screen-title">{t('game.question')} {mainScreenNum} {t('game.of')} 12</div>
                   </div>
                 </div>
 
@@ -1014,7 +1014,7 @@ const AtlantisBagiyaGame = () => {
                               audio.addEventListener('error', () => setQuestionAudioDone(true));
                             }
                           }}>
-                          Replay Audio
+                  {t('game.replayAudio')}
                         </button>
                         <button 
                           className={`ab-btn ab-btn-primary${!questionAudioDone ? ' ab-btn-disabled' : ''}`}
@@ -1028,7 +1028,7 @@ const AtlantisBagiyaGame = () => {
                             setSubQAudioDone(false);
                             setQTimer(0); qTimerRef.current = 0;
                           }}>
-                          Next Question
+                          {t('game.nextQuestionArrow')}
                         </button>
                       </div>
                     </div>
@@ -1048,9 +1048,9 @@ const AtlantisBagiyaGame = () => {
                 <>
                   <div className="ab-screen-header">
                     <div>
-                      <div className="ab-screen-title">Response {mainScreenNum}</div>
+                      <div className="ab-screen-title">{t('game.responseLabel')} {mainScreenNum}</div>
                       <div className="ab-screen-subtitle">
-                        {allSubQsDone ? 'All questions answered!' : `Sub-question ${subQIndex + 1} of ${currentConfig.subQStems.length}`}
+                        {allSubQsDone ? t('game.allAnswered') : `${t('game.subQuestion')} ${subQIndex + 1} ${t('game.of')} ${currentConfig.subQStems.length}`}
                       </div>
                     </div>
                     <div className="ab-chips">
@@ -1074,7 +1074,7 @@ const AtlantisBagiyaGame = () => {
                             audio.addEventListener('error', () => setSubQAudioDone(true));
                           }
                         }}>
-                        Replay Audio
+                  {t('game.replayAudio')}
                       </button>
                     </div>
 
@@ -1109,7 +1109,7 @@ const AtlantisBagiyaGame = () => {
                             advanceToNextScreen();
                           }
                         }}>
-                        {subQIndex < currentConfig.subQStems.length - 1 ? 'Next Question →' : (mainScreenNum < 13 ? 'Next Screen →' : 'Finish Game')}
+                        {subQIndex < currentConfig.subQStems.length - 1 ? t('game.nextQuestionArrow') : (mainScreenNum < 13 ? t('game.nextScreenArrow') : t('game.finishGame'))}
                       </button>
                     </div>
                   </div>
@@ -1124,13 +1124,13 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen" id="dashboard-capture-area">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">{quitReason ? 'Assessment Terminated' : 'Assessment Complete'}</div>
-                <div className="ab-screen-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Bagiya · Final Results'}</div>
+                <div className="ab-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
+                <div className="ab-screen-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.finalResults')}</div>
               </div>
               <div className="ab-chips">
                 <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="ab-chip">Final Results</span>
-                <span className="ab-chip">Time: {formatTime(totalTimeSec)}</span>
+                <span className="ab-chip">{t('game.finalResults')}</span>
+                <span className="ab-chip">{t('game.timeChip')} {formatTime(totalTimeSec)}</span>
               </div>
             </div>
 
@@ -1139,16 +1139,16 @@ const AtlantisBagiyaGame = () => {
               <div className="ab-score-top">
                 <div className="ab-score-dial">
                   <div className="ab-score-big">{totalPts}</div>
-                  <div className="ab-score-label">/ {maxPts} pts</div>
+                  <div className="ab-score-label">/ {maxPts} {t('game.ptsLabel')}</div>
                 </div>
                 <div className="ab-metric-grid">
                   {[
-                    { label: '✓ Exact (2pts)', val: correctCount, cls: 'green' },
-                    { label: '~ Partial (1pt)', val: partialCount, cls: '' },
-                    { label: '✗ Wrong (0pts)', val: wrongCount, cls: 'red' },
-                    { label: '% Accuracy', val: `${accuracyPct}%`, cls: '' },
-                    { label: '⏱ Time', val: formatTime(totalTimeSec), cls: '' },
-                    { label: 'Screens', val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
+                    { label: t('game.exactLabel'),    val: correctCount, cls: 'green' },
+                    { label: t('game.partialLabel'),  val: partialCount, cls: '' },
+                    { label: t('game.wrongLabel'),    val: wrongCount, cls: 'red' },
+                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '' },
+                    { label: t('game.timeLabel'),     val: formatTime(totalTimeSec), cls: '' },
+                    { label: t('game.screensLabel'),  val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="ab-metric-box">
                       <label>{m.label}</label>
@@ -1165,13 +1165,13 @@ const AtlantisBagiyaGame = () => {
                 <table className="ab-q-table">
                   <thead>
                     <tr>
-                      <th>Screen</th>
-                      <th>Sub-Q</th>
-                      <th>Target</th>
-                      <th>Child Chose</th>
-                      <th>Status</th>
-                      <th>Score</th>
-                      <th>Time</th>
+                      <th>{t('game.screenHeader')}</th>
+                      <th>{t('game.subQHeader')}</th>
+                      <th>{t('game.targetHeader')}</th>
+                      <th>{t('game.childChoseHeader')}</th>
+                      <th>{t('game.statusHeader')}</th>
+                      <th>{t('game.scoreTable.score')}</th>
+                      <th>{t('game.scoreTable.timeTaken')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1187,7 +1187,7 @@ const AtlantisBagiyaGame = () => {
                         </td>
                         <td>
                           <span className="ab-badge">
-                            {s.score === 2 ? 'Correct' : s.score === 1 ? 'Partial' : 'Wrong'}
+                            {s.score === 2 ? t('game.statusCorrect') : s.score === 1 ? t('game.statusPartial') : t('game.statusWrong')}
                           </span>
                         </td>
                         <td>{s.score}</td>
@@ -1235,8 +1235,8 @@ const AtlantisBagiyaGame = () => {
       {showResumeModal && (
         <div className="ab-modal-overlay">
           <div className="ab-modal">
-            <h2>Saved Progress Found</h2>
-            <p>You have a previously paused session for this game.</p>
+            <h2>{t('game.progressFound')}</h2>
+            <p>{t('game.progressDesc')}</p>
             <div className="ab-btn-row" style={{ marginTop: 20 }}>
               <button className="ab-btn ab-btn-secondary" onClick={() => {
                 setShowResumeModal(false);
@@ -1244,10 +1244,10 @@ const AtlantisBagiyaGame = () => {
                 setAudioFinished(false);
                 setScreen('splash');
               }}>
-                Restart Fresh
+                {t('game.restartFresh')}
               </button>
               <button className="ab-btn ab-btn-primary" onClick={resumeGame}>
-                Resume Game
+                {t('game.resumeGame')}
               </button>
             </div>
           </div>
@@ -1258,11 +1258,11 @@ const AtlantisBagiyaGame = () => {
       {showQuitModal && (
         <div className="ab-modal-overlay">
           <div className="ab-modal">
-            <h2>Pause or Quit</h2>
-            <p>Why are you stopping the game?</p>
+            <h2>{t('game.pauseQuitTitle')}</h2>
+            <p>{t('game.pauseDesc')}</p>
             <div style={{ position: 'relative' }}>
               <textarea
-                placeholder="E.g., Child is tired, disconnected, etc."
+                {...{placeholder: t('game.pausePlaceholder')}}
                 value={quitReason}
                 onChange={e => setQuitReason(e.target.value)}
                 style={{ paddingRight: 44, width: '100%', boxSizing: 'border-box' }}
@@ -1280,11 +1280,11 @@ const AtlantisBagiyaGame = () => {
             </div>
             <div className="ab-btn-row" style={{ marginTop: 16 }}>
               <button className="ab-btn ab-btn-secondary" style={{ padding: '8px 18px', minWidth: 0, fontSize: '0.88rem' }}
-                onClick={() => setShowQuitModal(false)}>Cancel</button>
+                onClick={() => setShowQuitModal(false)}>{t('game.cancel')}</button>
               <button className="ab-btn ab-btn-warning" style={{ padding: '8px 18px', minWidth: 0, fontSize: '0.88rem' }}
-                onClick={() => handleQuit('paused')}>Pause & Save</button>
+                onClick={() => handleQuit('paused')}>{t('game.pauseSave')}</button>
               <button className="ab-btn ab-btn-danger" style={{ padding: '8px 18px', minWidth: 0, fontSize: '0.88rem' }}
-                onClick={() => handleQuit('quit')}>Quit & End</button>
+                onClick={() => handleQuit('quit')}>{t('game.quitEnd')}</button>
             </div>
           </div>
         </div>

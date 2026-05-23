@@ -890,7 +890,7 @@ const ChorMachayeShorGame = () => {
     // Animate correct
     setHouses(prev => prev.map(h => h.currentPosition === house.currentPosition ? { ...h, animationClass: 'correct-response' } : h));
     setTreasurePos(house.currentPosition);
-    showFeedbackMsg('✔ Correct!', 'correct');
+    showFeedbackMsg(t('game.correctFeedbackChor'), 'correct');
     await playAudio('cm_appalause.wav');
     await new Promise(r => setTimeout(r, 500));
     setTreasurePos(null);
@@ -920,7 +920,7 @@ const ChorMachayeShorGame = () => {
       if (h.isResponseHouse) return { ...h, animationClass: 'highlight-blur' };
       return h;
     }));
-    showFeedbackMsg('✖ Try again. Observe carefully.', 'incorrect');
+    showFeedbackMsg(t('game.incorrectFeedbackChor'), 'incorrect');
     await playAudio('cm_neglect.wav');
     setHouses(prev => prev.map(h => h.isResponseHouse ? { ...h, animationClass: 'highlight-sharp' } : { ...h, animationClass: '' }));
     await new Promise(r => setTimeout(r, 800));
@@ -938,7 +938,7 @@ const ChorMachayeShorGame = () => {
   const handleMilestone = async (item) => {
     if (currentPhase < item.maxPhases) {
       if (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) {
-        showFeedbackMsg('Phase 1 Completed! Click Phase 2 to continue.', 'correct');
+        showFeedbackMsg(t('game.phase1Complete'), 'correct');
         return;
       }
       setPhase1TimeTaken(timerSeconds);
@@ -947,7 +947,7 @@ const ChorMachayeShorGame = () => {
       setCorrectTouchCount(0);
       setIsRuleSelection(true);
       
-      showFeedbackMsg('✅ Great! You found the pattern', 'correct');
+      showFeedbackMsg(t('game.foundPattern'), 'correct');
       setPhaseLabel(`Phase ${nextPhase}: Rule Changed`);
       setTargetLabel(`Phase ${nextPhase} Target: ${Array.isArray(item.consecutiveRequired) ? item.consecutiveRequired[nextPhase - 1] : item.consecutiveRequired} Correct in a row`);
       await new Promise(r => setTimeout(r, 2000));
@@ -1053,7 +1053,7 @@ const ChorMachayeShorGame = () => {
     setCorrectTouchCount(0);
     setIsRuleSelection(true);
     
-    showFeedbackMsg('✅ Great! You found the pattern', 'correct');
+    showFeedbackMsg(t('game.foundPattern'), 'correct');
     setPhaseLabel(`Phase ${nextPhase}: Rule Changed`);
     setTargetLabel(`Phase ${nextPhase} Target: ${Array.isArray(item.consecutiveRequired) ? item.consecutiveRequired[nextPhase - 1] : item.consecutiveRequired} Correct in a row`);
     
@@ -1096,7 +1096,7 @@ const ChorMachayeShorGame = () => {
     setTimerSeconds(0);
     setInteractionLocked(true);
     
-    showFeedbackMsg('🔄 Trial 2', 'correct');
+    showFeedbackMsg(t('game.trial2Label'), 'correct');
     await new Promise(r => setTimeout(r, 2000));
     startTimer();
     await shuffleHouses(0, 1, null, false, null);
@@ -1252,11 +1252,11 @@ const ChorMachayeShorGame = () => {
             <div className="chor-brand">
               <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
               <div className="chor-divider"></div>
-              <span className="chor-test-title">Chor Machaye Shor</span>
+              <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
           <main className="chor-main">
@@ -1267,7 +1267,7 @@ const ChorMachayeShorGame = () => {
                 </div>
 
                 <h2 className="chor-welcome-text" style={{ fontSize: '2.4rem', textAlign: 'center' }}>
-                  Welcome to Chor Machaye Shor
+                  {t('game.welcomeChor')}
                 </h2>
 
                 <div className="chor-splash-footer">
@@ -1277,7 +1277,7 @@ const ChorMachayeShorGame = () => {
                       onClick={startGame} 
                       style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                     >
-                      Start Now
+                      {t('game.startNow')}
                     </button>
                   </div>
                 </div>
@@ -1289,7 +1289,7 @@ const ChorMachayeShorGame = () => {
         {showResumeModal && (
           <div className="chor-modal-overlay">
             <div className="chor-modal-content">
-              <h2>Saved Progress Found</h2>
+              <h2>{t('game.progressFound')}</h2>
               <p>You have a previously paused game session. Would you like to resume?</p>
               <div className="modal-actions-row">
                 <button className="modal-btn modal-btn-cancel" onClick={async () => {
@@ -1307,10 +1307,10 @@ const ChorMachayeShorGame = () => {
                   resetGameState();
                   setAudioFinished(false);
                   setScreen('splash');
-                }}>Restart Fresh</button>
+                }}>{t('game.restartFresh')}</button>
                 <button className="modal-btn modal-btn-primary" onClick={() => {
                   resumeGame();
-                }}>Resume Game</button>
+                }}>{t('game.resumeGame')}</button>
               </div>
             </div>
           </div>
@@ -1334,12 +1334,12 @@ const ChorMachayeShorGame = () => {
             <div className="chor-brand">
               <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
               <div className="chor-divider"></div>
-              <span className="chor-test-title">Chor Machaye Shor</span>
+              <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.time')}</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
 
@@ -1348,12 +1348,12 @@ const ChorMachayeShorGame = () => {
               {/* Header Section */}
               <div className="chor-dash-header">
                 <div>
-                  <div className="chor-dash-title">{quitReason ? 'Session Terminated' : 'Assessment Complete'}</div>
+                  <div className="chor-dash-title">{quitReason ? t('game.sessionTerminated') : t('game.assessmentComplete')}</div>
                   <div className="chor-dash-subtitle">{quitReason ? 'Assessor requested early exit' : 'Test finished successfully'}</div>
                 </div>
                 <div className="chor-dash-badges">
                   <span className="chor-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                  <span className="chor-chip chor-chip-splash">Final Results</span>
+                  <span className="chor-chip chor-chip-splash">{t('game.finalResults')}</span>
                   <span className="chor-chip chor-chip-game">Time: {Math.floor(tTime / 60)}m {tTime % 60}s</span>
                 </div>
               </div>
@@ -1362,17 +1362,17 @@ const ChorMachayeShorGame = () => {
               {/* Performance Section */}
               <div className="chor-dash-section">
                 <h3 className="chor-section-title">Performance</h3>
-                <p className="chor-section-subtitle">Assessment Completed</p>
+                <p className="chor-section-subtitle">{t('game.assessmentCompleted2')}</p>
                 
                 <div className="chor-dash-stat-grid">
                   <div className="chor-big-score-circle">
                     <span className="score-value">{totalScore}</span>
-                    <span className="score-max">Total Score</span>
+                    <span className="score-max">{t('game.totalScore')}</span>
                   </div>
                   <div className="chor-stat-boxes">
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Total Score</div><div className="chor-stat-val">{totalScore}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Completed Items</div><div className="chor-stat-val text-green">{attempted}</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Total Moves</div><div className="chor-stat-val text-red">{tMoves}</div></div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">{t('game.totalMoves')}</div><div className="chor-stat-val text-red">{tMoves}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Accuracy</div><div className="chor-stat-val">{accuracy}%</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Total Time</div><div className="chor-stat-val">{Math.floor(tTime / 60)}m {tTime % 60}s</div></div>
                     <div className="chor-stat-box chor-stat-box-wide"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{avgTime}s</div></div>
@@ -1382,7 +1382,7 @@ const ChorMachayeShorGame = () => {
 
               {/* Detailed Breakdown Table */}
               <div className="chor-dash-section">
-                <h3 className="chor-section-title">Detailed Question Breakdown</h3>
+                <h3 className="chor-section-title">{t('game.detailedBreakdown')}</h3>
                 <div className="chor-table-wrapper">
                   <table className="chor-data-table">
                     <thead>
@@ -1391,7 +1391,7 @@ const ChorMachayeShorGame = () => {
                         <th>Status</th>
                         <th>Item Name</th>
                         <th>Score</th>
-                        <th>Moves</th>
+                        <th>{t('game.movesLabel')}</th>
                         <th>Total Time</th>
                         <th>Phase 1</th>
                         <th>Phase 2</th>
@@ -1466,12 +1466,12 @@ const ChorMachayeShorGame = () => {
           <div className="chor-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
             <div className="chor-divider"></div>
-            <span className="chor-test-title">Chor Machaye Shor</span>
+            <span className="chor-test-title">{t('home.games.chor.title')}</span>
           </div>
           <div className="chor-stats">
-            <div className="chor-stat-pill"><span className="chor-stat-label">CHILD ID</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-label">TIME</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-label">SCORE</span><span className="chor-stat-value">{totalScore}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.time')}</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
             <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
           </div>
         </header>
@@ -1552,7 +1552,7 @@ const ChorMachayeShorGame = () => {
       {showPauseModal && (
         <div className="chor-modal-overlay">
           <div className="chor-modal-content">
-            <h2>Pause or Quit</h2>
+            <h2>{t('game.pauseQuitTitle')}</h2>
             <p>Session timer is paused. Please provide a reason below.</p>
             <div className="modal-textarea-wrapper">
               <textarea className="modal-textarea" placeholder="E.g., Child is crying, washroom break..." value={quitReason} onChange={(e) => setQuitReason(e.target.value)}></textarea>
@@ -1560,8 +1560,8 @@ const ChorMachayeShorGame = () => {
             </div>
             <div className="modal-actions-row">
               <button className="modal-btn modal-btn-cancel" onClick={() => { setShowPauseModal(false); setIsPaused(false); startTimer(); }}>Cancel</button>
-              <button className="modal-btn modal-btn-pause" onClick={() => handlePauseAction('paused')}>Pause & Save</button>
-              <button className="modal-btn modal-btn-quit" onClick={() => handlePauseAction('quit')}>Quit & End</button>
+              <button className="modal-btn modal-btn-pause" onClick={() => handlePauseAction('paused')}>{t('game.pauseSave')}</button>
+              <button className="modal-btn modal-btn-quit" onClick={() => handlePauseAction('quit')}>{t('game.quitEnd')}</button>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 
 const SessionAssessmentForm = ({
   assessment,
@@ -13,6 +14,7 @@ const SessionAssessmentForm = ({
   children
 }) => {
   const [validationErrors, setValidationErrors] = useState({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleValidationAndSubmit = () => {
     const errors = {};
@@ -24,10 +26,13 @@ const SessionAssessmentForm = ({
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      submitAssessmentForm();
-    } else {
-      // Optional: scroll to the first error
+      setShowConfirm(true);
     }
+  };
+
+  const handleConfirm = () => {
+    setShowConfirm(false);
+    submitAssessmentForm();
   };
 
   return (
@@ -68,7 +73,7 @@ const SessionAssessmentForm = ({
             ))}
           </div>
           {validationErrors[q.key] && (
-            <div className="shared-error-text">This field is required. Please select an option.</div>
+            <div className="shared-error-text">{t('game.validationRequired')}</div>
           )}
         </div>
       ))}
@@ -125,15 +130,59 @@ const SessionAssessmentForm = ({
         {assessmentSubmitted ? (
           children
         ) : (
-          <button 
-            onClick={handleValidationAndSubmit} 
-            disabled={isAssessmentSubmitting} 
+          <button
+            onClick={handleValidationAndSubmit}
+            disabled={isAssessmentSubmitting}
             className="shared-submit-btn"
           >
             {isAssessmentSubmitting ? t('game.saving') : t('game.submitAssessment')}
           </button>
         )}
       </div>
+
+      {showConfirm && ReactDOM.createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px', backgroundColor: 'rgba(0,0,0,0.5)'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            width: '100%', maxWidth: '400px', padding: '24px'
+          }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
+              {t('game.submitAssessment')}
+            </h2>
+            <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '0.95rem' }}>
+              {t('game.confirmSubmitMsg')}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={isAssessmentSubmitting}
+                style={{
+                  padding: '8px 20px', borderRadius: '8px', border: '1px solid #cbd5e1',
+                  background: '#fff', color: '#475569', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem'
+                }}
+              >
+                {t('game.cancel')}
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={isAssessmentSubmitting}
+                style={{
+                  padding: '8px 20px', borderRadius: '8px', border: 'none',
+                  background: '#4f46e5', color: '#fff', fontWeight: '600', cursor: 'pointer',
+                  fontSize: '0.9rem', opacity: isAssessmentSubmitting ? 0.6 : 1
+                }}
+              >
+                {isAssessmentSubmitting ? t('game.saving') : t('game.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

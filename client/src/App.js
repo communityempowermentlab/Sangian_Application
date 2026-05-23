@@ -27,6 +27,7 @@ import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
 import AdminAssessorsList from './pages/AdminAssessorsList';
 import AdminAssessorAdd from './pages/AdminAssessorAdd';
 import AdminAssessorEdit from './pages/AdminAssessorEdit';
+import AdminScreenshots from './pages/AdminScreenshots';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 
@@ -127,6 +128,7 @@ function App() {
                                 <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />
+                                <Route path="screenshots"            element={<AdminScreenshots />} />
                                 <Route path="settings"               element={<AdminSettings />} />
                             </Route>
                         </Route>

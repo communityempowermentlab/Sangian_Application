@@ -178,7 +178,7 @@ const Home = () => {
     };
 
     const formatDate = (iso) => {
-        if (!iso) return 'Never';
+        if (!iso) return t('home.never');
         const d = new Date(iso);
         return d.toLocaleString('en-GB', {
             day: '2-digit', month: 'short', year: 'numeric',
@@ -259,13 +259,13 @@ const Home = () => {
                                     {isLoggedIn && (
                                         <div className="game-card-activity">
                                             <div className="card-activity-item">
-                                                <span className="activity-label">Last Played:</span> 
+                                                <span className="activity-label">{t('home.lastPlayed')}</span>
                                                 <span className="activity-value">
-                                                    {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : 'Never'}
+                                                    {summaries[test.gameKey] ? formatDate(summaries[test.gameKey].last_played_at) : t('home.never')}
                                                 </span>
                                             </div>
                                             <div className="card-activity-item">
-                                                <span className="activity-label">Total Sessions:</span> 
+                                                <span className="activity-label">{t('home.totalSessions')}</span>
                                                 <span className="activity-value">
                                                     {summaries[test.gameKey]?.total_attempts || 0}
                                                 </span>

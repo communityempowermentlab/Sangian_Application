@@ -479,13 +479,13 @@ const NumberSkillGame = () => {
         <div className="ns-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />
           <div className="ns-divider"></div>
-          <span className="ns-test-title">Ankganit</span>
+          <span className="ns-test-title">{t('home.games.numeracy.title')}</span>
         </div>
         <div className="ns-stats">
           {childData?.child_id && (
-            <div className="ns-stat-pill"><span className="ns-stat-label">CHILD ID</span> <span className="ns-stat-value">{childData.child_id}</span></div>
+            <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.childId')}</span> <span className="ns-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="ns-stat-pill"><span className="ns-stat-label">SCORE</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
+          <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.score')}</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
           {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
@@ -504,7 +504,7 @@ const NumberSkillGame = () => {
                 <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-image" onError={e => e.target.style.display='none'} />
               </div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                Welcome to Ankganit
+                {t('game.welcome')}
               </h2>
               
 

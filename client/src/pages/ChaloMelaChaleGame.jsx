@@ -1073,13 +1073,13 @@ const ChaloMelaChaleGame = () => {
       <div className="results-screen" id="dashboard-capture-area">
         <div className="screen-header">
           <div>
-            <div className="screen-title">{isDropped ? 'Session Dropped (Clinical Rule)' : (quitReason ? 'Session Terminated (Partial)' : 'Assessment Complete')}</div>
-            <div className="screen-subtitle">{isDropped ? 'Q1-Q3 score < 2: System-enforced drop' : (quitReason ? 'Assessor requested early exit' : 'Test finished successfully')}</div>
+            <div className="screen-title">{isDropped ? t('game.sessionDropped') : (quitReason ? t('game.sessionTerminatedPartial') : t('game.assessmentComplete'))}</div>
+            <div className="screen-subtitle">{isDropped ? t('game.droppedSubtitle') : (quitReason ? t('game.assessorExit') : t('game.testFinished'))}</div>
           </div>
           <div className="chips">
             <span className="chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-            <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>Final Results</span>
-            <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>Time: {totalTimeMin}m {totalTimeSec}s</span>
+            <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>{t('game.finalResults')}</span>
+            <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>{t('game.timeChip')} {totalTimeMin}m {totalTimeSec}s</span>
           </div>
         </div>
 
@@ -1095,7 +1095,7 @@ const ChaloMelaChaleGame = () => {
               </div>
               <div className="meter-labels">
                 <span>0</span>
-                <span>Performance meter</span>
+                <span>{t('game.performanceMeter')}</span>
                 <span>{TOTAL_QUESTIONS}</span>
               </div>
             </div>
@@ -1103,31 +1103,31 @@ const ChaloMelaChaleGame = () => {
 
           <div className="metrics-summary-cards">
             <div className="metric-mini-card">
-              <div className="metric-label">Total Score</div>
+              <div className="metric-label">{t('game.totalScore')}</div>
               <div className="metric-value">{correctCount} / {TOTAL_QUESTIONS}</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Correct</div>
+              <div className="metric-label">{t('game.correct2')}</div>
               <div className="metric-value" style={{ color: '#16a34a' }}>{correctCount}</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Incorrect</div>
+              <div className="metric-label">{t('game.incorrect2')}</div>
               <div className="metric-value" style={{ color: '#dc2626' }}>{TOTAL_QUESTIONS - correctCount}</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Percentage</div>
+              <div className="metric-label">{t('game.percentage')}</div>
               <div className="metric-value">{accuracy}.0%</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Total Time</div>
+              <div className="metric-label">{t('game.totalTime')}</div>
               <div className="metric-value">{totalTimeMin}m {totalTimeSec}s</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Questions</div>
+              <div className="metric-label">{t('game.questionsLabel')}</div>
               <div className="metric-value">{allScores.length} / {TOTAL_QUESTIONS}</div>
             </div>
             <div className="metric-mini-card">
-              <div className="metric-label">Avg Time/Q</div>
+              <div className="metric-label">{t('game.avgTimeQ')}</div>
               <div className="metric-value">{allScores.length > 0 ? (totalTimeSeconds / allScores.length).toFixed(0) : 0}s</div>
             </div>
           </div>
@@ -1159,28 +1159,28 @@ const ChaloMelaChaleGame = () => {
                   </div>
                   {s.failReason && (
                     <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '6px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #fca5a5' }}>
-                      {s.failReason === "Hit Weed" ? "Question Ended Due to Illegal Moves" : 
-                       s.failReason === "Timeout" ? "Time Out – Destination Not Achieved" : 
-                       "Destination Not Achieved"}
+                      {s.failReason === "Hit Weed" ? t('game.questionEndedMoves') :
+                       s.failReason === "Timeout" ? t('game.timeoutDestination') :
+                       t('game.destinationNotAchieved')}
                     </div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f1f5f9', padding: '8px', borderRadius: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>Targeted Moves:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.targetedMoves')}</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(s.id)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>User Moves:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.userMoves')}</span>
                       <span style={{ color: '#0369a1', fontWeight: '700' }}>{s.moves}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>Time Taken:</span>
+                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.timeTakenLabel')}</span>
                       <span style={{ color: '#1e293b', fontWeight: '700' }}>{Math.round(parseFloat(s.timeTaken))}s</span>
                     </div>
                   </div>
                   {matrix && s.path && s.path.length > 0 && (
                     <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Selected Path</span>
+                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('game.userSelectedPath')}</span>
                        <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
                           {matrix.flat().map((type, i) => {
                              const r = Math.floor(i / matrix[0].length);
@@ -1263,7 +1263,7 @@ const ChaloMelaChaleGame = () => {
       <div className="screen">
         <div className="screen-header">
           <div>
-            <div className="screen-title">Chalo Mela Chalen - {title}</div>
+            <div className="screen-title">{t('home.games.mela.title')} - {title}</div>
             <div className="screen-subtitle">
               {QUESTION_CONFIG[questionState.id]?.subtitle || ""}
             </div>
@@ -1276,16 +1276,16 @@ const ChaloMelaChaleGame = () => {
         </div>
         <div className="pattern-controls">
           {!isTQ && (
-            <button className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1 || questionState.nextUnlocked} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 Refresh</button>
+            <button className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1 || questionState.nextUnlocked} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 {t('game.refreshBtn')}</button>
           )}
           {isTQ && (
-            <button className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2 || questionState.nextUnlocked} onClick={handleRetake}>↺ Retake ({Math.max(0, 2 - retakeCount)}/2)</button>
+            <button className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2 || questionState.nextUnlocked} onClick={handleRetake}>{t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)</button>
           )}
           {isTQ && (
             <>
-              <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} style={{ cursor: 'default' }}>Trial 1</button>
+              <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} style={{ cursor: 'default' }}>{t('game.trialLabel')} 1</button>
               {!questionState.trial2Hidden && (
-                <button className={`pattern-btn ${isT2Active ? 'pattern-btn-primary' : (isT2Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT2Disabled} style={{ cursor: 'default' }}>Trial 2</button>
+                <button className={`pattern-btn ${isT2Active ? 'pattern-btn-primary' : (isT2Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT2Disabled} style={{ cursor: 'default' }}>{t('game.trialLabel')} 2</button>
               )}
             </>
           )}
@@ -1328,7 +1328,7 @@ const ChaloMelaChaleGame = () => {
               await saveToServer('completed', allScores, totalScore);
             }
           }}>
-            {questionState.id === 'tq1' ? 'Teaching Question 2' : questionState.id === 'tq2' ? 'Question 1' : questionState.id === 'q1' ? 'Sample B' : questionState.id === 'tq3' ? 'Teaching Question 4' : questionState.id === 'tq4' ? 'Question 2' : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `Question ${parseInt(questionState.id.substring(1)) + 1}` : 'Next Question'}
+            {questionState.id === 'tq1' ? t('game.teachingQ2Label') : questionState.id === 'tq2' ? `${t('game.question')} 1` : questionState.id === 'q1' ? t('game.sampleBLabel') : questionState.id === 'tq3' ? t('game.teachingQ4Label') : questionState.id === 'tq4' ? `${t('game.question')} 2` : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `${t('game.question')} ${parseInt(questionState.id.substring(1)) + 1}` : t('game.nextQuestion')}
           </button>
         </div>
         <div className="matrix-wrap">
@@ -1361,14 +1361,14 @@ const ChaloMelaChaleGame = () => {
         </div>
         <div className="tq1-info-panel">
           <div className="info-row" style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'12px'}}>
-            <div className="info-card"><div className="info-label">CURRENT TRIAL</div><div className="info-value">{questionState.gameStarted ? (isTQ ? `Trial ${questionState.currentTrial}` : 'Question') : '—'}</div></div>
-            <div className="info-card"><div className="info-label">MOVES</div><div className="info-value">{questionState.moveCount}</div></div>
-            <div className="info-card"><div className="info-label">TIME</div><div className="info-value" style={{color: questionState.timeRemaining <= 3 ? '#ef4444' : '#2563eb'}}>{questionState.timeRemaining}s</div></div>
-            <div className="info-card"><div className="info-label">SCORE</div><div className="info-value">{totalScore}</div></div>
+            <div className="info-card"><div className="info-label">{t('game.currentTrialLabel')}</div><div className="info-value">{questionState.gameStarted ? (isTQ ? `${t('game.trialLabel')} ${questionState.currentTrial}` : t('game.question')) : '—'}</div></div>
+            <div className="info-card"><div className="info-label">{t('game.movesInfoLabel')}</div><div className="info-value">{questionState.moveCount}</div></div>
+            <div className="info-card"><div className="info-label">{t('game.timeInfoLabel')}</div><div className="info-value" style={{color: questionState.timeRemaining <= 3 ? '#ef4444' : '#2563eb'}}>{questionState.timeRemaining}s</div></div>
+            <div className="info-card"><div className="info-label">{t('game.score')}</div><div className="info-value">{totalScore}</div></div>
           </div>
           <div className="trial-results" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'12px'}}>
-            <div className="result-card"><div className="result-title">Trial 1 Result</div><div className="result-details">{questionState.trial1Result}</div></div>
-            {isTQ && !questionState.trial2Hidden && <div className="result-card"><div className="result-title">Trial 2 Result</div><div className="result-details">{questionState.trial2Result}</div></div>}
+            <div className="result-card"><div className="result-title">{t('game.trialLabel')} 1</div><div className="result-details">{questionState.trial1Result}</div></div>
+            {isTQ && !questionState.trial2Hidden && <div className="result-card"><div className="result-title">{t('game.trialLabel')} 2</div><div className="result-details">{questionState.trial2Result}</div></div>}
           </div>
         </div>
       </div>
@@ -1382,11 +1382,11 @@ const ChaloMelaChaleGame = () => {
           <div className="brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
             <div className="divider"></div>
-            <span className="test-title">Chalo Mela Chalen</span>
+            <span className="test-title">{t('home.games.mela.title')}</span>
           </div>
           <div className="stats">
-            <div className="stat-pill"><span className="stat-label">CHILD ID</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
-            <div className="stat-pill"><span className="stat-label">SCORE</span><span className="stat-value">{totalScore}</span></div>
+            <div className="stat-pill"><span className="stat-label">{t('game.childId')}</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
+            <div className="stat-pill"><span className="stat-label">{t('game.score')}</span><span className="stat-value">{totalScore}</span></div>
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 
@@ -1397,7 +1397,7 @@ const ChaloMelaChaleGame = () => {
                   audioRef.current.pause();
                   audioRef.current.wasPlayingBeforePause = true;
                 }
-              }}><span>⏸</span> Pause/Quit</button>
+              }}><span>⏸</span> {t('game.pauseQuit')}</button>
             )}
           </div>
         </header>
@@ -1412,12 +1412,12 @@ const ChaloMelaChaleGame = () => {
               <div className="card splash-card">
                 <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-image" /></div>
                 <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  Welcome to Chalo Mela Chalen
+                  {t('game.welcomeMela')}
                 </h2>
 
                 <div className="btn-row">
-                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Start Now</button>
-                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>Replay Audio</button>
+                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.startNow')}</button>
+                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.replayAudio')}</button>
                 </div>
 
               </div>
@@ -1427,26 +1427,26 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">Chalo Mela Chalen - Sample A</div>
+                  <div className="screen-title">{t('home.games.mela.title')} - {t('game.sampleALabel')}</div>
                 </div>
               </div>
           <div className="pattern-controls">
             <button 
               className={`pattern-btn ${activePath === 'p1' ? 'active-highlight' : (completedPaths.p1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} 
               onClick={() => !isAnimating && !completedPaths.p1 && runPathSequence(PATH1_SEQ, 'p1', 'p2')}
-            >Path 1</button>
-            <button 
-              className={`pattern-btn ${activePath === 'p2' ? 'active-highlight' : (completedPaths.p2 ? 'pattern-btn-disabled' : (unlockedPaths.p2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`} 
+            >{t('game.path1')}</button>
+            <button
+              className={`pattern-btn ${activePath === 'p2' ? 'active-highlight' : (completedPaths.p2 ? 'pattern-btn-disabled' : (unlockedPaths.p2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`}
               onClick={() => !isAnimating && !completedPaths.p2 && unlockedPaths.p2 && runPathSequence(PATH2_SEQ, 'p2', 'p3')}
-            >Path 2</button>
-            <button 
-              className={`pattern-btn ${activePath === 'p3' ? 'active-highlight' : (completedPaths.p3 ? 'pattern-btn-disabled' : (unlockedPaths.p3 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`} 
+            >{t('game.path2')}</button>
+            <button
+              className={`pattern-btn ${activePath === 'p3' ? 'active-highlight' : (completedPaths.p3 ? 'pattern-btn-disabled' : (unlockedPaths.p3 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`}
               onClick={() => !isAnimating && !completedPaths.p3 && unlockedPaths.p3 && runPathSequence(PATH3_SEQ, 'p3', 'tq1')}
-            >Path 3</button>
-            <button 
-              className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`} 
+            >{t('game.path3')}</button>
+            <button
+              className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
               onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
-            >Teaching Question 1</button>
+            >{t('game.teachingQ1Label')}</button>
           </div>
               <div className="matrix-wrap">
                 <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_P1[0].length}, 1fr)` }}>
@@ -1478,7 +1478,7 @@ const ChaloMelaChaleGame = () => {
             </div>
           )}
           {['tq1', 'tq2', 'q1', 'tq3', 'tq4', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'].includes(screen) && renderQuestionShell(
-            screen.startsWith('tq') ? `Teaching Question ${screen.substring(2)}` : `Question ${screen.substring(1)}`
+            screen.startsWith('tq') ? `${t('game.teachingLabel')} ${t('game.question')} ${screen.substring(2)}` : `${t('game.question')} ${screen.substring(1)}`
           )}
           {screen === 'results' && renderResultsScreen()}
           
@@ -1486,20 +1486,20 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">Chalo Mela Chalen - Sample B</div>
+                  <div className="screen-title">{t('home.games.mela.title')} - {t('game.sampleBLabel')}</div>
                 </div>
               </div>
           <div className="pattern-controls">
             <button 
-              className={`pattern-btn ${activePath === 'sbP1' ? 'active-highlight' : (completedPaths.sbP1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary')} unclickable`} 
-            >Path 1</button>
-            <button 
-              className={`pattern-btn ${activePath === 'sbP2' ? 'active-highlight' : (completedPaths.sbP2 ? 'pattern-btn-disabled' : (unlockedPaths.sbP2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))} unclickable`} 
-            >Path 2</button>
-            <button 
-              className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`} 
+              className={`pattern-btn ${activePath === 'sbP1' ? 'active-highlight' : (completedPaths.sbP1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary')} unclickable`}
+            >{t('game.path1')}</button>
+            <button
+              className={`pattern-btn ${activePath === 'sbP2' ? 'active-highlight' : (completedPaths.sbP2 ? 'pattern-btn-disabled' : (unlockedPaths.sbP2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))} unclickable`}
+            >{t('game.path2')}</button>
+            <button
+              className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
               onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}
-            >Teaching Question 3</button>
+            >{t('game.teachingQ3Label')}</button>
           </div>
               <div className="matrix-wrap">
                 <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_SB[0].length}, 1fr)` }}>
@@ -1537,13 +1537,13 @@ const ChaloMelaChaleGame = () => {
       {showPauseModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Pause or Quit</h2>
-            <p>Why are you stopping the game? <span style={{ color: '#dc2626', fontWeight: 700 }}>* (Required)</span></p>
+            <h2>{t('game.pauseQuitTitle')}</h2>
+            <p>{t('game.pauseDesc')} <span style={{ color: '#dc2626', fontWeight: 700 }}>{t('game.requiredStar')}</span></p>
             
             <div className="modal-textarea-wrapper">
               <textarea 
                 className="modal-textarea"
-                placeholder="Please enter a reason here..."
+                {...{placeholder: t('game.pausePlaceholder')}}
                 value={quitReason} 
                 onChange={e => setQuitReason(e.target.value)}
               />
@@ -1571,20 +1571,20 @@ const ChaloMelaChaleGame = () => {
                   audioRef.current.play().catch(e => console.log('resume audio failed', e));
                   audioRef.current.wasPlayingBeforePause = false;
                 }
-              }}>Cancel</button>
+              }}>{t('game.cancel')}</button>
               <button 
                 className="modal-btn modal-btn-pause" 
                 disabled={!quitReason.trim()}
                 onClick={() => handlePauseAction('paused')}
               >
-                Pause & Save
+                {t('game.pauseSave')}
               </button>
               <button 
                 className="modal-btn modal-btn-quit" 
                 disabled={!quitReason.trim()}
                 onClick={() => handlePauseAction('quit')}
               >
-                Quit & End
+                {t('game.quitEnd')}
               </button>
             </div>
           </div>
@@ -1594,11 +1594,11 @@ const ChaloMelaChaleGame = () => {
       {showResumeModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Saved Progress Found</h2>
-            <p>You have a previously paused game session for this child. Would you like to resume?</p>
+            <h2>{t('game.progressFound')}</h2>
+            <p>{t('game.progressDesc')}</p>
             <div className="modal-actions-row" style={{ marginTop: '20px' }}>
-              <button className="modal-btn modal-btn-cancel" onClick={handleRestartFresh}>Restart Fresh</button>
-              <button className="modal-btn modal-btn-pause" style={{ background: '#2563eb', color: 'white', border: 'none' }} onClick={resumeGame}>Resume Game</button>
+              <button className="modal-btn modal-btn-cancel" onClick={handleRestartFresh}>{t('game.restartFresh')}</button>
+              <button className="modal-btn modal-btn-pause" style={{ background: '#2563eb', color: 'white', border: 'none' }} onClick={resumeGame}>{t('game.resumeGame')}</button>
             </div>
           </div>
         </div>

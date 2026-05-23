@@ -850,17 +850,17 @@ const AuditoryAttentionGame = () => {
           <div className="aa-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />
             <div className="aa-divider"></div>
-            <span className="aa-test-title">Dhyan Kahan Hai</span>
+            <span className="aa-test-title">{t('home.games.dhyan.title')}</span>
           </div>
           <div className="aa-stats">
             {childId && (
               <div className="aa-stat-pill">
-                <span className="aa-stat-label">CHILD ID</span>
+                <span className="aa-stat-label">{t('game.childId')}</span>
                 <span className="aa-stat-value">{childId}</span>
               </div>
             )}
             <div className="aa-stat-pill">
-              <span className="aa-stat-label">SCORE</span>
+              <span className="aa-stat-label">{t('game.score')}</span>
               <span className="aa-stat-value">{Object.values(questionScores).reduce((a,c) => a + (c ? c.correct : 0), 0) + levelScores.correct}</span>
             </div>
             {screen !== 'checking' && screen !== 'splash' && screen !== 'score' && (
@@ -875,7 +875,7 @@ const AuditoryAttentionGame = () => {
                   setQuitReason('');
                   setShowQuitModal(true);
                 }}>
-                <span>⏸</span> Pause/Quit
+                <span>⏸</span> {t('game.pauseQuit')}
               </button>
             )}
           </div>
@@ -903,7 +903,7 @@ const AuditoryAttentionGame = () => {
                     <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-image" />
                  </div>
                  <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '28px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                   Welcome to Dhyan Kahan Hai
+                   {t('game.welcomeDhyan')}
                  </h2>
 
                   <button
@@ -912,7 +912,7 @@ const AuditoryAttentionGame = () => {
                     style={{ fontSize: '1.2rem', padding: '16px 40px', opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
                     onClick={startNewGameSession}
                   >
-                    Start Now
+                    {t('game.startNow')}
                   </button>
                </div>
             </div>
@@ -923,7 +923,7 @@ const AuditoryAttentionGame = () => {
             <div className="aa-screen">
                <div className="aa-header">
                  <div>
-                   <h2 className="aa-title">Sample Question A</h2>
+                   <h2 className="aa-title">{t('game.sampleQuestionA')}</h2>
                    <p className="aa-subtitle">Listen to instructions and click all images</p>
                  </div>
                </div>
@@ -975,7 +975,7 @@ const AuditoryAttentionGame = () => {
                <div className="aa-header">
                  <div>
                    <h2 className="aa-title">Question {currentQIndex}</h2>
-                   <p className="aa-subtitle">Listen to the instructions carefully</p>
+                   <p className="aa-subtitle">{t('game.listenInstructions')}</p>
                  </div>
                </div>
 
@@ -1031,7 +1031,7 @@ const AuditoryAttentionGame = () => {
                    <span className="aa-info-value">{displayWordCount} / {wordsList.length}</span>
                  </div>
                  <div className="aa-info-group">
-                   <span className="aa-info-label">Targets:</span>
+                   <span className="aa-info-label">{t('game.progressFound')}:</span>
                    <span className="aa-info-value" style={{color: 'var(--danger)'}}>{getQConfig().TARGET_WORDS.join(' & ')} ★</span>
                  </div>
                </div>
@@ -1071,8 +1071,8 @@ const AuditoryAttentionGame = () => {
             <div id="dashboard-container" className="aa-screen" style={{ overflowY: 'auto' }}>
                <div className="aa-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                  <div>
-                   <h2 className="aa-title">{quitReason ? '🏆 Assessment Terminated' : '🏆 Assessment Complete'}</h2>
-                   <p className="aa-subtitle">{quitReason ? `Reason: ${quitReason}` : 'Final Results'}</p>
+                   <h2 className="aa-title">{quitReason ? ('🏆 ' + t('game.assessmentTerminated')) : ('🏆 ' + t('game.assessmentComplete'))}</h2>
+                   <p className="aa-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.finalResults')}</p>
                  </div>
                  <div style={{ background: '#4f46e5', color: '#fff', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem' }}>
                    {t('game.attemptLabel')}{attemptNo}
@@ -1183,11 +1183,11 @@ const AuditoryAttentionGame = () => {
       {showResumeModal && (
         <div className="nr-modal-overlay">
           <div className="nr-modal">
-            <h2>Saved Progress Found</h2>
-            <p>You have a previously paused session for this game.</p>
+            <h2>{t('game.progressFound')}</h2>
+            <p>{t('game.progressDesc')}</p>
             <div className="aa-btn-row">
-              <button className="aa-btn aa-btn-secondary" onClick={handleRestartFresh}>Restart Fresh</button>
-              <button className="aa-btn aa-btn-primary" onClick={resumeSessionData}>Resume Game</button>
+              <button className="aa-btn aa-btn-secondary" onClick={handleRestartFresh}>{t('game.restartFresh')}</button>
+              <button className="aa-btn aa-btn-primary" onClick={resumeSessionData}>{t('game.resumeGame')}</button>
             </div>
           </div>
         </div>
@@ -1196,8 +1196,8 @@ const AuditoryAttentionGame = () => {
       {showQuitModal && (
         <div className="nr-modal-overlay">
           <div className="nr-modal">
-            <h2>Pause or Quit</h2>
-            <p>Why are you stopping the game?</p>
+            <h2>{t('game.pauseQuitTitle')}</h2>
+            <p>{t('game.pauseDesc')}</p>
             <div style={{ position: 'relative', marginBottom: 12 }}>
               <textarea placeholder="E.g., Child is tired..." value={quitReason} onChange={e => setQuitReason(e.target.value)} style={{ width: '100%', padding: '12px 40px 12px 12px' }} />
               <button 
@@ -1218,9 +1218,9 @@ const AuditoryAttentionGame = () => {
                 if (isPaused) {
                   togglePause();
                 }
-              }}>Cancel</button>
-              <button className="aa-btn" style={{ background: '#fef08a' }} onClick={() => handleQuitRequest('paused')}>Pause & Save</button>
-              <button className="aa-btn" style={{ background: '#fee2e2', color: 'red' }} onClick={() => handleQuitRequest('quit')}>Quit & End</button>
+              }}>{t('game.cancel')}</button>
+              <button className="aa-btn" style={{ background: '#fef08a' }} onClick={() => handleQuitRequest('paused')}>{t('game.pauseSave')}</button>
+              <button className="aa-btn" style={{ background: '#fee2e2', color: 'red' }} onClick={() => handleQuitRequest('quit')}>{t('game.quitEnd')}</button>
             </div>
           </div>
         </div>
