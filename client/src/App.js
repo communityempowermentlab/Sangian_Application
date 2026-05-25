@@ -28,6 +28,7 @@ import AdminAssessorsList from './pages/AdminAssessorsList';
 import AdminAssessorAdd from './pages/AdminAssessorAdd';
 import AdminAssessorEdit from './pages/AdminAssessorEdit';
 import AdminScreenshots from './pages/AdminScreenshots';
+import AdminAnalysis from './pages/AdminAnalysis';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 
@@ -57,6 +58,7 @@ const ROUTE_TITLES = {
     '/admin/assessors/add':     'Add Assessor | Admin Panel | Community Empowerment Lab',
     '/admin/reports':           'Reports | Admin Panel | Community Empowerment Lab',
     '/admin/docs':              'Documentation | Admin Panel | Community Empowerment Lab',
+    '/admin/analysis':          'Analysis | Admin Panel | Community Empowerment Lab',
     '/admin/settings':          'Settings | Admin Panel | Community Empowerment Lab',
 };
 
@@ -126,6 +128,7 @@ function App() {
                                 <Route path="assessors"              element={<AdminAssessorsList />} />
                                 <Route path="assessors/add"          element={<AdminAssessorAdd />} />
                                 <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
+                                <Route path="analysis"               element={<AdminAnalysis />} />
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />
                                 <Route path="screenshots"            element={<AdminScreenshots />} />

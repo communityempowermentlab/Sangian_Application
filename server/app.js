@@ -13,6 +13,7 @@ const crashAnalyticsRoutes = require('./src/routes/crashAnalyticsRoutes');
 const crashLogRoutes       = require('./src/routes/crashLogRoutes');
 const testingRoutes        = require('./src/routes/testingRoutes');
 const screenshotRoutes     = require('./src/routes/screenshotRoutes');
+const analysisRoutes       = require('./src/routes/analysisRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -96,6 +97,7 @@ app.use('/api/crash-analytics', crashAnalyticsRoutes);
 app.use('/api/errors',          crashLogRoutes);
 app.use('/api/testing',         testingRoutes);
 app.use('/api/screenshots',     screenshotRoutes);
+app.use('/api/analysis',        analysisRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

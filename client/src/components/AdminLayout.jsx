@@ -22,10 +22,11 @@ const AdminLayout = () => {
     const navigate = useNavigate();
 
     const activeGroup =
-        location.pathname.includes('/admin/children') ? 'children' :
-        location.pathname.includes('/admin/reports')  ? 'reports'  :
-        location.pathname.includes('/admin/docs')     ? 'docs'     :
-        location.pathname.includes('/admin/settings') ? 'settings' :
+        location.pathname.includes('/admin/children')  ? 'children' :
+        location.pathname.includes('/admin/analysis')  ? 'analysis' :
+        location.pathname.includes('/admin/reports')   ? 'reports'  :
+        location.pathname.includes('/admin/docs')      ? 'docs'     :
+        location.pathname.includes('/admin/settings')  ? 'settings' :
             'dashboard';
 
     const adminUserStr = localStorage.getItem('adminUser');
@@ -121,6 +122,12 @@ const AdminLayout = () => {
                             className={`admin-menu-item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
                         >
                             📊 Dashboard
+                        </Link>
+                        <Link
+                            to="/admin/analysis"
+                            className={`admin-menu-item ${activeGroup === 'analysis' ? 'active' : ''}`}
+                        >
+                            🔬 Analysis
                         </Link>
                         <Link
                             to="/admin/children"
