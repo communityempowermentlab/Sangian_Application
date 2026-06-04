@@ -248,6 +248,45 @@ const getTargetMoves = (id) => {
   return QUESTION_CONFIG[id]?.t2 || '-';
 };
 
+const kAdditionalCoinValue = 4;
+
+const fmtSecs = (v) => {
+  if (v == null) return '—';
+  const s = Math.round(Number(v));
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
+};
+
+const getCoinsTotal = (id) => {
+  if (!id || id.startsWith('p') || id.startsWith('sb')) return 0;
+  if (id.startsWith('tq')) return (id === 'tq4' ? 5 : 3) + kAdditionalCoinValue;
+  return (QUESTION_CONFIG[id]?.t2 || 0) + kAdditionalCoinValue;
+};
+
+const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
+  const size  = coinsTotal > 10 ? 36 : coinsTotal > 8 ? 40 : 46;
+  const gap   = coinsTotal > 8  ? 3  : 5;
+  return (
+    <div className="coin-bar" style={{ gap }}>
+      {Array.from({ length: coinsTotal }, (_, i) => {
+        const isSpent = allCoinsDrained || i < moveCount;
+        return (
+          <div key={i} className="coin-slot" style={{ width: size, height: size }}>
+            <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="coin-img" alt="" />
+            {isSpent && (
+              <img
+                src="/assets/images/chalo_mela_chale/rover_cross.png"
+                className="coin-cross"
+                alt=""
+                style={{ animationDelay: allCoinsDrained ? `${i * 30}ms` : '0ms' }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const PATH1_SEQ = ["R4C1","R4C2","R4C3","R4C4","R3C4","R2C4","R2C3"];
 const PATH2_SEQ = ["R4C1","R3C1","R2C1","R2C2","R2C3"];
@@ -265,6 +304,7 @@ const ChaloMelaChaleGame = () => {
   const [allScores, setAllScores] = useState([]);
   const [refreshCount, setRefreshCount] = useState(0);
   const [retakeCount, setRetakeCount] = useState(0);
+  const [collectedCoins, setCollectedCoins] = useState(0);
   const [audioFinished, setAudioFinished] = useState(false);
   const totalScore = allScores.reduce((acc, s) => acc + s.score, 0);
   const [gameSessionId, setGameSessionId] = useState(null);
@@ -318,7 +358,8 @@ const ChaloMelaChaleGame = () => {
     trial2Unlocked: false,
     trial2Hidden: false,
     isComplete: false,
-    nextUnlocked: false
+    nextUnlocked: false,
+    allCoinsDrained: false,
   });
   
   const audioRef        = useRef(null);
@@ -329,6 +370,7 @@ const ChaloMelaChaleGame = () => {
   const questionStateRef = useRef(questionState);
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
   const isMountedRef    = useRef(false);
+  const pdfGeneratedRef = useRef(false);
 
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
 
@@ -473,6 +515,7 @@ const ChaloMelaChaleGame = () => {
       }
     }
     if (ss.isDropped) setIsDropped(true);
+    if (ss.collectedCoins !== undefined) setCollectedCoins(ss.collectedCoins);
     setStartTime(Date.now());
     setShowResumeModal(false);
   };
@@ -522,16 +565,17 @@ const ChaloMelaChaleGame = () => {
         progress_level: scoresToSave.length,
         status: statusOverride || 'in_progress',
         quit_reason: optionalQuitReason || quitReason,
-        saved_state: { 
-          allScores: scoresToSave, 
-          totalScore: totalToSave, 
-          unlockedPaths, 
+        saved_state: {
+          allScores: scoresToSave,
+          totalScore: totalToSave,
+          unlockedPaths,
           completedPaths,
           screen,
           questionState,
           isDropped: isDroppedOverride || isDropped,
           refreshCount,
-          retakeCount
+          retakeCount,
+          collectedCoins,
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -543,6 +587,15 @@ const ChaloMelaChaleGame = () => {
       stopAll();
     }
   }, [screen, stopAll]);
+
+  // Auto-generate PDF when results screen loads (ensures Dashboard link appears in admin reports)
+  useEffect(() => {
+    if (screen === 'results' && gameSessionId && !pdfGeneratedRef.current) {
+      pdfGeneratedRef.current = true;
+      const t = setTimeout(() => { generateAndUploadPDF(); }, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [screen, gameSessionId]); // eslint-disable-line
 
   // Sync state on screen change to ensure real-time "In Progress" tracking
   useEffect(() => {
@@ -601,7 +654,8 @@ const ChaloMelaChaleGame = () => {
       moveCount: 0,
       timeRemaining: timeLimit,
       isComplete: false,
-      wrongMovePos: null
+      wrongMovePos: null,
+      allCoinsDrained: false,
     }));
     const now = Date.now();
     setQStartTime(now);
@@ -636,7 +690,8 @@ const ChaloMelaChaleGame = () => {
       ...prev,
       path: [{ row: spPos.r, col: spPos.c }],
       moveCount: 0,
-      isComplete: false
+      isComplete: false,
+      allCoinsDrained: false,
     }));
     playSoundEffect('start_trial.wav');
   }, [retakeCount, playSoundEffect]);
@@ -663,7 +718,8 @@ const ChaloMelaChaleGame = () => {
       trial2Hidden: false,
       isComplete: false,
       nextUnlocked: false,
-      wrongMovePos: null
+      wrongMovePos: null,
+      allCoinsDrained: false,
     };
     setQuestionState(newState);
     setScreen(id);
@@ -781,19 +837,34 @@ const ChaloMelaChaleGame = () => {
     const lastPos = s.path[s.path.length - 1];
     if (r === lastPos.row && c === lastPos.col) return;
     const isAdj = Math.abs(r - lastPos.row) <= 1 && Math.abs(c - lastPos.col) <= 1;
-    if (!isAdj) return;
-    if (s.matrix[r][c] === "7-T2") { 
-      playSoundEffect('wrong_move.wav'); 
-      setQuestionState(prev => ({ ...prev, wrongMovePos: { row: r, col: c } }));
-      handleResult(false, "Hit Weed"); 
-      return; 
+    if (!isAdj) {
+      clearInterval(timerRef.current);
+      playSoundEffect('wrong_move.wav');
+      setQuestionState(prev => ({ ...prev, allCoinsDrained: true, gameStarted: false }));
+      safeSetTimeout(() => handleResult(false, "Non-Adjacent"), 400);
+      return;
     }
-    
+    if (s.matrix[r][c] === "7-T2") {
+      clearInterval(timerRef.current);
+      playSoundEffect('wrong_move.wav');
+      setQuestionState(prev => ({ ...prev, allCoinsDrained: true, wrongMovePos: { row: r, col: c }, gameStarted: false }));
+      safeSetTimeout(() => handleResult(false, "Hit Weed"), 400);
+      return;
+    }
+
     const newPath = [...s.path, { row: r, col: c }];
     const cellType = s.matrix[r][c];
     const addMoves = cellType === "7-T3" ? 2 : 1;
     const newMoveCount = s.moveCount + addMoves;
-    
+
+    const coinsTotal = getCoinsTotal(s.id);
+    if (coinsTotal > 0 && newMoveCount >= coinsTotal && cellType !== "7-EP") {
+      clearInterval(timerRef.current);
+      setQuestionState(prev => ({ ...prev, path: newPath, moveCount: newMoveCount, allCoinsDrained: true, gameStarted: false }));
+      safeSetTimeout(() => handleResult(false, "Out of Coins", newMoveCount), 400);
+      return;
+    }
+
     setQuestionState(prev => ({ ...prev, path: newPath, moveCount: newMoveCount }));
     playSoundEffect('move.wav');
     const isTQ = s.id.startsWith('tq');
@@ -819,7 +890,7 @@ const ChaloMelaChaleGame = () => {
     const isTQ = s.id.startsWith('tq');
     let score = 0;
     const moveCount = finalMoveCount !== null ? finalMoveCount : s.moveCount;
-    
+
     if (isSuccess) {
       if (isTQ) {
         score = s.currentTrial === 1 ? 2 : 1;
@@ -830,6 +901,12 @@ const ChaloMelaChaleGame = () => {
           else if (moveCount <= config.t1) score = 1;
         }
       }
+    }
+
+    const coinsTotal = getCoinsTotal(s.id);
+    const coinsRemaining = coinsTotal > 0 ? Math.max(0, coinsTotal - moveCount) : 0;
+    if (isSuccess && coinsRemaining > 0) {
+      setCollectedCoins(prev => prev + coinsRemaining);
     }
     
     const resultMsg = isSuccess ? `✅ Reached End | Score: ${score}` : `❌ ${reason} | Score: 0`;
@@ -911,9 +988,6 @@ const ChaloMelaChaleGame = () => {
       }, config);
       setAssessmentSubmitted(true);
       setAssessmentSaveMsg('✅ Assessment saved successfully!');
-      safeSetTimeout(() => {
-        generateAndUploadPDF();
-      }, 1000);
     } catch (e) {
       console.error(e);
       setAssessmentSaveMsg('❌ Failed to save assessment. Please try again.');
@@ -923,28 +997,45 @@ const ChaloMelaChaleGame = () => {
   };
 
   const generateAndUploadPDF = async () => {
+    let wrapper = null;
     try {
       const element = document.getElementById('dashboard-capture-area');
       if (!element) return;
-      
+
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
+      // Clone content into a clean wrapper directly on document.body so it has
+      // NO .app / .rover-body-shell ancestors — no backdrop-filter, no rgba bleed.
+      const clone = element.cloneNode(true);
+
+      // Kill all CSS animations BEFORE appending to DOM.
+      // The fadeIn animation starts from opacity:0 — if html2canvas captures during
+      // that animation the whole PDF appears washed-out/grey.
+      clone.style.animation = 'none';
+      clone.style.opacity = '1';
+      clone.querySelectorAll('*').forEach(node => {
+        node.style.animation = 'none';
+        node.style.transition = 'none';
+        node.style.opacity = '';   // clear any inline opacity so full opacity is used
+      });
+
+      wrapper = document.createElement('div');
+      wrapper.style.cssText = [
+        'position:fixed', 'top:-99999px', 'left:0',
+        'width:' + element.scrollWidth + 'px',
+        'background:#ffffff', 'padding:20px',
+        'z-index:-9999', 'pointer-events:none',
+      ].join(';');
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
+        scale: 1.5,
         useCORS: true,
         backgroundColor: '#ffffff',
-        logging: false,
-        onclone: (clonedDoc) => {
-          const el = clonedDoc.getElementById('dashboard-capture-area');
-          if (el) {
-            el.style.background = '#ffffff';
-            el.style.padding = '20px';
-            el.style.borderRadius = '0';
-          }
-        },
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
+        windowWidth: wrapper.scrollWidth,
+        windowHeight: wrapper.scrollHeight,
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       
@@ -971,6 +1062,8 @@ const ChaloMelaChaleGame = () => {
       await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
     } catch (e) {
       console.error('Failed to generate and upload PDF:', e);
+    } finally {
+      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
     }
   };
 
@@ -988,11 +1081,13 @@ const ChaloMelaChaleGame = () => {
     setAudioFinished(false);
     setRefreshCount(0);
     setRetakeCount(0);
+    setCollectedCoins(0);
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setQuitReason('');
     setAssessmentSubmitted(false);
     setIsPaused(false);
     hasAutoStarted.current = { sampleA: false, sampleB: false };
+    pdfGeneratedRef.current = false;
     setQuestionState({
       id: '',
       matrix: [],
@@ -1008,7 +1103,8 @@ const ChaloMelaChaleGame = () => {
       trial2Unlocked: false,
       trial2Hidden: false,
       isComplete: false,
-      nextUnlocked: false
+      nextUnlocked: false,
+      allCoinsDrained: false,
     });
   };
 
@@ -1068,9 +1164,11 @@ const ChaloMelaChaleGame = () => {
     const totalTimeSeconds = allScores.reduce((acc, s) => acc + parseFloat(s.timeTaken), 0);
     const totalTimeMin = Math.floor(totalTimeSeconds / 60);
     const totalTimeSec = Math.floor(totalTimeSeconds % 60);
+    const totalCoinsBudget = allScores.reduce((sum, s) => sum + getCoinsTotal(s.id), 0);
+    const coinEfficiency = totalCoinsBudget > 0 ? Math.round((collectedCoins / totalCoinsBudget) * 100) : 0;
 
     return (
-      <div className="results-screen" id="dashboard-capture-area">
+      <div className="results-screen" id="dashboard-capture-area" style={{ backgroundColor: '#fff', padding: '20px' }}>
         <div className="screen-header">
           <div>
             <div className="screen-title">{isDropped ? t('game.sessionDropped') : (quitReason ? t('game.sessionTerminatedPartial') : t('game.assessmentComplete'))}</div>
@@ -1083,52 +1181,80 @@ const ChaloMelaChaleGame = () => {
           </div>
         </div>
 
-        <div className="results-grid-top">
-          <div className="score-main-card">
-            <div className="score-big-circle">
-              <div className="score-val">{correctCount}</div>
-              <div className="score-label">/ {TOTAL_QUESTIONS}</div>
-            </div>
-            <div className="performance-meter">
-              <div className="meter-bar">
-                <div className="meter-fill" style={{ width: `${accuracy}%` }}></div>
+        {/* ── Compact summary card ── */}
+        <div className="results-top-card">
+          {/* Circle row-spans + 2 KPI rows */}
+          <div className="results-main-grid">
+            {/* Left: dial spans both KPI rows */}
+            <div className="score-col">
+              <div className="score-dial-sm">
+                <div className="score-val-sm">{correctCount}</div>
+                <div className="score-lbl-sm">/ {TOTAL_QUESTIONS}</div>
               </div>
-              <div className="meter-labels">
-                <span>0</span>
-                <span>{t('game.performanceMeter')}</span>
-                <span>{TOTAL_QUESTIONS}</span>
+              <div className="performance-meter">
+                <div className="meter-bar">
+                  <div className="meter-fill" style={{ width: `${accuracy}%` }}></div>
+                </div>
+                <div className="meter-labels">
+                  <span>0</span>
+                  <span>{t('game.performanceMeter')}</span>
+                  <span>{TOTAL_QUESTIONS}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: KPI row 1 */}
+            <div className="kpi-row">
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.correct2')}</div>
+                <div className="kpi-val kpi-green">{correctCount}</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.incorrect2')}</div>
+                <div className="kpi-val kpi-red">{TOTAL_QUESTIONS - correctCount}</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.percentage')}</div>
+                <div className="kpi-val">{accuracy}%</div>
+              </div>
+            </div>
+
+            {/* Right: KPI row 2 */}
+            <div className="kpi-row">
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.totalTime')}</div>
+                <div className="kpi-val">{totalTimeMin}m {totalTimeSec}s</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.questionsLabel')}</div>
+                <div className="kpi-val">{allScores.length} / {TOTAL_QUESTIONS}</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label">{t('game.avgTimeQ')}</div>
+                <div className="kpi-val">{allScores.length > 0 ? (totalTimeSeconds / allScores.length).toFixed(0) : 0}s</div>
               </div>
             </div>
           </div>
 
-          <div className="metrics-summary-cards">
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.totalScore')}</div>
-              <div className="metric-value">{correctCount} / {TOTAL_QUESTIONS}</div>
+          {/* Coin summary */}
+          <div className="coin-summary-strip">
+            <div className="coin-summary-title">
+              <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 16, height: 16 }} alt="" />
+              Coin Summary
             </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.correct2')}</div>
-              <div className="metric-value" style={{ color: '#16a34a' }}>{correctCount}</div>
-            </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.incorrect2')}</div>
-              <div className="metric-value" style={{ color: '#dc2626' }}>{TOTAL_QUESTIONS - correctCount}</div>
-            </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.percentage')}</div>
-              <div className="metric-value">{accuracy}.0%</div>
-            </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.totalTime')}</div>
-              <div className="metric-value">{totalTimeMin}m {totalTimeSec}s</div>
-            </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.questionsLabel')}</div>
-              <div className="metric-value">{allScores.length} / {TOTAL_QUESTIONS}</div>
-            </div>
-            <div className="metric-mini-card">
-              <div className="metric-label">{t('game.avgTimeQ')}</div>
-              <div className="metric-value">{allScores.length > 0 ? (totalTimeSeconds / allScores.length).toFixed(0) : 0}s</div>
+            <div className="kpi-grid-3">
+              <div className="kpi-card kpi-coin">
+                <div className="kpi-label">Total Budget</div>
+                <div className="kpi-val kpi-gold">{totalCoinsBudget}</div>
+              </div>
+              <div className="kpi-card kpi-coin">
+                <div className="kpi-label">Coins Collected</div>
+                <div className="kpi-val kpi-gold">{collectedCoins}</div>
+              </div>
+              <div className="kpi-card kpi-coin">
+                <div className="kpi-label">Efficiency</div>
+                <div className="kpi-val kpi-gold">{coinEfficiency}%</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1151,6 +1277,9 @@ const ChaloMelaChaleGame = () => {
                   }
                 }
               }
+              const qCoinsTotal  = getCoinsTotal(s.id);
+              const qCoinsUsed   = s.moves || 0;
+              const qCoinsKept   = s.score > 0 ? Math.max(0, qCoinsTotal - qCoinsUsed) : 0;
               return (
                 <div key={idx} className="result-mini-card" style={{ gap: '12px' }}>
                   <div className="res-card-top">
@@ -1159,8 +1288,10 @@ const ChaloMelaChaleGame = () => {
                   </div>
                   {s.failReason && (
                     <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '6px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #fca5a5' }}>
-                      {s.failReason === "Hit Weed" ? t('game.questionEndedMoves') :
-                       s.failReason === "Timeout" ? t('game.timeoutDestination') :
+                      {s.failReason === "Hit Weed"       ? t('game.questionEndedMoves') :
+                       s.failReason === "Timeout"         ? t('game.timeoutDestination') :
+                       s.failReason === "Out of Coins"    ? '🪙 Out of coins' :
+                       s.failReason === "Non-Adjacent"    ? '⛔ Non-adjacent move' :
                        t('game.destinationNotAchieved')}
                     </div>
                   )}
@@ -1175,9 +1306,28 @@ const ChaloMelaChaleGame = () => {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
                       <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.timeTakenLabel')}</span>
-                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{Math.round(parseFloat(s.timeTaken))}s</span>
+                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{fmtSecs(s.timeTaken)}</span>
                     </div>
                   </div>
+
+                  {/* Coin trail */}
+                  {qCoinsTotal > 0 && (
+                    <div className="q-coin-trail">
+                      <div className="q-coin-trail-label">
+                        <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 13, height: 13 }} alt="" />
+                        <span>Budget {qCoinsTotal} · Used {qCoinsUsed} · Collected {qCoinsKept}</span>
+                      </div>
+                      <div className="q-coin-dots">
+                        {Array.from({ length: qCoinsTotal }, (_, i) => (
+                          <div key={i} className="q-coin-slot-mini">
+                            <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="q-coin-img-mini" alt="" />
+                            {i < qCoinsUsed && <img src="/assets/images/chalo_mela_chale/rover_cross.png" className="q-coin-cross-mini" alt="" />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {matrix && s.path && s.path.length > 0 && (
                     <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('game.userSelectedPath')}</span>
@@ -1331,33 +1481,42 @@ const ChaloMelaChaleGame = () => {
             {questionState.id === 'tq1' ? t('game.teachingQ2Label') : questionState.id === 'tq2' ? `${t('game.question')} 1` : questionState.id === 'q1' ? t('game.sampleBLabel') : questionState.id === 'tq3' ? t('game.teachingQ4Label') : questionState.id === 'tq4' ? `${t('game.question')} 2` : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `${t('game.question')} ${parseInt(questionState.id.substring(1)) + 1}` : t('game.nextQuestion')}
           </button>
         </div>
-        <div className="matrix-wrap">
-          <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${questionState.matrix[0]?.length || 4}, 1fr)` }}>
-            {questionState.matrix.flat().map((type, idx) => {
-              const cols = questionState.matrix[0]?.length || 4;
-              const r = Math.floor(idx / cols), c = idx % cols;
-              const inPath = questionState.path.some(p => p.row === r && p.col === c);
-              const isStart = questionState.matrix[r][c] === "7-SP";
-              const isLast = questionState.path.length > 0 && questionState.path[questionState.path.length-1].row === r && questionState.path[questionState.path.length-1].col === c;
-              const isEP = type === "7-EP";
-              
-              let highClass = "";
-              if (inPath) {
-                if (isStart) highClass = "cell-start";
-                else if (isLast && isEP) highClass = "cell-end";
-                else highClass = "cell-path";
-              }
-              const isWrongMove = questionState.wrongMovePos && questionState.wrongMovePos.row === r && questionState.wrongMovePos.col === c;
-              
-              return (
-                <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
-                  <img src={IMG_MAPPING[type]} alt={type}/>
-                  {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
-                  {isWrongMove && <div className="cross-mark">❌</div>}
-                </div>
-              );
-            })}
+        <div className="matrix-with-coins">
+          <div className="matrix-wrap">
+            <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${questionState.matrix[0]?.length || 4}, 1fr)` }}>
+              {questionState.matrix.flat().map((type, idx) => {
+                const cols = questionState.matrix[0]?.length || 4;
+                const r = Math.floor(idx / cols), c = idx % cols;
+                const inPath = questionState.path.some(p => p.row === r && p.col === c);
+                const isStart = questionState.matrix[r][c] === "7-SP";
+                const isLast = questionState.path.length > 0 && questionState.path[questionState.path.length-1].row === r && questionState.path[questionState.path.length-1].col === c;
+                const isEP = type === "7-EP";
+
+                let highClass = "";
+                if (inPath) {
+                  if (isStart) highClass = "cell-start";
+                  else if (isLast && isEP) highClass = "cell-end";
+                  else highClass = "cell-path";
+                }
+                const isWrongMove = questionState.wrongMovePos && questionState.wrongMovePos.row === r && questionState.wrongMovePos.col === c;
+
+                return (
+                  <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
+                    <img src={IMG_MAPPING[type]} alt={type}/>
+                    {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                    {isWrongMove && <div className="cross-mark">❌</div>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+          {getCoinsTotal(questionState.id) > 0 && (
+            <CoinBar
+              coinsTotal={getCoinsTotal(questionState.id)}
+              moveCount={questionState.moveCount}
+              allCoinsDrained={questionState.allCoinsDrained || false}
+            />
+          )}
         </div>
         <div className="tq1-info-panel">
           <div className="info-row" style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'12px'}}>
@@ -1387,6 +1546,10 @@ const ChaloMelaChaleGame = () => {
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">{t('game.childId')}</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">{t('game.score')}</span><span className="stat-value">{totalScore}</span></div>
+            <div className="stat-pill coin-stat-pill">
+              <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="coin-stat-icon" alt="" />
+              <span className="stat-value">{collectedCoins}</span>
+            </div>
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 

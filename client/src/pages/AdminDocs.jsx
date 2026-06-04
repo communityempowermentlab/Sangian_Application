@@ -56,7 +56,7 @@ const SEC_H = 38; // px per accordion section row
 
 // ─── Bilingual Introduction Defaults ─────────────────────────────────────────
 
-const HINDI_FONT = "'Noto Sans Devanagari', 'Mangal', 'Arial Unicode MS', sans-serif";
+const HINDI_FONT = "'Hind', 'Noto Sans Devanagari', sans-serif";
 
 const GAME_INTRO_DEFAULTS = {
     atlantis_bagiya: {
@@ -91,14 +91,14 @@ const GAME_INTRO_DEFAULTS = {
         en: {
             skill:       'Visual Processing & Spatial Decision-Making',
             objective:   'It measures simultaneous or visual processing that requires decision-making to identify the shortest route to a goal.',
-            description: 'Help the character reach the mela using the shortest possible path. This activity encourages smart thinking, planning, and visual problem-solving skills.',
+            description: 'Help Baby reach the mela using the shortest possible path. This Test encourages smart thinking, planning, and visual problem-solving skills.',
             guidance:    'Look at the paths carefully and think before you choose. Which is the shortest way to reach the mela?',
         },
         hi: {
-            skill:       'दृश्य प्रसंस्करण और स्थानिक निर्णय-निर्माण',
-            objective:   'इस टेस्ट का उद्देश्य बच्चे की चित्रात्मक जानकारी को समझने, अलग-अलग रास्तों की तुलना करने और लक्ष्य तक पहुँचने के लिए सबसे छोटे रास्ते का चयन करने की क्षमता का आकलन करना है।',
-            description: 'इस खेल में बच्चे को लड़के को सबसे छोटे रास्ते से मेले तक पहुँचाना होता है। यह गतिविधि सोचने, रास्तों की तुलना करने और सही निर्णय लेने की क्षमता को बढ़ाती है।',
-            guidance:    'रास्तों को ध्यान से देखो और सोच-समझकर चुनो। मेले तक पहुँचने का सबसे छोटा रास्ता कौन सा है?',
+            skill:       'देखकर सोचना और सही रास्ता चुनना',
+            objective:   'इस टेस्ट में बच्चा तस्वीर देखकर समझता है और मेले तक जाने का सबसे छोटा रास्ता चुनता है।',
+            description: 'इस खेल में बच्चे को सबसे छोटे रास्ते से मेले तक पहुँचाना होता है। यह सोचने, रास्ते देखने और सही चुनाव करने की क्षमता को समझने में मदद करता है।',
+            guidance:    'रास्तों को ध्यान से देखो और सोचकर चुनो। मेले तक जाने का सबसे छोटा रास्ता कौन सा है?',
         },
     },
     auditory_dhyan: {
@@ -4412,10 +4412,10 @@ const GameplayManualViewer = ({ game }) => {
 // ─── Introduction Viewer ─────────────────────────────────────────────────────
 
 const INTRO_FIELD_DEFS = [
-    { key: 'objective',   label: 'Test Objective',  labelHi: 'परीक्षण उद्देश्य',               icon: '🎯', rows: 4 },
-    { key: 'description', label: 'About this Game', labelHi: 'इस खेल के बारे में',              icon: '📘', rows: 5 },
-    { key: 'skill',       label: 'Cognitive Skill', labelHi: 'संज्ञानात्मक कौशल',              icon: '🧠', rows: 1 },
-    { key: 'guidance',    label: 'Child Guidance',  labelHi: 'बच्चों के लिए मार्गदर्शन',      icon: '💡', rows: 2 },
+    { key: 'objective',   label: 'Test Objective',  labelHi: 'परीक्षण उद्देश्य',          icon: '🎯', rows: 4 },
+    { key: 'description', label: 'About this Game', labelHi: 'इस खेल के बारे में',         icon: '📘', rows: 5 },
+    { key: 'skill',       label: 'Cognitive Skill', labelHi: 'संज्ञानात्मक कौशल',         icon: '🧠', rows: 1 },
+    { key: 'guidance',    label: 'Child Guidance',  labelHi: 'बच्चों के लिए मार्गदर्शन', icon: '💡', rows: 2 },
 ];
 
 const IntroCard = ({ icon, title, titleHi, game, accent, children }) => (

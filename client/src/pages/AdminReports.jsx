@@ -37,6 +37,23 @@ const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit',
 const fmtOnlyDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtOnlyTime = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '—';
 
+// Format a raw-seconds value → "45s" under 1 min, "2m 05s" at 1 min+
+const fmtSecs = (v) => {
+    if (v == null) return '—';
+    const s = Math.round(Number(v));
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
+};
+
+// ─── Rover coin budget per question (t2 + 4 bonus) ────────────────────────────
+const ROVER_Q_BUDGET = {
+  tq1: 7, tq2: 7, tq3: 7, tq4: 9,
+  q1: 7, q2: 7, q3: 8, q4: 6, q5: 8, q6: 9, q7: 9, q8: 8,
+  q9: 10, q10: 9, q11: 10, q12: 11, q13: 9, q14: 9, q15: 11,
+  q16: 12, q17: 12, q18: 12,
+};
+const getRoverBudget = (id) => ROVER_Q_BUDGET[id] || 0;
+
 // ─── ChorMachayeShor column label helper ──────────────────────────────────────
 const chorColLabel = (c) => {
     if (c === 'q1t1') return 'Item 1 (T1)';
@@ -466,12 +483,15 @@ const AdminReports = () => {
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3' }}>Total Moves</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>🪙 Budget</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>🪙 Collected</th>
                                             {detail?.columns?.map(c => (
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>{c.toUpperCase()} Score</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7', minWidth: 60 }}>🪙 Kept</th>
                                                 </React.Fragment>
                                             ))}
                                         </>
@@ -540,7 +560,7 @@ const AdminReports = () => {
                                     {ASSESSMENT_COLS.map(ac => (
                                         <th key={ac.key} style={{ ...S.th, background: '#ede9fe', color: '#6d28d9', minWidth: 120 }}>{ac.label}</th>
                                     ))}
-                                    <th style={{ ...S.th, textAlign: 'center', background: '#e2e8f0', minWidth: 110 }}>Dashboard</th>
+                                    <th style={{ ...S.th, textAlign: 'center', background: '#fee2e2', color: '#b91c1c', minWidth: 110 }}>📄 PDF</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -580,7 +600,7 @@ const AdminReports = () => {
                                                             <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoi`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoo`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#991b1b' }}>{qs[`q${q}_eoc`] ?? '—'}</td>
-                                                            <td style={{ ...S.tdCenter, color: '#854d0e' }}>{qs[`q${q}_time`] ?? '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#854d0e' }}>{fmtSecs(qs[`q${q}_time`])}</td>
                                                         </React.Fragment>
                                                     );
                                                 })
@@ -598,23 +618,44 @@ const AdminReports = () => {
                                                             <td style={{ ...S.tdCenter, color: '#0369a1', fontWeight: 600 }}>{correct ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: '#991b1b', fontWeight: 600 }}>{incorrect ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: score > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>{score ?? '—'}</td>
-                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{time != null ? `${Math.round(time)}s` : '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(time)}</td>
                                                         </React.Fragment>
                                                     );
                                                 })
                                             ) : isRover ? (
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
-                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{fmtSecs(row.actual_game_time)}</td>
+                                                    {(() => {
+                                                        const cols = detail?.columns || [];
+                                                        const qs = row.question_scores || {};
+                                                        const totalBudget = cols.reduce((s, c) => s + getRoverBudget(c), 0);
+                                                        const totalCollected = cols.reduce((s, c) => {
+                                                            const sc = qs[c]; const mv = qs[`${c}_moves`] ?? 0;
+                                                            return s + (sc > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
+                                                        }, 0);
+                                                        return (
+                                                            <>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: '#b45309' }}>{totalBudget}</td>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: '#b45309' }}>{totalCollected}</td>
+                                                            </>
+                                                        );
+                                                    })()}
                                                     {(detail?.columns || []).map(c => {
                                                         const qs = row.question_scores || {};
                                                         const score = qs[c];
+                                                        const moves = qs[`${c}_moves`] ?? 0;
+                                                        const budget = getRoverBudget(c);
+                                                        const kept = score > 0 ? Math.max(0, budget - moves) : 0;
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#1e293b' }}>{moves || '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(qs[`${c}_time`])}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: kept > 0 ? '#b45309' : '#94a3b8', fontWeight: kept > 0 ? 700 : 400 }}>
+                                                                    {score != null ? (kept > 0 ? `+${kept}` : '0') : '—'}
+                                                                </td>
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -622,7 +663,7 @@ const AdminReports = () => {
                                             ) : isChor ? (
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#1e293b' }}>{row.total_moves ?? '—'}</td>
-                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    <td style={{ ...S.tdCenter, fontWeight: 600, color: '#64748b' }}>{fmtSecs(row.actual_game_time)}</td>
                                                     {(detail?.columns || []).map(c => {
                                                         const qs = row.question_scores || {};
                                                         const score = qs[c];
@@ -630,7 +671,7 @@ const AdminReports = () => {
                                                             <React.Fragment key={`chor-${c}`}>
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
                                                                 <td style={{ ...S.tdCenter, color: '#1e293b' }}>{qs[`${c}_moves`] ?? '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(qs[`${c}_time`])}</td>
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -645,14 +686,14 @@ const AdminReports = () => {
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q1`] === 'YES' ? '#059669' : qs[`${c}_ass_q1`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q1`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q2`] === 'YES' ? '#059669' : qs[`${c}_ass_q2`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q2`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q3`] === 'YES' ? '#059669' : qs[`${c}_ass_q3`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q3`] ?? '—'}</td>
-                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(qs[`${c}_time`])}</td>
                                                         </React.Fragment>
                                                     );
                                                 })
                                             ) : activeGame?.key === 'literacy_reading_skill' ? (
                                                 <>
                                                     <td style={{ ...S.tdCenter, fontWeight: 700, color: '#059669' }}>{row.score != null ? `${row.score}/22` : '—'}</td>
-                                                    <td style={{ ...S.tdCenter, color: '#64748b' }}>{row.actual_game_time ? `${Math.round(row.actual_game_time)}s` : '—'}</td>
+                                                    <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(row.actual_game_time)}</td>
                                                     {detail?.columns?.map((c, idx) => {
                                                         const qNum = idx + 1;
                                                         const isSSR = qNum === 21 || qNum === 22;
@@ -668,7 +709,7 @@ const AdminReports = () => {
                                                                         <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q3`] === 'YES' ? '#dc2626' : qs[`${c}_ass_q3`] === 'NO' ? '#059669' : '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>{qs[`${c}_ass_q3`] ?? '—'}</td>
                                                                     </>
                                                                 )}
-                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{qs[`${c}_time`] != null ? `${Math.round(qs[`${c}_time`])}s` : '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(qs[`${c}_time`])}</td>
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -682,7 +723,7 @@ const AdminReports = () => {
                                                             <td style={S.scoreCell(v, isAtlantis)}>
                                                                 {v != null ? v : '—'}
                                                             </td>
-                                                            <td style={S.tdCenter}>{row.question_scores[`${c}_time`] ? `${Math.round(row.question_scores[`${c}_time`])}s` : '—'}</td>
+                                                            <td style={S.tdCenter}>{fmtSecs(row.question_scores[`${c}_time`])}</td>
                                                             {activeGame?.key !== 'numeracy_number_skill' && (
                                                                 <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
                                                             )}
@@ -740,20 +781,14 @@ const AdminReports = () => {
                                             ))}
                                             <td style={{ ...S.tdCenter, background: '#f8fafc', borderLeft: '1px solid #f1f5f9' }}>
                                                 {row.pdf_url ? (
-                                                    <a 
-                                                        href={`${API_URL.replace('/api', '')}${row.pdf_url}`} 
-                                                        target="_blank" 
-                                                        rel="noreferrer" 
-                                                        style={{ 
-                                                            textDecoration: 'none', background: '#3b82f6', color: '#fff', 
-                                                            padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', 
-                                                            fontWeight: 'bold', display: 'inline-block', transition: 'background 0.2s' 
-                                                        }}
+                                                    <button
+                                                        onClick={() => window.open(`${API_URL.replace('/api', '')}${row.pdf_url}`, '_blank')}
+                                                        style={{ background:'#fee2e2', color:'#991b1b', padding:'4px 12px', border:'none', borderRadius:'12px', fontWeight:'bold', fontSize:'0.8rem', cursor:'pointer', whiteSpace:'nowrap' }}
                                                     >
-                                                        View Dashboard
-                                                    </a>
+                                                        View PDF
+                                                    </button>
                                                 ) : (
-                                                    <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>N/A</span>
+                                                    <span style={{ color: '#cbd5e1' }}>—</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -914,10 +949,10 @@ const AdminReports = () => {
                                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)'; }}
                                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
                             >
-                                <div style={S.cardIcon}>{game.icon}</div>
-                                <div style={S.cardTitle}>{game.title}</div>
-                                {game.local && <div style={S.cardLocal}>({game.local})</div>}
-                                <div style={S.tag(game.color)}>{game.tag}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                                    <span style={{ fontSize: '2rem', lineHeight: 1 }}>{game.icon}</span>
+                                    <span style={S.cardTitle}>{game.title}</span>
+                                </div>
 
                                 <div style={S.kpiRow}>
                                     <div style={S.kpi(false)}>

@@ -85,8 +85,8 @@ exports.updateGameSession = async (req, res) => {
         if (quit_reason !== undefined) { updateQuery += 'quit_reason = ?, '; updateParams.push(quit_reason); }
         if (saved_state !== undefined) { updateQuery += 'saved_state = ?, '; updateParams.push(JSON.stringify(saved_state)); }
 
-        // If status became completed or quit, mark end_time
-        if (status === 'completed' || status === 'quit') {
+        // If status became terminal (completed, quit, or dropped), mark end_time
+        if (status === 'completed' || status === 'quit' || status === 'dropped') {
             updateQuery += 'end_time = NOW(), ';
         }
 
