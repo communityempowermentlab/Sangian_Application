@@ -211,20 +211,34 @@ const AdminReports = () => {
                 qHeaders.push(`${colLabel} Time(s)`);
             });
         } else {
-            detail.columns.forEach((c, idx) => {
-                const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
-                const colLabel = c.toUpperCase();
-                qHeaders.push(colLabel);
-                if (isRover) qHeaders.push(`${colLabel} Moves`);
+            const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
+            if (isRover) {
+                // Coin summary columns come first (matching datatable layout)
+                qHeaders.push(
+                    'Coins Budget (Session)', 'Coins Collected (Session)', 'Coin Efficiency (%)',
+                    'Coins Earned (Actual)', 'Retake Count', 'Refresh Count',
+                );
+            }
+            detail.columns.forEach((c) => {
+                const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                const colLabel = isTQTrial
+                    ? c.replace(/^(tq\d+)_t([12])$/, (_, q, t) => `${q.toUpperCase()} Trial ${t}`)
+                    : c.toUpperCase();
+                qHeaders.push(`${colLabel} Score`);
+                qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
-                qHeaders.push(`${colLabel} Replays`);
+                qHeaders.push(`${colLabel} Retake`);
+                qHeaders.push(`${colLabel} 🪙 Kept`);
+                if (!isTQTrial && isRover) {
+                    qHeaders.push(`${colLabel} Replays`);
+                }
             });
         }
 
         const headers = [
-            'Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time', 
-            'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Moves', 'Total Time(s)', 
-            ...qHeaders, 
+            'Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time',
+            'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Moves', 'Total Time(s)',
+            ...qHeaders,
             'Attempted Questions', 'Actual Game Time(s)', 'Total Session Time(s)', 'Paused Questions', 'Pause Reasons',
             ...assessmentLabels
         ];
@@ -296,11 +310,38 @@ const AdminReports = () => {
                 });
             } else {
                 const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
+                if (isRoverCSV) {
+                    // Session-level coin summary (same columns added to qHeaders above)
+                    const cols = detail?.columns || [];
+                    const totalBudget = cols.reduce((s, c) => s + getRoverBudget(c.replace(/_t[12]$/, '')), 0);
+                    const totalCollected = cols.reduce((s, c) => {
+                        const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                        if (isTQTrial) return s;
+                        const sc = r.question_scores?.[c]; const mv = r.question_scores?.[`${c}_moves`] ?? 0;
+                        return s + (sc > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
+                    }, 0);
+                    const efficiency = totalBudget > 0 ? Math.round((totalCollected / totalBudget) * 100) : 0;
+                    rowArr.push(
+                        totalBudget, totalCollected, `${efficiency}%`,
+                        r.coins_collected ?? '', r.retake_count ?? '', r.refresh_count ?? '',
+                    );
+                }
                 detail?.columns?.forEach(c => {
-                    rowArr.push(r.question_scores?.[c] ?? '');
-                    if (isRoverCSV) rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
-                    rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
-                    rowArr.push(r.question_scores?.[`${c}_replays`] ?? '');
+                    const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                    const qs    = r.question_scores || {};
+                    const sc    = qs[c] ?? '';
+                    const moves = qs[`${c}_moves`] ?? '';
+                    const time  = qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '';
+                    const retake = qs[`${c}_retakes`] ?? '';
+                    const mv   = typeof moves === 'number' ? moves : (parseInt(moves) || 0);
+                    const scNum = typeof sc === 'number' ? sc : (parseInt(sc) || 0);
+                    const kept = isTQTrial
+                        ? (qs[`${c}_coins_kept`] ?? (scNum > 0 ? Math.max(0, getRoverBudget(c.replace(/_t[12]$/, '')) - mv) : 0))
+                        : (scNum > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
+                    rowArr.push(sc, moves, time, retake, kept);
+                    if (!isTQTrial && isRoverCSV) {
+                        rowArr.push(qs[`${c}_replays`] ?? '');
+                    }
                 });
             }
             
@@ -485,15 +526,30 @@ const AdminReports = () => {
                                             <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>🪙 Budget</th>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>🪙 Collected</th>
-                                            {detail?.columns?.map(c => (
-                                                <React.Fragment key={c}>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 60 }}>{c.toUpperCase()} Score</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7', minWidth: 60 }}>🪙 Kept</th>
-                                                </React.Fragment>
-                                            ))}
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>🪙 Coins Earned</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fce7f3' }}>Retakes</th>
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe' }}>Refreshes</th>
+                                            {detail?.columns?.map(c => {
+                                                const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                                                const tqTrialLabel = isTQTrial
+                                                    ? c.replace(/^(tq\d+)_t([12])$/, (_, q, t) => `${q.toUpperCase()} Trial ${t}`)
+                                                    : null;
+                                                const bg = isTQTrial
+                                                    ? (c.endsWith('_t1') ? '#dbeafe' : '#e0e7ff')
+                                                    : '#d1fae5';
+                                                return (
+                                                    <React.Fragment key={c}>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 70 }}>
+                                                            {isTQTrial ? tqTrialLabel : `${c.toUpperCase()} Score`}
+                                                        </th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#fce7f3', minWidth: 60 }}>Retake</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7', minWidth: 60 }}>🪙 Kept</th>
+                                                        {!isTQTrial && <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                         </>
                                     ) : activeGame?.key === 'triangle_rachna' ? (
                                         detail.columns.map((c, idx) => {
@@ -629,8 +685,10 @@ const AdminReports = () => {
                                                     {(() => {
                                                         const cols = detail?.columns || [];
                                                         const qs = row.question_scores || {};
-                                                        const totalBudget = cols.reduce((s, c) => s + getRoverBudget(c), 0);
+                                                        const totalBudget = cols.reduce((s, c) => s + getRoverBudget(c.replace(/_t[12]$/, '')), 0);
                                                         const totalCollected = cols.reduce((s, c) => {
+                                                            const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                                                            if (isTQTrial) return s;
                                                             const sc = qs[c]; const mv = qs[`${c}_moves`] ?? 0;
                                                             return s + (sc > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
                                                         }, 0);
@@ -638,6 +696,11 @@ const AdminReports = () => {
                                                             <>
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: '#b45309' }}>{totalBudget}</td>
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: '#b45309' }}>{totalCollected}</td>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: '#92400e', background: '#fffbeb' }}>
+                                                                    {row.coins_collected ?? '—'}
+                                                                </td>
+                                                                <td style={{ ...S.tdCenter, color: '#9d174d' }}>{row.retake_count ?? '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#5b21b6' }}>{row.refresh_count ?? '—'}</td>
                                                             </>
                                                         );
                                                     })()}
@@ -645,17 +708,28 @@ const AdminReports = () => {
                                                         const qs = row.question_scores || {};
                                                         const score = qs[c];
                                                         const moves = qs[`${c}_moves`] ?? 0;
-                                                        const budget = getRoverBudget(c);
-                                                        const kept = score > 0 ? Math.max(0, budget - moves) : 0;
+                                                        const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                                                        const budget  = getRoverBudget(c.replace(/_t[12]$/, ''));
+                                                        const kept    = isTQTrial
+                                                            ? (qs[`${c}_coins_kept`] ?? (score > 0 ? Math.max(0, budget - moves) : 0))
+                                                            : (score > 0 ? Math.max(0, budget - moves) : 0);
+                                                        const retakes = qs[`${c}_retakes`] ?? '—';
+                                                        const trialBg = isTQTrial
+                                                            ? (c.endsWith('_t1') ? 'rgba(219,234,254,0.25)' : 'rgba(224,231,255,0.25)')
+                                                            : 'transparent';
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
-                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>{score ?? '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#1e293b' }}>{moves || '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(qs[`${c}_time`])}</td>
-                                                                <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>
-                                                                <td style={{ ...S.tdCenter, color: kept > 0 ? '#b45309' : '#94a3b8', fontWeight: kept > 0 ? 700 : 400 }}>
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, background: trialBg,
+                                                                    color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>
+                                                                    {score ?? '—'}
+                                                                </td>
+                                                                <td style={{ ...S.tdCenter, color: '#1e293b', background: trialBg }}>{moves || '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#64748b', background: trialBg }}>{fmtSecs(qs[`${c}_time`])}</td>
+                                                                <td style={{ ...S.tdCenter, color: '#9d174d', background: trialBg }}>{score != null ? retakes : '—'}</td>
+                                                                <td style={{ ...S.tdCenter, color: kept > 0 ? '#b45309' : '#94a3b8', fontWeight: kept > 0 ? 700 : 400, background: trialBg }}>
                                                                     {score != null ? (kept > 0 ? `+${kept}` : '0') : '—'}
                                                                 </td>
+                                                                {!isTQTrial && <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>}
                                                             </React.Fragment>
                                                         );
                                                     })}

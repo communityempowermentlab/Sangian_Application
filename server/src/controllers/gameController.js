@@ -1,5 +1,13 @@
 const { pool } = require('../config/db');
 
+// Rover coin budget per question (t2 + 4 bonus coins) — mirrors client-side ROVER_Q_BUDGET
+const ROVER_Q_BUDGET = {
+    tq1: 7, tq2: 7, tq3: 7, tq4: 9,
+    q1: 7, q2: 7, q3: 8,  q4: 6,  q5: 8,  q6: 9,  q7: 9,  q8: 8,
+    q9: 10, q10: 9, q11: 10, q12: 11, q13: 9, q14: 9, q15: 11,
+    q16: 13, q17: 12, q18: 12,
+};
+
 // Start a new game session
 exports.startGameSession = async (req, res) => {
     try {
@@ -340,6 +348,41 @@ exports.getReportDetail = async (req, res) => {
                 }
             });
 
+            // TQ per-trial data (rover_mela) — stored separately from allScores
+            const tqTrials = parsedState?.tqTrials || {};
+            Object.entries(tqTrials).forEach(([key, data]) => {
+                const baseId = key.replace(/_t[12]$/, '');
+                const budget = ROVER_Q_BUDGET[baseId] || 0;
+                const moves  = data.moves ?? 0;
+                const score  = data.score ?? null;
+                questionScores[key]                  = score;
+                questionScores[`${key}_moves`]       = data.moves ?? null;
+                questionScores[`${key}_time`]        = data.timeTaken ?? null;
+                questionScores[`${key}_retakes`]     = data.retakeCount ?? 0;
+                questionScores[`${key}_coins_kept`]  = (score > 0 && budget > 0) ? Math.max(0, budget - moves) : 0;
+            });
+
+            // FALLBACK for old sessions that don't have tqTrials yet:
+            // derive tq1_t1 / tq1_t2 etc. from the existing allScores entries.
+            // Each allScores entry for a TQ question has a `trial` field (1 or 2).
+            if (Object.keys(tqTrials).length === 0 && ['rover_mela','chalo_mela_chale'].includes(gameName)) {
+                scores.forEach(s => {
+                    const qid = s.id || s.qId;
+                    if (qid && typeof qid === 'string' && qid.startsWith('tq')) {
+                        const trialNum  = s.trial || 1;
+                        const trialKey  = `${qid}_t${trialNum}`;
+                        const budget    = ROVER_Q_BUDGET[qid] || 0;
+                        const moves     = s.moves || 0;
+                        const score     = s.score ?? null;
+                        questionScores[trialKey]                 = score;
+                        questionScores[`${trialKey}_moves`]      = moves || null;
+                        questionScores[`${trialKey}_time`]       = s.timeTaken ?? null;
+                        questionScores[`${trialKey}_retakes`]    = 0;   // not tracked in old sessions
+                        questionScores[`${trialKey}_coins_kept`] = (score > 0 && budget > 0) ? Math.max(0, budget - moves) : 0;
+                    }
+                });
+            }
+
             // ChorMachayeShor format (itemResults)
             chorItems.forEach(item => {
                 let key;
@@ -390,6 +433,18 @@ exports.getReportDetail = async (req, res) => {
                 total_session_time: totalSessionTime,
                 actual_game_time: (actualGameTime > 0) ? Math.round(actualGameTime) : (chorItems.length > 0 || scores.length > 0 ? 0 : null),
                 total_moves: (totalMoves > 0) ? totalMoves : (chorItems.length > 0 || scores.length > 0 ? 0 : null),
+                coins_collected: parsedState?.collectedCoins ??
+                    // Fallback: compute from allScores for sessions before collectedCoins was tracked
+                    (['rover_mela','chalo_mela_chale'].includes(gameName)
+                        ? scores.reduce((sum, s) => {
+                            const qid = s.id || s.qId;
+                            if (!qid || typeof qid !== 'string' || qid.startsWith('tq')) return sum;
+                            const budget = ROVER_Q_BUDGET[qid] || 0;
+                            return sum + (s.score > 0 && budget > 0 ? Math.max(0, budget - (s.moves || 0)) : 0);
+                          }, 0)
+                        : null),
+                retake_count:    parsedState?.retakeCount    ?? null,
+                refresh_count:   parsedState?.refreshCount   ?? null,
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
@@ -410,7 +465,12 @@ exports.getReportDetail = async (req, res) => {
         // Determine Columns
         let sortedQIds = [];
         if (['rover_mela', 'chalo_mela_chale'].includes(gameName)) {
-            sortedQIds = ['tq1', 'tq2', 'tq3', 'tq4', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'];
+            sortedQIds = [
+                'tq1_t1', 'tq1_t2', 'tq2_t1', 'tq2_t2',
+                'tq3_t1', 'tq3_t2', 'tq4_t1', 'tq4_t2',
+                'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8',
+                'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
+            ];
         } else if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
             sortedQIds = ['q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11'];
         } else {

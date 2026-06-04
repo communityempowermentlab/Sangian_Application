@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import ReactDOM from 'react-dom';
 
 const SessionAssessmentForm = ({
@@ -13,6 +13,7 @@ const SessionAssessmentForm = ({
   t,
   children
 }) => {
+  const formUid = useId();          // unique per instance — prevents radio name collision in StrictMode
   const [validationErrors, setValidationErrors] = useState({});
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -58,7 +59,7 @@ const SessionAssessmentForm = ({
               <label key={opt.val} className="shared-radio-item">
                 <input 
                   type="radio" 
-                  name={q.key} 
+                  name={`${formUid}_${q.key}`}
                   disabled={assessmentSubmitted} 
                   checked={assessment[q.key] === opt.val} 
                   onChange={() => {

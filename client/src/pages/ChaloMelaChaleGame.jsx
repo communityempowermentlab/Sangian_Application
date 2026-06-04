@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
@@ -369,8 +369,10 @@ const ChaloMelaChaleGame = () => {
   const isStoppedRef    = useRef(false); // set true by stopAll; blocks ALL new audio/intervals
   const questionStateRef = useRef(questionState);
   const hasAutoStarted = useRef({ sampleA: false, sampleB: false });
-  const isMountedRef    = useRef(false);
-  const pdfGeneratedRef = useRef(false);
+  const isMountedRef          = useRef(false);
+  const pdfGeneratedRef       = useRef(false);
+  const tqTrialsRef           = useRef({});   // stores per-trial data for teaching questions
+  const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
 
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
 
@@ -516,6 +518,7 @@ const ChaloMelaChaleGame = () => {
     }
     if (ss.isDropped) setIsDropped(true);
     if (ss.collectedCoins !== undefined) setCollectedCoins(ss.collectedCoins);
+    if (ss.tqTrials) tqTrialsRef.current = ss.tqTrials;
     setStartTime(Date.now());
     setShowResumeModal(false);
   };
@@ -576,6 +579,7 @@ const ChaloMelaChaleGame = () => {
           refreshCount,
           retakeCount,
           collectedCoins,
+          tqTrials: tqTrialsRef.current,
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -807,21 +811,37 @@ const ChaloMelaChaleGame = () => {
     });
   }, [playAudio, runPathSequence, safeSetTimeout]);
 
-  // Handle auto-start on screen change
-  useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
-      audioRef.current.currentTime = 0;
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.warn('Autoplay blocked by browser policy:', err);
-          setAudioFinished(true);
-        });
-      }
-    }
-    
+  // ── Layout effect: runs synchronously BEFORE browser paint ──────────────────
+  // This guarantees the button is visually disabled before the user ever sees
+  // the splash screen, regardless of which navigation path brought them here.
+  useLayoutEffect(() => {
     if (screen === 'splash') {
+      setAudioFinished(false);               // button locked — must complete audio first
+      splashAudioStartedRef.current = false; // allow audio to play once
       hasAutoStarted.current = { sampleA: false, sampleB: false };
+    }
+  }, [screen]);
+
+  // ── Audio auto-play + demo-screen trigger (after paint) ──────────────────
+  useEffect(() => {
+    if (
+      !isCheckingSession &&
+      screen === 'splash' &&
+      !showResumeModal &&
+      !splashAudioStartedRef.current &&
+      audioRef.current
+    ) {
+      splashAudioStartedRef.current = true;
+      // Force-reload clears any stale error/ended state left from when src was
+      // undefined on the results screen.  Without this, play() can immediately
+      // reject and — via the old catch — instantly highlight the button.
+      audioRef.current.load();
+      audioRef.current.play().catch(err => {
+        // play() failed (e.g. truly blocked by browser policy).
+        // Do NOT set audioFinished here — that would highlight the button before
+        // audio plays.  The Replay Audio button is the user's escape hatch.
+        console.warn('Splash audio autoplay failed:', err);
+      });
     } else if (screen === 'sampleA' && !hasAutoStarted.current.sampleA) {
       hasAutoStarted.current.sampleA = true;
       startAutoDemoA();
@@ -829,7 +849,7 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
 
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
@@ -902,11 +922,16 @@ const ChaloMelaChaleGame = () => {
     if (isSuccess && coinsRemaining > 0) {
       setCollectedCoins(prev => prev + coinsRemaining);
     }
-    
+
     const resultMsg = isSuccess ? `✅ Reached End | Score: ${score}` : `❌ ${reason} | Score: 0`;
     const now = Date.now();
     const startTimeToUse = qStartTimeRef.current;
     const timeTaken = startTimeToUse ? ((now - startTimeToUse) / 1000).toFixed(1) : "0.0";
+
+    // Store per-trial data for TQ questions so both trials appear in reports
+    if (isTQ) {
+      tqTrialsRef.current[`${s.id}_t${s.currentTrial}`] = { score, moves: moveCount, timeTaken, retakeCount };
+    }
     const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: s.path, failReason: isSuccess ? null : reason };
     
     // Compute new scores array synchronously outside setState
@@ -982,6 +1007,9 @@ const ChaloMelaChaleGame = () => {
       }, config);
       setAssessmentSubmitted(true);
       setAssessmentSaveMsg('✅ Assessment saved successfully!');
+      // Regenerate PDF now that assessment answers are filled — overrides the earlier blank-form PDF
+      pdfGeneratedRef.current = false;
+      setTimeout(() => generateAndUploadPDF(), 1000);
     } catch (e) {
       console.error(e);
       setAssessmentSaveMsg('❌ Failed to save assessment. Please try again.');
@@ -1061,6 +1089,41 @@ const ChaloMelaChaleGame = () => {
     }
   };
 
+  const handleRetest = () => {
+    stopAll();
+    isStoppedRef.current = false;
+    setGameSessionId(null);
+    setShowResumeModal(false);
+    setScreen('splash');
+    setAllScores([]);
+    setUnlockedPaths({ p2: false, p3: false, tq1: false, sbP2: false, tq3: false });
+    setCompletedPaths({ p1: false, p2: false, p3: false, sbP1: false, sbP2: false });
+    setIsDropped(false);
+    setAudioFinished(false);
+    setRefreshCount(0);
+    setRetakeCount(0);
+    setCollectedCoins(0);
+    setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
+    setQuitReason('');
+    setAssessmentSubmitted(false);
+    setAssessmentSaveMsg('');
+    setIsPaused(false);
+    hasAutoStarted.current = { sampleA: false, sampleB: false };
+    splashAudioStartedRef.current = false;
+    pdfGeneratedRef.current = false;
+    tqTrialsRef.current = {};
+    setQuestionState({
+      id: '', matrix: [], currentTrial: 1, gameStarted: false, path: [],
+      moveCount: 0, timeRemaining: 10,
+      trial1Result: 'Not Started', trial2Result: 'Not Started',
+      trial1Score: 0, trial2Score: 0,
+      trial2Unlocked: false, trial2Hidden: false,
+      isComplete: false, nextUnlocked: false, allCoinsDrained: false,
+    });
+    // Start a fresh server session so the new attempt is saved
+    if (childData?.child_id) startNewGame(childData.child_id);
+  };
+
   const handleRestartFresh = () => {
     setGameSessionId(null);
     setShowResumeModal(false);
@@ -1081,7 +1144,9 @@ const ChaloMelaChaleGame = () => {
     setAssessmentSubmitted(false);
     setIsPaused(false);
     hasAutoStarted.current = { sampleA: false, sampleB: false };
+    splashAudioStartedRef.current = false;
     pdfGeneratedRef.current = false;
+    tqTrialsRef.current = {};
     setQuestionState({
       id: '',
       matrix: [],
@@ -1372,6 +1437,44 @@ const ChaloMelaChaleGame = () => {
           </div>
         )}
 
+        {/* Assessment summary — always rendered so PDF always captures responses */}
+        {assessmentSubmitted && (
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px 24px', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', marginBottom: '14px' }}>
+              📋 {t('game.sessionDetails')}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+              {[
+                { label: t('game.q1Label'), val: assessment.q1 },
+                { label: t('game.q2Label'), val: assessment.q2 },
+                { label: t('game.q3Label'), val: assessment.q3 },
+                { label: t('game.q4Label'), val: assessment.q4 },
+              ].map(({ label, val }) => (
+                <div key={label} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: val ? '#0f172a' : '#cbd5e1' }}>{val || '—'}</div>
+                </div>
+              ))}
+            </div>
+            {assessment.behaviors?.length > 0 && (
+              <div style={{ marginTop: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{t('game.q5Label')}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {assessment.behaviors.map(b => (
+                    <span key={b} style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 10px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600 }}>{b}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {assessment.notes && (
+              <div style={{ marginTop: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{t('game.extraNotes')}</div>
+                <div style={{ fontSize: '0.85rem', color: '#334155', lineHeight: 1.5 }}>{assessment.notes}</div>
+              </div>
+            )}
+          </div>
+        )}
+
         <SessionAssessmentForm
           assessment={assessment}
           setAssessment={setAssessment}
@@ -1386,7 +1489,7 @@ const ChaloMelaChaleGame = () => {
           <>
             <button
                 className="btn btn-primary"
-                onClick={() => { setScreen('splash'); setGameSessionId(null); setAssessmentSubmitted(false); setAudioFinished(false); setAssessmentSaveMsg(''); }}
+                onClick={handleRetest}
               >{t('game.retest')}</button>
             <button className="btn btn-secondary" onClick={() => { stopAll(); navigate('/'); }}>{t('game.home')}</button>
           </>
@@ -1765,7 +1868,6 @@ const ChaloMelaChaleGame = () => {
         ref={audioRef} 
         src={screen === 'splash' ? `${AUDIO_DIR}/SB_splash.wav` : undefined}
         onEnded={() => setAudioFinished(true)}
-        onError={() => setAudioFinished(true)}
       />
     </div>
   );
