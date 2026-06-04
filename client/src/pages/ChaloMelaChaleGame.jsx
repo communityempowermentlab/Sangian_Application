@@ -223,7 +223,7 @@ const QUESTION_CONFIG = {
   q13: { time: 120, t2: 5, t1: 6 },
   q14: { time: 180, t2: 5, t1: 6 },
   q15: { time: 180, t2: 7, t1: 8 },
-  q16: { time: 180, t2: 8, t1: 9 },
+  q16: { time: 180, t2: 9, t1: 10 },
   q17: { time: 180, t2: 8, t1: 9 },
   q18: { time: 180, t2: 8, t1: 9 }
 };
@@ -837,13 +837,7 @@ const ChaloMelaChaleGame = () => {
     const lastPos = s.path[s.path.length - 1];
     if (r === lastPos.row && c === lastPos.col) return;
     const isAdj = Math.abs(r - lastPos.row) <= 1 && Math.abs(c - lastPos.col) <= 1;
-    if (!isAdj) {
-      clearInterval(timerRef.current);
-      playSoundEffect('wrong_move.wav');
-      setQuestionState(prev => ({ ...prev, allCoinsDrained: true, gameStarted: false }));
-      safeSetTimeout(() => handleResult(false, "Non-Adjacent"), 400);
-      return;
-    }
+    if (!isAdj) return; // silent ignore — no state change, no scoring, no path closure
     if (s.matrix[r][c] === "7-T2") {
       clearInterval(timerRef.current);
       playSoundEffect('wrong_move.wav');
@@ -1291,7 +1285,6 @@ const ChaloMelaChaleGame = () => {
                       {s.failReason === "Hit Weed"       ? t('game.questionEndedMoves') :
                        s.failReason === "Timeout"         ? t('game.timeoutDestination') :
                        s.failReason === "Out of Coins"    ? '🪙 Out of coins' :
-                       s.failReason === "Non-Adjacent"    ? '⛔ Non-adjacent move' :
                        t('game.destinationNotAchieved')}
                     </div>
                   )}

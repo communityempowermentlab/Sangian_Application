@@ -50,7 +50,7 @@ const ROVER_Q_BUDGET = {
   tq1: 7, tq2: 7, tq3: 7, tq4: 9,
   q1: 7, q2: 7, q3: 8, q4: 6, q5: 8, q6: 9, q7: 9, q8: 8,
   q9: 10, q10: 9, q11: 10, q12: 11, q13: 9, q14: 9, q15: 11,
-  q16: 12, q17: 12, q18: 12,
+  q16: 13, q17: 12, q18: 12,
 };
 const getRoverBudget = (id) => ROVER_Q_BUDGET[id] || 0;
 
