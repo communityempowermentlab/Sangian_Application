@@ -29,6 +29,12 @@ import AdminAssessorAdd from './pages/AdminAssessorAdd';
 import AdminAssessorEdit from './pages/AdminAssessorEdit';
 import AdminScreenshots from './pages/AdminScreenshots';
 import AdminAnalysis from './pages/AdminAnalysis';
+import AdminMeta from './pages/AdminMeta';
+import AdminHelpSupport from './pages/AdminHelpSupport';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import ContactPage from './pages/ContactPage';
+import HelpPage from './pages/HelpPage';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 
@@ -50,6 +56,8 @@ const ROUTE_TITLES = {
     '/games/bagiya':            'Bagiya | Game | Community Empowerment Lab',
     '/games/chalo_mela_chale':  'Chalo Mela Chalen | Game | Community Empowerment Lab',
     '/games/chor_machaye_shor': 'Chor Machaye Shor | Game | Community Empowerment Lab',
+    '/terms-conditions':         'Terms & Conditions | Community Empowerment Lab',
+    '/privacy-policy':           'Privacy Policy | Community Empowerment Lab',
     '/admin/login':             'Admin Login | Community Empowerment Lab',
     '/admin/dashboard':         'Dashboard | Admin Panel | Community Empowerment Lab',
     '/admin/children':          'Children | Admin Panel | Community Empowerment Lab',
@@ -60,6 +68,10 @@ const ROUTE_TITLES = {
     '/admin/docs':              'Documentation | Admin Panel | Community Empowerment Lab',
     '/admin/analysis':          'Analysis | Admin Panel | Community Empowerment Lab',
     '/admin/settings':          'Settings | Admin Panel | Community Empowerment Lab',
+    '/admin/meta':              'Meta | Admin Panel | Community Empowerment Lab',
+    '/contact-us':              'Contact Us | Community Empowerment Lab',
+    '/help':                    'Help & Support | Community Empowerment Lab',
+    '/admin/help-support':      'Help & Support | Admin Panel | Community Empowerment Lab',
 };
 
 const PageTitle = () => {
@@ -99,6 +111,10 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/login" element={<Login />} />
+                            <Route path="/terms-conditions" element={<TermsPage />} />
+                            <Route path="/privacy-policy" element={<PrivacyPage />} />
+                            <Route path="/contact-us" element={<ContactPage />} />
+                            <Route path="/help" element={<HelpPage />} />
                         </Route>
 
                         {/* ── Protected Game Routes (child must be logged in) ── */}
@@ -132,6 +148,8 @@ function App() {
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />
                                 <Route path="screenshots"            element={<AdminScreenshots />} />
+                                <Route path="meta"                   element={<AdminMeta />} />
+                                <Route path="help-support"           element={<AdminHelpSupport />} />
                                 <Route path="settings"               element={<AdminSettings />} />
                             </Route>
                         </Route>

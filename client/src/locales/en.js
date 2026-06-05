@@ -21,7 +21,11 @@ export const en = {
     language: "🌐 Language"
   },
   footer: {
-    copyright: "© 2026 Community Empowerment Lab · Sangian Cognitive Test Interface"
+    copyright: "© 2026 Community Empowerment Lab · Sangian Cognitive Test Interface",
+    terms:     "Terms & Conditions",
+    privacy:   "Privacy Policy",
+    contact:   "Contact Us",
+    help:      "Help & Support",
   },
   home: {
     heroPill: "🧠 Kauffman-inspired assessment • For supervised use only",

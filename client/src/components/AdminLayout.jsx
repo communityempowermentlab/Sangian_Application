@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import '../pages/AdminDashboard.css';
@@ -18,16 +18,23 @@ const isTokenValid = () => {
 const AdminLayout = () => {
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [usersOpen, setUsersOpen] = useState(false);
+    const usersRef = useRef(null);
     const location = useLocation();
     const navigate = useNavigate();
 
     const activeGroup =
-        location.pathname.includes('/admin/children')  ? 'children' :
-        location.pathname.includes('/admin/analysis')  ? 'analysis' :
-        location.pathname.includes('/admin/reports')   ? 'reports'  :
-        location.pathname.includes('/admin/docs')      ? 'docs'     :
-        location.pathname.includes('/admin/settings')  ? 'settings' :
+        location.pathname.includes('/admin/children')      ? 'children'     :
+        location.pathname.includes('/admin/assessors')     ? 'assessors'    :
+        location.pathname.includes('/admin/analysis')      ? 'analysis'     :
+        location.pathname.includes('/admin/meta')          ? 'meta'         :
+        location.pathname.includes('/admin/reports')       ? 'reports'      :
+        location.pathname.includes('/admin/docs')          ? 'docs'         :
+        location.pathname.includes('/admin/help-support')  ? 'help-support' :
+        location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
+
+    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors';
 
     const adminUserStr = localStorage.getItem('adminUser');
     const adminName = adminUserStr ? JSON.parse(adminUserStr).name : 'Admin';
@@ -62,6 +69,17 @@ const AdminLayout = () => {
             setTime(new Date().toLocaleTimeString([], { hour12: false }));
         }, 1000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Close Users dropdown on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (usersRef.current && !usersRef.current.contains(e.target)) {
+                setUsersOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
     }, []);
 
     const handleLogoutClick = () => {
@@ -123,24 +141,35 @@ const AdminLayout = () => {
                         >
                             📊 Dashboard
                         </Link>
-                        <Link
-                            to="/admin/analysis"
-                            className={`admin-menu-item ${activeGroup === 'analysis' ? 'active' : ''}`}
-                        >
-                            🔬 Analysis
-                        </Link>
-                        <Link
-                            to="/admin/children"
-                            className={`admin-menu-item ${location.pathname.startsWith('/admin/children') ? 'active' : ''}`}
-                        >
-                            👥 Children
-                        </Link>
-                        <Link
-                            to="/admin/assessors"
-                            className={`admin-menu-item ${location.pathname.startsWith('/admin/assessors') ? 'active' : ''}`}
-                        >
-                            👨‍🏫 Assessors
-                        </Link>
+
+                        {/* Users dropdown */}
+                        <div className="admin-menu-dropdown" ref={usersRef}>
+                            <button
+                                className={`admin-menu-item admin-menu-item--btn ${isUsersActive ? 'active' : ''}`}
+                                onClick={() => setUsersOpen(o => !o)}
+                            >
+                                👥 Users <span className="admin-dropdown-caret">{usersOpen ? '▴' : '▾'}</span>
+                            </button>
+                            {usersOpen && (
+                                <div className="admin-dropdown-panel">
+                                    <Link
+                                        to="/admin/children"
+                                        className={`admin-dropdown-item ${activeGroup === 'children' ? 'active' : ''}`}
+                                        onClick={() => setUsersOpen(false)}
+                                    >
+                                        👶 Children
+                                    </Link>
+                                    <Link
+                                        to="/admin/assessors"
+                                        className={`admin-dropdown-item ${activeGroup === 'assessors' ? 'active' : ''}`}
+                                        onClick={() => setUsersOpen(false)}
+                                    >
+                                        🧑‍🏫 Assessors
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
                         <Link
                             to="/admin/reports"
                             className={`admin-menu-item ${activeGroup === 'reports' ? 'active' : ''}`}
@@ -148,11 +177,34 @@ const AdminLayout = () => {
                             📈 Reports
                         </Link>
                         <Link
+                            to="/admin/analysis"
+                            className={`admin-menu-item ${activeGroup === 'analysis' ? 'active' : ''}`}
+                        >
+                            🔬 Analysis
+                        </Link>
+                        <Link
                             to="/admin/docs"
                             className={`admin-menu-item ${activeGroup === 'docs' ? 'active' : ''}`}
                         >
-                            📄 Documents
+                            📄 Docs
                         </Link>
+
+                        {/* Meta tab */}
+                        <Link
+                            to="/admin/meta"
+                            className={`admin-menu-item ${activeGroup === 'meta' ? 'active' : ''}`}
+                        >
+                            🗂️ Meta
+                        </Link>
+
+                        {/* Help & Support tab */}
+                        <Link
+                            to="/admin/help-support"
+                            className={`admin-menu-item ${activeGroup === 'help-support' ? 'active' : ''}`}
+                        >
+                            🎫 Support
+                        </Link>
+
                         <Link
                             to="/admin/settings"
                             className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}

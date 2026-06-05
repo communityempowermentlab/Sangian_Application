@@ -3,8 +3,12 @@ const router  = express.Router();
 const adminController      = require('../controllers/adminController');
 const adminChildController = require('../controllers/adminChildController');
 const adminAssessorController = require('../controllers/adminAssessorController');
+const contactController    = require('../controllers/contactController');
+const ticketController     = require('../controllers/ticketController');
+const helpContentController = require('../controllers/helpContentController');
 const adminAuth            = require('../middleware/adminAuth');
 const { upload }           = require('../middleware/upload');
+const { ticketUpload }     = require('../middleware/ticketUpload');
 
 // ── Public routes (no auth required) ─────────────────────────────────────────
 router.post('/login', adminController.loginAdmin);
@@ -29,5 +33,23 @@ router.get('/assessors',      adminAuth, adminAssessorController.getAllAssessors
 router.post('/assessors',     adminAuth, adminAssessorController.addAssessor);
 router.get('/assessors/:id',  adminAuth, adminAssessorController.getAssessorById);
 router.put('/assessors/:id',  adminAuth, adminAssessorController.updateAssessor);
+
+// Contact page management
+router.get('/contact-info',                    adminAuth, contactController.getContactInfo);
+router.post('/contact-info',                   adminAuth, contactController.updateContactInfo);
+router.get('/contact-messages',                adminAuth, contactController.getMessages);
+router.post('/contact-messages/update-status', adminAuth, contactController.updateMessageStatus);
+router.delete('/contact-messages/:id',         adminAuth, contactController.deleteMessage);
+
+// ── Help & Support bilingual content management ───────────────────────────────
+router.get('/help-content/:section/:lang',     adminAuth, helpContentController.adminGetContent);
+router.post('/help-content',                   adminAuth, helpContentController.adminUpdateContent);
+
+// ── Help & Support ticket management ─────────────────────────────────────────
+router.get('/tickets/stats',                   adminAuth, ticketController.adminTicketStats);
+router.get('/tickets',                         adminAuth, ticketController.adminGetTickets);
+router.get('/tickets/:ticket_id',              adminAuth, ticketController.adminGetTicket);
+router.post('/tickets/:ticket_id/status',      adminAuth, ticketController.adminUpdateStatus);
+router.post('/tickets/:ticket_id/reply',       adminAuth, ticketUpload.array('attachments', 3), ticketController.adminReply);
 
 module.exports = router;

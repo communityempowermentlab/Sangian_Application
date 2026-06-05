@@ -14,6 +14,10 @@ const crashLogRoutes       = require('./src/routes/crashLogRoutes');
 const testingRoutes        = require('./src/routes/testingRoutes');
 const screenshotRoutes     = require('./src/routes/screenshotRoutes');
 const analysisRoutes       = require('./src/routes/analysisRoutes');
+const { adminRouter: cmsAdminRoutes, publicRouter: cmsPublicRoutes } = require('./src/routes/cmsRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
+const ticketRoutes      = require('./src/routes/ticketRoutes');
+const helpContentRoutes = require('./src/routes/helpContentRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -83,6 +87,7 @@ const allowCrossOrigin = (req, res, next) => {
     next();
 };
 app.use('/uploads',        allowCrossOrigin, express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/tickets', allowCrossOrigin, express.static(path.join(__dirname, 'uploads/tickets')));
 app.use('/dashboard_pdfs', allowCrossOrigin, express.static(path.join(__dirname, 'dashboard_pdfs')));
 
 // Routes
@@ -98,6 +103,11 @@ app.use('/api/errors',          crashLogRoutes);
 app.use('/api/testing',         testingRoutes);
 app.use('/api/screenshots',     screenshotRoutes);
 app.use('/api/analysis',        analysisRoutes);
+app.use('/api/cms',             cmsAdminRoutes);
+app.use('/api/public/cms',      cmsPublicRoutes);
+app.use('/api/contact',         contactRoutes);
+app.use('/api/tickets',         ticketRoutes);
+app.use('/api/help-content',    helpContentRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

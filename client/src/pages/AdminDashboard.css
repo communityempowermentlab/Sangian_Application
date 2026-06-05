@@ -237,6 +237,63 @@
     color: #3730a3;
 }
 
+/* Button-style menu item (for dropdown trigger) */
+.admin-menu-item--btn {
+    cursor: pointer;
+    background: none;
+    font-family: inherit;
+}
+
+.admin-dropdown-caret {
+    font-size: 10px;
+    margin-left: 2px;
+    opacity: 0.7;
+}
+
+/* Dropdown container */
+.admin-menu-dropdown {
+    position: relative;
+}
+
+.admin-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 160px;
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    padding: 6px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.admin-dropdown-item:hover {
+    background: rgba(79, 70, 229, 0.07);
+    color: #3730a3;
+}
+
+.admin-dropdown-item.active {
+    background: rgba(79, 70, 229, 0.12);
+    color: #3730a3;
+}
+
 /* Search */
 .admin-search {
     display: flex;

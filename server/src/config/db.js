@@ -307,6 +307,419 @@ const initDb = async () => {
       )
     `);
 
+    // CMS pages table for dynamic legal/info content
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS cms_pages (
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        page_key         VARCHAR(100) UNIQUE NOT NULL,
+        title            VARCHAR(255) NOT NULL,
+        content          LONGTEXT,
+        meta_title       VARCHAR(255) DEFAULT NULL,
+        meta_description TEXT DEFAULT NULL,
+        meta_keywords    TEXT DEFAULT NULL,
+        slug             VARCHAR(150) DEFAULT NULL,
+        status           TINYINT DEFAULT 1,
+        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Safe migrations for existing cms_pages installs
+    const cmsMigrations = [
+      ["ALTER TABLE cms_pages ADD COLUMN meta_title VARCHAR(255) DEFAULT NULL",     'cms_pages.meta_title'],
+      ["ALTER TABLE cms_pages ADD COLUMN meta_description TEXT DEFAULT NULL",       'cms_pages.meta_description'],
+      ["ALTER TABLE cms_pages ADD COLUMN meta_keywords TEXT DEFAULT NULL",          'cms_pages.meta_keywords'],
+      ["ALTER TABLE cms_pages ADD COLUMN slug VARCHAR(150) DEFAULT NULL",           'cms_pages.slug'],
+      ["ALTER TABLE cms_pages ADD COLUMN contact_email VARCHAR(255) DEFAULT NULL",  'cms_pages.contact_email'],
+      ["ALTER TABLE cms_pages ADD COLUMN contact_phone VARCHAR(100) DEFAULT NULL",  'cms_pages.contact_phone'],
+      ["ALTER TABLE cms_pages ADD COLUMN contact_address TEXT DEFAULT NULL",        'cms_pages.contact_address'],
+      ["ALTER TABLE cms_pages ADD COLUMN contact_map_link TEXT DEFAULT NULL",       'cms_pages.contact_map_link'],
+    ];
+    for (const [sql, label] of cmsMigrations) {
+      try { await connection.query(sql); }
+      catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.warn(`Migration warning (${label}):`, e.message); }
+    }
+
+    // Full domain-specific Terms & Conditions content
+    const TERMS_CONTENT = `<h2>Terms &amp; Conditions</h2>
+<p><strong>Last updated:</strong> June 2026 &nbsp;|&nbsp; <strong>Platform:</strong> Sangian Cognitive Assessment System</p>
+<h3>1. Introduction &amp; Acceptance</h3>
+<p>By accessing or using the Sangian Cognitive Assessment System ("Platform"), operated by the Community Empowerment Lab ("CEL"), you agree to be bound by these Terms and Conditions. This Platform is intended exclusively for authorised users — trained assessors, programme administrators, and institutional staff — involved in the Sangian cognitive assessment programme. Unauthorised access is strictly prohibited.</p>
+<h3>2. User Responsibilities</h3>
+<p>All users of this Platform are expected to:</p>
+<ul>
+  <li>Use the system solely for its intended purpose — conducting and managing cognitive assessments for enrolled children.</li>
+  <li>Maintain the confidentiality of login credentials and never share account access with unauthorised individuals.</li>
+  <li>Ensure that all data entered into the system is accurate, complete, and reflects genuine assessment observations.</li>
+  <li>Report any system errors, discrepancies, or security concerns to the platform administrator immediately.</li>
+  <li>Comply with institutional consent and data protection protocols before registering any child participant.</li>
+</ul>
+<h3>3. Assessment Integrity Policy</h3>
+<p>The validity of the Sangian assessment framework depends on the integrity of the data collected. The following are strictly prohibited:</p>
+<ul>
+  <li>Falsifying, manipulating, or coaching child responses during assessments.</li>
+  <li>Entering fabricated or estimated scores in place of actual observed performance.</li>
+  <li>Interfering with the scoring algorithms or game session data through unauthorised technical means.</li>
+  <li>Sharing assessment tasks, instructions, or stimuli with non-authorised parties in a way that could bias future assessments.</li>
+</ul>
+<p>Violations may result in immediate account suspension and reporting to the relevant institutional authority.</p>
+<h3>4. Assessment Participation Guidelines</h3>
+<p>Assessments must be administered in accordance with the Sangian standard protocol:</p>
+<ul>
+  <li>Each session must be conducted in a quiet, distraction-free environment with an assessor present at all times.</li>
+  <li>Child participants must have consent obtained from a parent or legal guardian prior to enrolment.</li>
+  <li>Assessors must be trained and certified under the Sangian programme before conducting evaluations independently.</li>
+  <li>No child should interact with the system without direct assessor supervision.</li>
+</ul>
+<h3>5. Content Ownership &amp; Intellectual Property</h3>
+<p>All game content, scoring algorithms, assessment rubrics, visual assets, and documentation on this Platform are the intellectual property of the Community Empowerment Lab and its collaborators. Reproduction, redistribution, or commercial use without written permission is prohibited. Research publications based on data collected through this system must credit the CEL Sangian Assessment Programme.</p>
+<h3>6. System Usage Rights</h3>
+<p>CEL grants authorised users a limited, non-transferable licence to access and use the Platform for its intended assessment purposes. This licence does not permit reverse-engineering, bulk data scraping, or integration of unauthorised third-party tools.</p>
+<h3>7. Platform Limitations &amp; Disclaimers</h3>
+<p>The Sangian Platform is a research and evaluation tool. Assessment scores and analytics are indicative and must be interpreted by qualified professionals within the full context of each child's background and circumstances. CEL is not liable for data loss caused by connectivity failures, hardware issues, or force majeure events.</p>
+<h3>8. Modifications to Terms</h3>
+<p>CEL reserves the right to update these Terms and Conditions at any time. Continued use of the Platform following notification of changes constitutes acceptance of the revised terms.</p>
+<h3>9. Governing Authority</h3>
+<p>These Terms are governed in accordance with the operational policies of the Community Empowerment Lab. For queries or concerns, contact the Programme Administrator through official institutional channels.</p>`;
+
+    // Full domain-specific Privacy Policy content
+    const PRIVACY_CONTENT = `<h2>Privacy Policy</h2>
+<p><strong>Last updated:</strong> June 2026 &nbsp;|&nbsp; <strong>Platform:</strong> Sangian Cognitive Assessment System</p>
+<h3>1. Our Commitment to Privacy</h3>
+<p>The Community Empowerment Lab ("CEL") is committed to protecting the privacy of all individuals associated with the Sangian Cognitive Assessment Programme. This Privacy Policy explains how we collect, use, store, and safeguard personal and assessment-related data. We adhere to the principles of data minimisation, purpose limitation, and ethical handling of sensitive information.</p>
+<h3>2. Data We Collect</h3>
+<p>The Platform collects the following categories of data:</p>
+<ul>
+  <li><strong>Child Profiles:</strong> Name, date of birth, gender, child ID, and profile photograph (optional). No national identity numbers or financial information are collected.</li>
+  <li><strong>Assessment Data:</strong> Game session records, performance scores, response logs, time-on-task metrics, and post-session assessor observations.</li>
+  <li><strong>Assessor Profiles:</strong> Name, email address, and mobile number for programme coordination purposes.</li>
+  <li><strong>Session Logs:</strong> Login timestamps, device type, browser, and IP address for security and audit purposes.</li>
+  <li><strong>System Diagnostics:</strong> Error logs and crash reports used to improve platform stability (no personal data embedded).</li>
+</ul>
+<h3>3. How We Use This Data</h3>
+<p>Data collected is used exclusively for: conducting and recording standardised cognitive assessments; generating individual and aggregate performance reports; monitoring system usage to maintain security; and improving the Platform's functionality and assessment validity. Data is never used for advertising, commercial profiling, or shared with external third parties beyond programme operations.</p>
+<h3>4. Role-Based Data Access</h3>
+<ul>
+  <li><strong>Administrators:</strong> Full access to all child records, assessor profiles, session logs, and system reports.</li>
+  <li><strong>Assessors:</strong> Access limited to child profiles and session data relevant to their assigned activities.</li>
+  <li><strong>Children (participant accounts):</strong> Access limited to their own profile, game dashboard, and session history.</li>
+</ul>
+<p>No user can access data beyond the permissions assigned to their role.</p>
+<h3>5. Data Storage &amp; Security</h3>
+<p>All data is stored in a secured relational database on the programme's designated server infrastructure. Security measures include: encrypted HTTPS for all data in transit; password hashing using bcrypt; JWT-based session authentication with automatic expiry; server-side input validation and SQL injection prevention; regular database backups and access logging.</p>
+<h3>6. Data Sharing Policy</h3>
+<p>CEL does not sell, rent, or disclose personal data to external organisations. Aggregated, de-identified data may be shared in academic research publications or programme evaluation reports, provided no individual participant can be identified. Any data sharing with partner institutions requires a formal data-sharing agreement compliant with applicable data protection standards.</p>
+<h3>7. Data Retention</h3>
+<p>Assessment data and child profiles are retained for the programme duration and a minimum archival period of three years post-completion. Inactive assessor accounts are deactivated after six months of inactivity. Users may request data deletion by contacting the programme administrator, subject to programme obligations and statutory retention requirements.</p>
+<h3>8. User Rights</h3>
+<p>Individuals whose data is held on this Platform have the right to: request access to their personal data; request correction of inaccurate information; request deletion of their data subject to legal obligations; and raise concerns through official institutional channels.</p>
+<h3>9. Cookies &amp; Tracking</h3>
+<p>This Platform uses minimal browser storage (localStorage) exclusively for maintaining secure session tokens. No third-party tracking cookies are deployed. Optional integration with Google Analytics may collect anonymised usage statistics not linked to individual user identities.</p>
+<h3>10. Contact &amp; Governance</h3>
+<p>For any privacy-related enquiries, data access requests, or concerns, please contact the Sangian Programme Administrator through your institution's designated communication channel. CEL is committed to responding to all data privacy requests within a reasonable timeframe.</p>`;
+
+    // ── Hindi translations ────────────────────────────────────────────────────
+    const TERMS_CONTENT_HI = `<h2>नियम और शर्तें</h2>
+<p><strong>अंतिम अपडेट:</strong> जून 2026 &nbsp;|&nbsp; <strong>प्लेटफ़ॉर्म:</strong> संज्ञान संज्ञानात्मक मूल्यांकन प्रणाली</p>
+<h3>1. परिचय और स्वीकृति</h3>
+<p>संज्ञान संज्ञानात्मक मूल्यांकन प्रणाली ("प्लेटफ़ॉर्म") का उपयोग करके, जो कम्युनिटी एम्पावरमेंट लैब ("CEL") द्वारा संचालित है, आप इन नियमों और शर्तों से बंधे होने के लिए सहमत होते हैं। यह प्लेटफ़ॉर्म केवल अधिकृत उपयोगकर्ताओं के लिए है — प्रशिक्षित मूल्यांककों, कार्यक्रम प्रशासकों और संस्थागत कर्मचारियों के लिए। अनधिकृत पहुँच सख्ती से प्रतिबंधित है।</p>
+<h3>2. उपयोगकर्ता की जिम्मेदारियाँ</h3>
+<p>प्लेटफ़ॉर्म के सभी उपयोगकर्ताओं से अपेक्षा की जाती है कि वे:</p>
+<ul>
+  <li>सिस्टम का उपयोग केवल उसके निर्धारित उद्देश्य के लिए करें — नामांकित बच्चों के संज्ञानात्मक मूल्यांकन के लिए।</li>
+  <li>लॉगिन क्रेडेंशियल की गोपनीयता बनाए रखें और खाता पहुँच कभी साझा न करें।</li>
+  <li>सिस्टम में दर्ज सभी डेटा सटीक, पूर्ण और वास्तविक मूल्यांकन पर आधारित हो।</li>
+  <li>किसी भी त्रुटि, विसंगति या सुरक्षा चिंता की तुरंत रिपोर्ट करें।</li>
+  <li>किसी भी बच्चे को पंजीकृत करने से पहले संस्थागत सहमति और डेटा सुरक्षा प्रोटोकॉल का पालन करें।</li>
+</ul>
+<h3>3. मूल्यांकन अखंडता नीति</h3>
+<p>निम्नलिखित सख्त रूप से प्रतिबंधित हैं:</p>
+<ul>
+  <li>मूल्यांकन के दौरान बच्चों की प्रतिक्रियाओं को झूठा बनाना, हेरफेर करना या कोचिंग देना।</li>
+  <li>वास्तविक अवलोकन के बजाय काल्पनिक या अनुमानित स्कोर दर्ज करना।</li>
+  <li>अनधिकृत तकनीकी माध्यमों से स्कोरिंग एल्गोरिदम या सत्र डेटा में हस्तक्षेप करना।</li>
+  <li>मूल्यांकन कार्यों या निर्देशों को ऐसे तरीके से साझा करना जो भविष्य के मूल्यांकन को पक्षपातपूर्ण बना सके।</li>
+</ul>
+<p>उल्लंघन के परिणामस्वरूप खाता तत्काल निलंबित किया जा सकता है।</p>
+<h3>4. मूल्यांकन भागीदारी दिशानिर्देश</h3>
+<ul>
+  <li>प्रत्येक सत्र एक शांत, विकर्षण-मुक्त वातावरण में आयोजित किया जाना चाहिए।</li>
+  <li>नामांकन से पहले माता-पिता या कानूनी अभिभावक की सहमति आवश्यक है।</li>
+  <li>मूल्यांककों को स्वतंत्र रूप से मूल्यांकन करने से पहले प्रशिक्षित और प्रमाणित होना चाहिए।</li>
+  <li>कोई भी बच्चा सीधे मूल्यांकक की निगरानी के बिना सिस्टम के साथ इंटरैक्ट नहीं करना चाहिए।</li>
+</ul>
+<h3>5. सामग्री स्वामित्व और बौद्धिक संपदा</h3>
+<p>इस प्लेटफ़ॉर्म पर सभी गेम सामग्री, स्कोरिंग एल्गोरिदम, मूल्यांकन रूब्रिक्स, दृश्य संपत्ति और दस्तावेज़ीकरण CEL और उसके सहयोगियों की बौद्धिक संपदा हैं। लिखित अनुमति के बिना पुनरुत्पादन, पुनर्वितरण या व्यावसायिक उपयोग प्रतिबंधित है।</p>
+<h3>6. सिस्टम उपयोग अधिकार</h3>
+<p>CEL अधिकृत उपयोगकर्ताओं को प्लेटफ़ॉर्म तक सीमित, गैर-हस्तांतरणीय पहुँच प्रदान करता है। यह लाइसेंस रिवर्स-इंजीनियरिंग, बल्क डेटा स्क्रैपिंग, या अनधिकृत तृतीय-पक्ष उपकरणों के एकीकरण की अनुमति नहीं देता।</p>
+<h3>7. प्लेटफ़ॉर्म सीमाएँ और अस्वीकरण</h3>
+<p>संज्ञान प्लेटफ़ॉर्म एक शोध और मूल्यांकन उपकरण है। मूल्यांकन स्कोर और विश्लेषण सांकेतिक हैं और योग्य पेशेवरों द्वारा प्रत्येक बच्चे की पृष्ठभूमि के संदर्भ में व्याख्यायित किए जाने चाहिए।</p>
+<h3>8. नियमों में संशोधन</h3>
+<p>CEL इन नियमों और शर्तों को किसी भी समय अपडेट करने का अधिकार सुरक्षित रखता है। परिवर्तनों की अधिसूचना के बाद प्लेटफ़ॉर्म का उपयोग जारी रखना संशोधित शर्तों की स्वीकृति माना जाएगा।</p>
+<h3>9. शासी प्राधिकरण</h3>
+<p>ये नियम CEL की परिचालन नीतियों के अनुसार शासित होते हैं। प्रश्नों या चिंताओं के लिए, आधिकारिक संस्थागत चैनलों के माध्यम से कार्यक्रम प्रशासक से संपर्क करें।</p>`;
+
+    const PRIVACY_CONTENT_HI = `<h2>गोपनीयता नीति</h2>
+<p><strong>अंतिम अपडेट:</strong> जून 2026 &nbsp;|&nbsp; <strong>प्लेटफ़ॉर्म:</strong> संज्ञान संज्ञानात्मक मूल्यांकन प्रणाली</p>
+<h3>1. गोपनीयता के प्रति हमारी प्रतिबद्धता</h3>
+<p>कम्युनिटी एम्पावरमेंट लैब ("CEL") संज्ञान संज्ञानात्मक मूल्यांकन कार्यक्रम से जुड़े सभी व्यक्तियों की गोपनीयता की रक्षा के लिए प्रतिबद्ध है। यह नीति बताती है कि हम व्यक्तिगत और मूल्यांकन-संबंधी डेटा को कैसे एकत्र, उपयोग, संग्रहीत और सुरक्षित करते हैं।</p>
+<h3>2. हम जो डेटा एकत्र करते हैं</h3>
+<ul>
+  <li><strong>बच्चे की प्रोफ़ाइल:</strong> नाम, जन्म तिथि, लिंग, बच्चे की आईडी, और प्रोफ़ाइल फ़ोटोग्राफ (वैकल्पिक)। कोई राष्ट्रीय पहचान संख्या या वित्तीय जानकारी एकत्र नहीं की जाती।</li>
+  <li><strong>मूल्यांकन डेटा:</strong> गेम सत्र रिकॉर्ड, प्रदर्शन स्कोर, प्रतिक्रिया लॉग, और मूल्यांकक के अवलोकन।</li>
+  <li><strong>मूल्यांकक प्रोफ़ाइल:</strong> नाम, ईमेल पता, और मोबाइल नंबर।</li>
+  <li><strong>सत्र लॉग:</strong> लॉगिन टाइमस्टैम्प, डिवाइस प्रकार, ब्राउज़र, और आईपी पता।</li>
+  <li><strong>सिस्टम डायग्नोस्टिक्स:</strong> प्लेटफ़ॉर्म स्थिरता में सुधार के लिए त्रुटि लॉग (कोई व्यक्तिगत डेटा नहीं)।</li>
+</ul>
+<h3>3. हम इस डेटा का उपयोग कैसे करते हैं</h3>
+<p>एकत्र किया गया डेटा केवल इन उद्देश्यों के लिए उपयोग किया जाता है: मानकीकृत संज्ञानात्मक मूल्यांकन आयोजित करना और रिकॉर्ड करना; व्यक्तिगत और समग्र प्रदर्शन रिपोर्ट तैयार करना; सुरक्षा बनाए रखना; और प्लेटफ़ॉर्म की कार्यक्षमता में सुधार करना। डेटा का उपयोग विज्ञापन, व्यावसायिक प्रोफाइलिंग, या बाहरी तृतीय पक्षों के साथ साझाकरण के लिए कभी नहीं किया जाता।</p>
+<h3>4. भूमिका-आधारित डेटा पहुँच</h3>
+<ul>
+  <li><strong>प्रशासक:</strong> सभी बच्चों के रिकॉर्ड, मूल्यांकक प्रोफ़ाइल, सत्र लॉग और सिस्टम रिपोर्ट तक पूर्ण पहुँच।</li>
+  <li><strong>मूल्यांकक:</strong> उनकी निर्धारित गतिविधियों से संबंधित बच्चों के प्रोफ़ाइल और सत्र डेटा तक सीमित पहुँच।</li>
+  <li><strong>बच्चे (प्रतिभागी खाते):</strong> केवल अपनी प्रोफ़ाइल, गेम डैशबोर्ड, और सत्र इतिहास तक पहुँच।</li>
+</ul>
+<h3>5. डेटा संग्रहण और सुरक्षा</h3>
+<p>सभी डेटा कार्यक्रम के निर्दिष्ट सर्वर इंफ्रास्ट्रक्चर पर सुरक्षित रिलेशनल डेटाबेस में संग्रहीत है। सुरक्षा उपायों में शामिल हैं: ट्रांजिट में सभी डेटा के लिए HTTPS एन्क्रिप्शन; bcrypt का उपयोग करके पासवर्ड हैशिंग; स्वचालित एक्सपायरी के साथ JWT-आधारित सत्र प्रमाणीकरण; और SQL इंजेक्शन रोकथाम।</p>
+<h3>6. डेटा साझाकरण नीति</h3>
+<p>CEL व्यक्तिगत डेटा को बाहरी संगठनों को नहीं बेचता, किराए पर नहीं देता या प्रकट नहीं करता। समग्र, गैर-पहचान योग्य डेटा शैक्षणिक शोध प्रकाशनों या कार्यक्रम मूल्यांकन रिपोर्ट में साझा किया जा सकता है।</p>
+<h3>7. डेटा प्रतिधारण</h3>
+<p>मूल्यांकन डेटा और बच्चे की प्रोफ़ाइल कार्यक्रम की अवधि और पूरा होने के बाद न्यूनतम तीन वर्षों की संग्रह अवधि के लिए रखी जाती है। निष्क्रिय मूल्यांकक खाते छह महीने की निष्क्रियता के बाद निष्क्रिय कर दिए जाते हैं।</p>
+<h3>8. उपयोगकर्ता अधिकार</h3>
+<p>इस प्लेटफ़ॉर्म पर डेटा रखने वाले व्यक्तियों को अधिकार है: अपने व्यक्तिगत डेटा तक पहुँच का अनुरोध; गलत जानकारी में सुधार का अनुरोध; कानूनी दायित्वों के अधीन डेटा हटाने का अनुरोध; और आधिकारिक संस्थागत चैनलों के माध्यम से चिंता उठाने का।</p>
+<h3>9. कुकीज़ और ट्रैकिंग</h3>
+<p>यह प्लेटफ़ॉर्म केवल सुरक्षित सत्र टोकन बनाए रखने के लिए न्यूनतम ब्राउज़र संग्रहण (localStorage) का उपयोग करता है। कोई तृतीय-पक्ष ट्रैकिंग कुकीज़ तैनात नहीं की जाती हैं।</p>
+<h3>10. संपर्क और प्रशासन</h3>
+<p>किसी भी गोपनीयता-संबंधी प्रश्नों, डेटा पहुँच अनुरोधों, या चिंताओं के लिए, कृपया अपनी संस्था के निर्धारित संचार चैनल के माध्यम से संज्ञान कार्यक्रम प्रशासक से संपर्क करें।</p>`;
+
+    // Seed default CMS pages (insert if not exists, update content if still placeholder)
+    const PLACEHOLDER_FRAGMENT = 'under construction';
+    const [cmsRows] = await connection.query(
+      "SELECT page_key, content FROM cms_pages WHERE page_key IN ('terms','privacy','terms_hi','privacy_hi')"
+    );
+    const cmsMap = Object.fromEntries(cmsRows.map(r => [r.page_key, r.content]));
+
+    if (!cmsMap['terms']) {
+      await connection.query(
+        'INSERT INTO cms_pages (page_key, title, content, meta_title, meta_description, slug, status) VALUES (?, ?, ?, ?, ?, ?, 1)',
+        ['terms', 'Terms & Conditions', TERMS_CONTENT,
+          'Terms & Conditions | Sangian Assessment Programme',
+          'Read the Terms and Conditions governing the use of the Sangian Cognitive Assessment Platform.',
+          'terms-conditions']
+      );
+    } else if ((cmsMap['terms'] ?? '').includes(PLACEHOLDER_FRAGMENT)) {
+      await connection.query(
+        "UPDATE cms_pages SET content = ?, meta_title = ?, meta_description = ?, slug = ? WHERE page_key = 'terms'",
+        [TERMS_CONTENT,
+          'Terms & Conditions | Sangian Assessment Programme',
+          'Read the Terms and Conditions governing the use of the Sangian Cognitive Assessment Platform.',
+          'terms-conditions']
+      );
+    }
+
+    if (!cmsMap['privacy']) {
+      await connection.query(
+        'INSERT INTO cms_pages (page_key, title, content, meta_title, meta_description, slug, status) VALUES (?, ?, ?, ?, ?, ?, 1)',
+        ['privacy', 'Privacy Policy', PRIVACY_CONTENT,
+          'Privacy Policy | Sangian Assessment Programme',
+          'Learn how the Sangian Cognitive Assessment Platform collects, uses, and protects your data.',
+          'privacy-policy']
+      );
+    } else if ((cmsMap['privacy'] ?? '').includes(PLACEHOLDER_FRAGMENT)) {
+      await connection.query(
+        "UPDATE cms_pages SET content = ?, meta_title = ?, meta_description = ?, slug = ? WHERE page_key = 'privacy'",
+        [PRIVACY_CONTENT,
+          'Privacy Policy | Sangian Assessment Programme',
+          'Learn how the Sangian Cognitive Assessment Platform collects, uses, and protects your data.',
+          'privacy-policy']
+      );
+    }
+
+    // Hindi variants — insert once, never overwrite (admin edits them via CMS)
+    if (!cmsMap['terms_hi']) {
+      await connection.query(
+        'INSERT INTO cms_pages (page_key, title, content, slug, status) VALUES (?, ?, ?, ?, 1)',
+        ['terms_hi', 'नियम और शर्तें', TERMS_CONTENT_HI, 'terms-conditions']
+      );
+    }
+    if (!cmsMap['privacy_hi']) {
+      await connection.query(
+        'INSERT INTO cms_pages (page_key, title, content, slug, status) VALUES (?, ?, ?, ?, 1)',
+        ['privacy_hi', 'गोपनीयता नीति', PRIVACY_CONTENT_HI, 'privacy-policy']
+      );
+    }
+
+    // Contact messages table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(255) NOT NULL,
+        email      VARCHAR(255) NOT NULL,
+        phone      VARCHAR(50)  DEFAULT NULL,
+        subject    VARCHAR(500) NOT NULL,
+        message    TEXT NOT NULL,
+        status     ENUM('new','in_progress','resolved') DEFAULT 'new',
+        ip_address VARCHAR(45) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_status    (status),
+        INDEX idx_created   (created_at)
+      )
+    `);
+
+    // Seed contact CMS page
+    const [cmsContactRows] = await connection.query(
+      "SELECT page_key FROM cms_pages WHERE page_key = 'contact'"
+    );
+    if (!cmsContactRows.length) {
+      await connection.query(
+        `INSERT INTO cms_pages (page_key, title, content, contact_email, contact_phone, contact_address,
+         contact_map_link, meta_title, meta_description, slug, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        ['contact', 'Contact Us',
+         '<p>We\'d love to hear from you. Reach out to our team using the form below or through any of our contact channels.</p>',
+         'support@sangian.celworld.org',
+         '+91 522 000 0000',
+         'Community Empowerment Lab, Lucknow, Uttar Pradesh, India',
+         '',
+         'Contact Us | Sangian Assessment Programme',
+         'Get in touch with the Sangian Assessment Programme team.',
+         'contact-us']
+      );
+    }
+
+    // Seed Help & Support FAQ page
+    const [cmsHelpRows] = await connection.query(
+      "SELECT page_key FROM cms_pages WHERE page_key = 'help'"
+    );
+    if (!cmsHelpRows.length) {
+      const defaultFaqs = JSON.stringify([
+        { id: '1', q: 'How long does it take to get a response?',  a: 'Our team typically responds within 1–2 business days. Complex issues may take slightly longer.' },
+        { id: '2', q: 'What types of issues can I raise?',          a: 'Technical bugs, login problems, game session issues, data concerns, or any platform-related questions.' },
+        { id: '3', q: 'Can I attach screenshots?',                  a: 'Yes — you can attach up to 3 images (JPG, PNG, or WEBP, max 5 MB each) when creating a ticket or replying.' },
+        { id: '4', q: 'How do I track my ticket?',                  a: 'Use "My Tickets" with your verified email to see the full conversation thread and current status.' },
+      ]);
+      await connection.query(
+        'INSERT INTO cms_pages (page_key, title, content, slug, status) VALUES (?, ?, ?, ?, 1)',
+        ['help', 'Help & Support FAQ', defaultFaqs, 'help']
+      );
+    }
+
+    // ── Help & Support Ticket System ──────────────────────────────────────────
+
+    // Email OTP verification table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS email_verifications (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        email      VARCHAR(255) NOT NULL,
+        otp        VARCHAR(6)   NOT NULL,
+        expires_at DATETIME     NOT NULL,
+        verified   TINYINT      DEFAULT 0,
+        attempts   INT          DEFAULT 0,
+        created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email_otp (email)
+      )
+    `);
+
+    // Support tickets table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS tickets (
+        id        INT AUTO_INCREMENT PRIMARY KEY,
+        ticket_id VARCHAR(20)  UNIQUE NOT NULL,
+        email     VARCHAR(255) NOT NULL,
+        title     VARCHAR(255) NOT NULL,
+        description TEXT        NOT NULL,
+        status    ENUM('open','in_progress','waiting_for_user','resolved','closed') DEFAULT 'open',
+        created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email     (email),
+        INDEX idx_status    (status),
+        INDEX idx_ticket_id (ticket_id),
+        INDEX idx_created   (created_at)
+      )
+    `);
+
+    // Ticket messages (conversation thread) table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ticket_messages (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        ticket_id   VARCHAR(20) NOT NULL,
+        sender_type ENUM('user','admin') NOT NULL,
+        message     TEXT        NOT NULL,
+        attachments JSON,
+        created_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ticket_id (ticket_id),
+        INDEX idx_created   (created_at)
+      )
+    `);
+
+    // ── Help & Support bilingual content table ────────────────────────────────
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS help_support_content (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        section_key VARCHAR(50)  NOT NULL,
+        language    VARCHAR(5)   NOT NULL,
+        title       VARCHAR(255) NOT NULL,
+        content     LONGTEXT,
+        updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_section_lang (section_key, language),
+        INDEX idx_section (section_key),
+        INDEX idx_lang (language)
+      )
+    `);
+
+    // Seed bilingual content for all 3 sections
+    const hscRows = await connection.query('SELECT section_key, language FROM help_support_content');
+    const hscExisting = new Set(hscRows[0].map(r => `${r.section_key}:${r.language}`));
+
+    const CT_EN_HTML = `<p>If you are facing any issue related to the Sangian assessment system, you can raise a support ticket. Our support team will help you resolve your issue as quickly as possible.</p><h3>Key Instructions</h3><ul><li>Email verification is required before creating a ticket</li><li>A verification code will be sent to your email</li><li>After verification, you can submit your issue</li><li>Provide a clear title and detailed description</li><li>You may attach up to 3 relevant images for better understanding</li></ul><h3>Guidelines</h3><ul><li>Use a valid email address only</li><li>Avoid duplicate tickets for the same issue</li><li>Attach screenshots if available</li><li>Response time may vary based on issue priority</li></ul>`;
+    const CT_HI_HTML = `<p>अगर आपको Sangian assessment system में कोई समस्या आ रही है, तो आप यहाँ से अपना सपोर्ट टिकट बना सकते हैं। हमारी टीम आपकी समस्या को जल्दी हल करने की कोशिश करेगी।</p><h3>मुख्य निर्देश</h3><ul><li>टिकट बनाने से पहले ईमेल वेरिफिकेशन जरूरी है</li><li>आपके ईमेल पर एक OTP भेजा जाएगा</li><li>वेरिफाई करने के बाद ही टिकट बन सकता है</li><li>समस्या का टाइटल और पूरा विवरण लिखें</li><li>आप अधिकतम 3 तस्वीरें जोड़ सकते हैं</li></ul><h3>नियम</h3><ul><li>केवल सही ईमेल का उपयोग करें</li><li>एक ही समस्या के लिए बार-बार टिकट न बनाएं</li><li>स्क्रीनशॉट जोड़ना मददगार होगा</li><li>जवाब देने में समय लग सकता है</li></ul>`;
+    const MT_EN_HTML = `<p>Track all your submitted support requests in one place. You can view ticket status, responses, and communicate with our support team directly.</p><h3>Features</h3><ul><li>View all your tickets using your registered email</li><li>Track ticket status: Open, In Progress, Waiting, Resolved, Closed</li><li>View full conversation history</li><li>Reply directly to ongoing tickets</li><li>Upload additional evidence if needed (max 3 images per reply)</li></ul><h3>Guidelines</h3><ul><li>Keep your email consistent for tracking tickets</li><li>Check status regularly for updates</li><li>Use reply feature for follow-up communication</li><li>Do not create duplicate tickets for same issue</li></ul>`;
+    const MT_HI_HTML = `<p>यहाँ आप अपने सभी बनाए हुए सपोर्ट टिकट देख सकते हैं। आप टिकट की स्थिति और जवाब देख सकते हैं और हमारी टीम से बात कर सकते हैं।</p><h3>सुविधाएँ</h3><ul><li>अपने ईमेल से सभी टिकट देखें</li><li>टिकट की स्थिति देखें: नया, प्रगति में, इंतजार में, हल हो गया, बंद</li><li>पूरी बातचीत देखें</li><li>सीधे जवाब दें</li><li>जरूरत पड़ने पर 3 तस्वीरें जोड़ें</li></ul><h3>नियम</h3><ul><li>हमेशा एक ही ईमेल का उपयोग करें</li><li>समय-समय पर अपडेट देखें</li><li>रिप्लाई के जरिए बात करें</li><li>एक ही समस्या के लिए नया टिकट न बनाएं</li></ul>`;
+
+    const FAQ_EN = JSON.stringify([
+      { id:'1', q:'Why do I need email verification?',            a:'Email verification ensures that only genuine users can create tickets and helps us track communication securely.' },
+      { id:'2', q:'How long does it take to get a response?',     a:'Response time depends on the issue type. Usually, critical issues are handled within 24–48 hours.' },
+      { id:'3', q:'Can I edit my ticket after submission?',       a:'No, but you can reply to the ticket to provide additional information.' },
+      { id:'4', q:'What file types are allowed in attachments?',  a:'You can upload JPG, PNG, and WEBP images only (max 3 per message).' },
+      { id:'5', q:'Can I create multiple tickets for the same issue?', a:'No, please update the existing ticket instead of creating duplicates.' },
+      { id:'6', q:'How will I know my ticket is updated?',        a:'You will receive an email notification whenever there is a reply or status change.' },
+      { id:'7', q:'What if I lose my ticket ID?',                 a:'You can retrieve your tickets using your registered email address.' },
+      { id:'8', q:'Who handles my tickets?',                      a:'All tickets are handled by the Sangian support and assessment operations team.' },
+      { id:'9', q:'Can I reopen a closed ticket?',                a:'No, but you can create a new ticket referencing the old issue.' },
+      { id:'10',q:'Is my data safe?',                             a:'Yes, all data is securely stored and only used for support and system improvement.' },
+    ]);
+
+    const FAQ_HI = JSON.stringify([
+      { id:'1', q:'ईमेल वेरिफिकेशन क्यों जरूरी है?',        a:'यह सुनिश्चित करता है कि केवल सही उपयोगकर्ता ही टिकट बना सके और सुरक्षा बनी रहे।' },
+      { id:'2', q:'जवाब आने में कितना समय लगता है?',         a:'आमतौर पर 24–48 घंटे में जवाब मिल जाता है, समस्या पर निर्भर करता है।' },
+      { id:'3', q:'क्या मैं टिकट एडिट कर सकता हूँ?',         a:'नहीं, लेकिन आप रिप्लाई करके जानकारी जोड़ सकते हैं।' },
+      { id:'4', q:'कौन-कौन सी फाइल अपलोड कर सकते हैं?',      a:'आप JPG, PNG, WEBP इमेज अपलोड कर सकते हैं (अधिकतम 3)।' },
+      { id:'5', q:'क्या एक ही समस्या के लिए कई टिकट बना सकते हैं?', a:'नहीं, एक ही टिकट को अपडेट करना चाहिए।' },
+      { id:'6', q:'मुझे अपडेट कैसे मिलेगा?',                  a:'जब भी जवाब या स्टेटस बदलेगा, आपको ईमेल मिलेगा।' },
+      { id:'7', q:'अगर टिकट ID खो जाए तो?',                   a:'आप ईमेल से अपने सभी टिकट देख सकते हैं।' },
+      { id:'8', q:'मेरा टिकट कौन देखता है?',                   a:'Sangian सपोर्ट टीम आपके टिकट को देखती है।' },
+      { id:'9', q:'क्या बंद टिकट फिर से खोल सकते हैं?',       a:'नहीं, लेकिन नया टिकट बना सकते हैं।' },
+      { id:'10',q:'क्या मेरा डेटा सुरक्षित है?',               a:'हाँ, आपका डेटा सुरक्षित रखा जाता है और केवल सपोर्ट के लिए उपयोग होता है।' },
+    ]);
+
+    const hscSeed = [
+      ['create_ticket', 'en', 'Create a New Support Ticket',  CT_EN_HTML],
+      ['create_ticket', 'hi', 'नया सपोर्ट टिकट बनाएं',       CT_HI_HTML],
+      ['my_tickets',    'en', 'My Tickets',                    MT_EN_HTML],
+      ['my_tickets',    'hi', 'मेरे टिकट',                    MT_HI_HTML],
+      ['faq',           'en', 'Frequently Asked Questions',    FAQ_EN],
+      ['faq',           'hi', 'अक्सर पूछे जाने वाले प्रश्न', FAQ_HI],
+    ];
+
+    for (const [section_key, language, title, content] of hscSeed) {
+      if (!hscExisting.has(`${section_key}:${language}`)) {
+        await connection.query(
+          'INSERT INTO help_support_content (section_key, language, title, content) VALUES (?, ?, ?, ?)',
+          [section_key, language, title, content]
+        );
+      }
+    }
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {
