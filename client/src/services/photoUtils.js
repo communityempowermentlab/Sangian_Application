@@ -13,6 +13,18 @@ export const getChildPhotoUrl = (photo) => {
 };
 
 /**
+ * Returns the full URL for the admin logo.
+ * If no custom logo is uploaded, returns the default fallback logo.
+ */
+export const getAdminLogoUrl = (logoUrl) => {
+    if (!logoUrl) return '/cel_admin_logo.png';
+    if (logoUrl.startsWith('/uploads')) {
+        return `${SERVER_BASE}${logoUrl}`;
+    }
+    return logoUrl;
+};
+
+/**
  * Inline SVG used as the default avatar when a child has no photo.
  * This avoids any extra network request.
  */

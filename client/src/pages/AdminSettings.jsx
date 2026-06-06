@@ -3,6 +3,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import axiosAdmin from '../services/axiosAdmin';
 import { useGoogleAnalytics } from '../contexts/GoogleAnalyticsContext';
 import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
+import { getAdminLogoUrl } from '../services/photoUtils';
 
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
@@ -1776,7 +1777,7 @@ const AdminProfileTab = () => {
                     style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', border: '2px dashed #d1d5db', cursor: 'pointer', flexShrink: 0, background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                     {profile.logo_url
-                        ? <img src={profile.logo_url} alt="Admin Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        ? <img src={getAdminLogoUrl(profile.logo_url)} alt="Admin Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         : <span style={{ fontSize: '28px' }}>🖼️</span>
                     }
                 </div>

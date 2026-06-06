@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { AdminNotificationProvider, useAdminNotification } from '../contexts/AdminNotificationContext';
-import '../pages/AdminDashboard.css';
+import { getAdminLogoUrl } from '../services/photoUtils';
 
 const isTokenValid = () => {
     const token = localStorage.getItem('adminToken');
@@ -107,7 +107,7 @@ const AdminLayoutInner = () => {
         }
     };
 
-    const logoSrc = adminProfile.logo_url || '/cel_admin_logo.png';
+    const logoSrc = getAdminLogoUrl(adminProfile.logo_url);
     const adminName = adminProfile.name || 'Admin';
 
     return (
