@@ -27,6 +27,11 @@ export const en = {
     contact:   "Contact Us",
     help:      "Help & Support",
   },
+  breadcrumb: {
+    home:    "Home",
+    terms:   "Terms & Conditions",
+    privacy: "Privacy Policy",
+  },
   home: {
     heroPill: "🧠 Kauffman-inspired assessment • For supervised use only",
     welcome: "Welcome to the",

@@ -9,19 +9,14 @@ import './CmsPage.css';
 const BILINGUAL_PAGES = ['terms', 'privacy'];
 
 const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
-    const { language, changeLanguage } = useLanguage();
+    const { language, t } = useLanguage();
     const isBilingual = BILINGUAL_PAGES.includes(pageKey);
 
-    // Local display language — starts from global context, can be overridden per-page
-    const [displayLang, setDisplayLang] = useState(language || 'en');
     const [page,    setPage]    = useState(null);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(false);
 
-    // Sync if global language changes
-    useEffect(() => { setDisplayLang(language || 'en'); }, [language]);
-
-    const fetchKey = isBilingual && displayLang === 'hi' ? `${pageKey}_hi` : pageKey;
+    const fetchKey = isBilingual && language === 'hi' ? `${pageKey}_hi` : pageKey;
 
     useEffect(() => {
         let cancelled = false;
@@ -45,11 +40,6 @@ const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
         load(fetchKey).finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [fetchKey, pageKey]);
-
-    const handleLangSwitch = (lang) => {
-        setDisplayLang(lang);
-        changeLanguage(lang);
-    };
 
     // Apply SEO meta tags when page data arrives
     useEffect(() => {
@@ -102,26 +92,9 @@ const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
     return (
         <div className="cms-shell">
             <nav className="cms-hero-strip">
-                <Link to="/">Home</Link>
+                <Link to="/">{t('breadcrumb.home')}</Link>
                 <span>›</span>
-                <span>{breadcrumbLabel}</span>
-
-                {isBilingual && (
-                    <div className="cms-lang-toggle">
-                        <button
-                            className={`cms-lang-btn ${displayLang === 'en' ? 'active' : ''}`}
-                            onClick={() => handleLangSwitch('en')}
-                        >
-                            🇬🇧 EN
-                        </button>
-                        <button
-                            className={`cms-lang-btn ${displayLang === 'hi' ? 'active' : ''}`}
-                            onClick={() => handleLangSwitch('hi')}
-                        >
-                            🇮🇳 HI
-                        </button>
-                    </div>
-                )}
+                <span>{t(`breadcrumb.${pageKey}`) || breadcrumbLabel}</span>
             </nav>
             <article className="cms-card">
                 <h1 className="cms-page-title">{page.title}</h1>

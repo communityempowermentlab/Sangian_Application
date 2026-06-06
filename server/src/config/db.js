@@ -334,6 +334,7 @@ const initDb = async () => {
       ["ALTER TABLE cms_pages ADD COLUMN contact_phone VARCHAR(100) DEFAULT NULL",  'cms_pages.contact_phone'],
       ["ALTER TABLE cms_pages ADD COLUMN contact_address TEXT DEFAULT NULL",        'cms_pages.contact_address'],
       ["ALTER TABLE cms_pages ADD COLUMN contact_map_link TEXT DEFAULT NULL",       'cms_pages.contact_map_link'],
+      ["ALTER TABLE cms_pages ADD COLUMN content_hi LONGTEXT DEFAULT NULL",        'cms_pages.content_hi'],
     ];
     for (const [sql, label] of cmsMigrations) {
       try { await connection.query(sql); }
@@ -566,23 +567,49 @@ const initDb = async () => {
       )
     `);
 
+    // Contact email settings table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS contact_email_settings (
+        id                INT AUTO_INCREMENT PRIMARY KEY,
+        send_sender_email TINYINT(1) NOT NULL DEFAULT 1,
+        send_admin_email  TINYINT(1) NOT NULL DEFAULT 1,
+        admin_email       VARCHAR(255) DEFAULT NULL,
+        updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    // Ensure at least one settings row exists
+    const [[{ ces_count }]] = await connection.query('SELECT COUNT(*) AS ces_count FROM contact_email_settings');
+    if (!ces_count) {
+      await connection.query(
+        'INSERT INTO contact_email_settings (send_sender_email, send_admin_email, admin_email) VALUES (1, 1, ?)',
+        [process.env.ADMIN_EMAIL || null]
+      );
+    }
+
     // Seed contact CMS page
     const [cmsContactRows] = await connection.query(
-      "SELECT page_key FROM cms_pages WHERE page_key = 'contact'"
+      "SELECT page_key, content_hi FROM cms_pages WHERE page_key = 'contact'"
     );
     if (!cmsContactRows.length) {
       await connection.query(
-        `INSERT INTO cms_pages (page_key, title, content, contact_email, contact_phone, contact_address,
-         contact_map_link, meta_title, meta_description, slug, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        `INSERT INTO cms_pages (page_key, title, content, content_hi, contact_email, contact_phone, contact_address,
+         contact_map_link, meta_title, meta_description, slug, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         ['contact', 'Contact Us',
-         '<p>We\'d love to hear from you. Reach out to our team using the form below or through any of our contact channels.</p>',
+         '<p>We\'re here to help and would love to hear from you. Whether you have a question, feedback, or need support, feel free to reach out through the form below or any of our contact channels.</p>',
+         '<p>हम आपकी सहायता के लिए हमेशा तैयार हैं और आपसे सुनकर हमें खुशी होगी। चाहे आपका कोई प्रश्न हो, सुझाव हो या सहायता की आवश्यकता हो, नीचे दिए गए फॉर्म या किसी भी संपर्क माध्यम से हमसे बेझिझक संपर्क करें।</p>',
          'support@sangian.celworld.org',
          '+91 522 000 0000',
-         'Community Empowerment Lab, Lucknow, Uttar Pradesh, India',
+         'F-09, 9th floor, F-Block, Tower-B, Shalimar Grand, 10, Jopling Road, Lucknow - 226001',
          '',
          'Contact Us | Sangian Assessment Programme',
          'Get in touch with the Sangian Assessment Programme team.',
          'contact-us']
+      );
+    } else if (cmsContactRows[0] && !cmsContactRows[0].content_hi) {
+      // Backfill Hindi content for existing installs
+      await connection.query(
+        "UPDATE cms_pages SET content_hi = ? WHERE page_key = 'contact'",
+        ['<p>हम आपकी सहायता के लिए हमेशा तैयार हैं और आपसे सुनकर हमें खुशी होगी। चाहे आपका कोई प्रश्न हो, सुझाव हो या सहायता की आवश्यकता हो, नीचे दिए गए फॉर्म या किसी भी संपर्क माध्यम से हमसे बेझिझक संपर्क करें।</p>']
       );
     }
 

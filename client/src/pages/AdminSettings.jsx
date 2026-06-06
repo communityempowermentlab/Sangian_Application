@@ -7,10 +7,11 @@ import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
 const SETTINGS_MENU = [
-    { key: 'google_analytics',  icon: '📊', label: 'Google Analytics',  color: '#e37400', available: true  },
-    { key: 'crash_analytics',   icon: '🔥', label: 'Crash Analytics',   color: '#dc2626', available: true  },
-    { key: 'automated_testing', icon: '🧪', label: 'Automated Testing', color: '#7c3aed', available: true  },
-    { key: 'integrations',      icon: '🔗', label: 'Integrations',      color: '#6366f1', available: false },
+    { key: 'google_analytics',  icon: '📊', label: 'Google Analytics',    color: '#e37400', available: true  },
+    { key: 'crash_analytics',   icon: '🔥', label: 'Crash Analytics',     color: '#dc2626', available: true  },
+    { key: 'automated_testing', icon: '🧪', label: 'Automated Testing',   color: '#7c3aed', available: true  },
+    { key: 'contact_email',     icon: '📧', label: 'Contact Us Email',    color: '#4f46e5', available: true  },
+    { key: 'integrations',      icon: '🔗', label: 'Integrations',        color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
     { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
     { key: 'notifications',     icon: '🔔', label: 'Notifications',     color: '#f59e0b', available: false },
@@ -1547,12 +1548,136 @@ python run_tests.py --suite performance`}</pre>
     );
 };
 
+// ─── Contact Us Email Settings Tab ───────────────────────────────────────────
+
+const ToggleRow = ({ label, description, checked, onChange }) => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+        <div style={{ flex: 1, minWidth: 0, marginRight: '20px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937' }}>{label}</div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '3px', lineHeight: 1.5 }}>{description}</div>
+        </div>
+        <label style={{ position: 'relative', display: 'inline-block', width: '46px', height: '26px', flexShrink: 0 }}>
+            <input type="checkbox" checked={checked} onChange={onChange} style={{ opacity: 0, width: 0, height: 0 }} />
+            <span style={{ position: 'absolute', cursor: 'pointer', inset: 0, borderRadius: '34px', background: checked ? '#4f46e5' : '#d1d5db', transition: 'background 0.2s' }}>
+                <span style={{ position: 'absolute', height: '20px', width: '20px', left: checked ? '23px' : '3px', bottom: '3px', background: '#fff', borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+            </span>
+        </label>
+    </div>
+);
+
+const ContactEmailSettingsTab = () => {
+    const [settings, setSettings] = useState({ send_sender_email: 1, send_admin_email: 1, admin_email: '' });
+    const [loading,  setLoading]  = useState(true);
+    const [saving,   setSaving]   = useState(false);
+    const [toast,    setToast]    = useState(null);
+    const [emailErr, setEmailErr] = useState('');
+
+    const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
+
+    useEffect(() => {
+        setLoading(true);
+        axiosAdmin.get('/admin/contact-email-settings')
+            .then(({ data }) => {
+                const s = data.settings;
+                setSettings({ send_sender_email: s.send_sender_email ?? 1, send_admin_email: s.send_admin_email ?? 1, admin_email: s.admin_email ?? '' });
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const save = async () => {
+        if (settings.admin_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.admin_email)) {
+            setEmailErr('Enter a valid email address.');
+            return;
+        }
+        setEmailErr('');
+        setSaving(true);
+        try {
+            await axiosAdmin.post('/admin/contact-email-settings', settings);
+            showToast('success', 'Settings saved successfully!');
+        } catch { showToast('error', 'Failed to save settings.'); }
+        finally { setSaving(false); }
+    };
+
+    if (loading) return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: '12px', color: '#9ca3af' }}>
+            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            Loading…
+        </div>
+    );
+
+    return (
+        <div style={{ padding: '28px 32px', maxWidth: '640px' }}>
+
+            {toast && (
+                <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2', border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`, color: toast.type === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600, fontSize: '14px' }}>
+                    {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
+                </div>
+            )}
+
+            <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>Email Notifications</h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
+                    Configure automatic emails sent when a visitor submits the Contact Us form.
+                </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                <ToggleRow
+                    label="Send Thank-You Email to Sender"
+                    description="Automatically email the visitor a confirmation when they submit the contact form. Sent in the visitor's selected language (English or Hindi)."
+                    checked={!!settings.send_sender_email}
+                    onChange={e => setSettings(s => ({ ...s, send_sender_email: e.target.checked ? 1 : 0 }))}
+                />
+                <ToggleRow
+                    label="Send Admin Notification Email"
+                    description="Notify the admin email address below whenever a new contact form is submitted. Includes the visitor's full message, email, and phone number."
+                    checked={!!settings.send_admin_email}
+                    onChange={e => setSettings(s => ({ ...s, send_admin_email: e.target.checked ? 1 : 0 }))}
+                />
+            </div>
+
+            <div style={{ marginBottom: '28px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Admin Notification Email
+                </label>
+                <input
+                    type="email"
+                    value={settings.admin_email}
+                    onChange={e => { setEmailErr(''); setSettings(s => ({ ...s, admin_email: e.target.value })); }}
+                    placeholder="admin@example.com"
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${emailErr ? '#f87171' : '#e5e7eb'}`, fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+                {emailErr ? (
+                    <div style={{ marginTop: '5px', fontSize: '12px', fontWeight: 600, color: '#ef4444' }}>{emailErr}</div>
+                ) : (
+                    <div style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af' }}>
+                        Receives notification emails when "Send Admin Notification Email" is ON.
+                    </div>
+                )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>💡 Emails are sent asynchronously and do not delay form submission.</span>
+                <button
+                    onClick={save}
+                    disabled={saving}
+                    style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#4f46e5', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                >
+                    {saving ? '⏳ Saving…' : '💾 Save Settings'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // ─── Main AdminSettings page ──────────────────────────────────────────────────
 
 const CONTENT_MAP = {
     google_analytics:  <GoogleAnalyticsTab />,
     crash_analytics:   <CrashAnalyticsTab />,
     automated_testing: <AutomatedTestingTab />,
+    contact_email:     <ContactEmailSettingsTab />,
 };
 
 const AdminSettings = () => {

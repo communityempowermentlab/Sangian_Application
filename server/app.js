@@ -51,7 +51,7 @@ app.use(helmet({
                             "https://firebasecrashlytics.googleapis.com",
                             "https://firebase.googleapis.com"],
             "media-src":   ["'self'", "data:", "blob:"],
-            "frame-src":   ["https://accounts.google.com"],
+            "frame-src":   ["https://accounts.google.com", "https://www.google.com"],
             "object-src":  ["'none'"]
         }
     },

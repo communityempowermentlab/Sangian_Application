@@ -330,8 +330,10 @@ const ContactAdmin = () => {
     const [tab, setTab] = useState('info'); // 'info' | 'messages'
 
     // ── Contact Info state ──────────────────────────────────────────────────
-    const infoEditorRef = useRef(null);
-    const infoContent   = useRef('');
+    const infoEditorRef   = useRef(null);
+    const infoEditorHiRef = useRef(null);
+    const infoContent     = useRef('');
+    const infoContentHi   = useRef('');
     const [infoLoading,  setInfoLoading]  = useState(true);
     const [infoSaving,   setInfoSaving]   = useState(false);
     const [infoToast,    setInfoToast]    = useState(null);
@@ -355,29 +357,30 @@ const ContactAdmin = () => {
                     contact_map_link:  p.contact_map_link ?? '',
                     status:            p.status           ?? 1,
                 });
-                infoContent.current = p.content ?? '';
+                infoContent.current   = p.content    ?? '';
+                infoContentHi.current = p.content_hi ?? '';
             })
             .catch(() => {})
             .finally(() => setInfoLoading(false));
     }, [tab]);
 
     useEffect(() => {
-        if (!infoLoading && infoEditorRef.current) {
-            infoEditorRef.current.innerHTML = infoContent.current;
+        if (!infoLoading) {
+            if (infoEditorRef.current)   infoEditorRef.current.innerHTML   = infoContent.current;
+            if (infoEditorHiRef.current) infoEditorHiRef.current.innerHTML = infoContentHi.current;
         }
     }, [infoLoading]);
 
-    const execInfoCmd = useCallback((cmd, val = null) => {
-        infoEditorRef.current?.focus();
-        document.execCommand(cmd, false, val);
-    }, []);
+    const execInfoCmd   = useCallback((cmd, val = null) => { infoEditorRef.current?.focus();   document.execCommand(cmd, false, val); }, []);
+    const execInfoCmdHi = useCallback((cmd, val = null) => { infoEditorHiRef.current?.focus(); document.execCommand(cmd, false, val); }, []);
 
     const saveContactInfo = async () => {
         setInfoSaving(true);
         try {
             await axiosAdmin.post('/admin/contact-info', {
                 ...infoFields,
-                content: infoEditorRef.current?.innerHTML ?? '',
+                content:    infoEditorRef.current?.innerHTML   ?? '',
+                content_hi: infoEditorHiRef.current?.innerHTML ?? '',
             });
             showInfoToast('success', 'Contact info saved!');
         } catch { showInfoToast('error', 'Failed to save.'); }
@@ -418,8 +421,8 @@ const ContactAdmin = () => {
     };
 
     const TABS = [
-        { key: 'info',     label: '⚙️ Contact Info'     },
-        { key: 'messages', label: '📩 Message Inbox'    },
+        { key: 'info',     label: '⚙️ Contact Info'  },
+        { key: 'messages', label: '📩 Message Inbox' },
     ];
 
     return (
@@ -480,23 +483,34 @@ const ContactAdmin = () => {
                                     <label className="meta-field-label">📍 Office Address</label>
                                     <input className="meta-title-input" value={infoFields.contact_address}
                                         onChange={e => setInfoFields(f => ({ ...f, contact_address: e.target.value }))}
-                                        placeholder="Full office address" />
+                                        placeholder="F-09, 9th floor, F-Block, Tower-B, Shalimar Grand, 10, Jopling Road, Lucknow - 226001" />
                                 </div>
                                 <div className="meta-field-group contact-info-full">
                                     <label className="meta-field-label">🗺️ Google Maps Embed URL
-                                        <span className="meta-field-hint"> — paste the src from Google Maps embed iframe</span>
+                                        <span className="meta-field-hint"> — paste only the src value from the Google Maps embed iframe (not the full &lt;iframe&gt; tag)</span>
                                     </label>
-                                    <input className="meta-title-input" value={infoFields.contact_map_link}
-                                        onChange={e => setInfoFields(f => ({ ...f, contact_map_link: e.target.value }))}
-                                        placeholder="https://www.google.com/maps/embed?pb=..." />
+                                    <textarea
+                                        className="meta-title-input"
+                                        rows={3}
+                                        style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '12px' }}
+                                        value={infoFields.contact_map_link}
+                                        onChange={e => {
+                                            let val = e.target.value.trim();
+                                            // Auto-extract src if admin pastes full <iframe> tag
+                                            const srcMatch = val.match(/src="([^"]+)"/);
+                                            if (srcMatch) val = srcMatch[1];
+                                            setInfoFields(f => ({ ...f, contact_map_link: val }));
+                                        }}
+                                        placeholder="https://www.google.com/maps/embed?pb=... (or paste the full <iframe> tag — src will be extracted automatically)"
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Page description editor */}
+                        {/* Page description editor — English */}
                         <div className="meta-seo-section">
                             <div className="meta-seo-toggle" style={{ cursor: 'default' }}>
-                                ✍️ Page Description <span className="meta-seo-toggle-hint">Displayed on the public Contact Us page</span>
+                                🇬🇧 Page Description (English) <span className="meta-seo-toggle-hint">Shown when language is set to English</span>
                             </div>
                             <div className="meta-seo-fields" style={{ padding: '10px 12px 12px' }}>
                                 <div className="meta-editor-toolbar">
@@ -511,6 +525,28 @@ const ContactAdmin = () => {
                                     )}
                                 </div>
                                 <div ref={infoEditorRef} className="meta-editor-body" style={{ minHeight: '120px' }}
+                                    contentEditable suppressContentEditableWarning spellCheck />
+                            </div>
+                        </div>
+
+                        {/* Page description editor — Hindi */}
+                        <div className="meta-seo-section">
+                            <div className="meta-seo-toggle" style={{ cursor: 'default' }}>
+                                🇮🇳 Page Description (Hindi) <span className="meta-seo-toggle-hint">Shown when language is set to Hindi</span>
+                            </div>
+                            <div className="meta-seo-fields" style={{ padding: '10px 12px 12px' }}>
+                                <div className="meta-editor-toolbar">
+                                    {TOOLBAR.map((item, i) =>
+                                        item.sep ? <div key={i} className="meta-toolbar-sep" /> : (
+                                            <button key={item.cmd + (item.val ?? '')} title={item.title}
+                                                className="meta-toolbar-btn" style={item.style}
+                                                onMouseDown={e => { e.preventDefault(); execInfoCmdHi(item.cmd, item.val ?? null); }}>
+                                                {item.label}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                                <div ref={infoEditorHiRef} className="meta-editor-body" style={{ minHeight: '120px' }}
                                     contentEditable suppressContentEditableWarning spellCheck />
                             </div>
                         </div>

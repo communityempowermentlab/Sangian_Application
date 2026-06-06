@@ -158,4 +158,55 @@ const sendStatusChanged = (email, ticket_id, status) => send(
     `)
 );
 
-module.exports = { sendOtp, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged };
+// ── Contact form — thank-you to sender ───────────────────────────────────────
+const sendContactThankYou = (email, name, lang = 'en') => {
+    const isHi = lang === 'hi';
+    return send(
+        email,
+        isHi
+            ? 'आपसे संपर्क करने के लिए धन्यवाद – संगियान सपोर्ट'
+            : 'Thank You for Reaching Out – Sangian Support',
+        wrap(
+            isHi ? `धन्यवाद, ${name}!` : `Thank You, ${name}!`,
+            isHi ? `
+                <p style="color:#374151;font-size:15px;line-height:1.6">आपका संदेश कम्युनिटी एम्पावरमेंट लैब टीम को सफलतापूर्वक प्राप्त हो गया है।</p>
+                <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid ${BRAND_COLOR}">
+                  <p style="margin:0;color:${BRAND_COLOR};font-size:15px;font-weight:700">✅ आपका संदेश सफलतापूर्वक भेज दिया गया है।</p>
+                </div>
+                <p style="color:#374151;font-size:14px;line-height:1.6">हम आमतौर पर <strong>1–2 कार्य दिवसों</strong> के भीतर आपके ईमेल पते पर उत्तर देते हैं।</p>
+                <p style="color:#6b7280;font-size:13px;line-height:1.6">इस दौरान, त्वरित उत्तरों के लिए हमारा सहायता और समर्थन अनुभाग देखें।</p>
+            ` : `
+                <p style="color:#374151;font-size:15px;line-height:1.6">We have successfully received your message and our team will review it shortly.</p>
+                <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid ${BRAND_COLOR}">
+                  <p style="margin:0;color:${BRAND_COLOR};font-size:15px;font-weight:700">✅ Your message has been received successfully.</p>
+                </div>
+                <p style="color:#374151;font-size:14px;line-height:1.6">We typically respond within <strong>1–2 business days</strong> at the email address you provided.</p>
+                <p style="color:#6b7280;font-size:13px;line-height:1.6">In the meantime, feel free to explore our assessment platform or check our Help &amp; Support section for quick answers.</p>
+            `
+        )
+    );
+};
+
+// ── Contact form — admin notification ────────────────────────────────────────
+const sendContactAdminNotification = (adminEmail, { name, email, phone, subject, message }) => send(
+    adminEmail,
+    `New Contact Form – ${subject}`,
+    wrap(`New message from ${name}`, `
+        <p style="color:#374151;font-size:15px;line-height:1.6">A new contact form submission has been received.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:100px">Name</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:14px;color:#1f2937;font-weight:700">${name}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${email}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Phone</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${phone || '—'}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${subject}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;vertical-align:top">Message</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#374151;line-height:1.6">${message}</td></tr>
+        </table>
+        ${btn('View in Admin Panel', `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/contact`)}
+    `)
+);
+
+module.exports = { sendOtp, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };

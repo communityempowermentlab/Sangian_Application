@@ -40,6 +40,8 @@ router.post('/contact-info',                   adminAuth, contactController.upda
 router.get('/contact-messages',                adminAuth, contactController.getMessages);
 router.post('/contact-messages/update-status', adminAuth, contactController.updateMessageStatus);
 router.delete('/contact-messages/:id',         adminAuth, contactController.deleteMessage);
+router.get('/contact-email-settings',          adminAuth, contactController.getContactEmailSettings);
+router.post('/contact-email-settings',         adminAuth, contactController.updateContactEmailSettings);
 
 // ── Help & Support bilingual content management ───────────────────────────────
 router.get('/help-content/:section/:lang',     adminAuth, helpContentController.adminGetContent);

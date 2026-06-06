@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { sendContactThankYou, sendContactAdminNotification } = require('../services/emailService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,8 +35,8 @@ const submitContact = async (req, res) => {
 
     const { name, email, phone, subject, message } = req.body;
 
-    if (!name?.trim() || !email?.trim() || !subject?.trim() || !message?.trim()) {
-        return res.status(400).json({ success: false, message: 'Name, email, subject, and message are required.' });
+    if (!name?.trim() || !email?.trim() || !phone?.trim() || !subject?.trim() || !message?.trim()) {
+        return res.status(400).json({ success: false, message: 'Name, email, phone, subject, and message are required.' });
     }
     if (!EMAIL_RE.test(email)) {
         return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
@@ -51,6 +52,25 @@ const submitContact = async (req, res) => {
             [name.trim(), email.trim(), phone?.trim() || null, subject.trim(), message.trim(), ip]
         );
         res.json({ success: true, message: 'Your message has been received. Our team will contact you soon.' });
+
+        // Fire emails async after responding — don't block the user
+        (async () => {
+            try {
+                const [[settings]] = await pool.query('SELECT * FROM contact_email_settings LIMIT 1');
+                if (!settings) return;
+                const lang = (req.body.lang === 'hi') ? 'hi' : 'en';
+                if (settings.send_sender_email) {
+                    sendContactThankYou(email.trim(), name.trim(), lang).catch(() => {});
+                }
+                if (settings.send_admin_email && settings.admin_email) {
+                    sendContactAdminNotification(settings.admin_email, {
+                        name: name.trim(), email: email.trim(),
+                        phone: phone?.trim() || null,
+                        subject: subject.trim(), message: message.trim(),
+                    }).catch(() => {});
+                }
+            } catch {}
+        })();
     } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to submit. Please try again.' });
     }
@@ -59,7 +79,7 @@ const submitContact = async (req, res) => {
 const getPublicContactInfo = async (req, res) => {
     try {
         const [rows] = await pool.query(
-            `SELECT title, content, contact_email, contact_phone, contact_address, contact_map_link
+            `SELECT title, content, content_hi, contact_email, contact_phone, contact_address, contact_map_link
              FROM cms_pages WHERE page_key = 'contact' AND status = 1`
         );
         if (!rows.length) return res.status(404).json({ success: false, message: 'Not found' });
@@ -82,26 +102,26 @@ const getContactInfo = async (req, res) => {
 };
 
 const updateContactInfo = async (req, res) => {
-    const { title, content, contact_email, contact_phone, contact_address,
+    const { title, content, content_hi, contact_email, contact_phone, contact_address,
             contact_map_link, meta_title, meta_description, status } = req.body;
     try {
         const [existing] = await pool.query("SELECT id FROM cms_pages WHERE page_key = 'contact'");
         if (existing.length) {
             await pool.query(
-                `UPDATE cms_pages SET title=?, content=?, contact_email=?, contact_phone=?,
+                `UPDATE cms_pages SET title=?, content=?, content_hi=?, contact_email=?, contact_phone=?,
                  contact_address=?, contact_map_link=?, meta_title=?, meta_description=?, status=?
                  WHERE page_key='contact'`,
-                [title || 'Contact Us', content || '',
+                [title || 'Contact Us', content || '', content_hi || null,
                  contact_email || null, contact_phone || null,
                  contact_address || null, contact_map_link || null,
                  meta_title || null, meta_description || null, status ?? 1]
             );
         } else {
             await pool.query(
-                `INSERT INTO cms_pages (page_key, title, content, contact_email, contact_phone,
+                `INSERT INTO cms_pages (page_key, title, content, content_hi, contact_email, contact_phone,
                  contact_address, contact_map_link, meta_title, meta_description, status)
-                 VALUES ('contact',?,?,?,?,?,?,?,?,1)`,
-                [title || 'Contact Us', content || '',
+                 VALUES ('contact',?,?,?,?,?,?,?,?,?,1)`,
+                [title || 'Contact Us', content || '', content_hi || null,
                  contact_email || null, contact_phone || null,
                  contact_address || null, contact_map_link || null,
                  meta_title || null, meta_description || null]
@@ -158,8 +178,43 @@ const deleteMessage = async (req, res) => {
     }
 };
 
+const getContactEmailSettings = async (req, res) => {
+    try {
+        const [[row]] = await pool.query('SELECT * FROM contact_email_settings LIMIT 1');
+        if (!row) return res.json({ success: true, settings: { send_sender_email: 1, send_admin_email: 1, admin_email: '' } });
+        res.json({ success: true, settings: row });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+const updateContactEmailSettings = async (req, res) => {
+    const { send_sender_email, send_admin_email, admin_email } = req.body;
+    if (admin_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(admin_email)) {
+        return res.status(400).json({ success: false, message: 'Invalid admin email address.' });
+    }
+    try {
+        const [[existing]] = await pool.query('SELECT id FROM contact_email_settings LIMIT 1');
+        if (existing) {
+            await pool.query(
+                'UPDATE contact_email_settings SET send_sender_email=?, send_admin_email=?, admin_email=? WHERE id=?',
+                [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null, existing.id]
+            );
+        } else {
+            await pool.query(
+                'INSERT INTO contact_email_settings (send_sender_email, send_admin_email, admin_email) VALUES (?,?,?)',
+                [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null]
+            );
+        }
+        res.json({ success: true, message: 'Email settings saved.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     submitContact, getPublicContactInfo,
     getContactInfo, updateContactInfo,
     getMessages, updateMessageStatus, deleteMessage,
+    getContactEmailSettings, updateContactEmailSettings,
 };

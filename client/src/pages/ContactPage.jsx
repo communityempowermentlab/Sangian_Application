@@ -8,7 +8,7 @@ const T = {
     en: {
         badge:       '📬 Get in Touch',
         title:       'Contact Us',
-        subtitle:    'Have a question about the Sangian Assessment Programme? Our team is here to help. Reach out through any of our channels below.',
+        subtitle:    "We're here to help and would love to hear from you. Whether you have a question, feedback, or need support, feel free to reach out through the form below or any of our contact channels.",
         infoEmail:   'EMAIL',
         infoPhone:   'PHONE',
         infoAddress: 'ADDRESS',
@@ -17,13 +17,13 @@ const T = {
         fName:       'Full Name',        fNamePH:    'Your full name',
         fEmail:      'Email Address',    fEmailPH:   'you@example.com',
         fPhone:      'Phone Number',     fPhonePH:   '+91 00000 00000',
-        fPhoneOpt:   '(optional)',
         fSubject:    'Subject',          fSubjectPH: 'How can we help?',
         fMessage:    'Message',          fMessagePH: 'Describe your query or message in detail…',
         sendBtn:     '🚀 Send Message',  sendingBtn: '⏳ Sending…',
         eReqName:    'Full name is required.',
         eReqEmail:   'Email address is required.',
         eBadEmail:   'Enter a valid email address.',
+        eReqPhone:   'Phone number is required.',
         eReqSubject: 'Subject is required.',
         eReqMessage: 'Message is required.',
         eMaxMessage: 'Message must be under 5000 characters.',
@@ -37,7 +37,7 @@ const T = {
     hi: {
         badge:       '📬 संपर्क करें',
         title:       'संपर्क करें',
-        subtitle:    'संज्ञान मूल्यांकन कार्यक्रम के बारे में कोई प्रश्न है? हमारी टीम आपकी मदद के लिए यहाँ है। नीचे दिए गए किसी भी माध्यम से हमसे संपर्क करें।',
+        subtitle:    'हम आपकी सहायता के लिए हमेशा तैयार हैं और आपसे सुनकर हमें खुशी होगी। चाहे आपका कोई प्रश्न हो, सुझाव हो या सहायता की आवश्यकता हो, नीचे दिए गए फॉर्म या किसी भी संपर्क माध्यम से हमसे बेझिझक संपर्क करें।',
         infoEmail:   'ईमेल',
         infoPhone:   'फ़ोन',
         infoAddress: 'पता',
@@ -46,13 +46,13 @@ const T = {
         fName:       'पूरा नाम',         fNamePH:    'आपका पूरा नाम',
         fEmail:      'ईमेल पता',         fEmailPH:   'you@example.com',
         fPhone:      'फ़ोन नंबर',        fPhonePH:   '+91 00000 00000',
-        fPhoneOpt:   '(वैकल्पिक)',
         fSubject:    'विषय',             fSubjectPH: 'हम कैसे मदद कर सकते हैं?',
         fMessage:    'संदेश',            fMessagePH: 'अपनी समस्या या संदेश विस्तार से लिखें…',
         sendBtn:     '🚀 संदेश भेजें',   sendingBtn: '⏳ भेज रहे हैं…',
         eReqName:    'पूरा नाम आवश्यक है।',
         eReqEmail:   'ईमेल पता आवश्यक है।',
         eBadEmail:   'एक वैध ईमेल पता दर्ज करें।',
+        eReqPhone:   'फ़ोन नंबर अनिवार्य है।',
         eReqSubject: 'विषय आवश्यक है।',
         eReqMessage: 'संदेश आवश्यक है।',
         eMaxMessage: 'संदेश 5000 अक्षरों से कम होना चाहिए।',
@@ -92,6 +92,7 @@ const ContactPage = () => {
         if (!form.name.trim())    e.name    = t.eReqName;
         if (!form.email.trim())   e.email   = t.eReqEmail;
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t.eBadEmail;
+        if (!form.phone.trim())   e.phone   = t.eReqPhone;
         if (!form.subject.trim()) e.subject = t.eReqSubject;
         if (!form.message.trim()) e.message = t.eReqMessage;
         else if (form.message.length > 5000) e.message = t.eMaxMessage;
@@ -111,7 +112,7 @@ const ContactPage = () => {
         if (Object.keys(errs).length) { setErrors(errs); return; }
         setSubmitting(true);
         try {
-            await axios.post(`${API_URL}/contact/submit`, form);
+            await axios.post(`${API_URL}/contact/submit`, { ...form, lang: language });
             setSubmitted(true);
             setForm({ name: '', email: '', phone: '', subject: '', message: '', website: '' });
         } catch (err) {
@@ -122,9 +123,8 @@ const ContactPage = () => {
     };
 
     const infoCards = [
-        info?.contact_email   && { icon: '📧', label: t.infoEmail,   value: info.contact_email,   href: `mailto:${info.contact_email}` },
-        info?.contact_phone   && { icon: '📞', label: t.infoPhone,   value: info.contact_phone,   href: `tel:${info.contact_phone}` },
-        info?.contact_address && { icon: '📍', label: t.infoAddress, value: info.contact_address, href: null },
+        info?.contact_email && { icon: '📧', label: t.infoEmail, value: info.contact_email, href: `mailto:${info.contact_email}` },
+        info?.contact_phone && { icon: '📞', label: t.infoPhone, value: info.contact_phone, href: `tel:${info.contact_phone}` },
     ].filter(Boolean);
 
     return (
@@ -143,11 +143,15 @@ const ContactPage = () => {
                 {/* Left column */}
                 <aside className="contact-left">
 
-                    {info?.content && (
+                    {(info?.content || info?.content_hi) && (
                         <div className="contact-desc-card">
                             <div
                                 className="contact-desc-body"
-                                dangerouslySetInnerHTML={{ __html: info.content }}
+                                dangerouslySetInnerHTML={{
+                                    __html: (language === 'hi' && info.content_hi)
+                                        ? info.content_hi
+                                        : info.content
+                                }}
                             />
                         </div>
                     )}
@@ -169,16 +173,23 @@ const ContactPage = () => {
                         </div>
                     )}
 
-                    {info?.contact_map_link && (
+                    {info?.contact_map_link?.trim() && (
                         <div className="contact-map-wrap">
                             <iframe
                                 title="Office Location"
-                                src={info.contact_map_link}
-                                className="contact-map-iframe"
+                                src={info.contact_map_link.trim()}
+                                width="100%"
+                                height="300"
+                                style={{ border: 0 }}
                                 allowFullScreen=""
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
                             />
+                            {info?.contact_address && (
+                                <div className="contact-map-address">
+                                    <span>📍</span> {info.contact_address}
+                                </div>
+                            )}
                         </div>
                     )}
                 </aside>
@@ -228,11 +239,12 @@ const ContactPage = () => {
                             </div>
 
                             <div className="contact-form-row">
-                                <div className="contact-field">
-                                    <label className="contact-label">{t.fPhone} <span className="contact-optional">{t.fPhoneOpt}</span></label>
+                                <div className={`contact-field ${errors.phone ? 'has-error' : ''}`}>
+                                    <label className="contact-label">{t.fPhone} <span className="req">*</span></label>
                                     <input className="contact-input" type="tel" name="phone"
                                         value={form.phone} onChange={handleChange}
                                         placeholder={t.fPhonePH} maxLength={50} />
+                                    {errors.phone && <span className="contact-error">{errors.phone}</span>}
                                 </div>
                                 <div className={`contact-field ${errors.subject ? 'has-error' : ''}`}>
                                     <label className="contact-label">{t.fSubject} <span className="req">*</span></label>
