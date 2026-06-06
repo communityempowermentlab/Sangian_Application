@@ -232,9 +232,70 @@ const getLiveSessions = async (req, res) => {
     }
 };
 
+// ── Admin Profile ─────────────────────────────────────────────────────────────
+
+const getAdminProfile = async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT id, name, email, logo_url FROM admins WHERE id = ?', [req.admin.id]
+        );
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        res.json({ success: true, profile: rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+const updateAdminProfile = async (req, res) => {
+    const { name, email, currentPassword, newPassword } = req.body;
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!name?.trim() || !email?.trim())       return res.status(400).json({ success: false, message: 'Name and email are required.' });
+    if (!EMAIL_RE.test(email.trim()))           return res.status(400).json({ success: false, message: 'Invalid email address.' });
+    try {
+        const [rows] = await pool.query('SELECT * FROM admins WHERE id = ?', [req.admin.id]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        const admin = rows[0];
+
+        if (email.trim().toLowerCase() !== admin.email.toLowerCase()) {
+            const [dup] = await pool.query('SELECT id FROM admins WHERE email = ? AND id != ?', [email.trim(), req.admin.id]);
+            if (dup.length) return res.status(400).json({ success: false, message: 'Email already in use.' });
+        }
+
+        let passwordHash = admin.password_hash;
+        if (newPassword?.trim()) {
+            if (!currentPassword) return res.status(400).json({ success: false, message: 'Current password is required.' });
+            if (!(await bcrypt.compare(currentPassword, admin.password_hash)))
+                return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+            if (newPassword.length < 6) return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+            passwordHash = await bcrypt.hash(newPassword, 10);
+        }
+
+        await pool.query('UPDATE admins SET name=?, email=?, password_hash=? WHERE id=?',
+            [name.trim(), email.trim(), passwordHash, req.admin.id]);
+
+        res.json({ success: true, message: 'Profile updated.', profile: { name: name.trim(), email: email.trim() } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+const updateAdminLogo = async (req, res) => {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    const logoUrl = `/uploads/admin/${req.file.filename}`;
+    try {
+        await pool.query('UPDATE admins SET logo_url=? WHERE id=?', [logoUrl, req.admin.id]);
+        res.json({ success: true, message: 'Logo updated.', logoUrl });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 module.exports = {
     loginAdmin,
     logoutAdmin,
     getDashboardStats,
     getLiveSessions,
+    getAdminProfile,
+    updateAdminProfile,
+    updateAdminLogo,
 };

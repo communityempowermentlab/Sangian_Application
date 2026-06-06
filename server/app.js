@@ -88,6 +88,7 @@ const allowCrossOrigin = (req, res, next) => {
 };
 app.use('/uploads',        allowCrossOrigin, express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/tickets', allowCrossOrigin, express.static(path.join(__dirname, 'uploads/tickets')));
+app.use('/uploads/admin',   allowCrossOrigin, express.static(path.join(__dirname, 'uploads/admin')));
 app.use('/dashboard_pdfs', allowCrossOrigin, express.static(path.join(__dirname, 'dashboard_pdfs')));
 
 // Routes

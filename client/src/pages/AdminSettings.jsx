@@ -11,6 +11,9 @@ const SETTINGS_MENU = [
     { key: 'crash_analytics',   icon: '🔥', label: 'Crash Analytics',     color: '#dc2626', available: true  },
     { key: 'automated_testing', icon: '🧪', label: 'Automated Testing',   color: '#7c3aed', available: true  },
     { key: 'contact_email',     icon: '📧', label: 'Contact Us Email',    color: '#4f46e5', available: true  },
+    { key: 'smtp_settings',     icon: '📨', label: 'SMTP Settings',        color: '#0369a1', available: true  },
+    { key: 'help_email',        icon: '🎫', label: 'Ticket Notifications',  color: '#7c3aed', available: true  },
+    { key: 'admin_profile',     icon: '👤', label: 'Update Profile',       color: '#059669', available: true  },
     { key: 'integrations',      icon: '🔗', label: 'Integrations',        color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
     { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
@@ -1671,6 +1674,461 @@ const ContactEmailSettingsTab = () => {
     );
 };
 
+// ─── Admin Profile Tab ────────────────────────────────────────────────────────
+
+const AdminProfileTab = () => {
+    const [profile,     setProfile]     = useState({ name: '', email: '', logo_url: '' });
+    const [loading,     setLoading]     = useState(true);
+    const [saving,      setSaving]      = useState(false);
+    const [uploading,   setUploading]   = useState(false);
+    const [toast,       setToast]       = useState(null);
+    const [currentPwd,    setCurrentPwd]    = useState('');
+    const [newPwd,        setNewPwd]        = useState('');
+    const [confirmPwd,    setConfirmPwd]    = useState('');
+    const [pwdErr,        setPwdErr]        = useState('');
+    const [showCurrent,   setShowCurrent]   = useState(false);
+    const [showNew,       setShowNew]       = useState(false);
+    const [showConfirm,   setShowConfirm]   = useState(false);
+    const fileRef = useRef(null);
+
+    const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000); };
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/profile')
+            .then(({ data }) => setProfile(data.profile || {}))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const saveProfile = async () => {
+        if (newPwd || confirmPwd) {
+            if (newPwd !== confirmPwd) { setPwdErr('New passwords do not match.'); return; }
+            if (newPwd.length < 6)    { setPwdErr('New password must be at least 6 characters.'); return; }
+        }
+        setPwdErr('');
+        setSaving(true);
+        try {
+            const { data } = await axiosAdmin.put('/admin/profile', {
+                name: profile.name,
+                email: profile.email,
+                currentPassword: currentPwd || undefined,
+                newPassword:     newPwd     || undefined,
+            });
+            if (data.success) {
+                const stored = JSON.parse(localStorage.getItem('adminUser') || '{}');
+                const updated = { ...stored, name: data.profile.name, email: data.profile.email };
+                localStorage.setItem('adminUser', JSON.stringify(updated));
+                window.dispatchEvent(new Event('adminProfileUpdated'));
+                setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+                showToast('success', 'Profile updated successfully!');
+            }
+        } catch (err) {
+            showToast('error', err.response?.data?.message || 'Failed to save profile.');
+        } finally { setSaving(false); }
+    };
+
+    const handleLogoChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('logo', file);
+        setUploading(true);
+        try {
+            const { data } = await axiosAdmin.post('/admin/profile/logo', fd, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            if (data.success) {
+                setProfile(p => ({ ...p, logo_url: data.logoUrl }));
+                const stored = JSON.parse(localStorage.getItem('adminUser') || '{}');
+                localStorage.setItem('adminUser', JSON.stringify({ ...stored, logo_url: data.logoUrl }));
+                window.dispatchEvent(new Event('adminProfileUpdated'));
+                showToast('success', 'Logo updated!');
+            }
+        } catch (err) {
+            showToast('error', err.response?.data?.message || 'Logo upload failed.');
+        } finally { setUploading(false); e.target.value = ''; }
+    };
+
+    if (loading) return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: '12px', color: '#9ca3af' }}>
+            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTopColor: '#059669', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            Loading…
+        </div>
+    );
+
+    const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' };
+    const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+    const sectionStyle = { marginBottom: '28px' };
+
+    return (
+        <div style={{ padding: '28px 32px', maxWidth: '640px' }}>
+
+            {toast && (
+                <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2', border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`, color: toast.type === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600, fontSize: '14px' }}>
+                    {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
+                </div>
+            )}
+
+            {/* Logo upload */}
+            <div style={{ ...sectionStyle, display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div
+                    onClick={() => fileRef.current?.click()}
+                    style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', border: '2px dashed #d1d5db', cursor: 'pointer', flexShrink: 0, background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    {profile.logo_url
+                        ? <img src={profile.logo_url} alt="Admin Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        : <span style={{ fontSize: '28px' }}>🖼️</span>
+                    }
+                </div>
+                <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', marginBottom: '4px' }}>Admin Logo</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px' }}>Replaces the default logo in the top-left header. JPG, PNG, or WebP · max 2 MB.</div>
+                    <button
+                        onClick={() => fileRef.current?.click()}
+                        disabled={uploading}
+                        style={{ padding: '7px 16px', borderRadius: '8px', border: '1.5px solid #059669', background: 'transparent', color: '#059669', fontSize: '13px', fontWeight: 700, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: uploading ? 0.7 : 1 }}
+                    >
+                        {uploading ? '⏳ Uploading…' : '📤 Upload Logo'}
+                    </button>
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleLogoChange} />
+                </div>
+            </div>
+
+            {/* Name & Email */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', ...sectionStyle }}>
+                <div>
+                    <label style={labelStyle}>Admin Name</label>
+                    <input style={inputStyle} type="text" value={profile.name || ''} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} placeholder="Your name" />
+                </div>
+                <div>
+                    <label style={labelStyle}>Login Email</label>
+                    <input style={inputStyle} type="email" value={profile.email || ''} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} placeholder="admin@example.com" />
+                </div>
+            </div>
+
+            {/* Password change */}
+            <div style={{ ...sectionStyle, padding: '20px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', marginBottom: '4px' }}>Change Password</div>
+                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>Leave blank to keep your current password.</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div>
+                        <label style={labelStyle}>Current Password</label>
+                        <div style={{ position: 'relative' }}>
+                            <input style={{ ...inputStyle, paddingRight: '38px' }} type={showCurrent ? 'text' : 'password'} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
+                            <button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', fontSize: '16px', lineHeight: 1 }}>
+                                {showCurrent ? '🙈' : '👁️'}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label style={labelStyle}>New Password</label>
+                        <div style={{ position: 'relative' }}>
+                            <input style={{ ...inputStyle, paddingRight: '38px' }} type={showNew ? 'text' : 'password'} value={newPwd} onChange={e => { setNewPwd(e.target.value); setPwdErr(''); }} placeholder="••••••••" autoComplete="new-password" />
+                            <button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', fontSize: '16px', lineHeight: 1 }}>
+                                {showNew ? '🙈' : '👁️'}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Confirm New</label>
+                        <div style={{ position: 'relative' }}>
+                            <input style={{ ...inputStyle, paddingRight: '38px', borderColor: pwdErr ? '#f87171' : '#e5e7eb' }} type={showConfirm ? 'text' : 'password'} value={confirmPwd} onChange={e => { setConfirmPwd(e.target.value); setPwdErr(''); }} placeholder="••••••••" autoComplete="new-password" />
+                            <button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', fontSize: '16px', lineHeight: 1 }}>
+                                {showConfirm ? '🙈' : '👁️'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {pwdErr && <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#ef4444' }}>{pwdErr}</div>}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+                <button
+                    onClick={saveProfile}
+                    disabled={saving}
+                    style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#059669', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                >
+                    {saving ? '⏳ Saving…' : '💾 Save Profile'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ─── SMTP Settings Tab ────────────────────────────────────────────────────────
+
+const SmtpSettingsTab = () => {
+    const [settings, setSettings] = useState({ host: '', port: 587, username: '', password: '', encryption: 'tls', from_email: '', from_name: 'Sangian Support' });
+    const [loading,   setLoading]   = useState(true);
+    const [saving,    setSaving]    = useState(false);
+    const [testing,   setTesting]   = useState(false);
+    const [showPass,  setShowPass]  = useState(false);
+    const [toast,     setToast]     = useState(null);
+
+    const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000); };
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/smtp-settings')
+            .then(({ data }) => {
+                const s = data.settings || {};
+                setSettings({
+                    host:       s.host       || '',
+                    port:       s.port       || 587,
+                    username:   s.username   || '',
+                    password:   s.password   || '',
+                    encryption: s.encryption || 'tls',
+                    from_email: s.from_email || '',
+                    from_name:  s.from_name  || 'Sangian Support',
+                });
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            await axiosAdmin.post('/admin/smtp-settings', settings);
+            showToast('success', 'SMTP settings saved successfully!');
+        } catch { showToast('error', 'Failed to save settings.'); }
+        finally { setSaving(false); }
+    };
+
+    const testConnection = async () => {
+        setTesting(true);
+        try {
+            const { data } = await axiosAdmin.post('/admin/smtp-test');
+            showToast('success', data.message || 'Connection successful!');
+        } catch (err) {
+            showToast('error', err.response?.data?.error || 'Connection failed.');
+        } finally { setTesting(false); }
+    };
+
+    const field = (label, key, type = 'text', placeholder = '') => (
+        <div style={{ marginBottom: '18px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+            <input
+                type={type}
+                value={settings[key]}
+                onChange={e => setSettings(s => ({ ...s, [key]: e.target.value }))}
+                placeholder={placeholder}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+        </div>
+    );
+
+    if (loading) return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: '12px', color: '#9ca3af' }}>
+            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            Loading…
+        </div>
+    );
+
+    return (
+        <div style={{ padding: '28px 32px', maxWidth: '680px' }}>
+
+            {toast && (
+                <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2', border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`, color: toast.type === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600, fontSize: '14px' }}>
+                    {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
+                </div>
+            )}
+
+            <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>SMTP Configuration</h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
+                    Configure the outgoing email server. These settings are used for all automated emails — OTP verification, ticket notifications, and contact form responses.
+                </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>{field('SMTP Host', 'host', 'text', 'smtp.example.com')}</div>
+                <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Port</label>
+                    <input
+                        type="number"
+                        value={settings.port}
+                        onChange={e => setSettings(s => ({ ...s, port: parseInt(e.target.value) || 587 }))}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', marginBottom: '18px' }}
+                    />
+                </div>
+                <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Encryption</label>
+                    <select
+                        value={settings.encryption}
+                        onChange={e => setSettings(s => ({ ...s, encryption: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', marginBottom: '18px' }}
+                    >
+                        <option value="tls">TLS (STARTTLS)</option>
+                        <option value="ssl">SSL</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>{field('Username / Email', 'username', 'text', 'smtp-user@example.com')}</div>
+                <div style={{ gridColumn: '1 / -1', marginBottom: '18px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            type={showPass ? 'text' : 'password'}
+                            value={settings.password}
+                            onChange={e => setSettings(s => ({ ...s, password: e.target.value }))}
+                            placeholder="SMTP password or app password"
+                            style={{ width: '100%', padding: '10px 42px 10px 14px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                        />
+                        <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: 0 }}>
+                            {showPass ? '🙈' : '👁️'}
+                        </button>
+                    </div>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>{field('From Name', 'from_name', 'text', 'Sangian Support')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{field('From Email Address', 'from_email', 'email', 'support@example.com')}</div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '20px', borderTop: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
+                <button
+                    onClick={testConnection}
+                    disabled={testing || !settings.host}
+                    style={{ padding: '10px 20px', borderRadius: '10px', border: '1.5px solid #6366f1', background: '#fff', color: '#4f46e5', fontSize: '14px', fontWeight: 700, cursor: (testing || !settings.host) ? 'not-allowed' : 'pointer', opacity: (testing || !settings.host) ? 0.6 : 1, fontFamily: 'inherit' }}
+                >
+                    {testing ? '⏳ Testing…' : '🔌 Test Connection'}
+                </button>
+                <div style={{ flex: 1 }} />
+                <button
+                    onClick={save}
+                    disabled={saving}
+                    style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#6366f1', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                >
+                    {saving ? '⏳ Saving…' : '💾 Save Settings'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ─── Help & Support Email Settings Tab ────────────────────────────────────────
+
+const HelpEmailSettingsTab = () => {
+    const [settings, setSettings] = useState({ send_user_email: 1, send_admin_email: 1, send_on_admin_reply: 1, send_on_user_reply: 1, admin_email: '' });
+    const [loading,  setLoading]  = useState(true);
+    const [saving,   setSaving]   = useState(false);
+    const [toast,    setToast]    = useState(null);
+    const [emailErr, setEmailErr] = useState('');
+
+    const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/help-email-settings')
+            .then(({ data }) => {
+                const s = data.settings || {};
+                setSettings({
+                    send_user_email:     s.send_user_email     ?? 1,
+                    send_admin_email:    s.send_admin_email    ?? 1,
+                    send_on_admin_reply: s.send_on_admin_reply ?? 1,
+                    send_on_user_reply:  s.send_on_user_reply  ?? 1,
+                    admin_email:         s.admin_email         ?? '',
+                });
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const save = async () => {
+        if (settings.admin_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.admin_email)) {
+            setEmailErr('Enter a valid email address.');
+            return;
+        }
+        setEmailErr('');
+        setSaving(true);
+        try {
+            await axiosAdmin.post('/admin/help-email-settings', settings);
+            showToast('success', 'Settings saved successfully!');
+        } catch { showToast('error', 'Failed to save settings.'); }
+        finally { setSaving(false); }
+    };
+
+    if (loading) return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', gap: '12px', color: '#9ca3af' }}>
+            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            Loading…
+        </div>
+    );
+
+    return (
+        <div style={{ padding: '28px 32px', maxWidth: '640px' }}>
+
+            {toast && (
+                <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2', border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : '#fecaca'}`, color: toast.type === 'success' ? '#16a34a' : '#dc2626', fontWeight: 600, fontSize: '14px' }}>
+                    {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
+                </div>
+            )}
+
+            <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>Ticket Email Notifications</h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: 1.6 }}>
+                    Control which automated emails are sent for Help &amp; Support ticket events.
+                </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                <ToggleRow
+                    label="Send Confirmation Email to User"
+                    description="Email the user a confirmation with their ticket ID when they create a new ticket. Also sent when ticket status changes."
+                    checked={!!settings.send_user_email}
+                    onChange={e => setSettings(s => ({ ...s, send_user_email: e.target.checked ? 1 : 0 }))}
+                />
+                <ToggleRow
+                    label="Send New Ticket Notification to Admin"
+                    description="Notify the admin email address when a new support ticket is submitted. Includes ticket ID, subject, and user message."
+                    checked={!!settings.send_admin_email}
+                    onChange={e => setSettings(s => ({ ...s, send_admin_email: e.target.checked ? 1 : 0 }))}
+                />
+                <ToggleRow
+                    label="Notify User When Admin Replies"
+                    description="Send the user an email preview of the admin reply whenever the admin responds to their ticket."
+                    checked={!!settings.send_on_admin_reply}
+                    onChange={e => setSettings(s => ({ ...s, send_on_admin_reply: e.target.checked ? 1 : 0 }))}
+                />
+                <ToggleRow
+                    label="Notify Admin When User Replies"
+                    description="Send the admin an email notification with a preview when a user adds a reply to an existing ticket."
+                    checked={!!settings.send_on_user_reply}
+                    onChange={e => setSettings(s => ({ ...s, send_on_user_reply: e.target.checked ? 1 : 0 }))}
+                />
+            </div>
+
+            <div style={{ marginBottom: '28px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Admin Notification Email
+                </label>
+                <input
+                    type="email"
+                    value={settings.admin_email}
+                    onChange={e => { setEmailErr(''); setSettings(s => ({ ...s, admin_email: e.target.value })); }}
+                    placeholder="admin@example.com"
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${emailErr ? '#f87171' : '#e5e7eb'}`, fontSize: '14px', color: '#1f2937', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+                {emailErr ? (
+                    <div style={{ marginTop: '5px', fontSize: '12px', fontWeight: 600, color: '#ef4444' }}>{emailErr}</div>
+                ) : (
+                    <div style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af' }}>
+                        Receives new ticket and user reply notifications.
+                    </div>
+                )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>💡 Requires SMTP to be configured in the SMTP Settings tab.</span>
+                <button
+                    onClick={save}
+                    disabled={saving}
+                    style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#4f46e5', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                >
+                    {saving ? '⏳ Saving…' : '💾 Save Settings'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // ─── Main AdminSettings page ──────────────────────────────────────────────────
 
 const CONTENT_MAP = {
@@ -1678,6 +2136,9 @@ const CONTENT_MAP = {
     crash_analytics:   <CrashAnalyticsTab />,
     automated_testing: <AutomatedTestingTab />,
     contact_email:     <ContactEmailSettingsTab />,
+    smtp_settings:     <SmtpSettingsTab />,
+    help_email:        <HelpEmailSettingsTab />,
+    admin_profile:     <AdminProfileTab />,
 };
 
 const AdminSettings = () => {

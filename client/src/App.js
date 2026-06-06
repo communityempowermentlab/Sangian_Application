@@ -82,6 +82,7 @@ const PageTitle = () => {
                 ? 'Edit Child | Admin Panel | Community Empowerment Lab'
                 : 'Community Empowerment Lab');
         document.title = title;
+        window.scrollTo(0, 0);
     }, [pathname]);
     return null;
 };

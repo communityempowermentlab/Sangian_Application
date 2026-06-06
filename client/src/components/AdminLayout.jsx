@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { AdminNotificationProvider, useAdminNotification } from '../contexts/AdminNotificationContext';
 import '../pages/AdminDashboard.css';
 
-// Decode JWT payload and check expiry without verifying signature
 const isTokenValid = () => {
     const token = localStorage.getItem('adminToken');
     if (!token) return false;
@@ -15,13 +15,20 @@ const isTokenValid = () => {
     }
 };
 
-const AdminLayout = () => {
+const getAdminUser = () => {
+    try { return JSON.parse(localStorage.getItem('adminUser') || '{}'); }
+    catch { return {}; }
+};
+
+const AdminLayoutInner = () => {
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [usersOpen, setUsersOpen] = useState(false);
+    const [adminProfile, setAdminProfile] = useState(getAdminUser);
     const usersRef = useRef(null);
     const location = useLocation();
     const navigate = useNavigate();
+    const { newMessageCount, activeTicketCount } = useAdminNotification();
 
     const activeGroup =
         location.pathname.includes('/admin/children')      ? 'children'     :
@@ -35,12 +42,16 @@ const AdminLayout = () => {
             'dashboard';
 
     const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors';
-
-    const adminUserStr = localStorage.getItem('adminUser');
-    const adminName = adminUserStr ? JSON.parse(adminUserStr).name : 'Admin';
     const appVersion = 'v1.0.0';
 
-    // Guard: verify token on every route change (handles mid-session expiry)
+    // Sync profile from localStorage when updated by profile settings page
+    useEffect(() => {
+        const onProfileUpdated = () => setAdminProfile(getAdminUser());
+        window.addEventListener('adminProfileUpdated', onProfileUpdated);
+        return () => window.removeEventListener('adminProfileUpdated', onProfileUpdated);
+    }, []);
+
+    // Guard: verify token on every route change
     useEffect(() => {
         if (!isTokenValid()) {
             localStorage.removeItem('adminToken');
@@ -50,7 +61,7 @@ const AdminLayout = () => {
         }
     }, [location.pathname, navigate]);
 
-    // Periodic background token expiry check (every 60 seconds)
+    // Periodic background token expiry check
     useEffect(() => {
         const interval = setInterval(() => {
             if (!isTokenValid()) {
@@ -82,18 +93,12 @@ const AdminLayout = () => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const handleLogoutClick = () => {
-        setShowLogoutModal(true);
-    };
-
     const handleLogoutConfirm = async () => {
         try {
             const sessionId = localStorage.getItem('adminSessionId');
-            if (sessionId) {
-                await axiosAdmin.post(`/admin/logout/${sessionId}`);
-            }
+            if (sessionId) await axiosAdmin.post(`/admin/logout/${sessionId}`);
         } catch (e) {
-            console.error("Logout admin session error:", e);
+            console.error('Logout admin session error:', e);
         } finally {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminSessionId');
@@ -101,6 +106,9 @@ const AdminLayout = () => {
             navigate('/admin/login');
         }
     };
+
+    const logoSrc = adminProfile.logo_url || '/cel_admin_logo.png';
+    const adminName = adminProfile.name || 'Admin';
 
     return (
         <div className="admin-dashboard-wrapper">
@@ -110,7 +118,7 @@ const AdminLayout = () => {
                 <header className="admin-topbar">
                     <div className="admin-brand">
                         <Link to="/admin/dashboard" className="admin-brand-link">
-                            <img src="/cel_admin_logo.png" alt="Sangian Admin" className="admin-logo" />
+                            <img src={logoSrc} alt="Sangian Admin" className="admin-logo" />
                         </Link>
                     </div>
 
@@ -126,7 +134,7 @@ const AdminLayout = () => {
 
                         <div className="admin-version">{appVersion}</div>
 
-                        <button className="admin-btn admin-btn-danger" onClick={handleLogoutClick}>
+                        <button className="admin-btn admin-btn-danger" onClick={() => setShowLogoutModal(true)}>
                             🚪 Logout
                         </button>
                     </div>
@@ -189,20 +197,25 @@ const AdminLayout = () => {
                             📄 Docs
                         </Link>
 
-                        {/* Meta tab */}
+                        {/* Meta tab — badge shows unread contact messages */}
                         <Link
                             to="/admin/meta"
-                            className={`admin-menu-item ${activeGroup === 'meta' ? 'active' : ''}`}
+                            className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'meta' ? 'active' : ''}`}
                         >
                             🗂️ Meta
+                            {newMessageCount > 0 && (
+                                <span className="admin-nav-badge">{newMessageCount > 99 ? '99+' : newMessageCount}</span>
+                            )}
                         </Link>
 
-                        {/* Help & Support tab */}
                         <Link
                             to="/admin/help-support"
-                            className={`admin-menu-item ${activeGroup === 'help-support' ? 'active' : ''}`}
+                            className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'help-support' ? 'active' : ''}`}
                         >
                             🎫 Support
+                            {activeTicketCount > 0 && (
+                                <span className="admin-nav-badge">{activeTicketCount > 99 ? '99+' : activeTicketCount}</span>
+                            )}
                         </Link>
 
                         <Link
@@ -255,5 +268,11 @@ const AdminLayout = () => {
         </div>
     );
 };
+
+const AdminLayout = () => (
+    <AdminNotificationProvider>
+        <AdminLayoutInner />
+    </AdminNotificationProvider>
+);
 
 export default AdminLayout;

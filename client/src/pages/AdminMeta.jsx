@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
+import { useAdminNotification } from '../contexts/AdminNotificationContext';
 import './AdminMeta.css';
 
 const SIDEBAR_ITEMS = [
@@ -326,8 +327,8 @@ const STATUS_COLORS = {
     resolved:    { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
 };
 
-const ContactAdmin = () => {
-    const [tab, setTab] = useState('info'); // 'info' | 'messages'
+const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
+    const [tab, setTab] = useState('messages'); // 'messages' | 'info'
 
     // ── Contact Info state ──────────────────────────────────────────────────
     const infoEditorRef   = useRef(null);
@@ -409,33 +410,21 @@ const ContactAdmin = () => {
         await axiosAdmin.post('/admin/contact-messages/update-status', { id, status });
         setMsgs(m => m.map(x => x.id === id ? { ...x, status } : x));
         if (selected?.id === id) setSelected(s => ({ ...s, status }));
+        onStatusChange?.();
     };
-
-    const deleteMsg = async (id) => {
-        setDeleting(id);
-        try {
-            await axiosAdmin.delete(`/admin/contact-messages/${id}`);
-            setMsgs(m => m.filter(x => x.id !== id));
-            if (selected?.id === id) setSelected(null);
-        } catch {} finally { setDeleting(null); }
-    };
-
-    const TABS = [
-        { key: 'info',     label: '⚙️ Contact Info'  },
-        { key: 'messages', label: '📩 Message Inbox' },
-    ];
 
     return (
         <div className="contact-admin-wrap">
             {/* Tab bar */}
             <div className="contact-admin-tabs">
-                {TABS.map(t => (
-                    <button
-                        key={t.key}
-                        className={`contact-admin-tab ${tab === t.key ? 'active' : ''}`}
-                        onClick={() => setTab(t.key)}
-                    >{t.label}</button>
-                ))}
+                <button
+                    className={`contact-admin-tab ${tab === 'messages' ? 'active' : ''}`}
+                    onClick={() => setTab('messages')}
+                >📩 Message Inbox</button>
+                <button
+                    className={`contact-admin-tab ${tab === 'info' ? 'active' : ''}`}
+                    onClick={() => setTab('info')}
+                >⚙️ Contact Info</button>
             </div>
 
             {/* ── Info tab ────────────────────────────────────────────── */}
@@ -646,11 +635,6 @@ const ContactAdmin = () => {
                                                 );
                                             })}
                                         </div>
-                                        <button className="contact-delete-btn"
-                                            disabled={deleting === selected.id}
-                                            onClick={() => deleteMsg(selected.id)}>
-                                            {deleting === selected.id ? '⏳' : '🗑️ Delete'}
-                                        </button>
                                     </div>
                                 </div>
                             ) : (
@@ -848,6 +832,7 @@ const PlaceholderPanel = ({ item }) => (
 
 const AdminMeta = () => {
     const [activeKey, setActiveKey] = useState('terms');
+    const { newMessageCount, refreshCount } = useAdminNotification();
 
     const flatItems = SIDEBAR_ITEMS.flatMap(g => g.items);
     const activeItem = flatItems.find(i => i.key === activeKey) ?? flatItems[0];
@@ -865,7 +850,14 @@ const AdminMeta = () => {
                                 onClick={() => setActiveKey(item.key)}
                             >
                                 <span className="meta-sidebar-icon">{item.icon}</span>
-                                {item.label}
+                                <span className="meta-sidebar-label-wrap">
+                                    {item.label}
+                                    {item.key === 'contact' && newMessageCount > 0 && (
+                                        <span className="meta-sidebar-badge">
+                                            {newMessageCount > 99 ? '99+' : newMessageCount}
+                                        </span>
+                                    )}
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -889,7 +881,7 @@ const AdminMeta = () => {
                 {activeItem.type === 'cms'
                     ? <CmsEditor key={activeItem.key} pageKey={activeItem.key} />
                     : activeItem.type === 'contact'
-                        ? <ContactAdmin key="contact" />
+                        ? <ContactAdmin key="contact" newMessageCount={newMessageCount} onStatusChange={refreshCount} />
                         : activeItem.type === 'faq'
                             ? <HelpFaqAdmin key="help-faq" />
                             : <PlaceholderPanel item={activeItem} />

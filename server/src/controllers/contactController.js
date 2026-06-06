@@ -180,7 +180,7 @@ const deleteMessage = async (req, res) => {
 
 const getContactEmailSettings = async (req, res) => {
     try {
-        const [[row]] = await pool.query('SELECT * FROM contact_email_settings LIMIT 1');
+        const [[row]] = await pool.query('SELECT * FROM contact_email_settings WHERE id = 1');
         if (!row) return res.json({ success: true, settings: { send_sender_email: 1, send_admin_email: 1, admin_email: '' } });
         res.json({ success: true, settings: row });
     } catch (err) {
@@ -194,21 +194,30 @@ const updateContactEmailSettings = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Invalid admin email address.' });
     }
     try {
-        const [[existing]] = await pool.query('SELECT id FROM contact_email_settings LIMIT 1');
-        if (existing) {
-            await pool.query(
-                'UPDATE contact_email_settings SET send_sender_email=?, send_admin_email=?, admin_email=? WHERE id=?',
-                [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null, existing.id]
-            );
-        } else {
-            await pool.query(
-                'INSERT INTO contact_email_settings (send_sender_email, send_admin_email, admin_email) VALUES (?,?,?)',
-                [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null]
-            );
-        }
+        // Upsert pinned to id=1 — always one row, never inserts a second
+        await pool.query(
+            `INSERT INTO contact_email_settings (id, send_sender_email, send_admin_email, admin_email)
+             VALUES (1, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               send_sender_email = VALUES(send_sender_email),
+               send_admin_email  = VALUES(send_admin_email),
+               admin_email       = VALUES(admin_email)`,
+            [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null]
+        );
         res.json({ success: true, message: 'Email settings saved.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+const getNewMessageCount = async (req, res) => {
+    try {
+        const [[{ count }]] = await pool.query(
+            "SELECT COUNT(*) AS count FROM contact_messages WHERE status = 'new'"
+        );
+        res.json({ success: true, count: Number(count) });
+    } catch (err) {
+        res.status(500).json({ success: false, count: 0 });
     }
 };
 
@@ -217,4 +226,5 @@ module.exports = {
     getContactInfo, updateContactInfo,
     getMessages, updateMessageStatus, deleteMessage,
     getContactEmailSettings, updateContactEmailSettings,
+    getNewMessageCount,
 };

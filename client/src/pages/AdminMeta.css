@@ -65,6 +65,27 @@
     line-height: 1;
 }
 
+.meta-sidebar-label-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-sidebar-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
 /* ── Main panel ──────────────────────────────────────────────────────────── */
 
 .meta-main {
@@ -631,6 +652,27 @@
     border-bottom-color: #fff;
 }
 
+.contact-admin-tab--badged {
+    position: relative;
+}
+
+.contact-tab-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
 /* Contact info grid */
 .contact-info-grid {
     display: grid;
@@ -815,21 +857,6 @@
 }
 .contact-status-btn:hover   { border-color: rgba(79,70,229,0.3); background: rgba(79,70,229,0.06); }
 .contact-status-btn.current { font-weight: 800; }
-
-.contact-delete-btn {
-    padding: 5px 14px;
-    border-radius: 8px;
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #dc2626;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.12s;
-}
-.contact-delete-btn:hover:not(:disabled) { background: #dc2626; color: #fff; border-color: #dc2626; }
-.contact-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .contact-msg-empty-detail {
     border: 2px dashed var(--border);

@@ -223,14 +223,14 @@ const ContactPage = () => {
 
                             <div className="contact-form-row">
                                 <div className={`contact-field ${errors.name ? 'has-error' : ''}`}>
-                                    <label className="contact-label">{t.fName} <span className="req">*</span></label>
+                                    <label className="contact-label"><span>{t.fName}<span className="req"> *</span></span></label>
                                     <input className="contact-input" type="text" name="name"
                                         value={form.name} onChange={handleChange}
                                         placeholder={t.fNamePH} maxLength={255} />
                                     {errors.name && <span className="contact-error">{errors.name}</span>}
                                 </div>
                                 <div className={`contact-field ${errors.email ? 'has-error' : ''}`}>
-                                    <label className="contact-label">{t.fEmail} <span className="req">*</span></label>
+                                    <label className="contact-label"><span>{t.fEmail}<span className="req"> *</span></span></label>
                                     <input className="contact-input" type="email" name="email"
                                         value={form.email} onChange={handleChange}
                                         placeholder={t.fEmailPH} maxLength={255} />
@@ -240,14 +240,14 @@ const ContactPage = () => {
 
                             <div className="contact-form-row">
                                 <div className={`contact-field ${errors.phone ? 'has-error' : ''}`}>
-                                    <label className="contact-label">{t.fPhone} <span className="req">*</span></label>
+                                    <label className="contact-label"><span>{t.fPhone}<span className="req"> *</span></span></label>
                                     <input className="contact-input" type="tel" name="phone"
                                         value={form.phone} onChange={handleChange}
                                         placeholder={t.fPhonePH} maxLength={50} />
                                     {errors.phone && <span className="contact-error">{errors.phone}</span>}
                                 </div>
                                 <div className={`contact-field ${errors.subject ? 'has-error' : ''}`}>
-                                    <label className="contact-label">{t.fSubject} <span className="req">*</span></label>
+                                    <label className="contact-label"><span>{t.fSubject}<span className="req"> *</span></span></label>
                                     <input className="contact-input" type="text" name="subject"
                                         value={form.subject} onChange={handleChange}
                                         placeholder={t.fSubjectPH} maxLength={500} />
@@ -257,7 +257,7 @@ const ContactPage = () => {
 
                             <div className={`contact-field ${errors.message ? 'has-error' : ''}`}>
                                 <label className="contact-label">
-                                    {t.fMessage} <span className="req">*</span>
+                                    <span>{t.fMessage}<span className="req"> *</span></span>
                                     <span className="contact-char-count">{form.message.length}/5000</span>
                                 </label>
                                 <textarea className="contact-textarea" name="message"

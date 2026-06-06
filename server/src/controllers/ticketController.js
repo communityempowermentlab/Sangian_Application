@@ -178,8 +178,8 @@ const createTicket = async (req, res) => {
 
         // Insert first message (user's description) including any attachments
         await conn.query(
-            `INSERT INTO ticket_messages (ticket_id, sender_type, message, attachments)
-             VALUES (?, 'user', ?, ?)`,
+            `INSERT INTO ticket_messages (ticket_id, sender_type, message, attachments, is_read)
+             VALUES (?, 'user', ?, ?, 1)`,
             [ticket_id, description.trim(), attachments.length ? JSON.stringify(attachments) : null]
         );
 
@@ -202,9 +202,11 @@ const createTicket = async (req, res) => {
 const getMyTickets = async (req, res) => {
     try {
         const [rows] = await pool.query(
-            `SELECT ticket_id, title, status, created_at, updated_at
-             FROM tickets WHERE email = ?
-             ORDER BY created_at DESC`,
+            `SELECT t.ticket_id, t.title, t.status, t.created_at, t.updated_at,
+                    (SELECT COUNT(*) FROM ticket_messages tm
+                     WHERE tm.ticket_id = t.ticket_id AND tm.sender_type = 'admin' AND tm.is_read = 0) AS unread_count
+             FROM tickets t WHERE t.email = ?
+             ORDER BY t.created_at DESC`,
             [req.verifiedEmail]
         );
         return res.json({ tickets: rows });
@@ -228,6 +230,13 @@ const getTicketDetail = async (req, res) => {
 
         const [messages] = await pool.query(
             'SELECT * FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC',
+            [ticket_id]
+        );
+
+        // Mark all unread admin messages as read now that user has opened the ticket
+        await pool.query(
+            `UPDATE ticket_messages SET is_read = 1
+             WHERE ticket_id = ? AND sender_type = 'admin' AND is_read = 0`,
             [ticket_id]
         );
 
@@ -423,8 +432,8 @@ const adminReply = async (req, res) => {
         }
 
         await conn.query(
-            `INSERT INTO ticket_messages (ticket_id, sender_type, message, attachments)
-             VALUES (?, 'admin', ?, ?)`,
+            `INSERT INTO ticket_messages (ticket_id, sender_type, message, attachments, is_read)
+             VALUES (?, 'admin', ?, ?, 0)`,
             [ticket_id, message.trim(), attachments.length ? JSON.stringify(attachments) : null]
         );
 
@@ -460,8 +469,22 @@ const adminTicketStats = async (_req, res) => {
     }
 };
 
+// ── GET /api/admin/tickets/active-count ───────────────────────────────────────
+const adminActiveTicketCount = async (_req, res) => {
+    try {
+        const [[{ count }]] = await pool.query(
+            `SELECT COUNT(*) AS count FROM tickets WHERE status NOT IN ('closed')`
+        );
+        return res.json({ success: true, count });
+    } catch (err) {
+        console.error('adminActiveTicketCount error:', err);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
 module.exports = {
     sendOtp, verifyOtp, requireVerifiedEmail,
     createTicket, getMyTickets, getTicketDetail, replyToTicket,
     adminGetTickets, adminGetTicket, adminUpdateStatus, adminReply, adminTicketStats,
+    adminActiveTicketCount,
 };

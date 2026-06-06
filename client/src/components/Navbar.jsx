@@ -20,7 +20,6 @@ const Navbar = () => {
         try {
             const sessionId = localStorage.getItem('sessionId');
             if (sessionId) {
-                // Silently execute session dump
                 await axios.post(`${API_URL}/sessions/end/${sessionId}`);
             }
         } catch (e) {
@@ -75,22 +74,22 @@ const Navbar = () => {
                     <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{t('common.selectLanguage')}</h2>
                         <h3 style={{ fontSize: '1.1rem', color: '#6b7280', marginBottom: '24px' }}>अपनी पसंदीदा भाषा चुनें</h3>
-                        
+
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <button 
-                                onClick={() => { changeLanguage('en'); setShowLangModal(false); }} 
+                            <button
+                                onClick={() => { changeLanguage('en'); setShowLangModal(false); }}
                                 style={{ padding: '12px', fontSize: '1.1rem', background: language === 'en' ? '#2563eb' : '#f3f4f6', color: language === 'en' ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === 'en' ? 'bold' : 'normal' }}
                             >
                                 English
                             </button>
-                            <button 
-                                onClick={() => { changeLanguage('hi'); setShowLangModal(false); }} 
+                            <button
+                                onClick={() => { changeLanguage('hi'); setShowLangModal(false); }}
                                 style={{ padding: '12px', fontSize: '1.1rem', background: language === 'hi' ? '#2563eb' : '#f3f4f6', color: language === 'hi' ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === 'hi' ? 'bold' : 'normal' }}
                             >
                                 हिंदी
                             </button>
                         </div>
-                        
+
                         <button onClick={() => setShowLangModal(false)} style={{ marginTop: '24px', padding: '8px 16px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                             {t('common.cancel')}
                         </button>

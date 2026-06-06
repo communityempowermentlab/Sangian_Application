@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
+import { useAdminNotification } from '../contexts/AdminNotificationContext';
 import './AdminHelpSupport.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -33,21 +34,32 @@ const Toast = ({ msg, type, onDone }) => {
 };
 
 // ── Stats Bar ─────────────────────────────────────────────────────────────────
-const StatsBar = ({ stats }) => (
+const STAT_CHIPS = [
+    { key: 'total',            label: 'Total',       color: '#6366f1' },
+    { key: 'open',             label: 'Open',        color: '#16a34a' },
+    { key: 'in_progress',      label: 'In Progress', color: '#1d4ed8' },
+    { key: 'waiting_for_user', label: 'Waiting',     color: '#a16207' },
+    { key: 'resolved',         label: 'Resolved',    color: '#065f46' },
+    { key: 'closed',           label: 'Closed',      color: '#64748b' },
+];
+
+const StatsBar = ({ stats, activeStatus, onStatClick }) => (
     <div className="ahs-stats-bar">
-        {[
-            { key: 'total',           label: 'Total',           color: '#6366f1' },
-            { key: 'open',            label: 'Open',            color: '#16a34a' },
-            { key: 'in_progress',     label: 'In Progress',     color: '#1d4ed8' },
-            { key: 'waiting_for_user',label: 'Waiting',         color: '#a16207' },
-            { key: 'resolved',        label: 'Resolved',        color: '#065f46' },
-            { key: 'closed',          label: 'Closed',          color: '#64748b' },
-        ].map(({ key, label, color }) => (
-            <div key={key} className="ahs-stat-chip">
-                <span className="ahs-stat-num" style={{ color }}>{stats[key] ?? 0}</span>
-                <span className="ahs-stat-lbl">{label}</span>
-            </div>
-        ))}
+        {STAT_CHIPS.map(({ key, label, color }) => {
+            const isActive = key === 'total' ? activeStatus === '' : activeStatus === key;
+            return (
+                <button
+                    key={key}
+                    className={`ahs-stat-chip ahs-stat-chip--btn${isActive ? ' ahs-stat-chip--active' : ''}`}
+                    style={isActive ? { borderColor: color, background: `${color}10` } : {}}
+                    onClick={() => onStatClick(key)}
+                    title={`Filter by: ${label}`}
+                >
+                    <span className="ahs-stat-num" style={{ color }}>{stats[key] ?? 0}</span>
+                    <span className="ahs-stat-lbl" style={isActive ? { color } : {}}>{label}</span>
+                </button>
+            );
+        })}
     </div>
 );
 
@@ -71,7 +83,7 @@ const FilterBar = ({ filters, onChange, onSearch }) => (
         <select
             className="ahs-filter-select"
             value={filters.status}
-            onChange={e => { onChange('status', e.target.value); onSearch(); }}
+            onChange={e => { onChange('status', e.target.value); }}
         >
             <option value="">All Statuses</option>
             {ALL_STATUSES.map(s => (
@@ -306,6 +318,7 @@ const TicketDetailPanel = ({ ticketId, onClose, onRefreshList }) => {
 
 // ── Ticket List View ──────────────────────────────────────────────────────────
 const TicketListView = ({ onSelectTicket }) => {
+    const { activeTicketCount } = useAdminNotification();
     const INIT_FILTERS = { ticket_id: '', email: '', status: '', date_from: '', date_to: '' };
     const [tickets,   setTickets]   = useState([]);
     const [stats,     setStats]     = useState({});
@@ -322,10 +335,11 @@ const TicketListView = ({ onSelectTicket }) => {
         } catch {}
     }, []);
 
-    const loadTickets = useCallback(async (pg = 1) => {
+    const loadTickets = useCallback(async (pg = 1, overrideFilters = null) => {
         setLoading(true);
         try {
-            const params = { ...filters, page: pg, limit: LIMIT };
+            const active = overrideFilters || filters;
+            const params = { ...active, page: pg, limit: LIMIT };
             Object.keys(params).forEach(k => !params[k] && delete params[k]);
             const { data } = await axiosAdmin.get('/admin/tickets', { params });
             setTickets(data.tickets);
@@ -339,7 +353,14 @@ const TicketListView = ({ onSelectTicket }) => {
 
     const handleFilterChange = (key, val) => setFilters(f => ({ ...f, [key]: val }));
     const handleSearch = () => loadTickets(1);
-    const handleClear  = () => { setFilters(INIT_FILTERS); setTimeout(() => loadTickets(1), 0); };
+    const handleClear  = () => { setFilters(INIT_FILTERS); loadTickets(1, INIT_FILTERS); };
+
+    const handleStatClick = (key) => {
+        const newStatus = key === 'total' ? '' : key;
+        const newFilters = { ...filters, status: newStatus };
+        setFilters(newFilters);
+        loadTickets(1, newFilters);
+    };
 
     const totalPages = Math.ceil(total / LIMIT);
 
@@ -347,7 +368,14 @@ const TicketListView = ({ onSelectTicket }) => {
         <div className="ahs-list-view">
             <div className="ahs-list-header">
                 <div>
-                    <h2 className="ahs-page-title">Help &amp; Support Tickets</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h2 className="ahs-page-title">Help &amp; Support Tickets</h2>
+                        {activeTicketCount > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', height: '22px', padding: '0 6px', borderRadius: '11px', background: '#ef4444', color: '#fff', fontSize: '11px', fontWeight: 800, lineHeight: 1 }}>
+                                {activeTicketCount > 99 ? '99+' : activeTicketCount}
+                            </span>
+                        )}
+                    </div>
                     <p className="ahs-page-sub">Manage user support requests and respond to enquiries</p>
                 </div>
                 <button className="ahs-refresh-btn" onClick={() => { loadStats(); loadTickets(page); }}>
@@ -355,7 +383,7 @@ const TicketListView = ({ onSelectTicket }) => {
                 </button>
             </div>
 
-            <StatsBar stats={stats} />
+            <StatsBar stats={stats} activeStatus={filters.status} onStatClick={handleStatClick} />
 
             <FilterBar filters={filters} onChange={handleFilterChange} onSearch={handleSearch} />
             {Object.values(filters).some(Boolean) && (

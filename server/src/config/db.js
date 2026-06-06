@@ -324,6 +324,10 @@ const initDb = async () => {
       )
     `);
 
+    // Safe migration: admin logo URL
+    try { await connection.query("ALTER TABLE admins ADD COLUMN logo_url VARCHAR(255) DEFAULT NULL"); }
+    catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (admins.logo_url):', e.message); }
+
     // Safe migrations for existing cms_pages installs
     const cmsMigrations = [
       ["ALTER TABLE cms_pages ADD COLUMN meta_title VARCHAR(255) DEFAULT NULL",     'cms_pages.meta_title'],
@@ -577,14 +581,11 @@ const initDb = async () => {
         updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
-    // Ensure at least one settings row exists
-    const [[{ ces_count }]] = await connection.query('SELECT COUNT(*) AS ces_count FROM contact_email_settings');
-    if (!ces_count) {
-      await connection.query(
-        'INSERT INTO contact_email_settings (send_sender_email, send_admin_email, admin_email) VALUES (1, 1, ?)',
-        [process.env.ADMIN_EMAIL || null]
-      );
-    }
+    // Seed singleton settings row (id=1) — INSERT IGNORE means server restarts never duplicate it
+    await connection.query(
+      'INSERT IGNORE INTO contact_email_settings (id, send_sender_email, send_admin_email, admin_email) VALUES (1, 1, 1, ?)',
+      [process.env.ADMIN_EMAIL || null]
+    );
 
     // Seed contact CMS page
     const [cmsContactRows] = await connection.query(
@@ -746,6 +747,47 @@ const initDb = async () => {
         );
       }
     }
+
+    // Safe migration: add is_read to ticket_messages (1=read by recipient, 0=unread)
+    try {
+      await connection.query("ALTER TABLE ticket_messages ADD COLUMN is_read TINYINT(1) NOT NULL DEFAULT 1");
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (ticket_messages.is_read):', e.message);
+    }
+
+    // ── SMTP settings singleton table ──────────────────────────────────────────
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS smtp_settings (
+        id           INT          PRIMARY KEY DEFAULT 1,
+        host         VARCHAR(255) DEFAULT NULL,
+        port         INT          DEFAULT 587,
+        username     VARCHAR(255) DEFAULT NULL,
+        password     TEXT         DEFAULT NULL,
+        encryption   ENUM('none','tls','ssl') DEFAULT 'tls',
+        from_email   VARCHAR(255) DEFAULT NULL,
+        from_name    VARCHAR(100) DEFAULT 'Sangian Support',
+        updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await connection.query(`INSERT IGNORE INTO smtp_settings (id) VALUES (1)`);
+
+    // ── Help & Support email notification settings singleton table ─────────────
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS help_email_settings (
+        id                   INT        PRIMARY KEY DEFAULT 1,
+        send_user_email      TINYINT(1) DEFAULT 1,
+        send_admin_email     TINYINT(1) DEFAULT 1,
+        send_on_admin_reply  TINYINT(1) DEFAULT 1,
+        send_on_user_reply   TINYINT(1) DEFAULT 1,
+        admin_email          VARCHAR(255) DEFAULT NULL,
+        updated_at           TIMESTAMP  DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await connection.query(
+      `INSERT IGNORE INTO help_email_settings (id, send_user_email, send_admin_email, send_on_admin_reply, send_on_user_reply, admin_email)
+       VALUES (1, 1, 1, 1, 1, ?)`,
+      [process.env.ADMIN_EMAIL || null]
+    );
 
     connection.release();
     console.log('Database tables verified/created');

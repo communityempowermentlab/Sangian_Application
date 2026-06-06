@@ -600,11 +600,38 @@
     border-color: #c7d2fe;
     transform: translateY(-1px);
 }
+.ticket-list-item--unread {
+    border-color: #818cf8;
+    background: linear-gradient(160deg, #fafaff 0%, #f5f3ff 100%);
+}
 .tli-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 8px;
     margin-bottom: 6px;
+}
+.tli-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.tli-unread-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    animation: tli-pulse 1.8s ease-in-out infinite;
+}
+@keyframes tli-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.7; }
 }
 .tli-id {
     font-size: 12px;

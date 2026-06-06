@@ -8,16 +8,18 @@ import './HelpPage.css';
 
 const SERVER_BASE = API_URL.replace(/\/api$/, '');
 
-const STATUS_META = {
-    open:             { label: 'Open',               cls: 'badge-open'    },
-    in_progress:      { label: 'In Progress',         cls: 'badge-progress'},
-    waiting_for_user: { label: 'Waiting for Reply',   cls: 'badge-waiting' },
-    resolved:         { label: 'Resolved',            cls: 'badge-resolved'},
-    closed:           { label: 'Closed',              cls: 'badge-closed'  },
-};
+const getStatusMeta = (t) => ({
+    open:             { label: t('help.statusOpen'),            cls: 'badge-open'    },
+    in_progress:      { label: t('help.statusInProgress'),      cls: 'badge-progress'},
+    waiting_for_user: { label: t('help.statusWaitingForReply'), cls: 'badge-waiting' },
+    resolved:         { label: t('help.statusResolved'),        cls: 'badge-resolved'},
+    closed:           { label: t('help.statusClosed'),          cls: 'badge-closed'  },
+});
 
 const StatusBadge = ({ status }) => {
-    const m = STATUS_META[status] || { label: status, cls: 'badge-open' };
+    const { t } = useLanguage();
+    const meta = getStatusMeta(t);
+    const m = meta[status] || { label: status, cls: 'badge-open' };
     return <span className={`help-badge ${m.cls}`}>{m.label}</span>;
 };
 
@@ -32,7 +34,8 @@ const fmtDateShort = (d) => new Date(d).toLocaleDateString('en-IN', {
 
 // ── OTP Modal ─────────────────────────────────────────────────────────────────
 const OtpModal = ({ purpose, onClose, onVerified }) => {
-    const [step,       setStep]       = useState('email'); // 'email' | 'otp'
+    const { t } = useLanguage();
+    const [step,       setStep]       = useState('email');
     const [emailVal,   setEmailVal]   = useState('');
     const [otpVal,     setOtpVal]     = useState('');
     const [loading,    setLoading]    = useState(false);
@@ -59,7 +62,7 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
         setError('');
         const email = emailVal.trim().toLowerCase();
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError('Please enter a valid email address.');
+            setError(t('help.otpErrEmail'));
             return;
         }
         setLoading(true);
@@ -69,7 +72,7 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
             setStep('otp');
             startResendTimer();
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to send OTP. Please try again.');
+            setError(err.response?.data?.error || t('help.otpErrSend'));
         } finally {
             setLoading(false);
         }
@@ -78,7 +81,7 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
         setError('');
-        if (!otpVal.trim()) { setError('Please enter the OTP.'); return; }
+        if (!otpVal.trim()) { setError(t('help.otpErrEnter')); return; }
         setLoading(true);
         try {
             const { data } = await axios.post(`${API_URL}/tickets/verify-otp`, {
@@ -87,13 +90,13 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
             });
             onVerified(data.token, data.email);
         } catch (err) {
-            setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
+            setError(err.response?.data?.error || t('help.otpErrVerify'));
         } finally {
             setLoading(false);
         }
     };
 
-    const purposeLabel = purpose === 'create' ? 'Create New Ticket' : 'Access My Tickets';
+    const purposeLabel = purpose === 'create' ? t('help.otpPurposeCreate') : t('help.otpPurposeView');
 
     return (
         <div className="otp-overlay" onClick={onClose}>
@@ -101,59 +104,59 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
                 <button className="otp-close" onClick={onClose}>✕</button>
 
                 <div className="otp-icon">🔐</div>
-                <h2 className="otp-title">Verify Your Email</h2>
+                <h2 className="otp-title">{t('help.otpTitle')}</h2>
                 <p className="otp-sub">
-                    We'll send a one-time code to confirm your email before you can <strong>{purposeLabel}</strong>.
+                    {t('help.otpSubPrefix')} <strong>{purposeLabel}</strong>.
                 </p>
 
                 {error && <div className="otp-error">{error}</div>}
 
                 {step === 'email' ? (
                     <form onSubmit={handleSendOtp} className="otp-form">
-                        <label className="otp-label">Email Address</label>
+                        <label className="otp-label">{t('help.otpEmailLabel')}</label>
                         <input
                             type="email"
                             className="otp-input"
-                            placeholder="you@example.com"
+                            placeholder={t('help.otpEmailPlaceholder')}
                             value={emailVal}
                             onChange={e => setEmailVal(e.target.value)}
                             autoFocus
                         />
                         <button className="otp-btn" disabled={loading}>
-                            {loading ? 'Sending…' : 'Send Verification Code'}
+                            {loading ? t('help.otpSending') : t('help.otpSendBtn')}
                         </button>
                     </form>
                 ) : (
                     <form onSubmit={handleVerifyOtp} className="otp-form">
-                        <p className="otp-sent-to">Code sent to <strong>{emailVal}</strong></p>
+                        <p className="otp-sent-to">{t('help.otpSentTo')} <strong>{emailVal}</strong></p>
 
                         {devOtp && (
                             <div className="otp-dev-banner">
-                                <span className="otp-dev-label">⚠️ Dev Mode — SMTP not configured</span>
+                                <span className="otp-dev-label">{t('help.otpDevMode')}</span>
                                 <span className="otp-dev-code">{devOtp}</span>
                                 <button
                                     type="button"
                                     className="otp-dev-fill"
                                     onClick={() => setOtpVal(devOtp)}
                                 >
-                                    Auto-fill
+                                    {t('help.otpAutoFill')}
                                 </button>
                             </div>
                         )}
 
-                        <label className="otp-label">6-Digit Code</label>
+                        <label className="otp-label">{t('help.otpCodeLabel')}</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
                             className="otp-input otp-input--code"
-                            placeholder="• • • • • •"
+                            placeholder={t('help.otpCodePlaceholder')}
                             value={otpVal}
                             onChange={e => setOtpVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             autoFocus
                         />
                         <button className="otp-btn" disabled={loading}>
-                            {loading ? 'Verifying…' : 'Verify & Continue'}
+                            {loading ? t('help.otpVerifying') : t('help.otpVerifyBtn')}
                         </button>
                         <button
                             type="button"
@@ -161,7 +164,9 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
                             disabled={resendSecs > 0 || loading}
                             onClick={handleSendOtp}
                         >
-                            {resendSecs > 0 ? `Resend OTP in ${resendSecs}s` : 'Resend OTP'}
+                            {resendSecs > 0
+                                ? t('help.otpResendIn').replace('{n}', resendSecs)
+                                : t('help.otpResend')}
                         </button>
                     </form>
                 )}
@@ -172,6 +177,7 @@ const OtpModal = ({ purpose, onClose, onVerified }) => {
 
 // ── File Upload Preview ────────────────────────────────────────────────────────
 const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
+    const { t } = useLanguage();
     const inputRef = useRef(null);
 
     const handleAdd = (e) => {
@@ -187,18 +193,14 @@ const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
         <div className="file-upload-box">
             {files.map((f, i) => (
                 <div key={i} className="file-chip">
-                    <img
-                        src={URL.createObjectURL(f)}
-                        alt={f.name}
-                        className="file-chip-thumb"
-                    />
+                    <img src={URL.createObjectURL(f)} alt={f.name} className="file-chip-thumb" />
                     <span className="file-chip-name">{f.name}</span>
                     <button type="button" className="file-chip-remove" onClick={() => remove(i)}>✕</button>
                 </div>
             ))}
             {files.length < maxFiles && (
                 <button type="button" className="file-add-btn" onClick={() => inputRef.current.click()}>
-                    📎 Add Image
+                    {t('help.addImage')}
                 </button>
             )}
             <input
@@ -209,24 +211,27 @@ const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
                 style={{ display: 'none' }}
                 onChange={handleAdd}
             />
-            <span className="file-hint">{files.length}/{maxFiles} · JPG, PNG, WEBP · max 5 MB each</span>
+            <span className="file-hint">
+                {t('help.fileHint').replace('{cur}', files.length).replace('{max}', maxFiles)}
+            </span>
         </div>
     );
 };
 
 // ── Ticket Create Form ────────────────────────────────────────────────────────
 const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
-    const [title,    setTitle]    = useState('');
-    const [desc,     setDesc]     = useState('');
-    const [files,    setFiles]    = useState([]);
-    const [loading,  setLoading]  = useState(false);
-    const [error,    setError]    = useState('');
+    const { t } = useLanguage();
+    const [title,   setTitle]   = useState('');
+    const [desc,    setDesc]    = useState('');
+    const [files,   setFiles]   = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error,   setError]   = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        if (!title.trim()) { setError('Ticket title is required.'); return; }
-        if (!desc.trim())  { setError('Description is required.'); return; }
+        if (!title.trim()) { setError(t('help.errTitle')); return; }
+        if (!desc.trim())  { setError(t('help.errDesc'));  return; }
 
         setLoading(true);
         const fd = new FormData();
@@ -240,7 +245,7 @@ const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
             });
             onCreated(data.ticket_id);
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to create ticket. Please try again.');
+            setError(err.response?.data?.error || t('help.errCreate'));
         } finally {
             setLoading(false);
         }
@@ -248,21 +253,21 @@ const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
 
     return (
         <div className="help-section">
-            <button className="help-back-btn" onClick={onBack}>← Back</button>
+            <button className="help-back-btn" onClick={onBack}>{t('help.back')}</button>
             <div className="help-section-header">
-                <h2 className="help-section-title">Create New Ticket</h2>
-                <p className="help-section-sub">Verified as <strong>{userEmail}</strong></p>
+                <h2 className="help-section-title">{t('help.createTitle')}</h2>
+                <p className="help-section-sub">{t('help.verifiedAs')} <strong>{userEmail}</strong></p>
             </div>
 
             {error && <div className="help-error">{error}</div>}
 
             <form className="ticket-form" onSubmit={handleSubmit}>
                 <div className="ticket-field">
-                    <label className="ticket-label">Subject / Title <span className="req">*</span></label>
+                    <label className="ticket-label">{t('help.fieldSubject')} <span className="req">*</span></label>
                     <input
                         type="text"
                         className="ticket-input"
-                        placeholder="Brief description of your issue…"
+                        placeholder={t('help.fieldSubjectPlaceholder')}
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         maxLength={200}
@@ -271,10 +276,10 @@ const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
                 </div>
 
                 <div className="ticket-field">
-                    <label className="ticket-label">Description <span className="req">*</span></label>
+                    <label className="ticket-label">{t('help.fieldDesc')} <span className="req">*</span></label>
                     <textarea
                         className="ticket-textarea"
-                        placeholder="Describe your issue in detail — what happened, what you expected, and any steps to reproduce…"
+                        placeholder={t('help.fieldDescPlaceholder')}
                         rows={6}
                         value={desc}
                         onChange={e => setDesc(e.target.value)}
@@ -282,12 +287,14 @@ const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
                 </div>
 
                 <div className="ticket-field">
-                    <label className="ticket-label">Attachments <span className="ticket-optional">(optional)</span></label>
+                    <label className="ticket-label">
+                        {t('help.fieldAttachments')} <span className="ticket-optional">{t('help.optional')}</span>
+                    </label>
                     <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
                 </div>
 
                 <button className="ticket-submit-btn" disabled={loading}>
-                    {loading ? 'Submitting…' : '🎫 Submit Ticket'}
+                    {loading ? t('help.submitting') : t('help.submitBtn')}
                 </button>
             </form>
         </div>
@@ -295,25 +302,29 @@ const CreateTicketForm = ({ token, userEmail, onCreated, onBack }) => {
 };
 
 // ── Ticket Created Success ────────────────────────────────────────────────────
-const TicketCreatedSuccess = ({ ticketId, onViewTickets, onNewTicket }) => (
-    <div className="help-section help-success-section">
-        <div className="help-success-icon">🎉</div>
-        <h2 className="help-success-title">Ticket Submitted!</h2>
-        <p className="help-success-sub">Your support ticket has been created. We'll get back to you within 1–2 business days.</p>
-        <div className="help-success-id">
-            <span className="help-success-id-label">Your Ticket ID</span>
-            <span className="help-success-id-value">{ticketId}</span>
+const TicketCreatedSuccess = ({ ticketId, onViewTickets, onNewTicket }) => {
+    const { t } = useLanguage();
+    return (
+        <div className="help-section help-success-section">
+            <div className="help-success-icon">🎉</div>
+            <h2 className="help-success-title">{t('help.successTitle')}</h2>
+            <p className="help-success-sub">{t('help.successSub')}</p>
+            <div className="help-success-id">
+                <span className="help-success-id-label">{t('help.successIdLabel')}</span>
+                <span className="help-success-id-value">{ticketId}</span>
+            </div>
+            <p className="help-success-note">{t('help.successNote')}</p>
+            <div className="help-success-actions">
+                <button className="ticket-submit-btn" onClick={onViewTickets}>{t('help.viewMyTickets')}</button>
+                <button className="help-outline-btn" onClick={onNewTicket}>{t('help.createAnother')}</button>
+            </div>
         </div>
-        <p className="help-success-note">Keep this ID handy — you'll need it to track your ticket.</p>
-        <div className="help-success-actions">
-            <button className="ticket-submit-btn" onClick={onViewTickets}>View My Tickets</button>
-            <button className="help-outline-btn" onClick={onNewTicket}>Create Another Ticket</button>
-        </div>
-    </div>
-);
+    );
+};
 
 // ── My Tickets List ───────────────────────────────────────────────────────────
 const MyTicketsList = ({ token, userEmail, onSelectTicket, onBack }) => {
+    const { t } = useLanguage();
     const [tickets,  setTickets]  = useState([]);
     const [loading,  setLoading]  = useState(true);
     const [error,    setError]    = useState('');
@@ -326,13 +337,13 @@ const MyTicketsList = ({ token, userEmail, onSelectTicket, onBack }) => {
                 });
                 setTickets(data.tickets);
             } catch (err) {
-                setError(err.response?.data?.error || 'Failed to load tickets.');
+                setError(err.response?.data?.error || t('help.errLoad'));
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, [token]);
+    }, [token, t]);
 
     if (loading) return (
         <div className="help-section">
@@ -342,10 +353,10 @@ const MyTicketsList = ({ token, userEmail, onSelectTicket, onBack }) => {
 
     return (
         <div className="help-section">
-            <button className="help-back-btn" onClick={onBack}>← Back</button>
+            <button className="help-back-btn" onClick={onBack}>{t('help.back')}</button>
             <div className="help-section-header">
-                <h2 className="help-section-title">My Tickets</h2>
-                <p className="help-section-sub">Viewing tickets for <strong>{userEmail}</strong></p>
+                <h2 className="help-section-title">{t('help.myTicketsTitle')}</h2>
+                <p className="help-section-sub">{t('help.viewingFor')} <strong>{userEmail}</strong></p>
             </div>
 
             {error && <div className="help-error">{error}</div>}
@@ -353,19 +364,26 @@ const MyTicketsList = ({ token, userEmail, onSelectTicket, onBack }) => {
             {!error && tickets.length === 0 && (
                 <div className="help-empty">
                     <div className="help-empty-icon">🎫</div>
-                    <p>No tickets found for this email address.</p>
+                    <p>{t('help.noTickets')}</p>
                 </div>
             )}
 
             <div className="ticket-list">
-                {tickets.map(t => (
-                    <button key={t.ticket_id} className="ticket-list-item" onClick={() => onSelectTicket(t.ticket_id)}>
+                {tickets.map(ticket => (
+                    <button key={ticket.ticket_id} className={`ticket-list-item${ticket.unread_count > 0 ? ' ticket-list-item--unread' : ''}`} onClick={() => onSelectTicket(ticket.ticket_id)}>
                         <div className="tli-header">
-                            <span className="tli-id">{t.ticket_id}</span>
-                            <StatusBadge status={t.status} />
+                            <span className="tli-id">{ticket.ticket_id}</span>
+                            <div className="tli-header-right">
+                                {ticket.unread_count > 0 && (
+                                    <span className="tli-unread-badge">
+                                        {ticket.unread_count > 9 ? '9+' : ticket.unread_count} {t('help.unreadNew')}
+                                    </span>
+                                )}
+                                <StatusBadge status={ticket.status} />
+                            </div>
                         </div>
-                        <div className="tli-title">{t.title}</div>
-                        <div className="tli-date">Created {fmtDateShort(t.created_at)}</div>
+                        <div className="tli-title">{ticket.title}</div>
+                        <div className="tli-date">{t('help.createdOn')} {fmtDateShort(ticket.created_at)}</div>
                     </button>
                 ))}
             </div>
@@ -375,14 +393,15 @@ const MyTicketsList = ({ token, userEmail, onSelectTicket, onBack }) => {
 
 // ── Ticket Detail ─────────────────────────────────────────────────────────────
 const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
-    const [ticket,   setTicket]   = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [loading,  setLoading]  = useState(true);
-    const [error,    setError]    = useState('');
-    const [replyMsg, setReplyMsg] = useState('');
+    const { t } = useLanguage();
+    const [ticket,     setTicket]     = useState(null);
+    const [messages,   setMessages]   = useState([]);
+    const [loading,    setLoading]    = useState(true);
+    const [error,      setError]      = useState('');
+    const [replyMsg,   setReplyMsg]   = useState('');
     const [replyFiles, setReplyFiles] = useState([]);
-    const [sending,  setSending]  = useState(false);
-    const [sendErr,  setSendErr]  = useState('');
+    const [sending,    setSending]    = useState(false);
+    const [sendErr,    setSendErr]    = useState('');
     const threadRef = useRef(null);
 
     const load = useCallback(async () => {
@@ -393,23 +412,21 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
             setTicket(data.ticket);
             setMessages(data.messages);
             setTimeout(() => {
-                if (threadRef.current) {
-                    threadRef.current.scrollTop = threadRef.current.scrollHeight;
-                }
+                if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
             }, 50);
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to load ticket.');
+            setError(err.response?.data?.error || t('help.errLoadTicket'));
         } finally {
             setLoading(false);
         }
-    }, [ticketId, token]);
+    }, [ticketId, token, t]);
 
     useEffect(() => { load(); }, [load]);
 
     const handleReply = async (e) => {
         e.preventDefault();
         setSendErr('');
-        if (!replyMsg.trim()) { setSendErr('Please type a message before sending.'); return; }
+        if (!replyMsg.trim()) { setSendErr(t('help.errReply')); return; }
 
         setSending(true);
         const fd = new FormData();
@@ -424,7 +441,7 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
             setReplyFiles([]);
             await load();
         } catch (err) {
-            setSendErr(err.response?.data?.error || 'Failed to send reply.');
+            setSendErr(err.response?.data?.error || t('help.errSendReply'));
         } finally {
             setSending(false);
         }
@@ -435,9 +452,9 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
             <div className="help-spinner-wrap"><div className="help-spinner" /></div>
         </div>
     );
-    if (error)  return (
+    if (error) return (
         <div className="help-section">
-            <button className="help-back-btn" onClick={onBack}>← Back</button>
+            <button className="help-back-btn" onClick={onBack}>{t('help.backToTickets')}</button>
             <div className="help-error">{error}</div>
         </div>
     );
@@ -446,19 +463,17 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
 
     return (
         <div className="help-section td-shell">
-            <button className="help-back-btn" onClick={onBack}>← My Tickets</button>
+            <button className="help-back-btn" onClick={onBack}>{t('help.backToTickets')}</button>
 
-            {/* Ticket header */}
             <div className="td-header">
                 <div className="td-meta">
                     <span className="td-id">{ticket.ticket_id}</span>
                     <StatusBadge status={ticket.status} />
                 </div>
                 <h2 className="td-title">{ticket.title}</h2>
-                <p className="td-date">Opened {fmtDate(ticket.created_at)}</p>
+                <p className="td-date">{t('help.openedOn')} {fmtDate(ticket.created_at)}</p>
             </div>
 
-            {/* Conversation thread */}
             <div className="td-thread" ref={threadRef}>
                 {messages.map((m) => {
                     const isUser  = m.sender_type === 'user';
@@ -467,7 +482,7 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
                         : [];
                     return (
                         <div key={m.id} className={`msg-bubble ${isUser ? 'msg-user' : 'msg-admin'}`}>
-                            <div className="msg-sender">{isUser ? '👤 You' : '🛡️ Support Team'}</div>
+                            <div className="msg-sender">{isUser ? t('help.you') : t('help.supportTeam')}</div>
                             <div className="msg-text">{m.message}</div>
                             {attachs.length > 0 && (
                                 <div className="msg-attachments">
@@ -488,15 +503,14 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
                 })}
             </div>
 
-            {/* Reply box */}
             {isClosed ? (
-                <div className="td-closed-note">This ticket is closed. Please create a new ticket if you need further assistance.</div>
+                <div className="td-closed-note">{t('help.closedNote')}</div>
             ) : (
                 <form className="td-reply-form" onSubmit={handleReply}>
                     {sendErr && <div className="help-error">{sendErr}</div>}
                     <textarea
                         className="td-reply-input"
-                        placeholder="Write your reply…"
+                        placeholder={t('help.replyPlaceholder')}
                         rows={4}
                         value={replyMsg}
                         onChange={e => setReplyMsg(e.target.value)}
@@ -505,7 +519,7 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
                     <div className="td-reply-footer">
                         <FileUploadBox files={replyFiles} setFiles={setReplyFiles} maxFiles={3} />
                         <button className="ticket-submit-btn td-send-btn" disabled={sending}>
-                            {sending ? 'Sending…' : '📤 Send Reply'}
+                            {sending ? t('help.sending') : t('help.sendReply')}
                         </button>
                     </div>
                 </form>
@@ -514,7 +528,7 @@ const TicketDetail = ({ ticketId, token, userEmail, onBack }) => {
     );
 };
 
-// ── Default FAQs (fallback if API unavailable) ────────────────────────────────
+// ── Default FAQs ──────────────────────────────────────────────────────────────
 const DEFAULT_FAQS = [
     { id: '1', q: 'How long does it take to get a response?',  a: 'Our team typically responds within 1–2 business days. Complex issues may take slightly longer.' },
     { id: '2', q: 'What types of issues can I raise?',          a: 'Technical bugs, login problems, game session issues, data concerns, or any platform-related questions.' },
@@ -522,39 +536,14 @@ const DEFAULT_FAQS = [
     { id: '4', q: 'How do I track my ticket?',                  a: 'Use "My Tickets" with your verified email to see the full conversation thread and current status.' },
 ];
 
-const HELP_T = {
-    en: {
-        badge:    '🎫 Help & Support',
-        title:    'How can we help you?',
-        subtitle: 'Our support team is here to assist you with any issues related to the Sangian Assessment Platform. Create a ticket and we\'ll respond within 1–2 business days.',
-        createBtn:  'Create Ticket →',
-        myTicketBtn:'View My Tickets →',
-        defaultCreateTitle: 'Create New Ticket',
-        defaultMyTitle:     'My Tickets',
-        defaultFaqTitle:    'Frequently Asked Questions',
-    },
-    hi: {
-        badge:    '🎫 सहायता और समर्थन',
-        title:    'हम आपकी कैसे मदद कर सकते हैं?',
-        subtitle: 'हमारी सपोर्ट टीम संज्ञान मूल्यांकन प्लेटफ़ॉर्म से संबंधित किसी भी समस्या में आपकी मदद के लिए यहाँ है। टिकट बनाएं और हम 1–2 कार्य दिवसों में जवाब देंगे।',
-        createBtn:  'टिकट बनाएं →',
-        myTicketBtn:'मेरे टिकट देखें →',
-        defaultCreateTitle: 'नया सपोर्ट टिकट बनाएं',
-        defaultMyTitle:     'मेरे टिकट',
-        defaultFaqTitle:    'अक्सर पूछे जाने वाले प्रश्न',
-    },
-};
-
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN HelpPage
 // ══════════════════════════════════════════════════════════════════════════════
 const HelpPage = () => {
-    const { language } = useLanguage();
-    const ht = HELP_T[language] || HELP_T.en;
+    const { t, language } = useLanguage();
 
-    // view: 'home' | 'create-form' | 'create-success' | 'my-tickets' | 'ticket-detail'
     const [view,          setView]          = useState('home');
-    const [otpModal,      setOtpModal]      = useState(null); // null | 'create' | 'view'
+    const [otpModal,      setOtpModal]      = useState(null);
     const [verifiedToken, setVerifiedToken] = useState(null);
     const [verifiedEmail, setVerifiedEmail] = useState(null);
     const [createdId,     setCreatedId]     = useState(null);
@@ -562,14 +551,12 @@ const HelpPage = () => {
     const [faqs,          setFaqs]          = useState(DEFAULT_FAQS);
     const [cmsContent,    setCmsContent]    = useState({});
 
-    // Load all section content (bilingual) + FAQs
     useEffect(() => {
         const lang = language || 'en';
         axios.get(`${API_URL}/help-content/all/${lang}`)
             .then(({ data }) => {
                 if (data.content) {
                     setCmsContent(data.content);
-                    // Extract FAQs from the faq section if available
                     const faqSection = data.content.faq;
                     if (faqSection?.content) {
                         try {
@@ -608,7 +595,6 @@ const HelpPage = () => {
 
     return (
         <div className="help-shell">
-            {/* ── OTP Modal ────────────────────────────────────────────────── */}
             {otpModal && (
                 <OtpModal
                     purpose={otpModal}
@@ -617,23 +603,20 @@ const HelpPage = () => {
                 />
             )}
 
-            {/* ── Hero ─────────────────────────────────────────────────────── */}
             <div className="help-hero">
-                <div className="help-hero-badge">{ht.badge}</div>
-                <h1 className="help-hero-title">{ht.title}</h1>
-                <p className="help-hero-sub">{ht.subtitle}</p>
+                <div className="help-hero-badge">{t('help.badge')}</div>
+                <h1 className="help-hero-title">{t('help.title')}</h1>
+                <p className="help-hero-sub">{t('help.subtitle')}</p>
             </div>
 
-            {/* ── Content ──────────────────────────────────────────────────── */}
             <div className="help-body">
 
                 {view === 'home' && (
                     <div className="help-cards-grid">
-                        {/* Create ticket card */}
                         <div className="help-action-card help-action-card--primary">
                             <div className="help-action-icon">✉️</div>
                             <h3 className="help-action-title">
-                                {cmsContent.create_ticket?.title || ht.defaultCreateTitle}
+                                {cmsContent.create_ticket?.title || t('help.createCardTitle')}
                             </h3>
                             {cmsContent.create_ticket?.content ? (
                                 <div
@@ -642,30 +625,24 @@ const HelpPage = () => {
                                 />
                             ) : (
                                 <>
-                                    <p className="help-action-desc">
-                                        Have an issue or question? Submit a support ticket and we'll get back to you as soon as possible.
-                                    </p>
+                                    <p className="help-action-desc">{t('help.createCardDesc')}</p>
                                     <ul className="help-action-list">
-                                        <li>Email verification required</li>
-                                        <li>Attach up to 3 screenshots</li>
-                                        <li>Unique Ticket ID assigned</li>
-                                        <li>Email confirmation sent</li>
+                                        <li>{t('help.createCardItem1')}</li>
+                                        <li>{t('help.createCardItem2')}</li>
+                                        <li>{t('help.createCardItem3')}</li>
+                                        <li>{t('help.createCardItem4')}</li>
                                     </ul>
                                 </>
                             )}
-                            <button
-                                className="help-action-btn"
-                                onClick={() => setOtpModal('create')}
-                            >
-                                {ht.createBtn}
+                            <button className="help-action-btn" onClick={() => setOtpModal('create')}>
+                                {t('help.createBtn')}
                             </button>
                         </div>
 
-                        {/* My tickets card */}
                         <div className="help-action-card">
                             <div className="help-action-icon">📋</div>
                             <h3 className="help-action-title">
-                                {cmsContent.my_tickets?.title || ht.defaultMyTitle}
+                                {cmsContent.my_tickets?.title || t('help.myCardTitle')}
                             </h3>
                             {cmsContent.my_tickets?.content ? (
                                 <div
@@ -674,22 +651,17 @@ const HelpPage = () => {
                                 />
                             ) : (
                                 <>
-                                    <p className="help-action-desc">
-                                        Already submitted a ticket? Access your ticket history and continue the conversation with our team.
-                                    </p>
+                                    <p className="help-action-desc">{t('help.myCardDesc')}</p>
                                     <ul className="help-action-list">
-                                        <li>View all your tickets</li>
-                                        <li>Full conversation history</li>
-                                        <li>Reply and add attachments</li>
-                                        <li>Track ticket status live</li>
+                                        <li>{t('help.myCardItem1')}</li>
+                                        <li>{t('help.myCardItem2')}</li>
+                                        <li>{t('help.myCardItem3')}</li>
+                                        <li>{t('help.myCardItem4')}</li>
                                     </ul>
                                 </>
                             )}
-                            <button
-                                className="help-action-btn help-action-btn--outline"
-                                onClick={() => setOtpModal('view')}
-                            >
-                                {ht.myTicketBtn}
+                            <button className="help-action-btn help-action-btn--outline" onClick={() => setOtpModal('view')}>
+                                {t('help.myTicketBtn')}
                             </button>
                         </div>
                     </div>
@@ -708,10 +680,7 @@ const HelpPage = () => {
                     <TicketCreatedSuccess
                         ticketId={createdId}
                         onViewTickets={() => setView('my-tickets')}
-                        onNewTicket={() => {
-                            setCreatedId(null);
-                            setView('create-form');
-                        }}
+                        onNewTicket={() => { setCreatedId(null); setView('create-form'); }}
                     />
                 )}
 
@@ -719,10 +688,7 @@ const HelpPage = () => {
                     <MyTicketsList
                         token={verifiedToken}
                         userEmail={verifiedEmail}
-                        onSelectTicket={(id) => {
-                            setSelectedId(id);
-                            setView('ticket-detail');
-                        }}
+                        onSelectTicket={(id) => { setSelectedId(id); setView('ticket-detail'); }}
                         onBack={goHome}
                     />
                 )}
@@ -736,11 +702,10 @@ const HelpPage = () => {
                     />
                 )}
 
-                {/* ── FAQ strip ─────────────────────────────────────────── */}
                 {view === 'home' && (
                     <div className="help-faq">
                         <h3 className="help-faq-title">
-                            {cmsContent.faq?.title || ht.defaultFaqTitle}
+                            {cmsContent.faq?.title || t('help.defaultFaqTitle')}
                         </h3>
                         <div className="help-faq-grid">
                             {faqs.map(({ id, q, a }) => (
