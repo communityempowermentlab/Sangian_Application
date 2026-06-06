@@ -217,6 +217,17 @@ const formatTime = (sec) => {
   return `${m}:${s}`;
 };
 
+const fmtDuration = (sec) => {
+  if (sec == null) return '—';
+  const total = Math.round(Number(sec));
+  if (total < 60) return `${total}s`;
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h === 0) return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+
 // ─── Main Component ───────────────────────────────────────
 const AtlantisBagiyaGame = () => {
   const { t }    = useLanguage();
@@ -281,6 +292,7 @@ const AtlantisBagiyaGame = () => {
   const subQIndexRef = useRef(0);
   const qTimerRef = useRef(0);
   const subQAnsweredRef = useRef({});
+  const replayCountsRef = useRef({});   // subQIndex → replay count for current screen
 
   const timerRef = useRef(null);
   const splashAudioRef = useRef(null);
@@ -344,15 +356,15 @@ const AtlantisBagiyaGame = () => {
     }
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
-  // ── Session timer (runs during game response phase) ─────
+  // ── Session timer (runs during game AND score screen until assessment submitted) ─────
   useEffect(() => {
-    if (screen === 'game' && !showQuitModal) {
+    if ((screen === 'game' && !showQuitModal) || (screen === 'score' && !assessmentSubmitted)) {
       timerRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000);
     } else {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen, showQuitModal]);
+  }, [screen, showQuitModal, assessmentSubmitted]);
 
   // ── Question timer ──────────────────────────────────────
   useEffect(() => {
@@ -425,7 +437,7 @@ const AtlantisBagiyaGame = () => {
     setMainScreenNum(1); mainScreenNumRef.current = 1;
     setMainPhase('question');
     setSubQIndex(0); subQIndexRef.current = 0;
-    setSubQAnswered({}); subQAnsweredRef.current = {};
+    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
@@ -616,6 +628,7 @@ const AtlantisBagiyaGame = () => {
       chosenName: chosenItem.name,
       score: pts,
       timeTaken: qTimerRef.current,
+      replayCount: replayCountsRef.current[sqIdx] ?? 0,
     };
     
     const updScores = [...allScoresRef.current];
@@ -656,7 +669,7 @@ const AtlantisBagiyaGame = () => {
       setMainPhase('question');
     }
     setSubQIndex(0); subQIndexRef.current = 0;
-    setSubQAnswered({}); subQAnsweredRef.current = {};
+    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
@@ -764,7 +777,14 @@ const AtlantisBagiyaGame = () => {
         q5_behaviors: assessment.behaviors,
         additional_notes: assessment.notes,
       });
-      
+
+      // Save final screentime (stops here) to session so admin panel reflects it
+      if (gameSessionId) {
+        axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
+          saved_state: { allScores: allScoresRef.current, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, mainScreenNum: 13, screentime: timerSecondsRef.current },
+        }).catch(e => console.error('Screentime save error', e));
+      }
+
       setAssessmentSubmitted(true);
       setShowGrid(true); // Force grid to open so questions are captured
       
@@ -800,6 +820,7 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
           <div className="ab-divider"></div>
+          <img src="/assets/images/bagiya/bagiya.jpg" alt="Bagiya" className="ab-test-logo" />
           <span className="ab-test-title">{t('home.games.bagiya.title')}</span>
         </div>
         <div className="ab-stats">
@@ -973,7 +994,7 @@ const AtlantisBagiyaGame = () => {
                     setMainScreenNum(1); mainScreenNumRef.current = 1;
                     setMainPhase('question');
                     setSubQIndex(0); subQIndexRef.current = 0;
-                    setSubQAnswered({}); subQAnsweredRef.current = {};
+                    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
                     setGridFeedback({});
                     setScreen('game');
                   }}>
@@ -1023,7 +1044,7 @@ const AtlantisBagiyaGame = () => {
                           onClick={() => {
                             setMainPhase('response');
                             setSubQIndex(0); subQIndexRef.current = 0;
-                            setSubQAnswered({}); subQAnsweredRef.current = {};
+                            setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
                             setGridFeedback({});
                             setSubQAudioDone(false);
                             setQTimer(0); qTimerRef.current = 0;
@@ -1064,6 +1085,7 @@ const AtlantisBagiyaGame = () => {
                         className={`ab-btn ab-btn-secondary${subQAnswered[subQIndex] ? ' ab-btn-disabled' : ''}`}
                         disabled={!!subQAnswered[subQIndex]}
                         onClick={() => {
+                          replayCountsRef.current[subQIndex] = (replayCountsRef.current[subQIndex] || 0) + 1;
                           setSubQAudioDone(false);
                           const item = itemByStem[currentConfig.subQStems[subQIndex]];
                           if (item?.khaHai) {
@@ -1124,13 +1146,14 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen" id="dashboard-capture-area">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
-                <div className="ab-screen-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.finalResults')}</div>
+                <div className="ab-screen-title">Assessment Report</div>
+                {quitReason && (
+                  <div className="ab-screen-subtitle">{t('game.reasonLabel')} {quitReason}</div>
+                )}
               </div>
               <div className="ab-chips">
                 <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="ab-chip">{t('game.finalResults')}</span>
-                <span className="ab-chip">{t('game.timeChip')} {formatTime(totalTimeSec)}</span>
+                <span className="ab-chip">Screentime: {formatTime(timerSeconds)}</span>
               </div>
             </div>
 
@@ -1146,13 +1169,17 @@ const AtlantisBagiyaGame = () => {
                     { label: t('game.exactLabel'),    val: correctCount, cls: 'green' },
                     { label: t('game.partialLabel'),  val: partialCount, cls: '' },
                     { label: t('game.wrongLabel'),    val: wrongCount, cls: 'red' },
-                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '' },
-                    { label: t('game.timeLabel'),     val: formatTime(totalTimeSec), cls: '' },
+                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, sub: `${totalPts} / ${maxPts}`, cls: '', info: true },
+                    { label: 'Duration',              val: formatTime(totalTimeSec), cls: '' },
                     { label: t('game.screensLabel'),  val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="ab-metric-box">
-                      <label>{m.label}</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {m.label}
+                        {m.info && <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>}
+                      </label>
                       <div className={`ab-metric-val ${m.cls}`}>{m.val}</div>
+                      {m.sub && <div className="ab-metric-sub">{m.sub}</div>}
                     </div>
                   ))}
                 </div>
@@ -1165,19 +1192,34 @@ const AtlantisBagiyaGame = () => {
                 <table className="ab-q-table">
                   <thead>
                     <tr>
+                      <th>{t('game.sNo')}</th>
                       <th>{t('game.screenHeader')}</th>
+                      <th>Exposure Item</th>
                       <th>{t('game.subQHeader')}</th>
                       <th>{t('game.targetHeader')}</th>
                       <th>{t('game.childChoseHeader')}</th>
                       <th>{t('game.statusHeader')}</th>
                       <th>{t('game.scoreTable.score')}</th>
-                      <th>{t('game.scoreTable.timeTaken')}</th>
+                      <th>Duration</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {allScores.map((s, i) => (
-                      <tr key={i}>
-                        <td>S{s.screen}</td>
+                    {allScores.map((s, i) => {
+                      const screenCfg = SCREEN_CONFIGS.find(c => c.num === s.screen);
+                      const exposureItem = screenCfg ? itemByStem[screenCfg.questionStem] : null;
+                      const isFirstOfScreen = i === 0 || s.screen !== allScores[i - 1].screen;
+                      return (
+                      <tr key={i} className={isFirstOfScreen && i > 0 ? 'ab-screen-group-start' : ''}>
+                        <td>{i + 1}</td>
+                        <td>{isFirstOfScreen ? `S${s.screen}` : ''}</td>
+                        <td>
+                          {isFirstOfScreen && exposureItem ? (
+                            <div className="ab-exposure-cell">
+                              <img src={exposureItem.img} alt={exposureItem.name} className="ab-q-img" />
+                              <span className="ab-exposure-label">This is {exposureItem.name}</span>
+                            </div>
+                          ) : ''}
+                        </td>
                         <td>Q{s.subQ}</td>
                         <td>
                           <img src={itemByStem[s.targetStem]?.img} alt={s.targetName} className="ab-q-img" />
@@ -1186,14 +1228,15 @@ const AtlantisBagiyaGame = () => {
                           <img src={itemByStem[s.chosenStem]?.img} alt={s.chosenName} className="ab-q-img" />
                         </td>
                         <td>
-                          <span className="ab-badge">
+                          <span className={`ab-badge ${s.score === 2 ? 'ab-badge-correct' : s.score === 1 ? 'ab-badge-partial' : 'ab-badge-wrong'}`}>
                             {s.score === 2 ? t('game.statusCorrect') : s.score === 1 ? t('game.statusPartial') : t('game.statusWrong')}
                           </span>
                         </td>
                         <td>{s.score}</td>
-                        <td>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
+                        <td>{fmtDuration(s.timeTaken)}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -503,6 +503,11 @@ exports.submitAssessment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'session_id and child_id are required' });
         }
 
+        const behaviorsArr = Array.isArray(q5_behaviors) ? q5_behaviors : [];
+        if (behaviorsArr.length === 0) {
+            return res.status(400).json({ success: false, message: 'Q5 is required: please select at least one observed behaviour.' });
+        }
+
         const [result] = await pool.query(
             `INSERT INTO game_assessments 
              (session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors, additional_notes) 
@@ -514,7 +519,7 @@ exports.submitAssessment = async (req, res) => {
                 q2_feeling,
                 q3_tiredness,
                 q4_play_again,
-                JSON.stringify(q5_behaviors || []),
+                JSON.stringify(behaviorsArr),
                 additional_notes || ''
             ]
         );

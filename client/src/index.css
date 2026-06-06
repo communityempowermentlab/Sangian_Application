@@ -1135,8 +1135,19 @@ body {
   font-size: 1.5rem;
   font-weight: 800;
   color: #1e293b;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
   letter-spacing: -0.02em;
+}
+
+.shared-assessor-instruction {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-left: 3px solid #7c3aed;
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 28px;
 }
 
 .shared-form-group {
@@ -1311,5 +1322,100 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ── Reusable status badge (game result tables) ─────────────────────────── */
+.game-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.game-status-badge--correct   { background: #d1fae5; color: #065f46; }
+.game-status-badge--partial   { background: #fef3c7; color: #92400e; }
+.game-status-badge--wrong,
+.game-status-badge--incorrect { background: #fee2e2; color: #991b1b; }
+.game-status-badge--pending   { background: #dbeafe; color: #1e40af; }
+
+/* ── Question image column (game result tables) ──────────────────────────── */
+.q-img-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: zoom-in;
+  transition: transform 0.15s;
+}
+.q-img-thumb:hover { transform: scale(1.12); }
+.q-no-image {
+  display: inline-block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 4px 8px;
+  border: 1px dashed #cbd5e1;
+  white-space: nowrap;
+}
+.q-img-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+/* ── % Accuracy formula tooltip icon ────────────────────────────────────── */
+.kpi-formula-icon {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #94a3b8;
+  color: #fff;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  position: relative;
+  margin-left: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.kpi-formula-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s;
+  z-index: 200;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.kpi-formula-icon:hover::after { opacity: 1; }
+
+.q-img-fullscreen-overlay img {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 

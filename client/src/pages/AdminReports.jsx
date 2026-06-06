@@ -486,6 +486,8 @@ const AdminReports = () => {
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Time</th>
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Date <SortIcon field="end_time"/></th>
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Time</th>
+                                    <th style={{ ...S.th, textAlign: 'center', background: '#f0fdf4', color: '#065f46' }}>Duration</th>
+                                    <th style={{ ...S.th, textAlign: 'center', background: '#eff6ff', color: '#1e40af' }}>Screentime</th>
                                     {/* Per-question score columns */}
                                     {activeGame?.key === 'auditory_dhyan' ? (
                                         [1, 2, 3, 4].map(q => (
@@ -644,7 +646,24 @@ const AdminReports = () => {
                                             <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
                                             <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
                                             <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.end_time)}</td>
-                                            
+                                            <td style={{ ...S.tdCenter, color: '#065f46', fontWeight: 600 }}>
+                                                {(() => {
+                                                    const dur = Object.entries(row.question_scores || {})
+                                                        .filter(([k]) => k.endsWith('_time'))
+                                                        .reduce((acc, [, v]) => acc + (Number(v) || 0), 0);
+                                                    return dur > 0 ? fmtSecs(dur) : '—';
+                                                })()}
+                                            </td>
+                                            <td style={{ ...S.tdCenter, color: '#1e40af', fontWeight: 600 }}>
+                                                {(() => {
+                                                    const st = row.saved_state?.screentime ?? row.saved_state?.timerSeconds;
+                                                    if (st != null && st > 0) return fmtSecs(Math.round(st));
+                                                    if (row.end_time && row.start_time)
+                                                        return fmtSecs(Math.round((new Date(row.end_time) - new Date(row.start_time)) / 1000));
+                                                    return '—';
+                                                })()}
+                                            </td>
+
                                             {activeGame?.key === 'auditory_dhyan' ? (
                                                 [1, 2, 3, 4].map(q => {
                                                     const totalCorrectMap = { 1: 4, 2: 5, 3: 9, 4: 15 };

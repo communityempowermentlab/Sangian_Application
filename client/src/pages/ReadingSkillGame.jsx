@@ -553,6 +553,7 @@ const ReadingSkillGame = () => {
         <div className="rs-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />
           <div className="rs-divider"></div>
+          <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-test-logo" />
           <span className="rs-test-title">{t('home.games.literacy.title')}</span>
         </div>
         <div className="rs-stats">
@@ -684,7 +685,9 @@ const ReadingSkillGame = () => {
                     <div className="metric-val red">{incorrectCount}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>{t('game.percentage')}</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {t('game.percentage')} <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
+                    </label>
                     <div className="metric-val">{accuracyPercent}%</div>
                   </div>
                   <div className="rs-metric-box">
@@ -704,6 +707,7 @@ const ReadingSkillGame = () => {
                       <thead>
                         <tr>
                           <th>{t('game.questionNo')}</th>
+                          <th>{t('game.questionImage')}</th>
                           <th>{t('game.questionType')}</th>
                           <th>{t('game.scoreTable.question')}</th>
                           <th>{t('game.scoreTable.correctAnswer')}</th>
@@ -720,6 +724,7 @@ const ReadingSkillGame = () => {
                             <React.Fragment key={q.id}>
                               <tr style={{ cursor: 'default' }}>
                                 <td>{idx + 1}</td>
+                                <td><span className="q-no-image">No Image</span></td>
                                 <td>{getCategoryName(q.categoryName)}</td>
                                 <td className="col-text" title={q.text}>{q.text}</td>
                                 <td>{hasSSR ? t('game.allCriteriaMet') : q.text}</td>
@@ -728,7 +733,7 @@ const ReadingSkillGame = () => {
                               </tr>
                               {hasSSR && (
                                 <tr>
-                                  <td colSpan="6" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
+                                  <td colSpan="7" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
                                     <div style={{ padding: '15px 30px' }}>
                                       <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                                         <thead>

@@ -99,6 +99,16 @@
   letter-spacing: -0.01em;
 }
 
+.chor-test-logo {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  flex-shrink: 0;
+}
+
 .chor-brand-icon {
   width: 32px;
   height: 32px;

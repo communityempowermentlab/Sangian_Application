@@ -1273,7 +1273,9 @@ const ChaloMelaChaleGame = () => {
                 <div className="kpi-val kpi-red">{TOTAL_QUESTIONS - correctCount}</div>
               </div>
               <div className="kpi-card">
-                <div className="kpi-label">{t('game.percentage')}</div>
+                <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                  {t('game.percentage')} <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
+                </div>
                 <div className="kpi-val">{accuracy}%</div>
               </div>
             </div>
@@ -1637,6 +1639,7 @@ const ChaloMelaChaleGame = () => {
           <div className="brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
             <div className="divider"></div>
+            <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="mela-test-logo" />
             <span className="test-title">{t('home.games.mela.title')}</span>
           </div>
           <div className="stats">

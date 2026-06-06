@@ -717,6 +717,7 @@ const HerPherGame = () => {
           <div className="hp-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />
             <div className="hp-divider"></div>
+            <img src="/assets/images/her_pher/her_pher.jpg" alt="Her Pher" className="hp-test-logo" />
             <span className="hp-test-title">{t('home.games.herpher.title')}</span>
           </div>
           <div className="hp-stats">

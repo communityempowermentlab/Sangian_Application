@@ -358,6 +358,7 @@ const TriangleRachnaGame = () => {
   const [assessmentSubmitted, setAssDone]   = useState(false);
   const [isRecording, setIsRecording]               = useState(false);
   const [recordingTarget, setRecordingTarget]       = useState(null);
+  const [fullImg, setFullImg]                       = useState(null);
 
   const sessionIdRef    = useRef(null);
   const timerRef        = useRef(null);
@@ -1184,7 +1185,7 @@ const TriangleRachnaGame = () => {
                     <div className="rg-bd-col">
                       <div className="rg-bd-col-title">Target Image</div>
                       <div className="rg-bd-img-container">
-                        <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" onError={e => e.target.style.display='none'} />
+                        <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" style={{ cursor: 'zoom-in' }} onError={e => e.target.style.display='none'} onClick={() => setFullImg(`${IMAGE_PATH}/${getTargetImageName(key)}.png`)} />
                       </div>
                     </div>
 
@@ -1428,6 +1429,7 @@ const TriangleRachnaGame = () => {
           <div className="rg-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
             <div className="rg-divider"></div>
+            <img src="/assets/images/rachna/rachna.jpg" alt="Rachna" className="rg-test-logo" />
             <span className="rg-test-title">{t('home.games.rachna.title')}</span>
           </div>
           <div className="rg-stats">
@@ -1460,6 +1462,11 @@ const TriangleRachnaGame = () => {
       {showQuitModal && renderQuitModal()}
       {showAssessmentModal && renderAssessmentModal()}
       {showResumeModal && renderResumeModal()}
+      {fullImg && (
+        <div className="q-img-fullscreen-overlay" onClick={() => setFullImg(null)}>
+          <img src={fullImg} alt="Full view" />
+        </div>
+      )}
     </div>
   );
 };

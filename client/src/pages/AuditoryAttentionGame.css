@@ -363,6 +363,16 @@
   letter-spacing: -0.01em;
 }
 
+.aa-test-logo {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  flex-shrink: 0;
+}
+
 .aa-btn-highlight {
   animation: aa-pulsate 1.5s infinite ease-in-out;
   background: linear-gradient(135deg, #10b981, #059669) !important;

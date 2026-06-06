@@ -22,7 +22,11 @@ const PendingAssessmentModal = ({ session, childName, onClose, onComplete }) => 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!assessment.q1 || !assessment.q2 || !assessment.q3 || !assessment.q4) {
-            alert('Please answer all evaluation questions.');
+            alert('Please answer all evaluation questions (Q1–Q4).');
+            return;
+        }
+        if (!assessment.behaviors || assessment.behaviors.length === 0) {
+            alert('Q5 is mandatory. Please select at least one observed behaviour.');
             return;
         }
 

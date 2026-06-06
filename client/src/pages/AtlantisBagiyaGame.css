@@ -530,6 +530,12 @@
 
 .ab-metric-val.green { color: #16a34a; }
 .ab-metric-val.red { color: #dc2626; }
+.ab-metric-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 2px;
+}
 
 .ab-banner {
   background: linear-gradient(135deg, #ecfdf5, #d1fae5);
@@ -586,6 +592,21 @@
 
 .ab-row-correct td { background: #f0fdf4; }
 .ab-row-wrong td { background: #fef2f2; }
+
+.ab-exposure-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ab-exposure-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+.ab-screen-group-start td {
+  border-top: 2px solid #c7d2fe !important;
+}
 
 .ab-badge {
   padding: 3px 8px;
@@ -815,6 +836,16 @@
   font-weight: 800;
   color: #1e293b;
   letter-spacing: -0.01em;
+}
+
+.ab-test-logo {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  flex-shrink: 0;
 }
 
 .ab-btn-highlight {

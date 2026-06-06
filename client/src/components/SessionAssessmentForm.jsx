@@ -23,6 +23,7 @@ const SessionAssessmentForm = ({
     if (!assessment.q2) errors.q2 = true;
     if (!assessment.q3) errors.q3 = true;
     if (!assessment.q4) errors.q4 = true;
+    if (!assessment.behaviors || assessment.behaviors.length === 0) errors.q5 = true;
 
     setValidationErrors(errors);
 
@@ -39,7 +40,8 @@ const SessionAssessmentForm = ({
   return (
     <div className="shared-assessment-section">
       <h3 className="shared-form-title">{t('game.sessionDetails')}</h3>
-      
+      <p className="shared-assessor-instruction">📋 {t('game.assessorInstruction')}</p>
+
       {[
         { key: 'q1', label: t('game.q1Label') },
         { key: 'q2', label: t('game.q2Label') },
@@ -79,8 +81,10 @@ const SessionAssessmentForm = ({
         </div>
       ))}
 
-      <div className="shared-form-group">
-        <label className="shared-form-label">{t('game.q5Label')}</label>
+      <div className={`shared-form-group ${validationErrors.q5 ? 'error' : ''}`}>
+        <label className="shared-form-label">
+          {t('game.q5Label')} <span className="required-star">*</span>
+        </label>
         <div className="shared-checkbox-grid">
           {[
             { val: 'Difficulty sustaining attention', str: t('game.b1') },
@@ -93,18 +97,24 @@ const SessionAssessmentForm = ({
             { val: 'Calm and engaged throughout', str: t('game.b8') }
           ].map(bhv => (
              <label key={bhv.val} className="shared-checkbox-item">
-               <input 
-                 type="checkbox" 
-                 disabled={assessmentSubmitted} 
-                 checked={assessment.behaviors.includes(bhv.val)} 
+               <input
+                 type="checkbox"
+                 disabled={assessmentSubmitted}
+                 checked={assessment.behaviors.includes(bhv.val)}
                  onChange={(e) => {
-                  if(e.target.checked) setAssessment({...assessment, behaviors:[...assessment.behaviors, bhv.val]});
-                  else setAssessment({...assessment, behaviors: assessment.behaviors.filter(b=>b!==bhv.val)});
+                  const updated = e.target.checked
+                    ? [...assessment.behaviors, bhv.val]
+                    : assessment.behaviors.filter(b => b !== bhv.val);
+                  setAssessment({...assessment, behaviors: updated});
+                  if (validationErrors.q5) setValidationErrors({...validationErrors, q5: false});
                }} />
                {bhv.str}
              </label>
           ))}
         </div>
+        {validationErrors.q5 && (
+          <div className="shared-error-text">{t('game.validationQ5')}</div>
+        )}
       </div>
       
       <div className="shared-form-group">

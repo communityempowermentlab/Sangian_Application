@@ -765,6 +765,7 @@ const NumberRecallGame = () => {
         <div className="nr-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />
           <div className="nr-divider"></div>
+          <img src="/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />
           <span className="nr-test-title">{t('home.games.lottery.title')}</span>
         </div>
         <div className="nr-stats">
@@ -945,12 +946,15 @@ const NumberRecallGame = () => {
                   {[
                     { label: t('game.correctMetric'), val: correct, cls: 'green' },
                     { label: t('game.incorrectMetric'), val: wrong, cls: 'red' },
-                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '' },
+                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '', info: true },
                     { label: t('game.totalTimeMetric'), val: formatDurationMs(totalTimeMs), cls: '' },
                     { label: t('game.avgQMetric'), val: formatDurationMs(avgTimeMs), cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="nr-metric-box">
-                      <label>{m.label}</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {m.label}
+                        {m.info && <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>}
+                      </label>
                       <div className={`nr-metric-val ${m.cls}`}>{m.val}</div>
                     </div>
                   ))}
@@ -966,7 +970,9 @@ const NumberRecallGame = () => {
                 <table className="nr-q-table">
                   <thead>
                     <tr>
+                      <th>{t('game.sNo')}</th>
                       <th>{t('game.qNumHeader')}</th>
+                      <th>{t('game.questionImage')}</th>
                       <th>{t('game.yourResponse')}</th>
                       <th>{t('game.scoreTable.correctAnswer')}</th>
                       <th>{t('game.statusHeader')}</th>
@@ -980,7 +986,9 @@ const NumberRecallGame = () => {
                       const ok = s.score === 1;
                       return (
                         <tr key={i} className={ok ? 'nr-row-correct' : 'nr-row-incorrect'}>
+                          <td>{i + 1}</td>
                           <td>Q{s.questionNumber}</td>
+                          <td><span className="q-no-image">No Image</span></td>
                           <td style={{ fontFamily: 'monospace' }}>{(s.userResponse || []).join(', ')}</td>
                           <td style={{ fontFamily: 'monospace' }}>{(s.correctAnswer || []).join(', ')}</td>
                           <td>

@@ -735,7 +735,7 @@ const AuditoryAttentionGame = () => {
         
         const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
         if (logE) {
-          logE.response = 'Wrong Tap';
+          logE.response = 'Incorrect Tap';
           logE.result = 'EOI';
         }
       }
@@ -850,6 +850,7 @@ const AuditoryAttentionGame = () => {
           <div className="aa-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />
             <div className="aa-divider"></div>
+            <img src="/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg" alt="Dhyan Kahan Hai" className="aa-test-logo" />
             <span className="aa-test-title">{t('home.games.dhyan.title')}</span>
           </div>
           <div className="aa-stats">

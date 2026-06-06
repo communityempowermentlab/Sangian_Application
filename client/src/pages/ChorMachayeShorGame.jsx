@@ -1252,6 +1252,7 @@ const ChorMachayeShorGame = () => {
             <div className="chor-brand">
               <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
               <div className="chor-divider"></div>
+              <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
@@ -1334,6 +1335,7 @@ const ChorMachayeShorGame = () => {
             <div className="chor-brand">
               <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
               <div className="chor-divider"></div>
+              <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
@@ -1373,7 +1375,7 @@ const ChorMachayeShorGame = () => {
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Total Score</div><div className="chor-stat-val">{totalScore}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Completed Items</div><div className="chor-stat-val text-green">{attempted}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">{t('game.totalMoves')}</div><div className="chor-stat-val text-red">{tMoves}</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Accuracy</div><div className="chor-stat-val">{accuracy}%</div></div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">Accuracy <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span></div><div className="chor-stat-val">{accuracy}%</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Total Time</div><div className="chor-stat-val">{Math.floor(tTime / 60)}m {tTime % 60}s</div></div>
                     <div className="chor-stat-box chor-stat-box-wide"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{avgTime}s</div></div>
                   </div>
@@ -1387,7 +1389,9 @@ const ChorMachayeShorGame = () => {
                   <table className="chor-data-table">
                     <thead>
                       <tr>
+                        <th>S. No</th>
                         <th>Item</th>
+                        <th>Question Image</th>
                         <th>Status</th>
                         <th>Item Name</th>
                         <th>Score</th>
@@ -1402,7 +1406,9 @@ const ChorMachayeShorGame = () => {
                     <tbody>
                       {itemResults.map((r, i) => (
                         <tr key={i}>
+                          <td>{i + 1}</td>
                           <td><strong>{r.itemId}</strong></td>
+                          <td><span className="q-no-image">No Image</span></td>
                           <td>
                             <span className={`q-status-pill ${r.completed ? 'pass' : 'fail'}`}>
                               {r.completed ? '✔ Passed' : '✘ Failed'}
@@ -1466,6 +1472,7 @@ const ChorMachayeShorGame = () => {
           <div className="chor-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
             <div className="chor-divider"></div>
+            <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
             <span className="chor-test-title">{t('home.games.chor.title')}</span>
           </div>
           <div className="chor-stats">

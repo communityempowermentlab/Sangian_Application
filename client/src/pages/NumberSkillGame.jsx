@@ -479,6 +479,7 @@ const NumberSkillGame = () => {
         <div className="ns-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />
           <div className="ns-divider"></div>
+          <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />
           <span className="ns-test-title">{t('home.games.numeracy.title')}</span>
         </div>
         <div className="ns-stats">
@@ -648,7 +649,9 @@ const NumberSkillGame = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                       <tr>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.sNo')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.questionNo')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.questionImage')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.question')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.correctAnswer')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
@@ -662,10 +665,12 @@ const NumberSkillGame = () => {
                         const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
                         let cAnsText = qObj?.correctAnswer || '—';
                         if (qObj?.questionCategory === 13) cAnsText = `Q:${qObj.correctAnswer}, R:${qObj.remainder}`;
-                        
+
                         return (
                           <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{idx + 1}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{scoreObj.questionNumber}</td>
+                            <td style={{ padding: '12px 16px' }}><span className="q-no-image">No Image</span></td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{qObj?.text}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{cAnsText}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score}</td>
