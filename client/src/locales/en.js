@@ -57,8 +57,8 @@ export const en = {
       dhyan:    { title: "Dhyan Kahan Hai",   local: "", tag: "Listening focus",      desc: "Child responds only when they hear specific target words.", sub: "Selective listening & focus" },
       herpher:  { title: "Her Pher",          local: "", tag: "Dynamic memory",       desc: "Child keeps rules or information in mind while answering.", sub: "Holding & using information" },
       chor:     { title: "Chor Machaye Shor", local: "", tag: "Rule switching",       desc: "Child shifts between changing rules.", sub: "Rule switching & inhibition" },
-      numeracy: { title: "Ankganit",          local: "", tag: "Academic – Maths",     desc: "Age-appropriate tasks on counting and mathematics.", sub: "Early maths readiness" },
-      literacy: { title: "Padh ke batao",     local: "", tag: "Academic – Language",  desc: "Tasks around letters and early language readiness.", sub: "Reading & language" }
+      numeracy: { title: "Ankganit",          local: "", tag: "Academic – Maths",     desc: "Age-appropriate tasks on counting and mathematics.", sub: "" },
+      literacy: { title: "Padh ke batao",     local: "", tag: "Academic – Language",  desc: "Tasks around letters and early language readiness.", sub: "" }
     }
   },
   login: {
@@ -280,7 +280,7 @@ export const en = {
     attempted:           "Attempted",
     ssrQuestion:         "Assessment Question",
     userAnswer:          "User Answer",
-    assessmentLabel:     "Assessment",
+    assessmentLabel:     "Assessment Report",
     yesLabel:            "Yes",
     noLabel:             "No",
     finishAssessment:    "Finish Assessment",

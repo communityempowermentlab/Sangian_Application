@@ -756,8 +756,8 @@ const ReadingSkillGame = () => {
                                         <thead>
                                           <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                                             <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.ssrQuestion')}</th>
-                                            <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.userAnswer')}</th>
                                             <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.scoreTable.correctAnswer')}</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>{t('game.userAnswer')}</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -766,8 +766,8 @@ const ReadingSkillGame = () => {
                                             return (
                                               <tr key={cIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '8px' }}>{t(`game.readingCriteria.${criterion}`)}</td>
-                                                <td style={{ padding: '8px', textTransform: 'capitalize' }}>{answer}</td>
                                                 <td style={{ padding: '8px' }}>{t('game.noLabel')}</td>
+                                                <td style={{ padding: '8px', textTransform: 'capitalize' }}>{answer}</td>
                                               </tr>
                                             );
                                           })}
@@ -823,7 +823,6 @@ const ReadingSkillGame = () => {
           <div className="rs-modal" style={{ maxWidth: '600px' }}>
             <div className="rs-modal-header" style={{ marginBottom: '20px' }}>
               <h3>{t('game.assessmentLabel')}</h3>
-              <p>{t('game.assessmentComplete')}</p>
             </div>
             
             <div className="rs-assessment-criteria" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

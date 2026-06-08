@@ -231,6 +231,20 @@ const NumberSkillGame = () => {
     return `${m}:${s}`;
   };
 
+  const formatSec = (sec) => {
+    if (sec == null || sec < 0) return '—';
+    if (sec < 60) return `${sec}s`;
+    if (sec < 3600) {
+      const m = Math.floor(sec / 60);
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   // Speech to Text logic
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -600,7 +614,7 @@ const NumberSkillGame = () => {
               <div className="ns-chips">
                 <span className="ns-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  {t('game.time')}: {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
+                  {t('game.timeChip')} {formatTime(timerSeconds)}
                 </span>
               </div>
             </div>
@@ -615,10 +629,6 @@ const NumberSkillGame = () => {
                 </div>
 
                 <div className="ns-metric-grid">
-                  <div className="ns-metric-box">
-                    <label>{t('game.totalScore')}</label>
-                    <div className="metric-val">{getTotalScore()} / {QUESTIONS.length}</div>
-                  </div>
                   <div className="ns-metric-box">
                     <label>{t('game.correct')}</label>
                     <div className="metric-val green">{getTotalScore()}</div>
@@ -636,9 +646,9 @@ const NumberSkillGame = () => {
                     <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{getTotalScore()} / {QUESTIONS.length}</div>
                   </div>
                   <div className="ns-metric-box">
-                    <label>{t('game.totalTime')}</label>
+                    <label>{t('game.totalTimeMetric')}</label>
                     <div className="metric-val">
-                       {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
+                       {formatSec(allScores.reduce((acc, s) => acc + (s.timeTaken || 0), 0))}
                     </div>
                   </div>
                   <div className="ns-metric-box">
@@ -653,13 +663,11 @@ const NumberSkillGame = () => {
                     <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                       <tr>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.sNo')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.questionNo')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.questionImage')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.question')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.correctAnswer')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.timeTaken')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.status')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.duration')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -672,13 +680,15 @@ const NumberSkillGame = () => {
                         return (
                           <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{idx + 1}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{scoreObj.questionNumber}</td>
-                            <td style={{ padding: '12px 16px' }}><span className="q-no-image">No Image</span></td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{qObj?.text}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{cAnsText}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 600, background: scoreObj.score === 1 ? '#d1fae5' : '#fee2e2', color: scoreObj.score === 1 ? '#065f46' : '#991b1b' }}>
+                                {scoreObj.score === 1 ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}
+                              </span>
+                            </td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b' }}>{timeDisp}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score === 1 ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b', fontFamily: 'monospace' }}>{formatSec(scoreObj.timeTaken)}</td>
                           </tr>
                         );
                       })}
@@ -724,9 +734,9 @@ const NumberSkillGame = () => {
           <div className="ns-modal">
             <h2>{t('game.progressFound')}</h2>
             <p>{t('game.progressDesc')}</p>
-            <div className="ns-btn-row" style={{marginTop:'20px'}}>
-              <button className="ns-btn ns-btn-secondary" onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
-              <button className="ns-btn ns-btn-primary" onClick={resumeGame}>{t('game.resumeGame')}</button>
+            <div className="ns-btn-row" style={{ marginTop: '20px', flexWrap: 'nowrap' }}>
+              <button className="ns-btn ns-btn-secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
+              <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={resumeGame}>{t('game.resumeGame')}</button>
             </div>
           </div>
         </div>

@@ -568,8 +568,6 @@ const AdminReports = () => {
                                         })
                                     ) : activeGame?.key === 'literacy_reading_skill' ? (
                                         <>
-                                            <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5' }}>Total Score</th>
-                                            <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Total Time</th>
                                             {detail?.columns?.map((c, idx) => {
                                                 const qNum = idx + 1;
                                                 const isSSR = qNum === 21 || qNum === 22;
@@ -785,8 +783,6 @@ const AdminReports = () => {
                                                 })
                                             ) : activeGame?.key === 'literacy_reading_skill' ? (
                                                 <>
-                                                    <td style={{ ...S.tdCenter, fontWeight: 700, color: '#059669' }}>{row.score != null ? `${row.score}/22` : '—'}</td>
-                                                    <td style={{ ...S.tdCenter, color: '#64748b' }}>{fmtSecs(row.actual_game_time)}</td>
                                                     {detail?.columns?.map((c, idx) => {
                                                         const qNum = idx + 1;
                                                         const isSSR = qNum === 21 || qNum === 22;
