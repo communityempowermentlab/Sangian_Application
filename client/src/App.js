@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { useSEO } from './seo/useSEO';
+import { SEO_DEFAULTS, ROUTE_SEO, SITE_URL } from './seo/seoConfig';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -43,47 +45,87 @@ import { GoogleAnalyticsProvider } from './contexts/GoogleAnalyticsContext';
 import { CrashAnalyticsProvider }  from './contexts/CrashAnalyticsContext';
 import './index.css';
 
-const ROUTE_TITLES = {
-    '/':                        'Home | Community Empowerment Lab',
-    '/register':                'Register | Community Empowerment Lab',
-    '/login':                   'Login | Community Empowerment Lab',
-    '/games/number_skill':      'Ankganit | Game | Community Empowerment Lab',
-    '/games/reading_skill':     'Padh ke batao | Game | Community Empowerment Lab',
-    '/games/number_recall':     'Lottery Ka Ticket | Game | Community Empowerment Lab',
-    '/games/her_pher':          'Her Pher | Game | Community Empowerment Lab',
-    '/games/dhyan_kahan_hai':   'Dhyan Kahan Hai | Game | Community Empowerment Lab',
-    '/games/rachna':            'Rachna | Game | Community Empowerment Lab',
-    '/games/bagiya':            'Bagiya | Game | Community Empowerment Lab',
-    '/games/chalo_mela_chale':  'Chalo Mela Chalen | Game | Community Empowerment Lab',
-    '/games/chor_machaye_shor': 'Chor Machaye Shor | Game | Community Empowerment Lab',
-    '/terms-conditions':         'Terms & Conditions | Community Empowerment Lab',
-    '/privacy-policy':           'Privacy Policy | Community Empowerment Lab',
-    '/admin/login':             'Admin Login | Community Empowerment Lab',
-    '/admin/dashboard':         'Dashboard | Admin Panel | Community Empowerment Lab',
-    '/admin/children':          'Children | Admin Panel | Community Empowerment Lab',
-    '/admin/children/add':      'Add Child | Admin Panel | Community Empowerment Lab',
-    '/admin/assessors':         'Assessors | Admin Panel | Community Empowerment Lab',
-    '/admin/assessors/add':     'Add Assessor | Admin Panel | Community Empowerment Lab',
-    '/admin/reports':           'Reports | Admin Panel | Community Empowerment Lab',
-    '/admin/docs':              'Documentation | Admin Panel | Community Empowerment Lab',
-    '/admin/analysis':          'Analysis | Admin Panel | Community Empowerment Lab',
-    '/admin/settings':          'Settings | Admin Panel | Community Empowerment Lab',
-    '/admin/meta':              'Meta | Admin Panel | Community Empowerment Lab',
-    '/contact-us':              'Contact Us | Community Empowerment Lab',
-    '/help':                    'Help & Support | Community Empowerment Lab',
-    '/admin/help-support':      'Help & Support | Admin Panel | Community Empowerment Lab',
+// ── Admin route title map (these are noindex — title only, no OG needed) ───────
+const ADMIN_TITLES = {
+    '/admin/dashboard':      'Dashboard | Admin Panel',
+    '/admin/children':       'Children | Admin Panel',
+    '/admin/children/add':   'Add Child | Admin Panel',
+    '/admin/assessors':      'Assessors | Admin Panel',
+    '/admin/assessors/add':  'Add Assessor | Admin Panel',
+    '/admin/reports':        'Reports | Admin Panel',
+    '/admin/docs':           'Documentation | Admin Panel',
+    '/admin/analysis':       'Analysis | Admin Panel',
+    '/admin/settings':       'Settings | Admin Panel',
+    '/admin/meta':           'Meta | Admin Panel',
+    '/admin/help-support':   'Help & Support | Admin Panel',
 };
 
-const PageTitle = () => {
+// ── SEOManager — runs on every route change, applies full SEO config ──────────
+const SEOManager = () => {
     const { pathname } = useLocation();
+
+    const seo = useMemo(() => {
+        const siteOrigin = SITE_URL || window.location.origin;
+        const canonical  = `${siteOrigin}${pathname}`;
+
+        // 1. Start from global defaults
+        const base = { ...SEO_DEFAULTS };
+
+        // 2. Admin routes: title only + strict noindex
+        if (pathname.startsWith('/admin/') && pathname !== '/admin/login') {
+            const adminTitle = ADMIN_TITLES[pathname]
+                ?? (pathname.startsWith('/admin/children/edit/')
+                    ? 'Edit Child | Admin Panel'
+                    : 'Admin Panel');
+            return {
+                title:     adminTitle,
+                robots:    'noindex,nofollow',
+                canonical,
+                og:        { ...base.og, title: adminTitle, url: canonical },
+                twitter:   { ...base.twitter, title: adminTitle },
+                jsonLd:    null,
+            };
+        }
+
+        // 3. Game routes: title + noindex,follow
+        if (pathname.startsWith('/games/')) {
+            const routeOverride = ROUTE_SEO[pathname] ?? {};
+            const title = routeOverride.title ?? base.title;
+            return {
+                title,
+                robots:    'noindex,follow',
+                canonical,
+                og:        { ...base.og, ...(routeOverride.og ?? {}), title, url: canonical },
+                twitter:   { ...base.twitter, ...(routeOverride.twitter ?? {}), title },
+                jsonLd:    null,
+            };
+        }
+
+        // 4. Public routes: full SEO merge
+        const routeOverride = ROUTE_SEO[pathname] ?? {};
+        return {
+            ...base,
+            ...routeOverride,
+            canonical,
+            og: {
+                ...base.og,
+                ...(routeOverride.og ?? {}),
+                url: canonical,
+            },
+            twitter: {
+                ...base.twitter,
+                ...(routeOverride.twitter ?? {}),
+            },
+            jsonLd: 'jsonLd' in routeOverride ? routeOverride.jsonLd : base.jsonLd,
+        };
+    }, [pathname]);
+
+    useSEO(seo);
+
     useEffect(() => {
-        const title = ROUTE_TITLES[pathname]
-            ?? (pathname.startsWith('/admin/children/edit/')
-                ? 'Edit Child | Admin Panel | Community Empowerment Lab'
-                : 'Community Empowerment Lab');
-        document.title = title;
         window.scrollTo(0, 0);
     }, [pathname]);
+
     return null;
 };
 
@@ -103,7 +145,7 @@ function App() {
         <CrashAnalyticsProvider>
         <LanguageProvider>
             <Router>
-                <PageTitle />
+                <SEOManager />
                 <div className="App">
                     <Routes>
 

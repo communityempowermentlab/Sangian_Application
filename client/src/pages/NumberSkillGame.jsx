@@ -599,7 +599,6 @@ const NumberSkillGame = () => {
               </div>
               <div className="ns-chips">
                 <span className="ns-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                 <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   {t('game.time')}: {Math.floor(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / 60)}m {allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) % 60}s
                 </span>
@@ -629,8 +628,12 @@ const NumberSkillGame = () => {
                     <div className="metric-val red">{allScores.length - getTotalScore()}</div>
                   </div>
                   <div className="ns-metric-box">
-                    <label>{t('game.percentage')}</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      {t('game.accuracyLabel')}
+                      <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
+                    </label>
                     <div className="metric-val">{((getTotalScore() / QUESTIONS.length) * 100).toFixed(1)}%</div>
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{getTotalScore()} / {QUESTIONS.length}</div>
                   </div>
                   <div className="ns-metric-box">
                     <label>{t('game.totalTime')}</label>

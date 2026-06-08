@@ -64,6 +64,20 @@ const formatDurationMs = (ms) => {
   return formatTime(Math.floor(ms / 1000));
 };
 
+const formatSec = (sec) => {
+  if (sec == null || sec < 0) return '—';
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) {
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
 const getSP = (age) => (age >= 3 && age <= 6) ? '5-1' : '5-4';
 
 // ─── Numpad Panel Sub-Component ─────────────────────────────────
@@ -71,7 +85,7 @@ const NumpadPanel = ({
   title, chipLabel, audioSrc, qTimerDisplay,
   correct, maxSelect,
   onCorrect, onWrong, onAdvance,
-  isScored = false, autoPlay = false,
+  isScored = false, autoPlay = false, isLastQuestion = false,
 }) => {
   const { t } = useLanguage();
   const [selected, setSelected] = useState([]);
@@ -188,7 +202,7 @@ const NumpadPanel = ({
         <div className="nr-numpad-actions">
           {isPlaying && <div className="nr-action-msg" style={{ color: '#94a3b8' }}>🔊 </div>}
           {showNextButton ? (
-            <button className="nr-btn-next" onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}>{t('game.nextQuestionArrow')}</button>
+            <button className="nr-btn-next" onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}>{isLastQuestion ? t('game.finishGame') : t('game.nextQuestionArrow')}</button>
           ) : (
             !isPlaying && answered && wasCorrect && !isScored && (
               <div className="nr-action-msg" style={{ color: '#4ade80' }}>{t('game.correctFeedback')}</div>
@@ -455,7 +469,7 @@ const NumberRecallGame = () => {
 
   // ── Session timer ──────────────────────────────────────────
   useEffect(() => {
-    if (screen === 'game' && !showQuitModal) {
+    if (!['splash', 'score'].includes(screen) && !showQuitModal) {
       timerRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000);
     } else {
       clearInterval(timerRef.current);
@@ -750,7 +764,7 @@ const NumberRecallGame = () => {
   const correct = allScores.filter(s => s.score === 1).length;
   const wrong = allScores.filter(s => s.score === 0).length;
   const skipped = TOTAL_SCORED_QUESTIONS - attempted;
-  const accuracyPct = attempted > 0 ? ((correct / attempted) * 100).toFixed(1) : '0.0';
+  const accuracyPct = ((correct / TOTAL_SCORED_QUESTIONS) * 100).toFixed(1);
   const totalTimeMs = allScores.reduce((acc, s) => acc + (s.timeTaken || 0) * 1000, 0);
   const avgTimeMs = attempted > 0 ? (totalTimeMs / attempted) : 0;
   const isStopped = consecutiveWrong >= MAX_CONSECUTIVE_WRONG && attempted < TOTAL_SCORED_QUESTIONS;
@@ -864,7 +878,7 @@ const NumberRecallGame = () => {
         {screen === 'teaching1' && (
           <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
             <TeachingScreen
-              title={`${t('game.teachingLabel')} · teaching_1`}
+              title={`${t('game.teachingLabel')} · Teaching 1`}
               chipLabel={t('game.teachingLabel')}
               audioSrc="9_4.m4a"
               correct={[9, 4]}
@@ -881,7 +895,7 @@ const NumberRecallGame = () => {
         {screen === 'teaching2' && (
           <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
             <TeachingScreen
-              title={`${t('game.teachingLabel')} · teaching_2`}
+              title={`${t('game.teachingLabel')} · Teaching 2`}
               chipLabel={t('game.teachingLabel')}
               audioSrc="2_8.m4a"
               correct={[2, 8]}
@@ -907,6 +921,7 @@ const NumberRecallGame = () => {
               maxSelect={currentQ.maxSelect}
               isScored={true}
               autoPlay={true}
+              isLastQuestion={questionIndex === TOTAL_SCORED_QUESTIONS - 1}
               onCorrect={handleCorrect}
               onWrong={handleWrong}
               onAdvance={handleAdvance}
@@ -926,8 +941,7 @@ const NumberRecallGame = () => {
               </div>
               <div className="nr-chips">
                 <span className="nr-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="nr-chip">{t('game.finalResults')}</span>
-                <span className="nr-chip">{t('game.timeChip')} {formatDurationMs(totalTimeMs)}</span>
+                <span className="nr-chip">{t('game.timeChip')} {formatTime(timerSeconds)}</span>
               </div>
             </div>
 
@@ -939,31 +953,27 @@ const NumberRecallGame = () => {
                     <div className="nr-score-dial-big">{correct + wrong}</div>
                     <div className="nr-score-dial-small">/ {TOTAL_SCORED_QUESTIONS}</div>
                   </div>
-                  <div className="nr-score-accuracy">{t('game.totalCorrect')}</div>
                 </div>
 
                 <div className="nr-metric-grid">
                   {[
                     { label: t('game.correctMetric'), val: correct, cls: 'green' },
                     { label: t('game.incorrectMetric'), val: wrong, cls: 'red' },
-                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '', info: true },
+                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '', info: true, sub: `${correct} / ${TOTAL_SCORED_QUESTIONS}` },
                     { label: t('game.totalTimeMetric'), val: formatDurationMs(totalTimeMs), cls: '' },
                     { label: t('game.avgQMetric'), val: formatDurationMs(avgTimeMs), cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="nr-metric-box">
                       <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         {m.label}
-                        {m.info && <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>}
+                        {m.info && <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Questions (20) × 100">ⓘ</span>}
                       </label>
                       <div className={`nr-metric-val ${m.cls}`}>{m.val}</div>
+                      {m.sub && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{m.sub}</div>}
                     </div>
                   ))}
                 </div>
               </div>
-
-              {correct / TOTAL_SCORED_QUESTIONS >= 0.8 && (
-                <div className="nr-banner">{t('game.outstandingLottery')}</div>
-              )}
 
               {/* Per-question results */}
               <div className="nr-q-table-wrap">
@@ -972,12 +982,11 @@ const NumberRecallGame = () => {
                     <tr>
                       <th>{t('game.sNo')}</th>
                       <th>{t('game.qNumHeader')}</th>
-                      <th>{t('game.questionImage')}</th>
-                      <th>{t('game.yourResponse')}</th>
                       <th>{t('game.scoreTable.correctAnswer')}</th>
+                      <th>{t('game.yourResponse')}</th>
                       <th>{t('game.statusHeader')}</th>
                       <th>{t('game.scoreTable.score')}</th>
-                      <th>{t('game.scoreTable.timeTaken')}</th>
+                      <th>{t('game.scoreTable.duration')}</th>
                       <th>{t('game.replaysHeader')}</th>
                     </tr>
                   </thead>
@@ -988,16 +997,15 @@ const NumberRecallGame = () => {
                         <tr key={i} className={ok ? 'nr-row-correct' : 'nr-row-incorrect'}>
                           <td>{i + 1}</td>
                           <td>Q{s.questionNumber}</td>
-                          <td><span className="q-no-image">No Image</span></td>
-                          <td style={{ fontFamily: 'monospace' }}>{(s.userResponse || []).join(', ')}</td>
                           <td style={{ fontFamily: 'monospace' }}>{(s.correctAnswer || []).join(', ')}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{(s.userResponse || []).join(', ')}</td>
                           <td>
                             <span className={`nr-status-badge ${ok ? 'nr-badge-correct' : 'nr-badge-incorrect'}`}>
                               {ok ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}
                             </span>
                           </td>
                           <td>{s.score}</td>
-                          <td style={{ fontFamily: 'monospace' }}>{s.timeTaken != null ? `${s.timeTaken}s` : '—'}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{formatSec(s.timeTaken)}</td>
                           <td style={{ fontFamily: 'monospace' }}>{s.replayCount ?? 0}</td>
                         </tr>
                       );

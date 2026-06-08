@@ -158,7 +158,7 @@ const ReadingSkillGame = () => {
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   useEffect(() => {
-    if (screen === 'game' && !showQuitModal && !showMidTestModal) {
+    if ((screen === 'game' && !showQuitModal && !showMidTestModal) || (screen === 'score' && !assessmentSubmitted)) {
       timerRef.current = setInterval(() => {
         setTimerSeconds(s => s + 1);
       }, 1000);
@@ -166,7 +166,7 @@ const ReadingSkillGame = () => {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen, showQuitModal, showMidTestModal]);
+  }, [screen, showQuitModal, showMidTestModal, assessmentSubmitted]);
 
   const checkResume = async (childId) => {
     setIsCheckingSession(true);
@@ -242,6 +242,15 @@ const ReadingSkillGame = () => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+  };
+
+  const fmtDuration = (sec) => {
+    if (sec < 60) return `${sec}s`;
+    if (sec < 3600) return `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
   };
 
   // Speech to Text logic
@@ -654,12 +663,11 @@ const ReadingSkillGame = () => {
               </div>
               <div className="rs-chips">
                 <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                {dropReason
-                  ? <span className="rs-chip" style={{ color: '#fff', background: '#dc2626', border: '1px solid #b91c1c' }}>{t('game.droppedChip')}</span>
-                  : <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
-                }
-                <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  {t('game.timeChip')} {totalTimeDisp}
+                {dropReason && (
+                  <span className="rs-chip" style={{ color: '#fff', background: '#dc2626', border: '1px solid #b91c1c' }}>{t('game.droppedChip')}</span>
+                )}
+                <span className="rs-chip" style={{ color: '#374151', background: '#f3f4f6', border: '1px solid #d1d5db' }}>
+                  Screentime: {formatTime(timerSeconds)}
                 </span>
               </div>
             </div>
@@ -673,10 +681,6 @@ const ReadingSkillGame = () => {
 
                 <div className="rs-metric-grid">
                   <div className="rs-metric-box">
-                    <label>{t('game.totalScore')}</label>
-                    <div className="metric-val">{totalScoreVal} / {totalQuestionsCount}</div>
-                  </div>
-                  <div className="rs-metric-box">
                     <label>{t('game.correct2')}</label>
                     <div className="metric-val green">{totalScoreVal}</div>
                   </div>
@@ -689,9 +693,10 @@ const ReadingSkillGame = () => {
                       {t('game.percentage')} <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
                     </label>
                     <div className="metric-val">{accuracyPercent}%</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500, marginTop: 2 }}>{totalScoreVal} / {totalQuestionsCount}</div>
                   </div>
                   <div className="rs-metric-box">
-                    <label>{t('game.totalTime')}</label>
+                    <label>Duration</label>
                     <div className="metric-val">{totalTimeDisp}</div>
                   </div>
                   <div className="rs-metric-box">
@@ -707,12 +712,12 @@ const ReadingSkillGame = () => {
                       <thead>
                         <tr>
                           <th>{t('game.questionNo')}</th>
-                          <th>{t('game.questionImage')}</th>
                           <th>{t('game.questionType')}</th>
                           <th>{t('game.scoreTable.question')}</th>
                           <th>{t('game.scoreTable.correctAnswer')}</th>
                           <th>{t('game.scoreTable.score')}</th>
-                          <th>{t('game.scoreTable.timeTaken')}</th>
+                          <th>Status</th>
+                          <th>Duration</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -724,16 +729,28 @@ const ReadingSkillGame = () => {
                             <React.Fragment key={q.id}>
                               <tr style={{ cursor: 'default' }}>
                                 <td>{idx + 1}</td>
-                                <td><span className="q-no-image">No Image</span></td>
                                 <td>{getCategoryName(q.categoryName)}</td>
                                 <td className="col-text" title={q.text}>{q.text}</td>
                                 <td>{hasSSR ? t('game.allCriteriaMet') : q.text}</td>
                                 <td style={{ fontWeight: 'bold' }}>{scoreObj.score}</td>
-                                <td>{scoreObj.timeTaken}s</td>
+                                <td>
+                                  <span style={{
+                                    display: 'inline-block',
+                                    padding: '3px 14px',
+                                    borderRadius: 999,
+                                    fontSize: '0.82rem',
+                                    fontWeight: 600,
+                                    background: scoreObj.score >= 1 ? '#dcfce7' : '#fee2e2',
+                                    color: scoreObj.score >= 1 ? '#16a34a' : '#dc2626',
+                                  }}>
+                                    {scoreObj.score >= 1 ? 'Correct' : 'Incorrect'}
+                                  </span>
+                                </td>
+                                <td>{fmtDuration(scoreObj.timeTaken)}</td>
                               </tr>
                               {hasSSR && (
                                 <tr>
-                                  <td colSpan="7" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
+                                  <td colSpan="6" style={{ padding: '0', backgroundColor: '#f8fafc' }}>
                                     <div style={{ padding: '15px 30px' }}>
                                       <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                                         <thead>

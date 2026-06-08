@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSEO } from '../seo/useSEO';
+import { SITE_URL } from '../seo/seoConfig';
 import './CmsPage.css';
 
 // Pages that have Hindi variants stored as `${pageKey}_hi`
@@ -10,7 +12,8 @@ const BILINGUAL_PAGES = ['terms', 'privacy'];
 
 const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
     const { language, t } = useLanguage();
-    const isBilingual = BILINGUAL_PAGES.includes(pageKey);
+    const { pathname }    = useLocation();
+    const isBilingual     = BILINGUAL_PAGES.includes(pageKey);
 
     const [page,    setPage]    = useState(null);
     const [loading, setLoading] = useState(true);
@@ -41,38 +44,48 @@ const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
         return () => { cancelled = true; };
     }, [fetchKey, pageKey]);
 
-    // Apply SEO meta tags when page data arrives
-    useEffect(() => {
-        if (!page) return;
+    // Build the full SEO config from CMS API data.
+    // useSEO fires whenever `page` changes and overrides the route-level defaults
+    // that SEOManager already set for this path.
+    const siteOrigin = SITE_URL || window.location.origin;
+    const canonical  = `${siteOrigin}${pathname}`;
+    const ogImage    = `${siteOrigin}/cel_admin_logo.png`;
 
-        const pageTitle = page.meta_title || `${page.title} | Community Empowerment Lab`;
-        document.title = pageTitle;
+    const cmsTitle       = page ? (page.meta_title || `${page.title} | Community Empowerment Lab`) : null;
+    const cmsDescription = page?.meta_description || '';
+    const cmsKeywords    = page?.meta_keywords    || '';
 
-        // meta description
-        let descTag = document.querySelector('meta[name="description"]');
-        if (!descTag) {
-            descTag = document.createElement('meta');
-            descTag.setAttribute('name', 'description');
-            document.head.appendChild(descTag);
-        }
-        descTag.setAttribute('content', page.meta_description || '');
+    const cmsBreadcrumbJsonLd = page ? {
+        '@context': 'https://schema.org',
+        '@type':    'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home',              item: siteOrigin },
+            { '@type': 'ListItem', position: 2, name: page.title || breadcrumbLabel, item: canonical },
+        ],
+    } : null;
 
-        // meta keywords
-        let kwTag = document.querySelector('meta[name="keywords"]');
-        if (!kwTag) {
-            kwTag = document.createElement('meta');
-            kwTag.setAttribute('name', 'keywords');
-            document.head.appendChild(kwTag);
-        }
-        kwTag.setAttribute('content', page.meta_keywords || '');
-
-        // Clean up on unmount
-        return () => {
-            document.title = 'Community Empowerment Lab';
-            if (descTag) descTag.setAttribute('content', '');
-            if (kwTag)   kwTag.setAttribute('content', '');
-        };
-    }, [page]);
+    useSEO(page ? {
+        title:       cmsTitle,
+        description: cmsDescription,
+        keywords:    cmsKeywords,
+        robots:      'index,follow',
+        canonical,
+        og: {
+            type:        'article',
+            title:       cmsTitle,
+            description: cmsDescription,
+            image:       ogImage,
+            url:         canonical,
+            siteName:    'Community Empowerment Lab',
+        },
+        twitter: {
+            card:        'summary_large_image',
+            title:       cmsTitle,
+            description: cmsDescription,
+            image:       ogImage,
+        },
+        jsonLd: cmsBreadcrumbJsonLd,
+    } : null);
 
     if (loading) return (
         <div className="cms-shell">

@@ -656,7 +656,7 @@ const AdminReports = () => {
                                             </td>
                                             <td style={{ ...S.tdCenter, color: '#1e40af', fontWeight: 600 }}>
                                                 {(() => {
-                                                    const st = row.saved_state?.screentime ?? row.saved_state?.timerSeconds;
+                                                    const st = row.screentime;
                                                     if (st != null && st > 0) return fmtSecs(Math.round(st));
                                                     if (row.end_time && row.start_time)
                                                         return fmtSecs(Math.round((new Date(row.end_time) - new Date(row.start_time)) / 1000));

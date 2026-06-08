@@ -445,6 +445,7 @@ exports.getReportDetail = async (req, res) => {
                         : null),
                 retake_count:    parsedState?.retakeCount    ?? null,
                 refresh_count:   parsedState?.refreshCount   ?? null,
+                screentime:      parsedState?.screentime     ?? parsedState?.timerSeconds ?? null,
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,

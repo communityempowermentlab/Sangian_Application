@@ -899,7 +899,6 @@ const AtlantisBagiyaGame = () => {
                 <div className="ab-screen-title">{t('game.practiceQuestion')}</div>
               </div>
               <div className="ab-chips">
-                <span className="ab-chip">{t('game.practiceLabel')}</span>
                 <span className="ab-chip">{t('game.notScored')}</span>
               </div>
             </div>
@@ -908,7 +907,7 @@ const AtlantisBagiyaGame = () => {
               <div className="ab-question-img-box">
                 <img src={practiceItem.img} alt={practiceItem.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               </div>
-              <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
+              <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 20 }}>
                 <button
                   className="ab-btn ab-btn-secondary"
                   onClick={() => {
@@ -942,12 +941,11 @@ const AtlantisBagiyaGame = () => {
                 <div className="ab-screen-title">{t('game.practiceResponse')}</div>
               </div>
               <div className="ab-chips">
-                <span className="ab-chip">{t('game.practiceLabel')}</span>
               </div>
             </div>
 
             <div className="ab-card">
-              <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0 }}>
+              <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0, justifyContent: 'flex-start' }}>
                 <button
                   className={`ab-btn ab-btn-secondary${practiceAnswered ? ' ab-btn-disabled' : ''}`}
                   disabled={practiceAnswered}
@@ -1023,7 +1021,7 @@ const AtlantisBagiyaGame = () => {
                       <div className="ab-question-img-box">
                         <img src={qi.img} alt={qi.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                       </div>
-                      <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
+                      <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 20 }}>
                         <button className="ab-btn ab-btn-secondary"
                           onClick={() => {
                             if (qi?.audio) {
