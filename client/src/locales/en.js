@@ -54,7 +54,7 @@ export const en = {
       lottery:  { title: "Lottery Ka Ticket", local: "", tag: "Core auditory span",   desc: "Child listens to a series of numbers and repeats them in the same order.", sub: "" },
       mela:     { title: "Chalo Mela Chalen", local: "", tag: "Spatial planning",     desc: "Child plans a path through simple visual mazes.", sub: "Planning & spatial reasoning" },
       rachna:   { title: "Rachna",            local: "", tag: "Construction skills",  desc: "Child builds shapes and patterns using pieces.", sub: "Visual construction" },
-      dhyan:    { title: "Dhyan Kahan Hai",   local: "", tag: "Listening focus",      desc: "Child responds only when they hear specific target words.", sub: "Selective listening & focus" },
+      dhyan:    { title: "Dhyan Kahan Hai",   local: "", tag: "Listening focus",      desc: "Child responds only when they hear specific target words.", sub: "" },
       herpher:  { title: "Her Pher",          local: "", tag: "Dynamic memory",       desc: "Child keeps rules or information in mind while answering.", sub: "" },
       chor:     { title: "Chor Machaye Shor", local: "", tag: "Rule switching",       desc: "Child shifts between changing rules.", sub: "Rule switching & inhibition" },
       numeracy: { title: "Ankganit",          local: "", tag: "Academic – Maths",     desc: "Age-appropriate tasks on counting and mathematics.", sub: "" },

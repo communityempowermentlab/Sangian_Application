@@ -80,6 +80,19 @@ const formatTime = (sec) => {
   return `${m}:${s}`;
 };
 
+const fmtDuration = (sec) => {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+  const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+  const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
 const AuditoryAttentionGame = () => {
   const { t }    = useLanguage();
   const navigate = useNavigate();
@@ -153,6 +166,9 @@ const AuditoryAttentionGame = () => {
   const [assessment, setAssessment] = useState({ behaviors: [], notes: '' });
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [isAssessmentSubmitting, setIsAssessmentSubmitting] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const timerSecondsRef = useRef(0);
+  const sessionTimerRef = useRef(null);
   
   // Voice Recording Hook
   const [isRecording, setIsRecording] = useState(false);
@@ -198,6 +214,19 @@ const AuditoryAttentionGame = () => {
   }, []);
 
   useEffect(() => { return () => clearAllTimers(); }, [clearAllTimers]);
+
+  // ─── Session screentime timer (stops when assessment is submitted) ────────
+  useEffect(() => {
+    const active = screen !== 'checking' && screen !== 'splash' && !assessmentSubmitted;
+    if (active) {
+      sessionTimerRef.current = setInterval(() => {
+        setTimerSeconds(s => { timerSecondsRef.current = s + 1; return s + 1; });
+      }, 1000);
+    } else {
+      clearInterval(sessionTimerRef.current);
+    }
+    return () => clearInterval(sessionTimerRef.current);
+  }, [screen, assessmentSubmitted]);
 
   // ─── Audio Helpers ───────────────────────────────
   const cleanupAudio = () => {
@@ -314,7 +343,7 @@ const AuditoryAttentionGame = () => {
       saved.allScores.forEach(s => {
         if (s.qId >= 1 && s.qId <= 4) {
           qs[s.qId] = s.scoreObj || { correct: s.score, eoc: 0, eoi: 0, eoo: 0 };
-          qt[s.qId] = s.timeTaken;
+          qt[s.qId] = (s.timeTaken || 0) * 1000; // timeTaken saved in seconds, restore as ms
         }
       });
     }
@@ -376,7 +405,7 @@ const AuditoryAttentionGame = () => {
       }
     });
     
-    const state = { allScores };
+    const state = { allScores, screentime: timerSecondsRef.current, timerSeconds: timerSecondsRef.current };
     if (isGameRunning || isPaused) {
       state.activeQuestion = {
         qIndex: currentQIndex,
@@ -762,6 +791,7 @@ const AuditoryAttentionGame = () => {
 
   // ─── Assessment Submission ───────────────────────
   const submitAssessmentForm = async () => {
+    clearInterval(sessionTimerRef.current);
     setIsAssessmentSubmitting(true);
     try {
       await axios.post(`${API_URL}/games/assessments`, {
@@ -1070,88 +1100,136 @@ const AuditoryAttentionGame = () => {
           {/* FINAL SCORE & ASSESSMENT */}
           {screen === 'score' && (
             <div id="dashboard-container" className="aa-screen" style={{ overflowY: 'auto' }}>
-               <div className="aa-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <div>
-                   <h2 className="aa-title">{quitReason ? ('🏆 ' + t('game.assessmentTerminated')) : ('🏆 ' + t('game.assessmentComplete'))}</h2>
-                   <p className="aa-subtitle">{quitReason ? `${t('game.reasonLabel')} ${quitReason}` : t('game.finalResults')}</p>
-                 </div>
-                 <div style={{ background: '#4f46e5', color: '#fff', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem' }}>
-                   {t('game.attemptLabel')}{attemptNo}
-                 </div>
-               </div>
+               {(() => {
+                 const MAX_SCORE = 33; // 4+5+9+15 target words across Q1–Q4
+                 const totalCorrect = Object.values(questionScores).reduce((acc, qs) => acc + (qs ? qs.correct : 0), 0);
+                 const totalEoi = Object.values(questionScores).reduce((acc, qs) => acc + (qs ? (qs.eoi || 0) : 0), 0);
+                 const totalEoo = Object.values(questionScores).reduce((acc, qs) => acc + (qs ? (qs.eoo || 0) : 0), 0);
+                 const totalEoc = Object.values(questionScores).reduce((acc, qs) => acc + (qs ? (qs.eoc || 0) : 0), 0);
+                 const totalDurSec = Math.round(Object.values(questionTimes).reduce((acc, t) => acc + (t || 0), 0) / 1000);
+                 const completedQs = Object.values(questionScores).filter(qs => qs !== null).length;
+                 const avgTimeQ = completedQs > 0 ? Math.round(totalDurSec / completedQs) : 0;
+                 return (
+                   <div className="aa-card" style={{ background: 'white', padding: '24px 28px', borderRadius: 16, marginBottom: 20 }}>
+                     {/* Header */}
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 20, paddingBottom: 16, borderBottom: '1.5px solid #f1f5f9' }}>
+                       <div>
+                         <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+                           {quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}
+                         </div>
+                         {quitReason && <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Reason: {quitReason}</div>}
+                       </div>
+                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                         <span style={{ background: '#4f46e5', color: '#fff', borderRadius: 999, padding: '4px 12px', fontSize: '0.82rem', fontWeight: 600 }}>
+                           {t('game.attemptLabel')}{attemptNo}
+                         </span>
+                         <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 999, padding: '4px 12px', fontSize: '0.82rem', fontWeight: 600 }}>
+                           Screentime: {formatTime(timerSeconds)}
+                         </span>
+                       </div>
+                     </div>
+                     {/* Score summary */}
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+                       {/* Dial */}
+                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 140, height: 140, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)', color: '#fff', flexShrink: 0 }}>
+                         <span style={{ fontSize: '3rem', fontWeight: 800, lineHeight: 1 }}>{totalCorrect}</span>
+                         <span style={{ fontSize: '0.9rem', opacity: 0.85, marginTop: 4 }}>/ {MAX_SCORE}</span>
+                       </div>
+                       {/* KPI grid */}
+                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flex: 1, minWidth: 300 }}>
+                         <div className="hp-metric-box">
+                           <label>Correct</label>
+                           <div className="metric-val green">{totalCorrect}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>EOI</label>
+                           <div className="metric-val" style={{ color: '#d97706' }}>{totalEoi}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>EOO</label>
+                           <div className="metric-val red">{totalEoo}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>EOC</label>
+                           <div className="metric-val" style={{ color: '#7c3aed' }}>{totalEoc}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>% Accuracy <span className="kpi-formula-icon" data-tooltip={`Correct ÷ Total Targets (${MAX_SCORE}) × 100`}>ⓘ</span></label>
+                           <div className="metric-val">{((totalCorrect / MAX_SCORE) * 100).toFixed(1)}%</div>
+                           <div className="metric-sub">{totalCorrect} / {MAX_SCORE}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>Duration</label>
+                           <div className="metric-val">{fmtDuration(totalDurSec)}</div>
+                         </div>
+                         <div className="hp-metric-box">
+                           <label>Avg Time/Q</label>
+                           <div className="metric-val">{fmtDuration(avgTimeQ)}</div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 );
+               })()}
 
                <div className="aa-card" style={{ background: 'white', padding: 24, borderRadius: 16, marginBottom: 20 }}>
-                 <h3 className="nr-form-title" style={{ marginBottom: 16, textAlign: 'center' }}>Question-wise Summary</h3>
-                 <div style={{ overflowX: 'auto' }}>
-                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
-                     <thead>
-                       <tr style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.85rem' }}>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}></th>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', color: '#059669' }}>Correct Response</th>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', color: '#d97706' }}>EOI</th>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', color: '#dc2626' }}>EOO</th>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', color: '#7c3aed' }}>EOC</th>
-                         <th style={{ padding: '10px', borderBottom: '2px solid #e2e8f0', color: '#3b82f6' }}>Total Play Time</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {[1, 2, 3, 4].map((q, idx) => {
-                         const qs = questionScores[q] || { correct: 0, eoi: 0, eoo: 0, eoc: 0 };
-                         const qt = Math.round((questionTimes[q] || 0) / 1000);
-                         return (
-                           <tr key={q} style={{ borderBottom: idx===3?'none':'1px solid #f1f5f9' }}>
-                             <td style={{ padding: '12px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Q{q}</td>
-                             <td style={{ padding: '12px', fontWeight: 500 }}>{qs.correct || 0}</td>
-                             <td style={{ padding: '12px', fontWeight: 500 }}>{qs.eoi || 0}</td>
-                             <td style={{ padding: '12px', fontWeight: 500 }}>{qs.eoo || 0}</td>
-                             <td style={{ padding: '12px', fontWeight: 500 }}>{qs.eoc || 0}</td>
-                             <td style={{ padding: '12px', fontWeight: 500 }}>{qt}s</td>
-                           </tr>
-                         )
-                       })}
-                     </tbody>
-                   </table>
-                 </div>
-               </div>
-
-               <div className="aa-card" style={{ background: 'white', padding: 24, borderRadius: 16, marginBottom: 20 }}>
-                 <h3 className="nr-form-title" style={{ marginBottom: 16, textAlign: 'center' }}>Analytical Action Dashboard</h3>
                  <div style={{ overflowX: 'auto' }}>
                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem' }}>
-                      <thead>
-                        <tr style={{ background: '#f8fafc', color: '#475569' }}>
-                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '50px' }}>Q#</th>
-                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Requested Words</th>
-                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>User Responses</th>
-                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Result Type</th>
-                          <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '80px' }}>Time</th>
-                        </tr>
-                      </thead>
+                     <thead>
+                       <tr style={{ background: '#f8fafc', color: '#475569' }}>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '40px' }}>Q#</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '50px' }}>S.No.</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Target Word</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>User Response</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', minWidth: '120px' }}>Status</th>
+                         <th style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', width: '80px' }}>Duration</th>
+                       </tr>
+                     </thead>
                      <tbody>
                        {[1, 2, 3, 4].map(q => {
                          const qs = questionScores[q];
                          if (!qs || !qs.actionLog || qs.actionLog.length === 0) return null;
-                         
-                         return qs.actionLog.map((l, idx) => {
-                           let clr = '#475569';
-                           if (l.result === 'Correct Response') clr = '#059669';
-                           else if (l.result === 'EOO') clr = '#dc2626';
-                           else if (l.result === 'EOC') clr = '#7c3aed';
-                           else if (l.result === 'EOI') clr = '#d97706';
-
-                           // Only show Question number on the very first row of that question
-                           const showQNum = idx === 0;
-
-                           return (
-                             <tr key={`log-${q}-${idx}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                               <td style={{ padding: '10px 12px', fontWeight: showQNum ? 700 : 400, color: showQNum ? '#0f172a' : '#cbd5e1' }}>{showQNum ? q : ''}</td>
-                               <td style={{ padding: '10px 12px', fontWeight: 600 }}>{l.requestedWord}</td>
-                               <td style={{ padding: '10px 12px' }}>{l.response}</td>
-                               <td style={{ padding: '10px 12px', color: clr, fontWeight: clr !== '#475569' ? 600 : 400 }}>{l.result}</td>
-                               <td style={{ padding: '10px 12px', color: '#64748b' }}>{l.time}</td>
+                         const qCfg = CONFIG['QUESTION' + q];
+                         const targetWords = qCfg ? qCfg.TARGET_WORDS.join(' & ') : '';
+                         const qt = Math.round((questionTimes[q] || 0) / 1000);
+                         return (
+                           <React.Fragment key={q}>
+                             <tr style={{ background: '#eff6ff', borderTop: '2px solid #bfdbfe', borderBottom: '1px solid #bfdbfe' }}>
+                               <td colSpan={6} style={{ padding: '8px 14px' }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', fontSize: '0.82rem' }}>
+                                   <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', minWidth: 28 }}>Q{q}</span>
+                                   <span style={{ fontWeight: 600, color: '#0f172a' }}>Target:&nbsp;
+                                     <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>{targetWords}</span>
+                                   </span>
+                                   <span style={{ color: '#059669', fontWeight: 600 }}>Correct: {qs.correct || 0}</span>
+                                   <span style={{ color: '#d97706', fontWeight: 600 }}>EOI: {qs.eoi || 0}</span>
+                                   <span style={{ color: '#dc2626', fontWeight: 600 }}>EOO: {qs.eoo || 0}</span>
+                                   <span style={{ color: '#7c3aed', fontWeight: 600 }}>EOC: {qs.eoc || 0}</span>
+                                   <span style={{ color: '#64748b', marginLeft: 'auto' }}>Duration: {fmtDuration(qt)}</span>
+                                 </div>
+                               </td>
                              </tr>
-                           );
-                         });
+                             {qs.actionLog.map((l, idx) => {
+                               let pillBg = '#f1f5f9', pillClr = '#64748b';
+                               if (l.result === 'Correct Response') { pillBg = '#dcfce7'; pillClr = '#15803d'; }
+                               else if (l.result === 'EOO') { pillBg = '#fee2e2'; pillClr = '#dc2626'; }
+                               else if (l.result === 'EOC') { pillBg = '#ede9fe'; pillClr = '#7c3aed'; }
+                               else if (l.result === 'EOI') { pillBg = '#fef3c7'; pillClr = '#d97706'; }
+                               return (
+                                 <tr key={`log-${q}-${idx}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                   <td style={{ padding: '10px 12px', color: '#cbd5e1', fontSize: '0.75rem', textAlign: 'center' }}>—</td>
+                                   <td style={{ padding: '10px 12px', color: '#64748b' }}>{idx + 1}</td>
+                                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>{l.requestedWord}</td>
+                                   <td style={{ padding: '10px 12px' }}>{l.response}</td>
+                                   <td style={{ padding: '10px 12px' }}>
+                                     <span style={{ display: 'inline-block', background: pillBg, color: pillClr, borderRadius: 999, padding: '3px 12px', fontSize: '0.78rem', fontWeight: 600 }}>{l.result}</span>
+                                   </td>
+                                   <td style={{ padding: '10px 12px', color: '#64748b' }}>{l.time}</td>
+                                 </tr>
+                               );
+                             })}
+                           </React.Fragment>
+                         );
                        })}
                      </tbody>
                    </table>
