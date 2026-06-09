@@ -137,6 +137,11 @@ const SessionAssessmentForm = ({
          ></textarea>
       </div>
 
+      {Object.keys(validationErrors).some(k => validationErrors[k]) && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, color: '#dc2626', fontSize: '0.88rem', fontWeight: 600 }}>
+          ⚠ Please fill in all required fields above before submitting.
+        </div>
+      )}
       <div className="shared-final-actions">
         {assessmentSubmitted ? (
           children

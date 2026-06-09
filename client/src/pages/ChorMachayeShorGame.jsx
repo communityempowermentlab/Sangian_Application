@@ -6,6 +6,25 @@ import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './ChorMachayeShorGame.css';
 
+const formatTime = (sec) => {
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+};
+
+const fmtDuration = (sec) => {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+  const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+  const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
 const GAME_NAME = 'chor_machaye_shor';
 const TOTAL_QUESTIONS = 11;
 const AUDIO_DIR = '/assets/audios/chor_machaye_shor';
@@ -335,6 +354,7 @@ const ChorMachayeShorGame = () => {
   const [currentAttempts, setCurrentAttempts] = useState([]);
   const [itemResults, setItemResults] = useState([]);
   const [totalScore, setTotalScore] = useState(0);
+  const itemRetakesRef = useRef({});
   
   const [currentMistakes, setCurrentMistakes] = useState(0);
   const [currentConsecutiveBreaks, setCurrentConsecutiveBreaks] = useState(0);
@@ -363,6 +383,10 @@ const ChorMachayeShorGame = () => {
   const audioRef = useRef(null);
   const feedbackTimeoutRef = useRef(null);
 
+  const [sessionTimerSec, setSessionTimerSec] = useState(0);
+  const sessionTimerSecRef = useRef(0);
+  const sessionTimerRef = useRef(null);
+
   // Splash Audio Logic removed as this test has no splash audio file
   
   useEffect(() => {
@@ -386,6 +410,18 @@ const ChorMachayeShorGame = () => {
       navigate('/login');
     }
   }, []);
+
+  useEffect(() => {
+    const active = (screen === 'game' || screen === 'results') && !assessmentSubmitted;
+    if (active) {
+      sessionTimerRef.current = setInterval(() => {
+        setSessionTimerSec(s => { sessionTimerSecRef.current = s + 1; return s + 1; });
+      }, 1000);
+    } else {
+      clearInterval(sessionTimerRef.current);
+    }
+    return () => clearInterval(sessionTimerRef.current);
+  }, [screen, assessmentSubmitted]);
 
   const checkSession = async (childId) => {
     try {
@@ -459,7 +495,10 @@ const ChorMachayeShorGame = () => {
           itemResults: scoresToSave,
           currentItemIndex, currentTrial, currentPhase, currentMove, correctTouchCount,
           isRuleSelection, phase2Rule, lastCorrectPosition, timerSeconds,
-          currentAttempts, totalScore: finalScore, screen
+          currentAttempts, totalScore: finalScore, screen,
+          screentime: sessionTimerSecRef.current,
+          retakeCount: Object.values(itemRetakesRef.current).reduce((a, b) => a + b, 0),
+          itemRetakes: itemRetakesRef.current
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -476,6 +515,9 @@ const ChorMachayeShorGame = () => {
     setPhase2Rule(null);
     setLastCorrectPosition(null);
     setTimerSeconds(0);
+    setSessionTimerSec(0);
+    sessionTimerSecRef.current = 0;
+    itemRetakesRef.current = {};
     setCurrentAttempts([]);
     setTotalScore(0);
     setInteractionLocked(false);
@@ -510,6 +552,9 @@ const ChorMachayeShorGame = () => {
     setPhase2Rule(ss.phase2Rule || null);
     setLastCorrectPosition(ss.lastCorrectPosition !== undefined ? ss.lastCorrectPosition : null);
     setTimerSeconds(ss.timerSeconds || 0);
+    setSessionTimerSec(ss.screentime || 0);
+    sessionTimerSecRef.current = ss.screentime || 0;
+    itemRetakesRef.current = ss.itemRetakes || {};
     setCurrentAttempts(ss.currentAttempts || []);
     setTotalScore(ss.totalScore || 0);
     
@@ -957,7 +1002,7 @@ const ChorMachayeShorGame = () => {
       if (item.id === 1 && currentTrial === 1) {
         stopTimer();
         const score = calculateScore(item, currentAttempts.length + 1, 1);
-        const result = { itemId: item.id, itemName: item.name + ' (Trial 1)', score, moves: currentAttempts.length + 1, timeTaken: timerSeconds, completed: true, trial: 1 };
+        const result = { itemId: item.id, itemName: item.name + ' (Trial 1)', score, moves: currentAttempts.length + 1, timeTaken: timerSeconds, completed: true, trial: 1, retakes: itemRetakesRef.current[currentItemIndex] || 0 };
         const newResults = [...itemResults, result];
         setItemResults(newResults);
         setTotalScore(prev => prev + score);
@@ -975,7 +1020,7 @@ const ChorMachayeShorGame = () => {
   const handleMaxAttempts = async (item, movesCount) => {
     if (item.id === 1 && currentTrial === 1) {
       stopTimer();
-      const result = { itemId: item.id, itemName: item.name + ' (Trial 1)', score: 0, moves: movesCount, timeTaken: timerSeconds, completed: false, trial: 1 };
+      const result = { itemId: item.id, itemName: item.name + ' (Trial 1)', score: 0, moves: movesCount, timeTaken: timerSeconds, completed: false, trial: 1, retakes: itemRetakesRef.current[currentItemIndex] || 0 };
       const newResults = [...itemResults, result];
       setItemResults(newResults);
       saveToServer('in_progress', newResults);
@@ -1017,7 +1062,8 @@ const ChorMachayeShorGame = () => {
       phase2Time: phase1TimeTaken > 0 ? (timerSeconds - phase1TimeTaken) : 0,
       mistakes: currentMistakes, consecutiveBreaks: currentConsecutiveBreaks,
       finalRule: phase2Rule ? phase2Rule.type : null,
-      trial: currentTrial
+      trial: currentTrial,
+      retakes: itemRetakesRef.current[currentItemIndex] || 0
     };
     
     const newResults = [...itemResults, result];
@@ -1106,7 +1152,7 @@ const ChorMachayeShorGame = () => {
   const handleRetake = async () => {
     if (interactionLocked || isPaused) return;
     if (!window.confirm(`Restart Trial ${currentTrial}?`)) return;
-    
+    itemRetakesRef.current[currentItemIndex] = (itemRetakesRef.current[currentItemIndex] || 0) + 1;
     setInteractionLocked(true);
     setCorrectTouchCount(0);
     setCurrentMove(0);
@@ -1129,7 +1175,7 @@ const ChorMachayeShorGame = () => {
   const handlePauseAction = async (actionStatus) => {
     if (!quitReason.trim()) { alert('Please provide a reason'); return; }
     if (actionStatus === 'quit') {
-      await saveToServer('quit', quitReason);
+      await saveToServer('quit', null, quitReason);
       setShowPauseModal(false);
       setIsPaused(false);
       setScreen('results');
@@ -1141,12 +1187,15 @@ const ChorMachayeShorGame = () => {
   };
 
   const submitAssessment = async () => {
+    clearInterval(sessionTimerRef.current);
+    if (!gameSessionId) {
+      alert('Session not found. Please refresh and try again.');
+      return;
+    }
     setIsAssessmentSubmitting(true);
     try {
-      // If we already quit or paused, don't overwrite with 'completed'
-      // The status was already set in handlePauseAction
       if (quitReason) {
-        await saveToServer('quit');
+        await saveToServer('quit', null, quitReason);
       } else {
         await saveToServer('completed');
       }
@@ -1156,7 +1205,7 @@ const ChorMachayeShorGame = () => {
 
       await axios.post(`${API_URL}/games/assessments`, {
         session_id: gameSessionId,
-        child_id: childData.child_id,
+        child_id: childData?.child_id,
         q1_enjoyment: assessment.q1,
         q2_feeling: assessment.q2,
         q3_tiredness: assessment.q3,
@@ -1209,8 +1258,9 @@ const ChorMachayeShorGame = () => {
       setAssessmentSubmitted(true);
       alert(t('game.assessmentSubmitted'));
     } catch (e) {
-      console.error(e);
-      alert(t('common.failedToSave'));
+      console.error('Assessment submission error:', e);
+      const msg = e?.response?.data?.message || e?.message || 'Unknown error';
+      alert(`${t('common.failedToSave')}\n\nDetails: ${msg}`);
     } finally {
       setIsAssessmentSubmitting(false);
     }
@@ -1233,7 +1283,7 @@ const ChorMachayeShorGame = () => {
         if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
       }
       if (final) {
-        if (target === 'notes') setAssessment(p => ({ ...p, notes: p.notes + final }));
+        if (target === 'notes' || target === 'assessmentNotes') setAssessment(p => ({ ...p, notes: p.notes + final }));
         else setQuitReason(p => p + final);
       }
     };
@@ -1323,7 +1373,7 @@ const ChorMachayeShorGame = () => {
   if (screen === 'results') {
     const attempted = itemResults.length;
     const correctCount = itemResults.filter(r => r.completed).length;
-    const accuracy = attempted > 0 ? Math.round((correctCount / attempted) * 100) : 0;
+    const accuracy = Math.round((correctCount / 18) * 100);
     const tTime = itemResults.reduce((acc, r) => acc + r.timeTaken, 0);
     const tMoves = itemResults.reduce((acc, r) => acc + r.moves, 0);
     const avgTime = attempted > 0 ? Math.round(tTime / attempted) : 0;
@@ -1350,80 +1400,74 @@ const ChorMachayeShorGame = () => {
               {/* Header Section */}
               <div className="chor-dash-header">
                 <div>
-                  <div className="chor-dash-title">{quitReason ? t('game.sessionTerminated') : t('game.assessmentComplete')}</div>
+                  <div className="chor-dash-title">{t('game.assessmentComplete')}</div>
                   <div className="chor-dash-subtitle">{quitReason ? 'Assessor requested early exit' : 'Test finished successfully'}</div>
                 </div>
                 <div className="chor-dash-badges">
                   <span className="chor-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                  <span className="chor-chip chor-chip-splash">{t('game.finalResults')}</span>
-                  <span className="chor-chip chor-chip-game">Time: {Math.floor(tTime / 60)}m {tTime % 60}s</span>
+                  <span className="chor-chip" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>Screentime: {formatTime(sessionTimerSec)}</span>
                 </div>
               </div>
 
               <div className="chor-dash-content">
               {/* Performance Section */}
               <div className="chor-dash-section">
-                <h3 className="chor-section-title">Performance</h3>
-                <p className="chor-section-subtitle">{t('game.assessmentCompleted2')}</p>
                 
                 <div className="chor-dash-stat-grid">
                   <div className="chor-big-score-circle">
-                    <span className="score-value">{totalScore}</span>
-                    <span className="score-max">{t('game.totalScore')}</span>
+                    <span className="score-value">{correctCount}</span>
+                    <span className="score-max">/ 18</span>
                   </div>
                   <div className="chor-stat-boxes">
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Total Score</div><div className="chor-stat-val">{totalScore}</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Completed Items</div><div className="chor-stat-val text-green">{attempted}</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">{t('game.totalMoves')}</div><div className="chor-stat-val text-red">{tMoves}</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Accuracy <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span></div><div className="chor-stat-val">{accuracy}%</div></div>
-                    <div className="chor-stat-box"><div className="chor-stat-box-label">Total Time</div><div className="chor-stat-val">{Math.floor(tTime / 60)}m {tTime % 60}s</div></div>
-                    <div className="chor-stat-box chor-stat-box-wide"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{avgTime}s</div></div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">Correct</div><div className="chor-stat-val text-green">{correctCount}</div></div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">Incorrect</div><div className="chor-stat-val text-red">{attempted - correctCount}</div></div>
+                    <div className="chor-stat-box">
+                      <div className="chor-stat-box-label">% Accuracy <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Questions (18) × 100">ⓘ</span></div>
+                      <div className="chor-stat-val">{((correctCount / 18) * 100).toFixed(1)}%</div>
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{correctCount} / 18</div>
+                    </div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">Duration</div><div className="chor-stat-val">{fmtDuration(tTime)}</div></div>
+                    <div className="chor-stat-box"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{fmtDuration(avgTime)}</div></div>
                   </div>
                 </div>
               </div>
 
               {/* Detailed Breakdown Table */}
               <div className="chor-dash-section">
-                <h3 className="chor-section-title">{t('game.detailedBreakdown')}</h3>
                 <div className="chor-table-wrapper">
                   <table className="chor-data-table">
                     <thead>
                       <tr>
-                        <th>S. No</th>
-                        <th>Item</th>
-                        <th>Question Image</th>
-                        <th>Status</th>
+                        <th>S.No.</th>
                         <th>Item Name</th>
+                        <th>Trial</th>
+                        <th>Status</th>
+                        <th>Moves</th>
                         <th>Score</th>
-                        <th>{t('game.movesLabel')}</th>
-                        <th>Total Time</th>
-                        <th>Phase 1</th>
-                        <th>Phase 2</th>
-                        <th>Mistakes</th>
-                        <th>Rule</th>
+                        <th>Duration</th>
+                        <th>Retakes</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {itemResults.map((r, i) => (
+                      {itemResults.map((r, i) => {
+                        let pillBg = '#fee2e2', pillClr = '#dc2626', pillLabel = 'Incorrect';
+                        if (r.completed) { pillBg = '#dcfce7'; pillClr = '#15803d'; pillLabel = 'Correct'; }
+                        else if (r.score > 0) { pillBg = '#fef3c7'; pillClr = '#d97706'; pillLabel = 'Partial'; }
+                        return (
                         <tr key={i}>
                           <td>{i + 1}</td>
-                          <td><strong>{r.itemId}</strong></td>
-                          <td><span className="q-no-image">No Image</span></td>
+                          <td>{(r.itemName || '').replace(/^Item \d+:\s*/, '').replace(/\s*\(Trial \d+\)$/, '')}</td>
+                          <td>{r.trial || '—'}</td>
                           <td>
-                            <span className={`q-status-pill ${r.completed ? 'pass' : 'fail'}`}>
-                              {r.completed ? '✔ Passed' : '✘ Failed'}
-                            </span>
+                            <span style={{ display: 'inline-block', background: pillBg, color: pillClr, borderRadius: 999, padding: '3px 12px', fontSize: '0.78rem', fontWeight: 600 }}>{pillLabel}</span>
                           </td>
-                          <td>{r.itemName}</td>
-                          <td>{r.score}</td>
                           <td>{r.moves}</td>
-                          <td>{r.timeTaken}s</td>
-                          <td>{r.phase1Time ? `${r.phase1Time}s` : '—'}</td>
-                          <td>{r.phase2Time ? `${r.phase2Time}s` : '—'}</td>
-                          <td>{r.mistakes || 0}</td>
-                          <td>{r.finalRule || '—'}</td>
+                          <td>{r.score}</td>
+                          <td>{fmtDuration(r.timeTaken)}</td>
+                          <td>{r.retakes || 0}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
