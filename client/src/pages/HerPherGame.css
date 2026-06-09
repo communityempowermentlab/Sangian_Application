@@ -428,6 +428,8 @@
 .hp-metric-box .metric-val { font-size: 1.3rem; font-weight: 800; color: #1e293b; }
 .hp-metric-box .metric-val.green { color: #16a34a; }
 .hp-metric-box .metric-val.red { color: #ef4444; }
+.hp-metric-box .metric-sub { font-size: 0.8rem; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+
 
 .hp-banner { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 0.95rem; margin-bottom: 24px; }
 

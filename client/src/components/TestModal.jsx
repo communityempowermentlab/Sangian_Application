@@ -32,7 +32,7 @@ const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) 
                     <div className="modal-icon">🧠</div>
                     <div>
                         <h3 id="modalTitle">{title || 'Test module'}</h3>
-                        <p id="modalSubtitle" className="modal-subtitle">{subtitle}</p>
+                        {subtitle && <p id="modalSubtitle" className="modal-subtitle">{subtitle}</p>}
                     </div>
                 </div>
                 <div className="modal-body" id="modalBody">

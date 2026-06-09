@@ -155,6 +155,7 @@ const HerPherGame = () => {
   const [showControls, setShowControls]         = useState(false);  // sample retake/next
   const [buttonsDisabled, setButtonsDisabled]   = useState(false);
   const [shuffleInProgress, setShuffleInProgress] = useState(false);
+  const [timerSeconds, setTimerSeconds]           = useState(0);
 
   // Splash audio
   const [audioFinished, setAudioFinished]       = useState(false);
@@ -182,9 +183,15 @@ const HerPherGame = () => {
   const [recordingTarget, setRecordingTarget]   = useState(null);
 
   // Timers
-  const timerRef       = useRef(null);
-  const audioSplashRef = useRef(null);
-  const isResumingRef  = useRef(false);
+  const timerRef          = useRef(null);
+  const sessionTimerRef   = useRef(null);
+  const timerSecondsRef   = useRef(0);
+  const audioSplashRef    = useRef(null);
+  const isResumingRef     = useRef(false);
+
+  // Stable refs for use inside callbacks (avoids stale closure issues)
+  const scoreHistoryRef   = useRef([]);
+  const totalScoreRef     = useRef(0);
 
   // ──── Init: load child from localStorage ────────────────────────────────────
   useEffect(() => {
@@ -240,9 +247,23 @@ const HerPherGame = () => {
     return () => clearInterval(timerRef.current);
   }, [screen, showQuitModal, currentQuestion, currentAttempt]);
 
+  // ──── Session screentime timer (stops when assessment is submitted) ──────────
+  useEffect(() => {
+    if ((screen === 'game' || screen === 'score') && !assessmentSubmitted) {
+      sessionTimerRef.current = setInterval(() => {
+        setTimerSeconds(s => { timerSecondsRef.current = s + 1; return s + 1; });
+      }, 1000);
+    } else {
+      clearInterval(sessionTimerRef.current);
+    }
+    return () => clearInterval(sessionTimerRef.current);
+  }, [screen, assessmentSubmitted]);
+
   // ──── Sync ref ───────────────────────────────────────────────────────────────
   useEffect(() => { gameSessionIdRef.current = gameSessionId; }, [gameSessionId]);
   useEffect(() => { pausesRef.current = pauses; }, [pauses]);
+  useEffect(() => { scoreHistoryRef.current = scoreHistory; }, [scoreHistory]);
+  useEffect(() => { totalScoreRef.current = totalScore; }, [totalScore]);
 
   // ──── Build image layout when question/attempt changes ───────────────────────
   useEffect(() => {
@@ -342,6 +363,8 @@ const HerPherGame = () => {
     setScoreHistory([]);
     setTotalScore(0);
     setTotalTime(0);
+    setTimerSeconds(0);
+    timerSecondsRef.current = 0;
     setPauses([]);
     setAssessmentSubmitted(false);
     setQuitReason('');
@@ -557,34 +580,40 @@ const HerPherGame = () => {
     setScreen('score');
     clearInterval(timerRef.current);
     const sessId = gameSessionIdRef.current;
-    if (sessId) {
-      // Final save
-      setScoreHistory(hist => {
-        const allScores = hist.filter(h => h.attempt === 2 && !h.isSample).map(h => ({
-          qId: h.question,
-          score: h.score,
-          timeTaken: h.time,
-          correctCount: h.correctCount,
-          expectedImages: h.expectedImages,
-          selectedImages: h.selected,
-          matchedImages: h.matchedImages,
-          incorrectSelections: h.incorrectSelections,
-          missedImages: h.missedImages,
-          category: h.category
-        }));
-        setTotalScore(ts => {
-          axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
-            score: ts,
-            progress_level: 9,
-            status: 'completed',
-            saved_state: { allScores, totalScore: ts, scoreHistory: hist },
-          }).catch(e => console.error(e));
-          return ts;
-        });
-        return hist;
-      });
-    }
-  }, [totalScore, scoreHistory]);
+    if (!sessId) return;
+
+    // Use refs so we always read the latest committed state, even if this
+    // callback was captured in a stale closure by moveNext.
+    const hist = scoreHistoryRef.current;
+    const ts   = totalScoreRef.current;
+
+    const allScores = hist
+      .filter(h => h.attempt === 2 && !h.isSample)
+      .map(h => ({
+        qId: h.question,
+        score: h.score,
+        timeTaken: h.time,
+        correctCount: h.correctCount,
+        expectedImages: h.expectedImages,
+        selectedImages: h.selected,
+        matchedImages: h.matchedImages,
+        incorrectSelections: h.incorrectSelections,
+        missedImages: h.missedImages,
+        category: h.category,
+      }));
+
+    axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
+      score: ts,
+      progress_level: 9,
+      status: 'completed',
+      saved_state: {
+        allScores,
+        totalScore: ts,
+        screentime: timerSecondsRef.current,
+        timerSeconds: timerSecondsRef.current,
+      },
+    }).catch(e => console.error('Complete game save error', e));
+  }, []);
 
   // ──── Quit/Pause ─────────────────────────────────────────────────────────────
   const handleQuit = async (status) => {
@@ -893,18 +922,13 @@ const HerPherGame = () => {
                 </div>
                 <div className="hp-chips">
                   <span className="hp-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                  <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe' }}>{t('game.finalResults')}</span>
                   <span className="hp-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
-                    Time: {Math.floor(totalTime / 60)}m {totalTime % 60}s
+                    Screentime: {formatTime(timerSeconds)}
                   </span>
                 </div>
               </div>
 
               <div className="hp-card hp-result-card" style={{ padding: 30 }} id="dashboard-capture-area">
-                <div className="hp-result-header" style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{t('home.games.herpher.title')} {t('game.performanceLabel')}</h2>
-                  <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Assessment Completed</p>
-                </div>
 
                 <div className="hp-score-top">
                   <div className="hp-score-dial-container">
@@ -914,10 +938,6 @@ const HerPherGame = () => {
 
                   <div className="hp-metric-grid">
                     <div className="hp-metric-box">
-                      <label>Total Score</label>
-                      <div className="metric-val">{totalScore} / 25</div>
-                    </div>
-                    <div className="hp-metric-box">
                       <label>Correct</label>
                       <div className="metric-val green">{totalCorrectAll}</div>
                     </div>
@@ -926,11 +946,12 @@ const HerPherGame = () => {
                       <div className="metric-val red">{totalIncorrectAll}</div>
                     </div>
                     <div className="hp-metric-box">
-                      <label>Percentage</label>
+                      <label>% Accuracy <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Score (25) × 100">ⓘ</span></label>
                       <div className="metric-val">{((totalScore / 25) * 100).toFixed(1)}%</div>
+                      <div className="metric-sub">{totalScore} / 25</div>
                     </div>
                     <div className="hp-metric-box">
-                      <label>Total Time</label>
+                      <label>Duration</label>
                       <div className="metric-val">
                          {Math.floor(totalTime / 60)}m {totalTime % 60}s
                       </div>
@@ -941,10 +962,6 @@ const HerPherGame = () => {
                     </div>
                   </div>
                 </div>
-
-                {((totalScore / 25) * 100) > 80 && (
-                   <div className="hp-banner">{t('game.outstandingMemory')}</div>
-                )}
 
                 {/* Detailed Per-Question Integrity Dashboard */}
                 <div className="hp-q-grid" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: '20px' }}>
