@@ -55,7 +55,7 @@ const QUESTIONS = {
              {id:'yc-sm',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'}]},
 
   teachingQ1: { type:'teaching', title:'Teaching Question 1', next:'teachingQ2', isSample:true,
-    sources:[{id:'bs-lg',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
              {id:'rc-lg2',name:'Red Circle',size:'large',color:'#e74c3c',shape:'circle'},
              {id:'ys-sm',name:'Yellow Square',size:'small',color:'#f1c40f',shape:'square'}]},
 
@@ -65,25 +65,25 @@ const QUESTIONS = {
              {id:'yc-sm2',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'}]},
 
   question3:  { type:'question', title:'Question 3',  next:'question4', isSample:false,
-    sources:[{id:'bs-lg4',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg4',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
              {id:'rc-lg4',name:'Red Circle',size:'large',color:'#e74c3c',shape:'circle'},
-             {id:'bs-sm4',name:'Blue Square',size:'small',color:'#3498db',shape:'square'},
+             {id:'bs-sm4',name:'Blue Square',size:'small',color:'#2471a3',shape:'square'},
              {id:'ys-sm4',name:'Yellow Square',size:'small',color:'#f1c40f',shape:'square'}]},
 
   question4:  { type:'question', title:'Question 4',  next:'teachingQ5', isSample:false,
-    sources:[{id:'bs-lg5',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
-             {id:'bs-sm5',name:'Blue Square',size:'small',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg5',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
+             {id:'bs-sm5',name:'Blue Square',size:'small',color:'#2471a3',shape:'square'},
              {id:'rc-sm5',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'},
              {id:'yc-sm5',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'}]},
 
   teachingQ5: { type:'teaching', title:'Teaching Question 5', next:'question6', isSample:true,
     sources:[{id:'yt-lg6',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-up', scale:1.21},
-             {id:'bs-lg6',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:0.9}]},
+             {id:'bs-lg6',name:'Blue Square',size:'large',color:'#2471a3',shape:'square', scale:0.9}]},
 
   question6:  { type:'question', title:'Question 6',  next:'question7', isSample:false,
-    sources:[{id:'bs-lg7a',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
-             {id:'bs-lg7b',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
-             {id:'bs-sm7',name:'Blue Square',size:'small',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg7a',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
+             {id:'bs-lg7b',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
+             {id:'bs-sm7',name:'Blue Square',size:'small',color:'#2471a3',shape:'square'},
              {id:'ys-sm7',name:'Yellow Square',size:'small',color:'#f1c40f',shape:'square'}]},
 
   question7:  { type:'question', title:'Question 7',  next:'question8', isSample:false,
@@ -92,111 +92,111 @@ const QUESTIONS = {
              {id:'rc-sm8',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'}]},
 
   question8:  { type:'question', title:'Question 8',  next:'question9', isSample:false,
-    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#3498db',shape:'square', scale:1.0},
+    sources:[{id:'bs-lg9',name:'Blue Square',size:'large',color:'#2471a3',shape:'square', scale:1.0},
              {id:'yc-sm9a',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'yc-sm9b',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'},
              {id:'rc-sm9a',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'},
              {id:'rc-sm9b',name:'Red Circle',size:'small',color:'#e74c3c',shape:'circle'}]},
 
   question9:  { type:'question', title:'Question 9',  next:'question10', isSample:false,
-    sources:[{id:'bs-lg10a',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
-             {id:'bs-lg10b',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg10a',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
+             {id:'bs-lg10b',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
              {id:'rt-lg10a',name:'Red Triangle',size:'large',color:'#e74c3c',shape:'triangle-up'},
              {id:'rt-lg10b',name:'Red Triangle',size:'large',color:'#e74c3c',shape:'triangle-up'},
              {id:'yc-sm10',name:'Yellow Circle',size:'small',color:'#f1c40f',shape:'circle'}]},
 
   question10: { type:'question', title:'Question 10', next:'sampleB', isSample:false,
-    sources:[{id:'bs-lg11',name:'Blue Square',size:'large',color:'#3498db',shape:'square'},
+    sources:[{id:'bs-lg11',name:'Blue Square',size:'large',color:'#2471a3',shape:'square'},
              {id:'yt-lg11',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'triangle-up'},
              {id:'ys-sm11',name:'Yellow Square',size:'small',color:'#f1c40f',shape:'diamond'}]},
 
   sampleB:    { type:'sample',   title:'Sample B', next:'question11', isSample:true,
     sources:[{id:'yrt-lg-s',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt-lg-s',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt-lg-s',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question11: { type:'question', title:'Question 11', next:'question12', isSample:false,
     sources:[{id:'yrt-a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt-b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'}]},
 
   question12: { type:'question', title:'Question 12', next:'question13', isSample:false,
-    sources:[{id:'brt-a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt-b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+    sources:[{id:'brt-a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt-b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question13: { type:'question', title:'Question 13', next:'question14', isSample:false,
     sources:[{id:'yrt13',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt13',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt13',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question14: { type:'question', title:'Question 14', next:'question15', isSample:false,
     sources:[{id:'yrt14a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt14b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt14',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt14',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question15: { type:'question', title:'Question 15', next:'question16', isSample:false,
     sources:[{id:'yrt15',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt15a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt15b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt15a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt15b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question16: { type:'question', title:'Question 16', next:'question17', isSample:false,
     sources:[{id:'yrt16',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt16a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt16b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt16c',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt16a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt16b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt16c',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question17: { type:'question', title:'Question 17', next:'question18', isSample:false,
     sources:[{id:'yrt17a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt17b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt17a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt17b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt17a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt17b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question18: { type:'question', title:'Question 18', next:'question19', isSample:false,
     sources:[{id:'yrt18a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt18b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt18a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt18b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt18a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt18b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question19: { type:'question', title:'Question 19', next:'question20', isSample:false,
     sources:[{id:'yrt19a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt19b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt19a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt19b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt19a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt19b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question20: { type:'question', title:'Question 20', next:'question21', isSample:false,
     sources:[{id:'yrt20a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt20b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt20a',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt20b',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt20a',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt20b',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question21: { type:'question', title:'Question 21', next:'question22', isSample:false,
     sources:[{id:'yrt21a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt21b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt21c',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt21',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt21',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question22: { type:'question', title:'Question 22', next:'question23', isSample:false,
     sources:[{id:'yrt22a',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt22b',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt22c',name:'Yellow Triangle',size:'large',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt22',name:'Blue Triangle',size:'large',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt22',name:'Blue Triangle',size:'large',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question23: { type:'question', title:'Question 23', next:'question24', isSample:false,
     sources:[{id:'yrt23a',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt23b',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt23c',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt23d',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt23a',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt23b',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt23c',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt23d',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt23a',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt23b',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt23c',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt23d',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question24: { type:'question', title:'Question 24', next:'question25', isSample:false,
     sources:[{id:'yrt24a',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt24b',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt24c',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt24d',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt24a',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt24b',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt24c',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt24d',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt24a',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt24b',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt24c',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt24d',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question25: { type:'question', title:'Question 25', next:'question26', isSample:false,
     sources:[{id:'yrt25a',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
@@ -206,8 +206,8 @@ const QUESTIONS = {
              {id:'yrt25e',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt25f',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt25g',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt25a',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt25b',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt25a',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt25b',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question26: { type:'question', title:'Question 26', next:'question27', isSample:false,
     sources:[{id:'yrt26a',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
@@ -216,19 +216,19 @@ const QUESTIONS = {
              {id:'yrt26d',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt26e',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt26f',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt26a',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt26b',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt26c',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt26a',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt26b',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt26c',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 
   question27: { type:'question', title:'Question 27 (Final)', next:null, isSample:false,
     sources:[{id:'yrt27a',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt27b',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt27c',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
              {id:'yrt27d',name:'Yellow Triangle',size:'small',color:'#f1c40f',shape:'right-triangle',orientation:'BL'},
-             {id:'brt27a',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt27b',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt27c',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'},
-             {id:'brt27d',name:'Blue Triangle',size:'small',color:'#3498db',shape:'right-triangle',orientation:'BL'}]},
+             {id:'brt27a',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt27b',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt27c',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'},
+             {id:'brt27d',name:'Blue Triangle',size:'small',color:'#2471a3',shape:'right-triangle',orientation:'BL'}]},
 };
 
 const QUESTION_ORDER = [
@@ -240,6 +240,7 @@ const QUESTION_ORDER = [
   'question25','question26','question27',
 ];
 
+const TEXTURED_QS = new Set(QUESTION_ORDER.slice(QUESTION_ORDER.indexOf('sampleB')));
 const SAMPLE_QS = QUESTION_ORDER.filter(k => QUESTIONS[k].type === 'sample');
 const TEACHING_QS = QUESTION_ORDER.filter(k => QUESTIONS[k].type === 'teaching');
 const ORIGINAL_QS = QUESTION_ORDER.filter(k => QUESTIONS[k].type === 'question');
@@ -263,48 +264,64 @@ const SHAPE_SIZE_PX = { large: 200, small: 99 };
 const SOURCE_SIZE_PX = { large: 56, small: 38 };
 
 // ─── Shape renderer (both source and workspace) ───────────────
-function ShapeEl({ shape, color, size, orientation, workspace = false, customSize }) {
+const TEXTURE_DEFS = (
+  <defs>
+    <filter id="rg-fabric-texture" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55 0.45" numOctaves="4" seed="8" result="noise" />
+      <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise" />
+      <feComponentTransfer in="grayNoise" result="lightenedNoise">
+        <feFuncR type="linear" slope="0.35" intercept="0.65" />
+        <feFuncG type="linear" slope="0.35" intercept="0.65" />
+        <feFuncB type="linear" slope="0.35" intercept="0.65" />
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="lightenedNoise" mode="multiply" result="textured" />
+      <feComposite in="textured" in2="SourceGraphic" operator="in" />
+    </filter>
+  </defs>
+);
+
+function ShapeEl({ shape, color, size, orientation, workspace = false, customSize, textured = false }) {
   const sizePx = customSize || (workspace ? SHAPE_SIZE_PX[size] : SOURCE_SIZE_PX[size]);
-  const filter = workspace ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' : 'none';
+  const dropShadow = workspace ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' : 'none';
+  const shapeFilter = textured ? 'url(#rg-fabric-texture)' : undefined;
 
   if (shape === 'circle') {
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
-        <circle cx="50" cy="50" r="50" fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter: dropShadow }}>
+        {textured && TEXTURE_DEFS}
+        <circle cx="50" cy="50" r="50" fill={color} filter={shapeFilter} />
       </svg>
     );
   }
   if (shape === 'square') {
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
-        <rect width="100" height="100" fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter: dropShadow }}>
+        {textured && TEXTURE_DEFS}
+        <rect width="100" height="100" fill={color} filter={shapeFilter} />
       </svg>
     );
   }
   if (shape === 'diamond') {
-    // Original was a square of 0.85 * sizePx rotated 45 degrees.
-    // A square of side 0.85 in a 1.0 container has tip-to-tip = 0.85 * sqrt(2) = 1.202
-    // Tips at 0.5 +/- 0.601
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter, overflow: 'visible' }}>
-        <polygon points="50,-10.1 110.1,50 50,110.1 -10.1,50" fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter: dropShadow, overflow: 'visible' }}>
+        {textured && TEXTURE_DEFS}
+        <polygon points="50,-10.1 110.1,50 50,110.1 -10.1,50" fill={color} filter={shapeFilter} />
       </svg>
     );
   }
   if (shape === 'triangle-up') {
-    // Original height was sizePx / 2. Centered in a sizePx container.
-    // In a 100 viewBox, height is 50. Centered between 25 and 75.
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
-        <polygon points="50,25 0,75 100,75" fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter: dropShadow }}>
+        {textured && TEXTURE_DEFS}
+        <polygon points="50,25 0,75 100,75" fill={color} filter={shapeFilter} />
       </svg>
     );
   }
   if (shape === 'triangle-down') {
-    // Centered between 25 and 75.
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter }}>
-        <polygon points="0,25 100,25 50,75" fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" style={{ filter: dropShadow }}>
+        {textured && TEXTURE_DEFS}
+        <polygon points="0,25 100,25 50,75" fill={color} filter={shapeFilter} />
       </svg>
     );
   }
@@ -315,8 +332,9 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
     if (o === 'UL') pts = "0,0 0,100 100,0";
     if (o === 'UR') pts = "0,0 100,0 100,100";
     return (
-      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter }}>
-        <polygon points={pts} fill={color} />
+      <svg width={sizePx} height={sizePx} viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter: dropShadow }}>
+        {textured && TEXTURE_DEFS}
+        <polygon points={pts} fill={color} filter={shapeFilter} />
       </svg>
     );
   }
@@ -325,7 +343,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
-  const { t }    = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [childData, setChildData]           = useState(null);
@@ -359,9 +377,13 @@ const TriangleRachnaGame = () => {
   const [isRecording, setIsRecording]               = useState(false);
   const [recordingTarget, setRecordingTarget]       = useState(null);
   const [fullImg, setFullImg]                       = useState(null);
+  const [sessionElapsed, setSessionElapsed]         = useState(0);
 
-  const sessionIdRef    = useRef(null);
-  const timerRef        = useRef(null);
+  const sessionIdRef       = useRef(null);
+  const sessionStartRef    = useRef(null);
+  const sessionTimerRef    = useRef(null);
+  const sessionElapsedRef  = useRef(0);
+  const timerRef           = useRef(null);
   const audioRef        = useRef(null);
   const workspaceRef    = useRef(null);
   const dragItemRef     = useRef(null); // { sourceItem }
@@ -555,6 +577,14 @@ const TriangleRachnaGame = () => {
       });
       sessionIdRef.current = res.data.sessionId;
       setAttemptNo(res.data.attempt_no || 1);
+      // Start session-level screentime timer
+      sessionStartRef.current = Date.now();
+      clearInterval(sessionTimerRef.current);
+      sessionTimerRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
+        sessionElapsedRef.current = elapsed;
+        setSessionElapsed(elapsed);
+      }, 1000);
     } catch (e) { console.error(e); }
   }, [childData]);
 
@@ -564,9 +594,10 @@ const TriangleRachnaGame = () => {
     const allScores = Object.entries(scores).map(([k, sc]) => ({
       qId: k, score: sc, timeTaken: times[k] || 0,
     }));
+    const screentime = sessionElapsedRef.current || 0;
     axios.put(`${API_URL}/games/sessions/update/${sessionIdRef.current}`, {
       score: totalSc, progress_level: Object.keys(scores).length,
-      status, saved_state: { allScores, totalScore: totalSc, pauses: pausesRef.current, questionDetails: questionDetailsRef.current },
+      status, saved_state: { allScores, totalScore: totalSc, screentime, pauses: pausesRef.current, questionDetails: questionDetailsRef.current },
     }).catch(e => console.error(e));
   }, []);
 
@@ -764,6 +795,10 @@ const TriangleRachnaGame = () => {
   // ── Quit / Pause / Resume ─────────────────────────────────────
   const restartFresh = () => {
     setShowResumeModal(false);
+    clearInterval(sessionTimerRef.current);
+    setSessionElapsed(0);
+    sessionElapsedRef.current = 0;
+    sessionStartRef.current = null;
     sessionIdRef.current = null;
     pausesRef.current = [];
     setPauses([]);
@@ -856,18 +891,22 @@ const TriangleRachnaGame = () => {
         child_id: childData.child_id,
         q1_enjoyment: assessment.q1, q2_feeling: assessment.q2,
         q3_tiredness: assessment.q3, q4_play_again: assessment.q4,
-        q5_behaviors: JSON.stringify(assessment.behaviors),
+        q5_behaviors: assessment.behaviors,
         additional_notes: assessment.notes,
       });
       setAssDone(true);
-      
+      // Freeze screentime on submission — ref holds the exact displayed value
+      clearInterval(sessionTimerRef.current);
+      sessionElapsedRef.current = sessionElapsed;
+      saveProgress(questionScores, questionTimes, totalScore, 'completed');
+
       // Wait for DOM to render then capture
       setTimeout(() => {
         generateAndUploadPDF();
       }, 1000);
       
       alert(t('game.assessmentSubmitted'));
-    } catch (e) { console.error(e); } finally { setAssSub(false); }
+    } catch (e) { console.error(e); alert(e?.response?.data?.message || 'Submission failed. Please try again.'); } finally { setAssSub(false); }
   };
 
   const generateAndUploadPDF = async () => {
@@ -972,12 +1011,14 @@ const TriangleRachnaGame = () => {
                 {q.type.toUpperCase()}
               </span>
 
-              <div className="rg-timer blue-timer">
-                <span className="timer-icon">⏱</span> {t('game.timer')}: 
-                <span className={`rg-timer-val ${timerCls()}`}>
-                  {limit === 0 ? '∞' : formatTimerDisplay(timeElapsed)}
-                </span>
-              </div>
+              {limit !== 0 && (
+                <div className="rg-timer blue-timer">
+                  <span className="timer-icon">⏱</span> {t('game.timer')}:
+                  <span className={`rg-timer-val ${timerCls()}`}>
+                    {formatTimerDisplay(timeElapsed)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -985,10 +1026,6 @@ const TriangleRachnaGame = () => {
         {/* Main row: Target + Workspace */}
         <div className="rg-game-main-row">
           <div className="rg-panel rg-target-panel">
-            <div className="rg-panel-header">
-              <span className="rg-panel-title">{t('game.targetPattern')}</span>
-              <span className="rg-panel-hint">{t('game.buildThis')}</span>
-            </div>
             <div className="rg-panel-content">
               <img
                 src={`${IMAGE_PATH}/${getTargetImageName(currentKey)}.png`}
@@ -1000,12 +1037,6 @@ const TriangleRachnaGame = () => {
           </div>
 
           <div className="rg-panel rg-workspace-panel">
-            <div className="rg-panel-header">
-              <span className="rg-panel-title">{t('game.workspaceLabel')}</span>
-              <span className="rg-panel-hint">
-                {q.sources.some(s => isRotatable(s)) ? 'Drag shapes here · Double-click to rotate 90°' : 'Drag shapes here to build the pattern'}
-              </span>
-            </div>
             <div className="rg-panel-content" style={{ padding: 0, alignItems: 'stretch' }}>
               <div
                 ref={workspaceRef}
@@ -1014,9 +1045,6 @@ const TriangleRachnaGame = () => {
                 onDragLeave={onWorkspaceDragLeave}
                 onDrop={onWorkspaceDrop}
               >
-                {workspaceItems.length === 0 && (
-                  <div className="rg-workspace-placeholder">{t('game.dropShapes')}</div>
-                )}
                 {workspaceItems.map((item, index) => {
                   const sz = SHAPE_SIZE_PX[item.size] || 100;
                   const rotatable = isRotatable(item);
@@ -1029,7 +1057,7 @@ const TriangleRachnaGame = () => {
                       onDoubleClick={e => rotatable && onItemDblClick(e, item)}
                     >
                       <div className="rg-shape-wrapper" style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
-                        <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace />
+                        <ShapeEl shape={item.shape} color={item.color} size={item.size} orientation={item.orientation} workspace textured={TEXTURED_QS.has(currentKey)} />
                       </div>
                       <button className="rg-remove-btn" onClick={() => removeFromWorkspace(item.id)}>×</button>
                       {rotatable && (
@@ -1046,10 +1074,6 @@ const TriangleRachnaGame = () => {
         {/* Controls row: Source shapes + Buttons */}
         <div className="rg-game-controls-row">
           <div className="rg-source-panel">
-            <div className="rg-source-header">
-              <span className="rg-source-title">{t('game.sourceShapes')}</span>
-              <span className="rg-source-hint">{t('game.dragToWorkspace')}</span>
-            </div>
             <div className="rg-source-items">
               {q.sources.map((src, i) => {
                 const isUsed = workspaceItems.some(w => w.sourceId === src.id);
@@ -1065,9 +1089,8 @@ const TriangleRachnaGame = () => {
                   onTouchEnd={onSourceTouchEnd}
                 >
                   <div style={{ transform: `scale(${src.scale || 1})`, display: 'inline-flex' }}>
-                    <ShapeEl shape={src.shape} color={src.color} size={src.size} orientation={src.orientation} workspace={false} />
+                    <ShapeEl shape={src.shape} color={src.color} size={src.size} orientation={src.orientation} workspace={false} textured={TEXTURED_QS.has(currentKey)} />
                   </div>
-                  <div className="rg-source-label">{src.name} ({src.size})</div>
                 </div>
               )})}
             </div>
@@ -1090,10 +1113,13 @@ const TriangleRachnaGame = () => {
   // ── Score Screen ──────────────────────────────────────────────
   const renderScore = () => {
     const TOTAL_Q = SCORED_QUESTIONS.length;
+    const MAX_SCORE = TOTAL_Q * 2; // 24 × 2 = 48
     const scoredEntries = Object.entries(questionScores);
     const totalAttempted = scoredEntries.length;
-    const totalCorrect = scoredEntries.filter(([k, sc]) => sc > 0).length;
-    const pct = Math.round((totalCorrect / TOTAL_Q) * 100) || 0;
+    const totalCorrect  = scoredEntries.filter(([k, sc]) => sc === 2).length;
+    const totalPartial  = scoredEntries.filter(([k, sc]) => sc === 1).length;
+    const totalIncorrect = scoredEntries.filter(([k, sc]) => sc === 0).length;
+    const pct = Math.round((totalScore / MAX_SCORE) * 100) || 0;
     
     const totalTime = Object.values(questionTimes).reduce((a, b) => a + b, 0);
     const avgTime = totalAttempted ? Math.round(totalTime / totalAttempted) : 0;
@@ -1113,29 +1139,45 @@ const TriangleRachnaGame = () => {
           </div>
           <div className="rg-chips">
             <span className="rg-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-            <span className="rg-chip rg-chip-complete">COMPLETE</span>
-            <span className="rg-chip">Time: {Math.floor(totalTime/60)}m {totalTime%60}s</span>
+            <span className="rg-chip">Screentime: {Math.floor(sessionElapsed/60)}m {sessionElapsed%60}s</span>
           </div>
         </div>
 
-        <div style={{ padding: 24 }}>
-          {/* KPI Row */}
-          <div className="rg-score-top">
-            <div className="rg-score-dial-container">
-              <div className="rg-score-dial-big">{totalCorrect}</div>
-              <div className="rg-score-dial-small">/ {TOTAL_Q}</div>
+        <div style={{ padding: '16px 12px' }}>
+          {/* KPI Row — Bagiya-style */}
+          <div style={{ display:'flex', gap:20, flexWrap:'wrap', alignItems:'flex-start', marginBottom:24 }}>
+            {/* Score dial — rounded square */}
+            <div style={{
+              display:'flex', flexDirection:'column', alignItems:'center',
+              background:'linear-gradient(135deg, #4f46e5, #818cf8)',
+              borderRadius:16, padding:'20px 28px', color:'white', minWidth:130
+            }}>
+              <div style={{ fontSize:'2.8rem', fontWeight:900, lineHeight:1 }}>{totalScore}</div>
+              <div style={{ fontSize:'0.82rem', opacity:0.85, marginTop:4 }}>/ {MAX_SCORE} pts</div>
             </div>
-            <div className="rg-metric-grid">
-              <div className="rg-metric-box"><label>Correct</label><div className="rg-metric-val green">{totalCorrect}</div></div>
-              <div className="rg-metric-box"><label>Attempted</label><div className="rg-metric-val">{totalAttempted} / {TOTAL_Q}</div></div>
-              <div className="rg-metric-box"><label>Percentage</label><div className="rg-metric-val amber">{pct}%</div></div>
-              <div className="rg-metric-box"><label>Total Time</label><div className="rg-metric-val">{Math.floor(totalTime/60)}m {totalTime%60}s</div></div>
-              <div className="rg-metric-box"><label>Avg Time/Q</label><div className="rg-metric-val">{avgTime}s</div></div>
-              <div className="rg-metric-box"><label>Total Questions</label><div className="rg-metric-val">{TOTAL_Q}</div></div>
+
+            {/* Metric boxes */}
+            <div style={{ flex:1, display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(110px, 1fr))', gap:10 }}>
+              {[
+                { label: '✓ Correct (2pts)',   val: totalCorrect,   cls: '#16a34a', sub: null },
+                { label: '~ Partial (1pt)',    val: totalPartial,   cls: '#0f172a', sub: null },
+                { label: '✕ Incorrect (0pts)', val: totalIncorrect, cls: '#dc2626', sub: null },
+                { label: '% Accuracy',         val: `${pct}%`,      cls: '#d97706', sub: `${totalScore} / ${MAX_SCORE}`, info: true },
+                { label: 'Duration',           val: `${Math.floor(totalTime/60)}m ${totalTime%60}s`, cls: '#0f172a', sub: null },
+                { label: 'Questions',          val: `${totalAttempted} / ${TOTAL_Q}`, cls: '#0f172a', sub: null },
+              ].map((m, i) => (
+                <div key={i} style={{ background:'#f8fafc', border:'1px solid #e5e7eb', borderRadius:10, padding:'10px 14px' }}>
+                  <div style={{ fontSize:'0.74rem', color:'#6b7280', marginBottom:4, display:'flex', alignItems:'center', gap:2 }}>
+                    {m.label}
+                    {m.info && <span className="kpi-formula-icon" data-tooltip="Total Score ÷ Max Score (48) × 100">ⓘ</span>}
+                  </div>
+                  <div style={{ fontSize:'1.1rem', fontWeight:700, color: m.cls }}>{m.val}</div>
+                  {m.sub && <div style={{ fontSize:'0.7rem', color:'#94a3b8', fontWeight:500, marginTop:2 }}>{m.sub}</div>}
+                </div>
+              ))}
             </div>
           </div>
 
-          {pct >= 80 && <div className="rg-banner">{t('game.outstandingRachna')}</div>}
 
           {/* Per-question detail */}
           {/* Per-question detail breakdown */}
@@ -1174,16 +1216,22 @@ const TriangleRachnaGame = () => {
                   <div className="rg-breakdown-header">
                     <span className="rg-breakdown-title">{getQuestionTitle(key)}</span>
                     <div className="rg-breakdown-metrics">
-                      <span className="rg-bd-metric"><strong>Score:</strong> <span style={{color: sc>0?'#059669':'#e11d48'}}>{sc}/2</span></span>
-                      <span className="rg-bd-metric"><strong>Time:</strong> {formatTimerDisplay(t)}</span>
-                      <span className="rg-bd-metric"><strong>Moves:</strong> {moves}</span>
+                      <span className="rg-bd-metric" style={{
+                        background: sc===2?'#dcfce7': sc===1?'#fef9c3':'#fee2e2',
+                        color: sc===2?'#15803d': sc===1?'#92400e':'#b91c1c',
+                        padding:'2px 10px', borderRadius:999, fontWeight:700, fontSize:'0.78rem'
+                      }}>
+                        {sc===2?'Correct': sc===1?'Partial':'Incorrect'}
+                      </span>
+                      <span className="rg-bd-metric"><strong>Score:</strong> <span style={{color: sc===2?'#059669': sc===1?'#d97706':'#e11d48'}}>{sc}</span></span>
+                      <span className="rg-bd-metric"><strong>Duration:</strong> {formatTimerDisplay(t)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="rg-breakdown-body">
                     {/* Target Column */}
                     <div className="rg-bd-col">
-                      <div className="rg-bd-col-title">Target Image</div>
+                      <div className="rg-bd-col-title" style={{visibility:'hidden', height:0, overflow:'hidden'}}></div>
                       <div className="rg-bd-img-container">
                         <img src={`${IMAGE_PATH}/${getTargetImageName(key)}.png`} alt="Target" className="rg-bd-target-img" style={{ cursor: 'zoom-in' }} onError={e => e.target.style.display='none'} onClick={() => setFullImg(`${IMAGE_PATH}/${getTargetImageName(key)}.png`)} />
                       </div>
@@ -1191,7 +1239,7 @@ const TriangleRachnaGame = () => {
 
                     {/* User Generated Column */}
                     <div className="rg-bd-col">
-                      <div className="rg-bd-col-title">User Attempt</div>
+                      <div className="rg-bd-col-title" style={{visibility:'hidden', height:0, overflow:'hidden'}}></div>
                       <div className="rg-bd-mini-ws">
                         {wsItems.length === 0 ? (
                           <span style={{color: '#94a3b8', fontSize: '0.85rem'}}>No attempt recorded</span>
@@ -1218,13 +1266,14 @@ const TriangleRachnaGame = () => {
                                   pointerEvents: 'none' 
                                 }}>
                                   <div style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})`, width: '100%', height: '100%' }}>
-                                    <ShapeEl 
-                                      shape={item.shape} 
-                                      color={item.color} 
-                                      size={item.size} 
-                                      orientation={item.orientation} 
-                                      workspace 
-                                      customSize={sz} 
+                                    <ShapeEl
+                                      shape={item.shape}
+                                      color={item.color}
+                                      size={item.size}
+                                      orientation={item.orientation}
+                                      workspace
+                                      customSize={sz}
+                                      textured={TEXTURED_QS.has(currentKey)}
                                     />
                                   </div>
                                 </div>
@@ -1237,7 +1286,7 @@ const TriangleRachnaGame = () => {
 
                     {/* Assessor Column */}
                     <div className="rg-bd-col rg-bd-criteria-col">
-                      <div className="rg-bd-col-title">Assessment Answers</div>
+                      <div className="rg-bd-col-title" style={{visibility:'hidden', height:0, overflow:'hidden'}}></div>
                       <div className="rg-bd-criteria">
                         <div className="rg-bd-crit-item">
                           <span className="rg-crit-text">1. Gap {'>'} 2 squares</span>
@@ -1368,7 +1417,6 @@ const TriangleRachnaGame = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <h2 className="rg-ad-title">Assessment</h2>
-                <p className="rg-ad-subtitle">Please answer all criteria:</p>
               </div>
               <button className="rg-ad-close-btn" onClick={() => setShowAssessmentModal(false)}>✕</button>
             </div>
@@ -1377,8 +1425,10 @@ const TriangleRachnaGame = () => {
             {/* Criteria 1 */}
             <div className={`rg-ad-card ${qAnswers.q1 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                 <div className="rg-ad-q-hi">1. दो त्रिभुज के बीच में 2 खानों से ज़्यादा का अंतर है।</div>
-                 <div className="rg-ad-q-en">The gap between two triangles is more than 2 squares.</div>
+                {language === 'hi'
+                  ? <div>1. दो त्रिभुज के बीच में 2 खानों से ज़्यादा का अंतर है।</div>
+                  : <div>1. The gap between two triangles is more than 2 squares.</div>
+                }
               </div>
               <div className="rg-ad-actions">
                 <button className={`rg-ad-btn ${qAnswers.q1==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q1:'yes'}))}>Yes</button>
@@ -1388,8 +1438,10 @@ const TriangleRachnaGame = () => {
             {/* Criteria 2 */}
             <div className={`rg-ad-card ${qAnswers.q2 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                 <div className="rg-ad-q-hi">2. त्रिभुजों के बीच का संरेखण (alignment) में 2 खानों से ज़्यादा का अंतर है।</div>
-                 <div className="rg-ad-q-en">The alignment between the triangles has a difference of more than 2 squares.</div>
+                {language === 'hi'
+                  ? <div>2. त्रिभुजों के बीच का संरेखण (alignment) में 2 खानों से ज़्यादा का अंतर है।</div>
+                  : <div>2. The alignment between the triangles has a difference of more than 2 squares.</div>
+                }
               </div>
               <div className="rg-ad-actions">
                 <button className={`rg-ad-btn ${qAnswers.q2==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q2:'yes'}))}>Yes</button>
@@ -1399,8 +1451,10 @@ const TriangleRachnaGame = () => {
             {/* Criteria 3 */}
             <div className={`rg-ad-card ${qAnswers.q3 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                 <div className="rg-ad-q-hi">3. बच्चे द्वारा बनाया हुआ आकर प्रेरक रूपरेखा से मेल खाता है।</div>
-                 <div className="rg-ad-q-en">The shape created by the child matches the reference figure.</div>
+                {language === 'hi'
+                  ? <div>3. बच्चे द्वारा बनाया हुआ आकर प्रेरक रूपरेखा से मेल खाता है।</div>
+                  : <div>3. The shape created by the child matches the reference figure.</div>
+                }
               </div>
               <div className="rg-ad-actions">
                 <button className={`rg-ad-btn ${qAnswers.q3==='yes'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q3:'yes'}))}>Yes</button>
