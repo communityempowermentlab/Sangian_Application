@@ -773,7 +773,7 @@ const AdminReports = () => {
                                                     const v = qs[c];
                                                     return (
                                                         <React.Fragment key={`tr-${c}`}>
-                                                            <td style={{ ...S.tdCenter, fontWeight: 700, color: v > 0 ? '#059669' : v === 0 ? '#dc2626' : '#94a3b8' }}>{v != null ? `${v}/2` : '—'}</td>
+                                                            <td style={{ ...S.tdCenter, fontWeight: 700, color: v > 0 ? '#059669' : v === 0 ? '#dc2626' : '#94a3b8' }}>{v != null ? `${v}` : '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q1`] === 'YES' ? '#059669' : qs[`${c}_ass_q1`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q1`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q2`] === 'YES' ? '#059669' : qs[`${c}_ass_q2`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q2`] ?? '—'}</td>
                                                             <td style={{ ...S.tdCenter, color: qs[`${c}_ass_q3`] === 'YES' ? '#059669' : qs[`${c}_ass_q3`] === 'NO' ? '#dc2626' : '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>{qs[`${c}_ass_q3`] ?? '—'}</td>
