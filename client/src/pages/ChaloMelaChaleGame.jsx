@@ -6,7 +6,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './ChaloMelaChaleGame.css';
 const GAME_NAME = 'rover_mela';
-const TOTAL_QUESTIONS = 22; 
+const TOTAL_QUESTIONS = 18;
+const MAX_SCORE = 36;
 
 const AUDIO_DIR = '/assets/audios/chalo_mela_chale';
 const IMG_DIR = '/assets/images/chalo_mela_chale';
@@ -228,6 +229,13 @@ const QUESTION_CONFIG = {
   q18: { time: 180, t2: 8, t1: 9 }
 };
 
+const QUESTION_SEQUENCE = ['tq1', 'tq2', 'q1', 'tq3', 'tq4', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'];
+
+const fmtMmSs = (secs) => {
+  const s = Math.max(0, Math.round(Number(secs) || 0));
+  return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+};
+
 const MATRIX_MAP = {
   p1: MATRIX_P1,
   tq1: MATRIX_TQ1,
@@ -306,7 +314,7 @@ const ChaloMelaChaleGame = () => {
   const [retakeCount, setRetakeCount] = useState(0);
   const [collectedCoins, setCollectedCoins] = useState(0);
   const [audioFinished, setAudioFinished] = useState(false);
-  const totalScore = allScores.reduce((acc, s) => acc + s.score, 0);
+  const totalScore = allScores.filter(s => !s.id.startsWith('tq')).reduce((acc, s) => acc + s.score, 0);
   const [gameSessionId, setGameSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [qStartTime, setQStartTime] = useState(null);
@@ -373,6 +381,24 @@ const ChaloMelaChaleGame = () => {
   const pdfGeneratedRef       = useRef(false);
   const tqTrialsRef           = useRef({});   // stores per-trial data for teaching questions
   const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
+
+  // ── Session screentime timer ─────────────────────────────────────────────
+  // Starts only when "Start Now" is clicked (or game is resumed); stops when assessment is submitted.
+  const [timerSeconds, setTimerSeconds]   = useState(0);
+  const timerSecondsRef                   = useRef(0);
+  const sessionTimerRef                   = useRef(null);
+  const [sessionActive, setSessionActive] = useState(false);
+
+  useEffect(() => {
+    if (!gameSessionId || assessmentSubmitted || !sessionActive) {
+      clearInterval(sessionTimerRef.current);
+      return;
+    }
+    sessionTimerRef.current = setInterval(() => {
+      setTimerSeconds(s => { timerSecondsRef.current = s + 1; return s + 1; });
+    }, 1000);
+    return () => clearInterval(sessionTimerRef.current);
+  }, [gameSessionId, assessmentSubmitted, sessionActive]);
 
   useEffect(() => { questionStateRef.current = questionState; }, [questionState]);
 
@@ -519,7 +545,9 @@ const ChaloMelaChaleGame = () => {
     if (ss.isDropped) setIsDropped(true);
     if (ss.collectedCoins !== undefined) setCollectedCoins(ss.collectedCoins);
     if (ss.tqTrials) tqTrialsRef.current = ss.tqTrials;
+    if (ss.screentime) { timerSecondsRef.current = ss.screentime; setTimerSeconds(ss.screentime); }
     setStartTime(Date.now());
+    setSessionActive(true);
     setShowResumeModal(false);
   };
 
@@ -580,6 +608,7 @@ const ChaloMelaChaleGame = () => {
           retakeCount,
           collectedCoins,
           tqTrials: tqTrialsRef.current,
+          screentime: timerSecondsRef.current,
         }
       }, config);
     } catch (e) { console.error('Save error', e); }
@@ -895,15 +924,18 @@ const ChaloMelaChaleGame = () => {
         if (config && newMoveCount >= config.t2) isSuccess = true;
         else reason = `Too Few Moves: ${newMoveCount}`;
       }
-      handleResult(isSuccess, reason, newMoveCount);
+      handleResult(isSuccess, reason, newMoveCount, newPath);
     }
   };
 
-  const handleResult = (isSuccess, reason, finalMoveCount = null) => {
+  const handleResult = (isSuccess, reason, finalMoveCount = null, finalPath = null) => {
     const s = questionStateRef.current;
     const isTQ = s.id.startsWith('tq');
     let score = 0;
     const moveCount = finalMoveCount !== null ? finalMoveCount : s.moveCount;
+    // finalPath is passed from handleGridClick for EP clicks (ref not yet synced);
+    // for timeout-based endings (hit weed, out of coins) the ref is already updated.
+    const pathToSave = finalPath ?? s.path;
 
     if (isSuccess) {
       if (isTQ) {
@@ -919,7 +951,8 @@ const ChaloMelaChaleGame = () => {
 
     const coinsTotal = getCoinsTotal(s.id);
     const coinsRemaining = coinsTotal > 0 ? Math.max(0, coinsTotal - moveCount) : 0;
-    if (isSuccess && coinsRemaining > 0) {
+    // TQ coins display for teaching but don't count toward the final total.
+    if (coinsRemaining > 0 && reason !== 'Hit Weed' && !isTQ) {
       setCollectedCoins(prev => prev + coinsRemaining);
     }
 
@@ -930,9 +963,9 @@ const ChaloMelaChaleGame = () => {
 
     // Store per-trial data for TQ questions so both trials appear in reports
     if (isTQ) {
-      tqTrialsRef.current[`${s.id}_t${s.currentTrial}`] = { score, moves: moveCount, timeTaken, retakeCount };
+      tqTrialsRef.current[`${s.id}_t${s.currentTrial}`] = { score, moves: moveCount, timeTaken, retakeCount, path: pathToSave };
     }
-    const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: s.path, failReason: isSuccess ? null : reason };
+    const scoreEntry = { id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: pathToSave, failReason: isSuccess ? null : reason };
     
     // Compute new scores array synchronously outside setState
     setAllScores(prev => {
@@ -965,7 +998,7 @@ const ChaloMelaChaleGame = () => {
     } else {
       computedArr = [...currentScores, scoreEntry];
     }
-    const latestTotal = computedArr.reduce((acc, item) => acc + item.score, 0);
+    const latestTotal = computedArr.filter(e => !e.id.startsWith('tq')).reduce((acc, item) => acc + item.score, 0);
     const isFinalQ = s.id === 'q18';
     saveToServer(isFinalQ ? 'completed' : 'in_progress', computedArr, latestTotal);
     
@@ -1217,14 +1250,15 @@ const ChaloMelaChaleGame = () => {
   };
 
   const renderResultsScreen = () => {
-    const attempted = allScores.length;
-    const correctCount = allScores.filter(s => s.score > 0).length;
-    const accuracy = TOTAL_QUESTIONS > 0 ? Math.round((correctCount / TOTAL_QUESTIONS) * 100) : 0;
-    const totalTimeSeconds = allScores.reduce((acc, s) => acc + parseFloat(s.timeTaken), 0);
+    const nonTQScores = allScores.filter(s => !s.id.startsWith('tq'));
+    const correctCount = nonTQScores.filter(s => s.score === 2).length;
+    const partialCount = nonTQScores.filter(s => s.score === 1).length;
+    const accuracy = MAX_SCORE > 0 ? Math.round((totalScore / MAX_SCORE) * 100) : 0;
+    const totalTimeSeconds = nonTQScores.reduce((acc, s) => acc + parseFloat(s.timeTaken), 0);
     const totalTimeMin = Math.floor(totalTimeSeconds / 60);
     const totalTimeSec = Math.floor(totalTimeSeconds % 60);
-    const totalCoinsBudget = allScores.reduce((sum, s) => sum + getCoinsTotal(s.id), 0);
-    const coinEfficiency = totalCoinsBudget > 0 ? Math.round((collectedCoins / totalCoinsBudget) * 100) : 0;
+    const FIXED_COIN_BUDGET = 169;
+    const coinEfficiency = Math.round((collectedCoins / FIXED_COIN_BUDGET) * 100);
 
     return (
       <div className="results-screen" id="dashboard-capture-area" style={{ backgroundColor: '#fff', padding: '20px' }}>
@@ -1235,8 +1269,7 @@ const ChaloMelaChaleGame = () => {
           </div>
           <div className="chips">
             <span className="chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-            <span className="chip" style={{ background: '#eff6ff', color: '#2563eb' }}>{t('game.finalResults')}</span>
-            <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>{t('game.timeChip')} {totalTimeMin}m {totalTimeSec}s</span>
+            <span className="chip" style={{ background: '#f0fdf4', color: '#16a34a' }}>{t('game.timeChip')} {Math.floor(timerSeconds / 60)}m {(timerSeconds % 60).toString().padStart(2, '0')}s</span>
           </div>
         </div>
 
@@ -1247,74 +1280,55 @@ const ChaloMelaChaleGame = () => {
             {/* Left: dial spans both KPI rows */}
             <div className="score-col">
               <div className="score-dial-sm">
-                <div className="score-val-sm">{correctCount}</div>
-                <div className="score-lbl-sm">/ {TOTAL_QUESTIONS}</div>
-              </div>
-              <div className="performance-meter">
-                <div className="meter-bar">
-                  <div className="meter-fill" style={{ width: `${accuracy}%` }}></div>
-                </div>
-                <div className="meter-labels">
-                  <span>0</span>
-                  <span>{t('game.performanceMeter')}</span>
-                  <span>{TOTAL_QUESTIONS}</span>
-                </div>
+                <div className="score-val-sm">{totalScore}</div>
+                <div className="score-lbl-sm">/ {MAX_SCORE}</div>
               </div>
             </div>
 
             {/* Right: KPI row 1 */}
-            <div className="kpi-row">
+            <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
               <div className="kpi-card">
                 <div className="kpi-label">{t('game.correct2')}</div>
                 <div className="kpi-val kpi-green">{correctCount}</div>
               </div>
               <div className="kpi-card">
-                <div className="kpi-label">{t('game.incorrect2')}</div>
-                <div className="kpi-val kpi-red">{TOTAL_QUESTIONS - correctCount}</div>
+                <div className="kpi-label">Partially</div>
+                <div className="kpi-val" style={{ color: '#a16207' }}>{partialCount}</div>
               </div>
               <div className="kpi-card">
-                <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-                  {t('game.percentage')} <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
+                <div className="kpi-label">{t('game.incorrect2')}</div>
+                <div className="kpi-val kpi-red">{nonTQScores.filter(s => s.score === 0).length}</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {t('game.percentage')} <span className="kpi-formula-icon" data-tooltip="Total Score ÷ Max Score × 100">ⓘ</span>
                 </div>
                 <div className="kpi-val">{accuracy}%</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginTop: 1 }}>{totalScore} / {MAX_SCORE}</div>
               </div>
             </div>
 
             {/* Right: KPI row 2 */}
-            <div className="kpi-row">
+            <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
               <div className="kpi-card">
                 <div className="kpi-label">{t('game.totalTime')}</div>
                 <div className="kpi-val">{totalTimeMin}m {totalTimeSec}s</div>
               </div>
               <div className="kpi-card">
                 <div className="kpi-label">{t('game.questionsLabel')}</div>
-                <div className="kpi-val">{allScores.length} / {TOTAL_QUESTIONS}</div>
+                <div className="kpi-val">{nonTQScores.length} / {TOTAL_QUESTIONS}</div>
               </div>
               <div className="kpi-card">
                 <div className="kpi-label">{t('game.avgTimeQ')}</div>
-                <div className="kpi-val">{allScores.length > 0 ? (totalTimeSeconds / allScores.length).toFixed(0) : 0}s</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Coin summary */}
-          <div className="coin-summary-strip">
-            <div className="coin-summary-title">
-              <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 16, height: 16 }} alt="" />
-              Coin Summary
-            </div>
-            <div className="kpi-grid-3">
-              <div className="kpi-card kpi-coin">
-                <div className="kpi-label">Total Budget</div>
-                <div className="kpi-val kpi-gold">{totalCoinsBudget}</div>
+                <div className="kpi-val">{nonTQScores.length > 0 ? (totalTimeSeconds / nonTQScores.length).toFixed(0) : 0}s</div>
               </div>
               <div className="kpi-card kpi-coin">
-                <div className="kpi-label">Coins Collected</div>
-                <div className="kpi-val kpi-gold">{collectedCoins}</div>
-              </div>
-              <div className="kpi-card kpi-coin">
-                <div className="kpi-label">Efficiency</div>
-                <div className="kpi-val kpi-gold">{coinEfficiency}%</div>
+                <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 12, height: 12 }} alt="" />
+                  Collected / Budget
+                </div>
+                <div className="kpi-val kpi-gold">{collectedCoins} / {FIXED_COIN_BUDGET}</div>
+                <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginTop: 1 }}>{coinEfficiency}%</div>
               </div>
             </div>
           </div>
@@ -1322,108 +1336,161 @@ const ChaloMelaChaleGame = () => {
 
         <div className="accordion-section">
           <div className="results-grid-cards" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-            {allScores.map((s, idx) => {
-              const matrix = MATRIX_MAP[s.id];
-              const cumulativeMoves = [];
-              let currentMoves = 0;
-              if (s.path && matrix) {
-                for (let i = 0; i < s.path.length; i++) {
-                  if (i === 0) {
-                    cumulativeMoves.push(0);
-                  } else {
-                    const p = s.path[i];
-                    const type = matrix[p.row][p.col];
-                    currentMoves += (type === "7-T3" ? 2 : 1);
-                    cumulativeMoves.push(currentMoves);
-                  }
+            {(() => {
+              // Helper: build cumulative moves for path visualization
+              const buildCumMoves = (path, matrix) => {
+                const cum = []; let cur = 0;
+                for (let i = 0; i < path.length; i++) {
+                  if (i === 0) { cum.push(0); continue; }
+                  const t = matrix[path[i].row][path[i].col];
+                  cur += (t === "7-T3" ? 2 : 1);
+                  cum.push(cur);
                 }
-              }
-              const qCoinsTotal  = getCoinsTotal(s.id);
-              const qCoinsUsed   = s.moves || 0;
-              const qCoinsKept   = s.score > 0 ? Math.max(0, qCoinsTotal - qCoinsUsed) : 0;
-              return (
-                <div key={idx} className="result-mini-card" style={{ gap: '12px' }}>
-                  <div className="res-card-top">
-                    <span className="res-qname" style={{ fontSize: '1.05rem' }}>{s.id.toUpperCase()}</span>
-                    <span className="res-status" style={{ fontSize: '1.3rem' }}>{s.score > 0 ? '✅' : '❌'}</span>
-                  </div>
-                  {s.failReason && (
-                    <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '6px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #fca5a5' }}>
-                      {s.failReason === "Hit Weed"       ? t('game.questionEndedMoves') :
-                       s.failReason === "Timeout"         ? t('game.timeoutDestination') :
-                       s.failReason === "Out of Coins"    ? '🪙 Out of coins' :
-                       t('game.destinationNotAchieved')}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f1f5f9', padding: '8px', borderRadius: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.targetedMoves')}</span>
-                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(s.id)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.userMoves')}</span>
-                      <span style={{ color: '#0369a1', fontWeight: '700' }}>{s.moves}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #e2e8f0' }}>
-                      <span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.timeTakenLabel')}</span>
-                      <span style={{ color: '#1e293b', fontWeight: '700' }}>{fmtSecs(s.timeTaken)}</span>
-                    </div>
-                  </div>
+                return cum;
+              };
 
-                  {/* Coin trail */}
-                  {qCoinsTotal > 0 && (
-                    <div className="q-coin-trail">
-                      <div className="q-coin-trail-label">
-                        <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 13, height: 13 }} alt="" />
-                        <span>Budget {qCoinsTotal} · Used {qCoinsUsed} · Collected {qCoinsKept}</span>
-                      </div>
-                      <div className="q-coin-dots">
-                        {Array.from({ length: qCoinsTotal }, (_, i) => (
-                          <div key={i} className="q-coin-slot-mini">
-                            <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="q-coin-img-mini" alt="" />
-                            {i < qCoinsUsed && <img src="/assets/images/chalo_mela_chale/rover_cross.png" className="q-coin-cross-mini" alt="" />}
-                          </div>
-                        ))}
+              // Helper: status label + style from score
+              const statusInfo = (score, isTQTrial2 = false) => {
+                if (score === 2) return { label: 'Correct',   style: { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' } };
+                if (score === 1) return { label: 'Correct',   style: { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' } };
+                if (isTQTrial2)  return { label: 'Incorrect', style: { background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' } };
+                return               { label: 'Incorrect',   style: { background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' } };
+              };
+
+              // Helper: render a single card from a data object
+              const renderCard = (key, label, scoreVal, maxScore, moves, timeTaken, failReason, path, qId, dimmed = false) => {
+                const matrix = MATRIX_MAP[qId];
+                const cumMoves = (path && matrix) ? buildCumMoves(path, matrix) : [];
+                const qCoinsTotal = getCoinsTotal(qId);
+                const qCoinsUsed  = failReason === 'Hit Weed' ? qCoinsTotal : (moves || 0);
+                const qCoinsKept  = Math.max(0, qCoinsTotal - qCoinsUsed);
+                const isTQ = qId.startsWith('tq');
+                const isTrial2 = label.includes('Trial 2');
+
+                let statusLabel, statusStyle;
+                if (dimmed) {
+                  statusLabel = 'Not Needed';
+                  statusStyle = { background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' };
+                } else if (isTQ) {
+                  if (scoreVal > 0) {
+                    statusLabel = 'Completed';
+                    statusStyle = { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' };
+                  } else if (!isTrial2 && (moves || 0) === getTargetMoves(qId) + 1) {
+                    statusLabel = '→ Trial 2';
+                    statusStyle = { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' };
+                  } else {
+                    statusLabel = 'Not Completed';
+                    statusStyle = { background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' };
+                  }
+                } else {
+                  statusLabel = scoreVal === 2 ? 'Correct' : scoreVal === 1 ? 'Partially' : 'Incorrect';
+                  statusStyle = scoreVal === 2
+                    ? { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' }
+                    : scoreVal === 1
+                    ? { background: '#fefce8', color: '#a16207', border: '1px solid #fde68a' }
+                    : { background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' };
+                }
+
+                return (
+                  <div key={key} className="result-mini-card" style={{ gap: '12px', opacity: dimmed ? 0.55 : 1 }}>
+                    <div className="res-card-top">
+                      <span className="res-qname" style={{ fontSize: '1.05rem' }}>{label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ ...statusStyle, padding: '3px 10px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '700' }}>
+                          {statusLabel}
+                        </span>
+                        {!dimmed && !isTQ && (
+                          <span style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '700' }}>
+                            {scoreVal} / {maxScore}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
 
-                  {matrix && s.path && s.path.length > 0 && (
-                    <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('game.userSelectedPath')}</span>
-                       <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
+                    {!dimmed && failReason && (
+                      <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '6px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', border: '1px solid #fca5a5' }}>
+                        {failReason === "Hit Weed"    ? t('game.questionEndedMoves') :
+                         failReason === "Timeout"      ? t('game.timeoutDestination') :
+                         failReason === "Out of Coins" ? '🪙 Out of coins' :
+                         t('game.destinationNotAchieved')}
+                      </div>
+                    )}
+
+                    {!dimmed && (
+                      <div style={{ display: 'flex', gap: '12px', background: '#f1f5f9', padding: '8px 10px', borderRadius: '6px', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                        <span><span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.targetedMoves')}</span> <span style={{ color: '#1e293b', fontWeight: '700' }}>{getTargetMoves(qId)}</span></span>
+                        <span style={{ color: '#cbd5e1' }}>|</span>
+                        <span><span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.userMoves')}</span> <span style={{ color: '#0369a1', fontWeight: '700' }}>{moves}</span></span>
+                        <span style={{ color: '#cbd5e1' }}>|</span>
+                        <span><span style={{ color: '#64748b', fontWeight: '600' }}>{t('game.timeTakenLabel')}</span> <span style={{ color: '#1e293b', fontWeight: '700' }}>{fmtSecs(timeTaken)}</span></span>
+                      </div>
+                    )}
+
+                    {dimmed && (
+                      <div style={{ color: '#94a3b8', fontSize: '0.82rem', textAlign: 'center', padding: '8px 0' }}>
+                        Trial 1 passed — Trial 2 not needed
+                      </div>
+                    )}
+
+                    {/* Coin trail */}
+                    {!dimmed && qCoinsTotal > 0 && (
+                      <div className="q-coin-trail">
+                        <div className="q-coin-trail-label">
+                          <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 13, height: 13 }} alt="" />
+                          <span>Budget {qCoinsTotal} · Used {qCoinsUsed} · Collected {qCoinsKept}</span>
+                        </div>
+                        <div className="q-coin-dots">
+                          {Array.from({ length: qCoinsTotal }, (_, i) => (
+                            <div key={i} className="q-coin-slot-mini">
+                              <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="q-coin-img-mini" alt="" />
+                              {i < qCoinsUsed && <img src="/assets/images/chalo_mela_chale/rover_cross.png" className="q-coin-cross-mini" alt="" />}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Path visualization */}
+                    {!dimmed && matrix && path && path.length > 0 && (
+                      <div className="res-path-visualization" style={{ background: '#f8fafc', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                        <div className="mini-matrix" style={{ display: 'grid', gridTemplateColumns: `repeat(${matrix[0].length}, 1fr)`, gap: '2px', width: '100%', maxWidth: '240px', background: '#e2e8f0', padding: '3px', borderRadius: '8px' }}>
                           {matrix.flat().map((type, i) => {
-                             const r = Math.floor(i / matrix[0].length);
-                             const c = i % matrix[0].length;
-                             const pathIndex = s.path.findIndex(p => p.row === r && p.col === c);
-                             const inPath = pathIndex !== -1;
-                             const isStart = type === "7-SP";
-                             const isEnd = type === "7-EP";
-                             
-                             let bg = '#ffffff';
-                             if (inPath) {
-                                bg = isStart ? '#bfdbfe' : isEnd ? '#bbf7d0' : '#e0e7ff';
-                             } else {
-                                if (isStart || isEnd) bg = '#f1f5f9';
-                             }
-
-                             return (
-                               <div key={i} style={{ aspectRatio: '1/1', background: bg, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                                 <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.3 : 0.9 }} />
-                                 {inPath && (
-                                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: '900', color: '#1e3a8a', textShadow: '0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,0.8)' }}>
-                                     {pathIndex === 0 ? "S" : cumulativeMoves[pathIndex]}
-                                   </div>
-                                 )}
-                               </div>
-                             );
+                            const r = Math.floor(i / matrix[0].length);
+                            const c = i % matrix[0].length;
+                            const pathIndex = path.findIndex(p => p.row === r && p.col === c);
+                            const inPath = pathIndex !== -1;
+                            const isStart = type === "7-SP";
+                            const isEnd   = type === "7-EP";
+                            let bg = '#ffffff';
+                            if (inPath) bg = isStart ? '#bfdbfe' : isEnd ? '#bbf7d0' : '#e0e7ff';
+                            else if (isStart || isEnd) bg = '#f1f5f9';
+                            return (
+                              <div key={i} style={{ aspectRatio: '1/1', background: bg, borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                                <img src={IMG_MAPPING[type]} alt={type} style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: inPath ? 0.3 : 0.9 }} />
+                                {inPath && (
+                                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: '900', color: '#1e3a8a', textShadow: '0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,0.8)' }}>
+                                    {pathIndex === 0 ? "S" : cumMoves[pathIndex]}
+                                  </div>
+                                )}
+                              </div>
+                            );
                           })}
-                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              // Render all cards in QUESTION_SEQUENCE order
+              return QUESTION_SEQUENCE.flatMap(qId => {
+                if (qId.startsWith('tq')) return [];
+                const n = qId.replace(/^q/, '');
+                const s = allScores.find(e => e.id === qId);
+                if (!s) return [];
+                return [renderCard(s.id, `Q${n}`, s.score, 2, s.moves, s.timeTaken, s.failReason, s.path, qId)];
+              });
+            })()}
           </div>
         </div>
 
@@ -1502,16 +1569,26 @@ const ChaloMelaChaleGame = () => {
 
   const renderQuestionShell = (title) => {
     const isTQ = questionState.id.startsWith('tq');
-    const isT1Active = questionState.currentTrial === 1 && !questionState.nextUnlocked;
-    const isT2Active = questionState.currentTrial === 2 && !questionState.nextUnlocked;
-    const isT1Disabled = questionState.currentTrial > 1 || questionState.nextUnlocked;
-    const isT2Disabled = questionState.nextUnlocked || !questionState.trial2Unlocked;
+    const seqNum   = QUESTION_SEQUENCE.indexOf(questionState.id) + 1;
+    const qNum     = parseInt(questionState.id.replace('q', ''), 10) || 0;
+    const TOTAL_Q  = QUESTION_SEQUENCE.filter(id => !id.startsWith('tq')).length;
 
     return (
       <div className="screen">
         <div className="screen-header">
           <div>
-            <div className="screen-title">{t('home.games.mela.title')} - {title}</div>
+            <div className="screen-title">
+              {questionState.id.startsWith('tq')
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+                    {`${t('game.teachingLabel')} ${t('game.question')} ${questionState.id.replace('tq', '')} ${t('game.of')} 4`}
+                    <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#1d4ed8', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', border: '1.5px solid #93c5fd', borderRadius: 20, padding: '3px 14px', letterSpacing: '0.04em', boxShadow: '0 1px 4px rgba(59,91,219,0.10)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', boxShadow: '0 0 0 2px #bfdbfe' }} />
+                      {t('game.trialLabel')} {questionState.currentTrial}
+                    </span>
+                  </span>
+                : `${t('game.question')} ${qNum} ${t('game.of')} ${TOTAL_Q}`
+              }
+            </div>
             <div className="screen-subtitle">
               {QUESTION_CONFIG[questionState.id]?.subtitle || ""}
             </div>
@@ -1520,64 +1597,28 @@ const ChaloMelaChaleGame = () => {
             {QUESTION_CONFIG[questionState.id]?.chips?.map(c => (
               <span key={c} className="chip">{c}</span>
             ))}
+            {!isTQ && (
+              <button
+                style={{ fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20, border: refreshCount >= 1 || questionState.nextUnlocked ? '1px solid #e2e8f0' : '1px solid #cbd5e1', background: refreshCount >= 1 || questionState.nextUnlocked ? '#f1f5f9' : '#fff', color: refreshCount >= 1 || questionState.nextUnlocked ? '#94a3b8' : '#475569', fontWeight: 600, cursor: refreshCount >= 1 || questionState.nextUnlocked ? 'not-allowed' : 'pointer', lineHeight: 1.4 }}
+                disabled={refreshCount >= 1 || questionState.nextUnlocked}
+                onClick={() => handleRefresh(questionState.currentTrial)}
+              >🔄 {t('game.refreshBtn')}</button>
+            )}
+            {isTQ && (
+              <button
+                style={{ fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20, border: retakeCount >= 2 || questionState.nextUnlocked ? '1px solid #e2e8f0' : '1px solid #cbd5e1', background: retakeCount >= 2 || questionState.nextUnlocked ? '#f1f5f9' : '#fff', color: retakeCount >= 2 || questionState.nextUnlocked ? '#94a3b8' : '#475569', fontWeight: 600, cursor: retakeCount >= 2 || questionState.nextUnlocked ? 'not-allowed' : 'pointer', lineHeight: 1.4 }}
+                disabled={retakeCount >= 2 || questionState.nextUnlocked}
+                onClick={handleRetake}
+              >{t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)</button>
+            )}
+            {getCoinsTotal(questionState.id) > 0 && (
+              <span className="pc-coin-pill">
+                <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="pc-coin-icon" alt="" />
+                {collectedCoins}
+              </span>
+            )}
+            <span className="pc-timer-pill" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>⊙ {fmtMmSs(questionState.timeRemaining)}</span>
           </div>
-        </div>
-        <div className="pattern-controls">
-          {!isTQ && (
-            <button className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={refreshCount >= 1 || questionState.nextUnlocked} onClick={() => handleRefresh(questionState.currentTrial)}>🔄 {t('game.refreshBtn')}</button>
-          )}
-          {isTQ && (
-            <button className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-secondary'}`} disabled={retakeCount >= 2 || questionState.nextUnlocked} onClick={handleRetake}>{t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)</button>
-          )}
-          {isTQ && (
-            <>
-              <button className={`pattern-btn ${isT1Active ? 'pattern-btn-primary' : (isT1Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT1Disabled} style={{ cursor: 'default' }}>{t('game.trialLabel')} 1</button>
-              {!questionState.trial2Hidden && (
-                <button className={`pattern-btn ${isT2Active ? 'pattern-btn-primary' : (isT2Disabled ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} disabled={isT2Disabled} style={{ cursor: 'default' }}>{t('game.trialLabel')} 2</button>
-              )}
-            </>
-          )}
-          <button className={`pattern-btn ${questionState.nextUnlocked ? 'pattern-btn-highlight' : 'pattern-btn-disabled'}`} disabled={!questionState.nextUnlocked} onClick={async () => {
-            if (questionState.id === 'tq1') initQuestion('tq2', MATRIX_TQ2);
-            else if (questionState.id === 'tq2') initQuestion('q1', MATRIX_Q1);
-            else if (questionState.id === 'q1') setScreen('sampleB');
-            else if (questionState.id === 'tq3') initQuestion('tq4', MATRIX_TQ4);
-            else if (questionState.id === 'tq4') initQuestion('q2', MATRIX_Q2);
-            else if (questionState.id === 'q2') initQuestion('q3', MATRIX_Q3);
-            else if (questionState.id === 'q3') {
-              const q1s = allScores.find(s => s.id === 'q1')?.score || 0;
-              const q2s = allScores.find(s => s.id === 'q2')?.score || 0;
-              const q3s = allScores.find(s => s.id === 'q3')?.score || 0;
-              if (q1s < 2 && q2s < 2 && q3s < 2) {
-                // Drop Out - Only after first 3 main questions (q1, q2, q3)
-                setIsDropped(true);
-                setScreen('results');
-                await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
-              } else {
-                initQuestion('q4', MATRIX_Q4);
-              }
-            }
-            else if (questionState.id === 'q4') initQuestion('q5', MATRIX_Q5);
-            else if (questionState.id === 'q5') initQuestion('q6', MATRIX_Q6);
-            else if (questionState.id === 'q6') initQuestion('q7', MATRIX_Q7);
-            else if (questionState.id === 'q7') initQuestion('q8', MATRIX_Q8);
-            else if (questionState.id === 'q8') initQuestion('q9', MATRIX_Q9);
-            else if (questionState.id === 'q9') initQuestion('q10', MATRIX_Q10);
-            else if (questionState.id === 'q10') initQuestion('q11', MATRIX_Q11);
-            else if (questionState.id === 'q11') initQuestion('q12', MATRIX_Q12);
-            else if (questionState.id === 'q12') initQuestion('q13', MATRIX_Q13);
-            else if (questionState.id === 'q13') initQuestion('q14', MATRIX_Q14);
-            else if (questionState.id === 'q14') initQuestion('q15', MATRIX_Q15);
-            else if (questionState.id === 'q15') initQuestion('q16', MATRIX_Q16);
-            else if (questionState.id === 'q16') initQuestion('q17', MATRIX_Q17);
-            else if (questionState.id === 'q17') initQuestion('q18', MATRIX_Q18);
-            else {
-              setScreen('results');
-              await saveToServer('completed', allScores, totalScore);
-            }
-          }}>
-            {questionState.id === 'tq1' ? t('game.teachingQ2Label') : questionState.id === 'tq2' ? `${t('game.question')} 1` : questionState.id === 'q1' ? t('game.sampleBLabel') : questionState.id === 'tq3' ? t('game.teachingQ4Label') : questionState.id === 'tq4' ? `${t('game.question')} 2` : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `${t('game.question')} ${parseInt(questionState.id.substring(1)) + 1}` : t('game.nextQuestion')}
-          </button>
         </div>
         <div className="matrix-with-coins">
           <div className="matrix-wrap">
@@ -1616,17 +1657,57 @@ const ChaloMelaChaleGame = () => {
             />
           )}
         </div>
-        <div className="tq1-info-panel">
-          <div className="info-row" style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'12px'}}>
-            <div className="info-card"><div className="info-label">{t('game.currentTrialLabel')}</div><div className="info-value">{questionState.gameStarted ? (isTQ ? `${t('game.trialLabel')} ${questionState.currentTrial}` : t('game.question')) : '—'}</div></div>
-            <div className="info-card"><div className="info-label">{t('game.movesInfoLabel')}</div><div className="info-value">{questionState.moveCount}</div></div>
-            <div className="info-card"><div className="info-label">{t('game.timeInfoLabel')}</div><div className="info-value" style={{color: questionState.timeRemaining <= 3 ? '#ef4444' : '#2563eb'}}>{questionState.timeRemaining}s</div></div>
-            <div className="info-card"><div className="info-label">{t('game.score')}</div><div className="info-value">{totalScore}</div></div>
-          </div>
-          <div className="trial-results" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginTop:'12px'}}>
-            <div className="result-card"><div className="result-title">{t('game.trialLabel')} 1</div><div className="result-details">{questionState.trial1Result}</div></div>
-            {isTQ && !questionState.trial2Hidden && <div className="result-card"><div className="result-title">{t('game.trialLabel')} 2</div><div className="result-details">{questionState.trial2Result}</div></div>}
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 16, gap: 8 }}>
+          <button
+            className={`pattern-btn ${questionState.nextUnlocked ? 'pattern-btn-highlight' : 'pattern-btn-disabled'}`}
+            disabled={!questionState.nextUnlocked}
+            onClick={async () => {
+              if (questionState.id === 'tq1') initQuestion('tq2', MATRIX_TQ2);
+              else if (questionState.id === 'tq2') initQuestion('q1', MATRIX_Q1);
+              else if (questionState.id === 'tq3') initQuestion('tq4', MATRIX_TQ4);
+              else if (questionState.id === 'tq4') initQuestion('q2', MATRIX_Q2);
+              else if (questionState.id === 'q1') setScreen('sampleB');
+              else if (questionState.id === 'q2') initQuestion('q3', MATRIX_Q3);
+              else if (questionState.id === 'q3') {
+                const q1s = allScores.find(s => s.id === 'q1')?.score || 0;
+                const q2s = allScores.find(s => s.id === 'q2')?.score || 0;
+                const q3s = allScores.find(s => s.id === 'q3')?.score || 0;
+                if (q1s < 2 && q2s < 2 && q3s < 2) {
+                  setIsDropped(true);
+                  setScreen('results');
+                  await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
+                } else {
+                  initQuestion('q4', MATRIX_Q4);
+                }
+              }
+              else if (questionState.id === 'q4') initQuestion('q5', MATRIX_Q5);
+              else if (questionState.id === 'q5') initQuestion('q6', MATRIX_Q6);
+              else if (questionState.id === 'q6') initQuestion('q7', MATRIX_Q7);
+              else if (questionState.id === 'q7') initQuestion('q8', MATRIX_Q8);
+              else if (questionState.id === 'q8') initQuestion('q9', MATRIX_Q9);
+              else if (questionState.id === 'q9') initQuestion('q10', MATRIX_Q10);
+              else if (questionState.id === 'q10') initQuestion('q11', MATRIX_Q11);
+              else if (questionState.id === 'q11') initQuestion('q12', MATRIX_Q12);
+              else if (questionState.id === 'q12') initQuestion('q13', MATRIX_Q13);
+              else if (questionState.id === 'q13') initQuestion('q14', MATRIX_Q14);
+              else if (questionState.id === 'q14') initQuestion('q15', MATRIX_Q15);
+              else if (questionState.id === 'q15') initQuestion('q16', MATRIX_Q16);
+              else if (questionState.id === 'q16') initQuestion('q17', MATRIX_Q17);
+              else if (questionState.id === 'q17') initQuestion('q18', MATRIX_Q18);
+              else {
+                setScreen('results');
+                await saveToServer('completed', allScores, totalScore);
+              }
+            }}
+          >
+            {questionState.id === 'tq1' ? t('game.teachingQ2Label')
+              : questionState.id === 'tq2' ? `${t('game.question')} 1`
+              : questionState.id === 'tq3' ? t('game.teachingQ4Label')
+              : questionState.id === 'tq4' ? `${t('game.question')} 2`
+              : questionState.id === 'q1' ? t('game.sampleBLabel')
+              : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `${t('game.question')} ${parseInt(questionState.id.substring(1)) + 1}`
+              : t('game.nextQuestion')}
+          </button>
         </div>
       </div>
     );
@@ -1645,10 +1726,6 @@ const ChaloMelaChaleGame = () => {
           <div className="stats">
             <div className="stat-pill"><span className="stat-label">{t('game.childId')}</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
             <div className="stat-pill"><span className="stat-label">{t('game.score')}</span><span className="stat-value">{totalScore}</span></div>
-            <div className="stat-pill coin-stat-pill">
-              <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="coin-stat-icon" alt="" />
-              <span className="stat-value">{collectedCoins}</span>
-            </div>
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 
@@ -1678,7 +1755,7 @@ const ChaloMelaChaleGame = () => {
                 </h2>
 
                 <div className="btn-row">
-                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => setScreen('sampleA')} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.startNow')}</button>
+                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.startNow')}</button>
                   <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.replayAudio')}</button>
                 </div>
 
@@ -1689,27 +1766,9 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">{t('home.games.mela.title')} - {t('game.sampleALabel')}</div>
+                  <div className="screen-title">{t('game.sampleALabel')}</div>
                 </div>
               </div>
-          <div className="pattern-controls">
-            <button 
-              className={`pattern-btn ${activePath === 'p1' ? 'active-highlight' : (completedPaths.p1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary')}`} 
-              onClick={() => !isAnimating && !completedPaths.p1 && runPathSequence(PATH1_SEQ, 'p1', 'p2')}
-            >{t('game.path1')}</button>
-            <button
-              className={`pattern-btn ${activePath === 'p2' ? 'active-highlight' : (completedPaths.p2 ? 'pattern-btn-disabled' : (unlockedPaths.p2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`}
-              onClick={() => !isAnimating && !completedPaths.p2 && unlockedPaths.p2 && runPathSequence(PATH2_SEQ, 'p2', 'p3')}
-            >{t('game.path2')}</button>
-            <button
-              className={`pattern-btn ${activePath === 'p3' ? 'active-highlight' : (completedPaths.p3 ? 'pattern-btn-disabled' : (unlockedPaths.p3 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))}`}
-              onClick={() => !isAnimating && !completedPaths.p3 && unlockedPaths.p3 && runPathSequence(PATH3_SEQ, 'p3', 'tq1')}
-            >{t('game.path3')}</button>
-            <button
-              className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
-              onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
-            >{t('game.teachingQ1Label')}</button>
-          </div>
               <div className="matrix-wrap">
                 <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_P1[0].length}, 1fr)` }}>
                   {MATRIX_P1.flat().map((type, idx) => {
@@ -1737,6 +1796,12 @@ const ChaloMelaChaleGame = () => {
                   })}
                 </div>
               </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <button
+                  className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
+                  onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
+                >{t('game.teachingQ1Label')}</button>
+              </div>
             </div>
           )}
           {['tq1', 'tq2', 'q1', 'tq3', 'tq4', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'].includes(screen) && renderQuestionShell(
@@ -1748,21 +1813,9 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">{t('home.games.mela.title')} - {t('game.sampleBLabel')}</div>
+                  <div className="screen-title">{t('game.sampleBLabel')}</div>
                 </div>
               </div>
-          <div className="pattern-controls">
-            <button 
-              className={`pattern-btn ${activePath === 'sbP1' ? 'active-highlight' : (completedPaths.sbP1 ? 'pattern-btn-disabled' : 'pattern-btn-secondary')} unclickable`}
-            >{t('game.path1')}</button>
-            <button
-              className={`pattern-btn ${activePath === 'sbP2' ? 'active-highlight' : (completedPaths.sbP2 ? 'pattern-btn-disabled' : (unlockedPaths.sbP2 ? 'pattern-btn-secondary' : 'pattern-btn-disabled'))} unclickable`}
-            >{t('game.path2')}</button>
-            <button
-              className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
-              onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}
-            >{t('game.teachingQ3Label')}</button>
-          </div>
               <div className="matrix-wrap">
                 <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_SB[0].length}, 1fr)` }}>
                   {MATRIX_SB.flat().map((type, idx) => {
@@ -1790,6 +1843,12 @@ const ChaloMelaChaleGame = () => {
                     );
                   })}
                 </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <button
+                  className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
+                  onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}
+                >{t('game.teachingQ3Label')}</button>
               </div>
             </div>
           )}

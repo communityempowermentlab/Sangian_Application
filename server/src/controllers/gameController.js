@@ -399,9 +399,13 @@ exports.getReportDetail = async (req, res) => {
 
             // Global Metrics Calculation
             const allItems = (chorItems.length > 0) ? chorItems : scores;
-            let totalMoves = allItems.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
-            let actualGameTime = allItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
-            
+            // For rover_mela/chalo_mela_chale: exclude TQ entries so Duration reflects only actual test question times
+            const scoringItems = (['rover_mela', 'chalo_mela_chale'].includes(gameName))
+                ? allItems.filter(s => { const id = s.id || s.qId || ''; return !String(id).startsWith('tq'); })
+                : allItems;
+            let totalMoves = scoringItems.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
+            let actualGameTime = scoringItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
+
             // Fallback for sessions where moves/time might be stored differently
             if (totalMoves === 0 && parsedState?.totalMoves) totalMoves = parsedState.totalMoves;
             if (actualGameTime === 0 && parsedState?.timerSeconds) actualGameTime = parsedState.timerSeconds;

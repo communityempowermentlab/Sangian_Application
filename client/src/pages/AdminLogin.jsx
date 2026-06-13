@@ -4,14 +4,14 @@ import axios from 'axios';
 import './AdminLogin.css';
 
 const GAMES = [
-    { icon: '🧠', title: 'Bagiya',     tag: 'Visual Memory',    color: '#6366f1', img: '/assets/images/bagiya/bagiya.jpg' },
-    { icon: '🎟️', title: 'Lottery Ka Ticket',        tag: 'Auditory Span',    color: '#f59e0b', img: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
-    { icon: '🗺️', title: 'Chalo Mela Chalen',           tag: 'Spatial Planning', color: '#10b981', img: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
-    { icon: '👂', title: 'Dhyan Kahan Hai',   tag: 'Listening Focus',  color: '#8b5cf6', img: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
-    { icon: '🔄', title: 'Her Pher',       tag: 'Dynamic Memory',   color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
-    { icon: '🔢', title: 'Ankganit',        tag: 'Maths Skills',     color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
-    { icon: '📖', title: 'Padh ke batao',        tag: 'Language Skills',  color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
-    { icon: '⚡', title: 'Chor Machaye Shor',       tag: 'Rule Switching',   color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
+    { icon: '🧠', title: 'Bagiya',     tag: '',                 color: '#6366f1', img: '/assets/images/bagiya/bagiya.jpg' },
+    { icon: '🎟️', title: 'Lottery Ka Ticket',        tag: '',                 color: '#f59e0b', img: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
+    { icon: '🗺️', title: 'Chalo Mela Chalen',           tag: '',                 color: '#10b981', img: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
+    { icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6', img: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
+    { icon: '🔄', title: 'Her Pher',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
+    { icon: '🔢', title: 'Ankganit',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
+    { icon: '📖', title: 'Padh ke batao',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
+    { icon: '⚡', title: 'Chor Machaye Shor',       tag: '',                 color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
     { icon: '🔺', title: 'Rachna',      tag: 'Construction',     color: '#ef4444', img: '/assets/images/rachna/rachna.jpg' },
 ];
 

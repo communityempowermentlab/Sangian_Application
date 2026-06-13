@@ -256,6 +256,7 @@
 /* PATTERN CONTROLS (Sample A/B) */
 .pattern-controls {
   display: flex;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
@@ -263,7 +264,65 @@
   border-radius: 20px;
   background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(239,246,255,0.96));
   border: 1px solid #e5e7eb;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
+}
+
+.pattern-controls-left {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+
+.trial-btn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.trial-outcome {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.pc-q-count {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pc-coin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #92400e;
+  border: 1.5px solid #fde68a;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #fffbeb;
+}
+
+.pc-coin-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.pc-timer-pill {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #2563eb;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: #eff6ff;
+  letter-spacing: 0.03em;
 }
 
 .pattern-btn {
@@ -309,7 +368,7 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .matrix-grid {
@@ -982,8 +1041,8 @@
 }
 
 .score-dial-sm {
-  width: 100px;
-  height: 100px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #38bdf8, #2563eb);
   display: flex;
@@ -995,8 +1054,8 @@
   flex-shrink: 0;
 }
 
-.score-val-sm  { font-size: 2.2rem; font-weight: 900; line-height: 1; }
-.score-lbl-sm  { font-size: 0.72rem; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.04em; }
+.score-val-sm  { font-size: 4rem; font-weight: 900; line-height: 1; }
+.score-lbl-sm  { font-size: 1rem; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* KPI rows (right side of grid) */
 .kpi-row {

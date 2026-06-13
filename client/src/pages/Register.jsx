@@ -136,8 +136,6 @@ const Register = () => {
                                     <option value="">{t('register.genderDefault')}</option>
                                     <option value="female">{t('register.genderFemale')}</option>
                                     <option value="male">{t('register.genderMale')}</option>
-                                    <option value="other">{t('register.genderOther')}</option>
-                                    <option value="prefer_not_to_say">{t('register.genderPrefer')}</option>
                                 </select>
                                 <p className="field-error">{errors.gender}</p>
                             </div>

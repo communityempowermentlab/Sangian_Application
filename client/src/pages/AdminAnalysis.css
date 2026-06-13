@@ -373,6 +373,11 @@
   box-shadow: 0 2px 8px rgba(15,23,42,.04);
 }
 
+.ana-card--stretch {
+  display: flex;
+  flex-direction: column;
+}
+
 .ana-card-title {
   font-size: 13px;
   font-weight: 700;
@@ -381,6 +386,19 @@
 }
 
 .ana-card-body { padding: 12px 16px 14px; }
+
+.ana-card--stretch .ana-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.ana-card--stretch .ana-hbar-list {
+  flex: 1;
+  justify-content: space-evenly;
+  padding: 10px 16px;
+}
 
 /* ── KPI Row ──────────────────────────────────────────────── */
 .ana-kpi-row {
@@ -530,6 +548,11 @@
 .ana-table tr:last-child td { border-bottom: none; }
 .ana-table tr:hover td { background: rgba(79,70,229,.025); }
 .ana-table-empty { text-align: center; color: var(--muted, #64748b); font-style: italic; padding: 20px !important; }
+
+.ana-th-sort { cursor: pointer; user-select: none; }
+.ana-th-sort:hover { background: #f1f5f9; color: var(--text, #0f172a); }
+.ana-th-sort.active { color: var(--accent, #4f46e5); background: rgba(79,70,229,.06); }
+.ana-sort-icon { font-size: 9px; opacity: .6; margin-left: 2px; }
 
 /* table widgets */
 .ana-game-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }

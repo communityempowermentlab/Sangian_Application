@@ -5,15 +5,15 @@ import './AdminAnalysis.css';
 // ── Constants ─────────────────────────────────────────────
 
 const GAME_CATALOG = [
-  { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',            tag: 'Visual Memory',    color: '#6366f1' },
-  { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket', tag: 'Auditory Span',    color: '#f59e0b' },
-  { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen', tag: 'Spatial Planning', color: '#10b981' },
-  { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',   tag: 'Listening Focus',  color: '#8b5cf6' },
-  { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',          tag: 'Dynamic Memory',   color: '#0891b2' },
-  { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',          tag: 'Academic – Maths', color: '#7c3aed' },
-  { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke Batao',     tag: 'Academic – Lang',  color: '#059669' },
-  { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor', tag: 'Rule Switching',   color: '#dc2626' },
-  { key: 'triangle_rachna',        icon: '🔺', title: 'Rachna',            tag: 'Construction',     color: '#ef4444' },
+  { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',            tag: '',                 color: '#6366f1' },
+  { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket', tag: '',                 color: '#f59e0b' },
+  { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen', tag: '',                 color: '#10b981' },
+  { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6' },
+  { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',          tag: '',                 color: '#0891b2' },
+  { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',          tag: '',                 color: '#7c3aed' },
+  { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke Batao',     tag: '',                 color: '#059669' },
+  { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor', tag: '',                 color: '#dc2626' },
+  { key: 'triangle_rachna',        icon: '🔺', title: 'Rachna',            tag: '',                 color: '#ef4444' },
 ];
 
 const STATUS_COLORS = {
@@ -57,7 +57,7 @@ function fmt(n, dec = 0) {
 
 function formatDate(d) {
   if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }); }
+  try { return new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }); }
   catch { return d; }
 }
 
@@ -207,9 +207,9 @@ function KpiCard({ icon, label, value, sub, color = '#4f46e5' }) {
   );
 }
 
-function Card({ title, children, noPad }) {
+function Card({ title, children, noPad, stretch }) {
   return (
-    <div className="ana-card">
+    <div className={`ana-card${stretch ? ' ana-card--stretch' : ''}`}>
       {title && <div className="ana-card-title">{title}</div>}
       <div className={noPad ? '' : 'ana-card-body'}>{children}</div>
     </div>
@@ -223,6 +223,14 @@ function SkeletonCard() {
 // ── Overview Panel ────────────────────────────────────────
 
 function OverviewPanel({ data, loading }) {
+  const [sortKey, setSortKey] = React.useState('sessions');
+  const [sortDir, setSortDir] = React.useState('desc');
+
+  function handleSort(key) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('desc'); }
+  }
+
   if (loading && !data) return (
     <div className="ana-content">
       <div className="ana-kpi-row">{Array(5).fill(0).map((_, i) => <SkeletonCard key={i} />)}</div>
@@ -237,6 +245,32 @@ function OverviewPanel({ data, loading }) {
   const genderSegs = genderDist.map(r => ({ label: GENDER_LABELS[r.gender] || r.gender || 'Unknown', color: GENDER_COLORS[r.gender] || '#94a3b8', value: Number(r.children) }));
   const maxSessions = Math.max(...byGame.map(g => Number(g.sessions) || 0), 1);
 
+  const SORT_FIELDS = {
+    game:       g => (GAME_CATALOG.find(c => c.key === g.gameKey)?.title || g.gameKey || '').toLowerCase(),
+    sessions:   g => Number(g.sessions) || 0,
+    children:   g => Number(g.children) || 0,
+    completed:  g => Number(g.completed) || 0,
+    dropped:    g => Number(g.dropped) || 0,
+    completion: g => Number(g.completionRate) || 0,
+    avgScore:   g => Number(g.avgScore) || 0,
+    avgTime:    g => Number(g.avgDurationMins) || 0,
+  };
+  const sortedByGame = [...byGame].sort((a, b) => {
+    const fn = SORT_FIELDS[sortKey] || SORT_FIELDS.sessions;
+    const av = fn(a), bv = fn(b);
+    return sortDir === 'asc' ? (av > bv ? 1 : av < bv ? -1 : 0) : (av < bv ? 1 : av > bv ? -1 : 0);
+  });
+
+  function SortTh({ label, sortId }) {
+    const active = sortKey === sortId;
+    return (
+      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleSort(sortId)}>
+        {label}
+        <span className="ana-sort-icon">{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+      </th>
+    );
+  }
+
   return (
     <div className="ana-content">
       <div className="ana-kpi-row">
@@ -248,7 +282,7 @@ function OverviewPanel({ data, loading }) {
       </div>
 
       <div className="ana-grid-2">
-        <Card title="Sessions by Game">
+        <Card title="Sessions by Game" stretch>
           <div className="ana-hbar-list">
             {byGame.length === 0
               ? <div className="ana-chart-empty">No game data for selected filters</div>
@@ -305,10 +339,19 @@ function OverviewPanel({ data, loading }) {
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
-              <tr><th>Game</th><th>Sessions</th><th>Children</th><th>Completed</th><th>Dropped</th><th>Compl.%</th><th>Avg Score</th><th>Avg Time</th></tr>
+              <tr>
+                <SortTh label="Game"      sortId="game" />
+                <SortTh label="Sessions"  sortId="sessions" />
+                <SortTh label="Children"  sortId="children" />
+                <SortTh label="Completed" sortId="completed" />
+                <SortTh label="Dropped"   sortId="dropped" />
+                <SortTh label="Compl.%"   sortId="completion" />
+                <SortTh label="Avg Score" sortId="avgScore" />
+                <SortTh label="Avg Time"  sortId="avgTime" />
+              </tr>
             </thead>
             <tbody>
-              {byGame.map(g => {
+              {sortedByGame.map(g => {
                 const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
                 return (
                   <tr key={g.gameKey}>
@@ -323,7 +366,7 @@ function OverviewPanel({ data, loading }) {
                   </tr>
                 );
               })}
-              {byGame.length === 0 && <tr><td colSpan="8" className="ana-table-empty">No sessions recorded for selected filters</td></tr>}
+              {sortedByGame.length === 0 && <tr><td colSpan="8" className="ana-table-empty">No sessions recorded for selected filters</td></tr>}
             </tbody>
           </table>
         </div>
@@ -396,15 +439,6 @@ function GamePanel({ gameMeta, data, loading }) {
 
   return (
     <div className="ana-content">
-      <div className="ana-game-header" style={{ borderColor: gameMeta.color, background: `${gameMeta.color}0d` }}>
-        <div className="ana-game-header-icon" style={{ background: gameMeta.color }}>{gameMeta.icon}</div>
-        <div>
-          <div className="ana-game-header-title" style={{ color: gameMeta.color }}>{gameMeta.title}</div>
-          <div className="ana-game-header-tag">{gameMeta.tag}</div>
-        </div>
-        <div className="ana-game-header-meta">Max Score: <strong>{data.meta?.maxScore ?? '—'}</strong></div>
-      </div>
-
       <div className="ana-kpi-row">
         <KpiCard icon="🎮" label="Total Sessions"  value={fmt(kpis.totalSessions)}  color={gameMeta.color} />
         <KpiCard icon="👦" label="Unique Children" value={fmt(kpis.uniqueChildren)} color="#0891b2" />
@@ -527,7 +561,7 @@ function GamePanel({ gameMeta, data, loading }) {
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
-              <tr><th>Child</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>Date</th></tr>
+              <tr><th>Child</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>Date & Time</th></tr>
             </thead>
             <tbody>
               {recentSessions.map(s => (
@@ -785,9 +819,14 @@ export default function AdminAnalysis() {
                 : <>{activeGame?.icon} {activeGame?.title} Analytics</>
               }
             </h2>
-            {activeTab !== 'overall' && activeGame && (
+            {activeTab !== 'overall' && activeGame && activeGame.tag && (
               <span className="ana-panel-tag" style={{ background: `${activeGame.color}1a`, color: activeGame.color }}>
                 {activeGame.tag}
+              </span>
+            )}
+            {activeTab !== 'overall' && gameData[activeTab]?.meta?.maxScore != null && (
+              <span className="ana-panel-tag" style={{ background: '#f1f5f9', color: '#64748b' }}>
+                Max Score: <strong>{gameData[activeTab].meta.maxScore}</strong>
               </span>
             )}
             {loading && <span className="ana-loading-chip">⏳ Loading…</span>}
