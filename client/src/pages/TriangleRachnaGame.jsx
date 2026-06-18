@@ -552,7 +552,7 @@ const TriangleRachnaGame = () => {
 
   // ── Global mouse/touch handlers for item drag & rotation ──────
   useEffect(() => {
-    const onMouseMove = (e) => {
+    const onPointerMove = (e) => {
       if (itemDragRef.current) {
         const { id, startX, startY, origX, origY } = itemDragRef.current;
         const dx = e.clientX - startX, dy = e.clientY - startY;
@@ -576,10 +576,15 @@ const TriangleRachnaGame = () => {
           it.id === id ? { ...it, rotation: origRot + (angle - startAngle) } : it));
       }
     };
-    const onMouseUp = () => { itemDragRef.current = null; rotateRef.current = null; };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    return () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); };
+    const onPointerUp = () => { itemDragRef.current = null; rotateRef.current = null; };
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+    return () => { 
+      document.removeEventListener('pointermove', onPointerMove); 
+      document.removeEventListener('pointerup', onPointerUp); 
+      document.removeEventListener('pointercancel', onPointerUp); 
+    };
   }, []);
 
   // ── API: Start session ────────────────────────────────────────
@@ -726,10 +731,11 @@ const TriangleRachnaGame = () => {
   };
 
   // ── Start dragging a workspace item ──────────────────────────
-  const onItemMouseDown = (e, item) => {
+  const onItemPointerDown = (e, item) => {
     if (e.target.classList.contains('rg-remove-btn') ||
         e.target.classList.contains('rg-rotation-handle')) return;
     e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
     itemDragRef.current = { id: item.id, startX: e.clientX, startY: e.clientY, origX: item.x, origY: item.y };
     // Bring to front: move this item to the end of the array so it renders
     // on top (highest index = highest z-index) during and after drag.
@@ -741,8 +747,9 @@ const TriangleRachnaGame = () => {
   };
 
   // ── Start rotating a workspace item ──────────────────────────
-  const onRotHandleMouseDown = (e, item) => {
+  const onRotHandlePointerDown = (e, item) => {
     e.preventDefault(); e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
     const rect = e.currentTarget.closest('.rg-workspace-item').getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top  + rect.height / 2;
@@ -1055,7 +1062,7 @@ const TriangleRachnaGame = () => {
                       key={item.id}
                       className="rg-workspace-item"
                       style={{ left: item.x, top: item.y, width: sz, height: sz, zIndex: 5 + index }}
-                      onMouseDown={e => onItemMouseDown(e, item)}
+                      onPointerDown={e => onItemPointerDown(e, item)}
                       onDoubleClick={e => rotatable && onItemDblClick(e, item)}
                     >
                       <div className="rg-shape-wrapper" style={{ transform: `rotate(${item.rotation}deg) scale(${item.scale || 1})` }}>
@@ -1063,7 +1070,7 @@ const TriangleRachnaGame = () => {
                       </div>
                       <button className="rg-remove-btn" onClick={() => removeFromWorkspace(item.id)}>×</button>
                       {rotatable && (
-                        <div className="rg-rotation-handle" onMouseDown={e => onRotHandleMouseDown(e, item)}>↻</div>
+                        <div className="rg-rotation-handle" onPointerDown={e => onRotHandlePointerDown(e, item)}>↻</div>
                       )}
                     </div>
                   );

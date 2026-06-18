@@ -479,6 +479,7 @@
   position: absolute;
   cursor: grab;
   user-select: none;
+  touch-action: none;
   /* z-index is set via inline style (5 + array index) so later-placed
      shapes always sit above earlier ones. Dragging moves the item to
      the end of the array, giving it the highest index automatically. */
