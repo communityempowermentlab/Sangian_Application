@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './NumberRecallGame.css';
 
 // ─── Game Name ─────────────────────────────────────────────────
@@ -163,21 +165,7 @@ const NumpadPanel = ({
   const showNextButton = !isPlaying && answered && isScored;
 
   return (
-    <div>
-      <div className="nr-screen-header">
-        <div>
-          <div className="nr-screen-title">{title}</div>
-        </div>
-        <div className="nr-chips">
-
-          {qTimerDisplay && (
-            <span className="nr-chip" style={{ color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe', fontWeight: 700 }}>
-              ⏱ {qTimerDisplay}
-            </span>
-          )}
-        </div>
-      </div>
-
+    <div className="nr-panel-wrap">
       <div className="nr-numpad-wrap">
         <div className="nr-numpad-top">
           <div className="nr-numpad-title">{t('game.listenRemember')}</div>
@@ -200,20 +188,25 @@ const NumpadPanel = ({
         </div>
 
         <div className="nr-numpad-actions">
-          {isPlaying && <div className="nr-action-msg" style={{ color: '#94a3b8' }}>🔊 </div>}
-          {showNextButton ? (
-            <button className="nr-btn-next" onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}>{isLastQuestion ? t('game.finishGame') : t('game.nextQuestionArrow')}</button>
-          ) : (
-            !isPlaying && answered && wasCorrect && !isScored && (
-              <div className="nr-action-msg" style={{ color: '#4ade80' }}>{t('game.correctFeedback')}</div>
-            )
-          )}
-          {!isPlaying && answered && !wasCorrect && !isScored && (
-            <>
-              <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right. Try again.</div>
-              <button className="nr-replay-btn" onClick={() => { setSelected([]); setAnswered(false); setWasCorrect(null); }}>↩ Retry</button>
-            </>
-          )}
+          <div className="nr-action-feedback">
+            {isPlaying && <div className="nr-action-msg" style={{ color: '#64748b' }}>🔊</div>}
+            {!isPlaying && answered && wasCorrect && !isScored && (
+              <div className="nr-action-msg" style={{ color: '#16a34a' }}>{t('game.correctFeedback')}</div>
+            )}
+            {!isPlaying && answered && !wasCorrect && !isScored && (
+              <>
+                <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right. Try again.</div>
+                <button className="nr-replay-btn" onClick={() => { setSelected([]); setAnswered(false); setWasCorrect(null); }}>↩ Retry</button>
+              </>
+            )}
+          </div>
+          <button
+            className="nr-btn-next"
+            disabled={!showNextButton}
+            onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}
+          >
+            {isLastQuestion ? t('game.finishGame') : t('game.nextQuestionArrow')}
+          </button>
         </div>
       </div>
     </div>
@@ -317,17 +310,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   const hintText = selected.length < maxSelect ? t('game.selectNumbers').replace('{n}', maxSelect) : t('game.selectionComplete');
 
   return (
-    <div>
-      <div className="nr-screen-header">
-        <div>
-          <div className="nr-screen-title">{title}</div>
-        </div>
-        <div className="nr-chips">
-
-          <span className="nr-chip">{t('game.notScored')}</span>
-        </div>
-      </div>
-
+    <div className="nr-panel-wrap">
       <div className="nr-numpad-wrap">
         <div className="nr-numpad-top">
           <div>
@@ -353,22 +336,26 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
         </div>
 
         <div className="nr-numpad-actions">
-          {isWaiting && (
-            <div className="nr-action-msg" style={{ color: '#fbbf24' }}>{t('game.pleaseWaitAudio')}</div>
-          )}
-          {!isWaiting && firstAttemptDone && !isCorrect && !teachingAudioPlayed && teachingAudioSrc && (
-            <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite. Listen to the correction…</div>
-          )}
-          {!isWaiting && firstAttemptDone && !showNextButton && !isCorrect && (
-            <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right.</div>
-          )}
-          {showNextButton && (
-            <button className="nr-btn-next" onClick={onNext}>
-              <span>{nextIcon}</span>
-              <span>{nextLabel}</span>
-              <span style={{ fontSize: '0.85rem' }}>→</span>
-            </button>
-          )}
+          <div className="nr-action-feedback">
+            {isWaiting && (
+              <div className="nr-action-msg" style={{ color: '#d97706' }}>{t('game.pleaseWaitAudio')}</div>
+            )}
+            {!isWaiting && firstAttemptDone && !isCorrect && !teachingAudioPlayed && teachingAudioSrc && (
+              <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite. Listen to the correction…</div>
+            )}
+            {!isWaiting && firstAttemptDone && !showNextButton && !isCorrect && !teachingAudioSrc && (
+              <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right.</div>
+            )}
+          </div>
+          <button
+            className="nr-btn-next"
+            disabled={!showNextButton}
+            onClick={() => showNextButton && onNext && onNext()}
+          >
+            <span>{nextIcon}</span>
+            <span>{nextLabel}</span>
+            <span style={{ fontSize: '0.85rem' }}>→</span>
+          </button>
         </div>
       </div>
     </div>
@@ -423,6 +410,18 @@ const NumberRecallGame = () => {
   const sp = childData?.age ? getSP(childData.age) : '—';
   const totalScore = allScores.filter(s => s.score === 1).length;
 
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
+
   // ── Child data + resume check ──────────────────────────────
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
@@ -469,13 +468,13 @@ const NumberRecallGame = () => {
 
   // ── Session timer ──────────────────────────────────────────
   useEffect(() => {
-    if (!['splash', 'score'].includes(screen) && !showQuitModal) {
+    if ((screen !== 'splash' && screen !== 'score' && !showQuitModal) || (screen === 'score' && !assessmentSubmitted)) {
       timerRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000);
     } else {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen, showQuitModal]);
+  }, [screen, showQuitModal, assessmentSubmitted]);
 
   // ── Question timer ─────────────────────────────────────────
   useEffect(() => {
@@ -782,15 +781,51 @@ const NumberRecallGame = () => {
           <img src="/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />
           <span className="nr-test-title">{t('home.games.lottery.title')}</span>
         </div>
+
+        <div className="nr-topbar-center">
+          {screen === 'practice' && (
+            <div className="nr-topbar-screen-title">
+              {`${t('game.practiceLabel')} · ${t('game.sampleLabel')}`}
+              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+            </div>
+          )}
+          {screen === 'teaching1' && (
+            <div className="nr-topbar-screen-title">
+              {`${t('game.teachingLabel')} · Teaching 1`}
+              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+            </div>
+          )}
+          {screen === 'teaching2' && (
+            <div className="nr-topbar-screen-title">
+              {`${t('game.teachingLabel')} · Teaching 2`}
+              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+            </div>
+          )}
+          {screen === 'game' && (
+            <div className="nr-topbar-screen-title">
+              {t('game.question')} {questionIndex + 1} {t('game.of')} {TOTAL_SCORED_QUESTIONS}
+            </div>
+          )}
+          {screen === 'score' && (
+            <div className="nr-topbar-screen-title">Assessment Report</div>
+          )}
+        </div>
+
         <div className="nr-stats">
           {childData?.child_id && (
             <div className="nr-stat-pill">
-              <span className="nr-stat-label">{t('game.childId')}</span>
+              <span className="nr-stat-icon">👤</span>
               <span className="nr-stat-value">{childData.child_id}</span>
             </div>
           )}
+          {screen === 'game' && (
+            <div className="nr-stat-pill">
+              <span className="nr-stat-icon">⏱</span>
+              <span className="nr-stat-value">{formatTime(qTimer)}</span>
+            </div>
+          )}
           <div className="nr-stat-pill">
-            <span className="nr-stat-label">{t('game.score')}</span>
+            <span className="nr-stat-icon">🏆</span>
             <span className="nr-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
@@ -804,62 +839,45 @@ const NumberRecallGame = () => {
         </div>
       </header>
 
-      <main className="nr-main">
+      <main className={`nr-main${screen === 'splash' ? ' nr-main-splash' : ''}`}>
         {/* ─────────────── SPLASH ─────────────── */}
         {screen === 'splash' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="nr-screen-header">
-            </div>
-
-            <div className="nr-splash-card">
-              <div className="nr-splash-image-wrapper">
-                <img
-                  src={`${IMAGE_PATH}/lottery_ka_ticket.jpg`}
-                  alt="Lottery Ka Ticket"
-                  className="nr-splash-image"
-                  onError={e => {
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<div class="nr-splash-image-fallback">🎟️</div>';
-                  }}
-                />
-              </div>
-
-              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                {t('game.welcomeLottery')}
-              </h2>
-              
-
-
-              <div className="nr-btn-row">
+          <div className="nr-screen nr-screen-splash">
+            <div className="nr-splash-cover">
+              <img
+                src={`${IMAGE_PATH}/lottery_ka_ticket.jpg`}
+                alt="Lottery Ka Ticket"
+                className="nr-splash-img-full"
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+              <div className="nr-splash-btn-overlay">
                 <button
                   className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
-                 style={{ fontSize: '1.2rem', padding: '16px 40px' }}>
+                >
                   {t('game.startNow')}
                 </button>
                 <button
                   className="nr-btn nr-btn-secondary"
-                  onClick={() => { 
-                    if (audioRef.current) { 
+                  onClick={() => {
+                    if (audioRef.current) {
                       setAudioFinished(false);
-                      audioRef.current.currentTime = 0; 
-                      audioRef.current.play().catch(() => setAudioFinished(true)); 
-                    } 
+                      audioRef.current.currentTime = 0;
+                      audioRef.current.play().catch(() => setAudioFinished(true));
+                    }
                   }}
                 >
                   {t('game.replayAudio')}
                 </button>
               </div>
-
-
             </div>
           </div>
         )}
 
         {/* ─────────────── PRACTICE ─────────────── */}
         {screen === 'practice' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="nr-screen">
             <TeachingScreen
               title={`${t('game.practiceLabel')} · ${t('game.sampleLabel')}`}
               chipLabel={t('game.practiceLabel')}
@@ -876,7 +894,7 @@ const NumberRecallGame = () => {
 
         {/* ─────────────── TEACHING 1 ─────────────── */}
         {screen === 'teaching1' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="nr-screen">
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 1`}
               chipLabel={t('game.teachingLabel')}
@@ -893,7 +911,7 @@ const NumberRecallGame = () => {
 
         {/* ─────────────── TEACHING 2 ─────────────── */}
         {screen === 'teaching2' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="nr-screen">
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 2`}
               chipLabel={t('game.teachingLabel')}
@@ -910,7 +928,7 @@ const NumberRecallGame = () => {
 
         {/* ─────────────── GAME ─────────────── */}
         {screen === 'game' && currentQ && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }}>
+          <div className="nr-screen">
             <NumpadPanel
               key={`q-${questionIndex}`}
               title={`Question ${questionIndex + 1} of ${TOTAL_SCORED_QUESTIONS}`}
@@ -931,7 +949,7 @@ const NumberRecallGame = () => {
 
         {/* ─────────────── SCORE ─────────────── */}
         {screen === 'score' && (
-          <div className="nr-screen" style={{ backgroundColor: '#fff' }} id="dashboard-capture-area">
+          <div className="nr-screen" id="dashboard-capture-area">
             <div className="nr-screen-header">
               <div>
                 <div className="nr-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>

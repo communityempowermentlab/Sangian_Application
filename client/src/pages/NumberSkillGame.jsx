@@ -6,6 +6,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './NumberSkillGame.css';
 
 const CONFIG = {
@@ -95,6 +97,18 @@ const NumberSkillGame = () => {
   const timerRef = useRef(null);
   const audioRef = useRef(null);
 
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) {
@@ -147,7 +161,7 @@ const NumberSkillGame = () => {
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   useEffect(() => {
-    if (screen === 'game' && !showQuitModal) {
+    if ((screen === 'game' && !showQuitModal) || (screen === 'score' && !assessmentSubmitted)) {
       timerRef.current = setInterval(() => {
         setTimerSeconds(s => s + 1);
       }, 1000);
@@ -155,7 +169,7 @@ const NumberSkillGame = () => {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen, showQuitModal]);
+  }, [screen, showQuitModal, assessmentSubmitted]);
 
   const checkResume = async (childId) => {
     setIsCheckingSession(true);
@@ -474,6 +488,13 @@ const NumberSkillGame = () => {
         q5_behaviors: assessment.behaviors,
         additional_notes: assessment.notes
       });
+      // Save final screentime (stops here) to session so admin panel reflects it
+      if (gameSessionId) {
+        axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
+          saved_state: { questionIndex, allScores, timerSeconds, qTimer, pauses }
+        }).catch(e => console.error('Screentime save error', e));
+      }
+
       setAssessmentSubmitted(true);
       alert(t('game.assessmentSubmitted'));
       setTimeout(generateAndUploadPDF, 1500);
@@ -496,110 +517,92 @@ const NumberSkillGame = () => {
           <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />
           <span className="ns-test-title">{t('home.games.numeracy.title')}</span>
         </div>
+        <div className="ns-topbar-center">
+          {screen === 'game' && currentQuestion && (
+            <div className="ns-topbar-screen-title">{t('game.question')} {questionIndex + 1}</div>
+          )}
+        </div>
         <div className="ns-stats">
           {childData?.child_id && (
-            <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.childId')}</span> <span className="ns-stat-value">{childData.child_id}</span></div>
+            <div className="ns-stat-pill"><span className="ns-stat-icon">👤</span> <span className="ns-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="ns-stat-pill"><span className="ns-stat-label">{t('game.score')}</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
+          {screen === 'game' && (
+            <div className="ns-stat-pill"><span className="ns-stat-icon">⏱</span> <span className="ns-stat-value">{formatTime(qTimer)}</span></div>
+          )}
+          <div className="ns-stat-pill"><span className="ns-stat-icon">🏆</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
           {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
         </div>
       </header>
 
-      <main className="ns-main">
+      <main className={`ns-main${screen === 'splash' ? ' ns-main-splash' : ''}`}>
         {screen === 'splash' && (
-          <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="ns-screen-header">
-              <div style={{ textAlign: 'center', width: '100%' }}>
-                {/* Header text removed as requested */}
-              </div>
-            </div>
-            
-            <div className="ns-card ns-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
-              <div className="ns-splash-image-wrapper">
-                <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-image" onError={e => e.target.style.display='none'} />
-              </div>
-              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                {t('game.welcome')}
-              </h2>
-              
-
-              
-              <div className="ns-btn-row">
-                <button 
-                  className={`ns-btn ns-btn-primary ${audioFinished ? 'ns-btn-highlight' : ''}`} 
-                  disabled={!audioFinished} 
+          <div className="ns-screen ns-screen-splash">
+            <div className="ns-splash-cover">
+              <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+              <div className="ns-splash-btn-overlay">
+                <button
+                  className={`ns-btn ns-btn-primary ${audioFinished ? 'ns-btn-highlight' : ''}`}
+                  disabled={!audioFinished}
                   style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
-                  onClick={() => {
-                     startNewGame();
-                  }}
+                  onClick={() => { startNewGame(); }}
                 >
                   {t('game.startNow')}
                 </button>
-                 <button className="ns-btn ns-btn-secondary" onClick={() => {
-                   if (audioRef.current) {
-                     setAudioFinished(false);
-                     audioRef.current.currentTime = 0;
-                     audioRef.current.play();
-                   }
+                <button className="ns-btn ns-btn-secondary" onClick={() => {
+                  if (audioRef.current) {
+                    setAudioFinished(false);
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play();
+                  }
                 }}>{t('game.replayAudio')}</button>
               </div>
-
-
             </div>
           </div>
         )}
 
-        {screen === 'game' && currentQuestion && (
+        {screen === 'game' && currentQuestion && QUESTIONS[questionIndex].type === 'manual' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="ns-screen-header">
-              <div>
-                <div className="ns-screen-title" style={{fontSize: '1.4rem'}}>{t('game.question')} {questionIndex + 1} {t('game.of')} {QUESTIONS.length}</div>
-              </div>
-              <div className="ns-chips">
+            <div className="ns-card ns-question-card">
+              <div className="ns-question-content">{QUESTIONS[questionIndex].text}</div>
+            </div>
+            <div className="ns-response-buttons">
+              <button className="ns-response-btn ns-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct')}</button>
+              <button className="ns-response-btn ns-btn-incorrect" onClick={() => handleManualScoring(false)}>✗ {t('game.incorrect')}</button>
+            </div>
+          </div>
+        )}
 
-                <span className="ns-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
-                  ⏱ {t('game.timer')}: {formatTime(qTimer)}
-                </span>
-              </div>
+        {screen === 'game' && currentQuestion && QUESTIONS[questionIndex].type !== 'manual' && (
+          <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
+            <div className="ns-card ns-question-card ns-split-question">
+              <div className="ns-question-content">{QUESTIONS[questionIndex].text}</div>
             </div>
 
-            <div className="ns-card ns-question-bg" style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-              <div className="ns-question-label">{QUESTIONS[questionIndex].text}</div>
-              
-              {QUESTIONS[questionIndex].type === 'manual' ? (
-                <div className="ns-manual-buttons" style={{marginTop:'30px'}}>
-                  <button className="ns-btn ns-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct')}</button>
-                  <button className="ns-btn ns-btn-incorrect" onClick={() => handleManualScoring(false)}>✗ {t('game.incorrect')}</button>
-                </div>
-              ) : (
-                <div className="ns-auto-inputs" style={{marginTop:'30px'}}>
-                  {QUESTIONS[questionIndex].questionCategory === 13 ? (
-                    <>
-                      <div className="ns-input-group" onClick={()=>setActiveInput('quotient')} style={{cursor:'pointer'}}>
-                        <label>{t('game.quotient')}:</label>
-                        <input type="text" readOnly value={quotientVal} style={activeInput==='quotient'?{borderColor:'#2563eb'}:{}} />
-                      </div>
-                      <div className="ns-input-group" onClick={()=>setActiveInput('remainder')} style={{cursor:'pointer'}}>
-                        <label>{t('game.remainder')}:</label>
-                        <input type="text" readOnly value={remainderVal} style={activeInput==='remainder'?{borderColor:'#2563eb'}:{}} />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="ns-input-group" onClick={()=>setActiveInput('answer')}>
-                      <label>{t('game.answer')}:</label>
-                      <input type="text" readOnly value={answerVal} />
-                    </div>
-                  )}
-                  <button className="ns-btn ns-btn-submit" onClick={handleAutoScoring}>{t('game.submitAnswer')}</button>
-
-                  <div className="ns-numpad" style={{marginTop:'20px'}}>
-                    {[1,2,3,4,5,6,7,8,9].map(num => <button key={num} onClick={()=>handleNumpadInput(num)} className="ns-key">{num}</button>)}
-                    <button onClick={()=>handleNumpadInput('clear')} className="ns-key ns-key-danger" style={{fontSize:'1.2rem'}}>{t('game.clear')}</button>
-                    <button onClick={()=>handleNumpadInput(0)} className="ns-key">0</button>
-                    <button onClick={()=>handleNumpadInput('back')} className="ns-key" style={{background:'#6b7280'}}>⌫</button>
+            <div className="ns-auto-inputs ns-split-inputs">
+              {QUESTIONS[questionIndex].questionCategory === 13 ? (
+                <div className="ns-input-row">
+                  <div className="ns-input-group" onClick={()=>setActiveInput('quotient')}>
+                    <label>{t('game.quotient')}</label>
+                    <input type="text" readOnly value={quotientVal} className={activeInput==='quotient' ? 'ns-input-active' : ''} />
+                  </div>
+                  <div className="ns-input-group" onClick={()=>setActiveInput('remainder')}>
+                    <label>{t('game.remainder')}</label>
+                    <input type="text" readOnly value={remainderVal} className={activeInput==='remainder' ? 'ns-input-active' : ''} />
                   </div>
                 </div>
+              ) : (
+                <div className="ns-input-group" onClick={()=>setActiveInput('answer')}>
+                  <input type="text" readOnly value={answerVal} placeholder="?" className="ns-input-active" />
+                </div>
               )}
+              <button className="ns-btn ns-btn-submit" onClick={handleAutoScoring}>{t('game.submitAnswer')}</button>
+
+              <div className="ns-numpad">
+                {[1,2,3,4,5,6,7,8,9].map(num => <button key={num} onClick={()=>handleNumpadInput(num)} className="ns-key">{num}</button>)}
+                <button onClick={()=>handleNumpadInput('clear')} className="ns-key ns-key-danger" style={{fontSize:'1.2rem'}}>{t('game.clear')}</button>
+                <button onClick={()=>handleNumpadInput(0)} className="ns-key">0</button>
+                <button onClick={()=>handleNumpadInput('back')} className="ns-key ns-key-back">⌫</button>
+              </div>
             </div>
           </div>
         )}

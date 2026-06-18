@@ -120,10 +120,10 @@ exports.getResumeSession = async (req, res) => {
         if (['Chalo Mela Chale', 'chalo_mela_chale'].includes(gameName)) normalizedName = 'rover_mela';
         if (gameName === 'chor_machaye_shor') normalizedName = 'cognitive_flex_chor';
 
-        // Find the absolute latest session for this game
+        // Find the absolute latest session for this game that is NOT finalized
         const [rows] = await pool.query(
             `SELECT * FROM game_sessions 
-             WHERE child_id = ? AND game_name = ?
+             WHERE child_id = ? AND game_name = ? AND status NOT IN ('completed', 'quit', 'dropped')
              ORDER BY start_time DESC LIMIT 1`,
             [childId, normalizedName]
         );

@@ -28,6 +28,9 @@
   "dependencies": {
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@react-oauth/google": "^0.13.5",
     "axios": "^1.13.5",
     "html2canvas": "^1.4.1",

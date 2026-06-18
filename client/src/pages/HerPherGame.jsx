@@ -10,6 +10,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './HerPherGame.css';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -50,33 +52,71 @@ const getSP = (age) => {
   return '—';
 };
 
-// ─── Position Maps & Grid ───────────────────────────────────────────────────────
-const POSITION_MAPS = {
-  6:  [2, 3, 4, 7, 8, 9],
-  7:  [2, 3, 4, 7, 8, 9, 13],
-  8:  [2, 3, 4, 7, 8, 9, 12, 13],
-  9:  [1, 2, 3, 4, 7, 8, 9, 12, 13],
-  10: [1, 2, 3, 4, 5, 7, 8, 9, 12, 13],
-  11: [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13],
-  12: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13],
-  13: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-  14: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-};
-
-function generateAllPositions() {
-  const positions = [];
-  for (let i = 0; i < MAX_POSITIONS; i++) {
-    const x = (i % GRID_COLS) * IMAGE_SIZE + GRID_OFFSET_X;
-    const y = Math.floor(i / GRID_COLS) * IMAGE_SIZE + GRID_OFFSET_Y;
-    positions.push({ x, y, index: i + 1 });
-  }
-  return positions;
-}
-
 function getPositionsForCount(count) {
-  const all = generateAllPositions();
-  const indices = POSITION_MAPS[count] || [];
-  return indices.map(idx => all[idx - 1]);
+  let cols, rows, size;
+  
+  // Use slightly looser grids so staggering has room
+  if (count <= 6) {
+    cols = 3; rows = 2; size = 220;
+  } else if (count <= 8) {
+    cols = 4; rows = 2; size = 210;
+  } else if (count <= 10) {
+    cols = 4; rows = 3; size = 180;
+  } else if (count <= 12) {
+    cols = 5; rows = 3; size = 170;
+  } else {
+    cols = 6; rows = 3; size = 150;
+  }
+
+  const currentHeight = GRID_HEIGHT_3; // 620
+  
+  const cellWidth = GRID_WIDTH / cols;
+  const cellHeight = currentHeight / rows;
+  
+  const allCells = [];
+  for (let i = 0; i < cols * rows; i++) {
+    allCells.push(i);
+  }
+  
+  // Pick random cells
+  const shuffledCells = shuffle(allCells);
+  const selectedCells = shuffledCells.slice(0, count);
+  
+  const positions = [];
+  
+  for (let i = 0; i < count; i++) {
+    const cellIndex = selectedCells[i];
+    const c = cellIndex % cols;
+    const r = Math.floor(cellIndex / cols);
+    
+    // Stagger every second row to the right by half a cell width to break vertical grid lines
+    const staggerOffset = (r % 2 === 1) ? (cellWidth * 0.35) : 0;
+    
+    // Center point of the cell
+    let cellCenterX = c * cellWidth + cellWidth / 2 + staggerOffset;
+    let cellCenterY = r * cellHeight + cellHeight / 2;
+    
+    // Clamp center so staggered items don't overflow the right edge
+    if (cellCenterX + size / 2 > GRID_WIDTH) {
+      cellCenterX = GRID_WIDTH - size / 2 - 10;
+    }
+    
+    // Add aggressive jitter to fully organicize the layout
+    const maxShiftX = Math.max(0, (cellWidth - size) / 2 - 10);
+    const maxShiftY = Math.max(0, (cellHeight - size) / 2 - 10);
+    const shiftX = (Math.random() * 2 - 1) * maxShiftX;
+    const shiftY = (Math.random() * 2 - 1) * maxShiftY;
+    
+    positions.push({
+      x: cellCenterX + shiftX - size / 2,
+      y: cellCenterY + shiftY - size / 2,
+      size: size,
+      gridHeight: currentHeight,
+      index: i + 1
+    });
+  }
+  
+  return positions;
 }
 
 // ─── Game Data ──────────────────────────────────────────────────────────────────
@@ -194,6 +234,18 @@ const HerPherGame = () => {
   const totalScoreRef     = useRef(0);
   const finalAllScoresRef = useRef([]);   // populated by completeGame for later use in submitAssessment
 
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
+
   // ──── Init: load child from localStorage ────────────────────────────────────
   useEffect(() => {
     const raw = localStorage.getItem('currentChild');
@@ -285,6 +337,8 @@ const HerPherGame = () => {
       imageId,
       x: positions[i].x,
       y: positions[i].y,
+      size: positions[i].size,
+      gridHeight: positions[i].gridHeight,
     }));
     setImageLayout(layout);
     setClickedImages(new Set());
@@ -466,7 +520,7 @@ const HerPherGame = () => {
         setTimeout(() => {
           setImageLayout(prev => {
             const positions = shuffle(getPositionsForCount(qData.imageCount));
-            return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y }));
+            return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y, size: positions[i].size, gridHeight: positions[i].gridHeight }));
           });
           
           // 3. Wait for layout movement to bounce/settle
@@ -578,6 +632,8 @@ const HerPherGame = () => {
       imageId,
       x: positions[i].x,
       y: positions[i].y,
+      size: positions[i].size,
+      gridHeight: positions[i].gridHeight,
     })));
   };
 
@@ -796,15 +852,45 @@ const HerPherGame = () => {
             <img src="/assets/images/her_pher/her_pher.jpg" alt="Her Pher" className="hp-test-logo" />
             <span className="hp-test-title">{t('home.games.herpher.title')}</span>
           </div>
+
+          <div className="hp-topbar-center">
+            {screen === 'game' && qData && (
+              <>
+                <div className="hp-topbar-screen-title">
+                  {questionLabel}
+                  <div className="hp-chips" style={{ marginTop: 0 }}>
+                    {currentAttempt === 1 && !qData.isSample && (
+                      <span className="hp-chip" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
+                        Practice
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           <div className="hp-stats">
             <div className="hp-stat-pill">
-              <span className="hp-stat-label">{t('game.childId')}</span>
+              <span className="hp-stat-icon">👤</span>
               <span className="hp-stat-value">{childData?.child_id || '—'}</span>
             </div>
             <div className="hp-stat-pill">
-              <span className="hp-stat-label">{t('game.score')}</span>
+              <span className="hp-stat-icon">🏆</span>
               <span className="hp-stat-value">{totalScore}</span>
             </div>
+
+            {screen === 'game' && qData && (
+              <div className="hp-stat-pill">
+                <span className="hp-stat-value">{clickedCount}/{qData.imageCount}</span>
+              </div>
+            )}
+
+            {screen === 'game' && (
+              <div className="hp-stat-pill">
+                <span className="hp-stat-icon">⏱</span>
+                <span className="hp-stat-value">{formatTime(questionTime)}</span>
+              </div>
+            )}
 
             {screen === 'game' && (
               <button
@@ -817,40 +903,22 @@ const HerPherGame = () => {
           </div>
         </header>
 
-        <main className="hp-main">
+        <main className={`hp-main${screen === 'splash' ? ' hp-main-splash' : ''}`}>
 
           {/* ══════════════ SPLASH ══════════════ */}
           {screen === 'splash' && (
-            <div className="hp-screen">
-              <div className="hp-screen-header">
-                <div style={{ textAlign: 'center', width: '100%' }}>
-                  {/* Header text removed as requested */}
-                </div>
-              </div>
-
-              <div className="hp-card hp-splash-card">
-                <div className="hp-splash-img-wrapper">
-                  <img
-                    src="/assets/images/her_pher/her_pher.jpg"
-                    alt="Her Pher"
-                    className="hp-splash-img"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = '<div class="hp-splash-fallback">🔄<br/>Her Pher</div>';
-                    }}
-                  />
-                </div>
-
-                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  {t('game.welcomeHerPher')}
-                </h2>
-                
-
-
-                <div className="hp-btn-row">
+            <div className="hp-screen hp-screen-splash">
+              <div className="hp-splash-cover">
+                <img
+                  src="/assets/images/her_pher/her_pher.jpg"
+                  alt="Her Pher"
+                  className="hp-splash-img-full"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <div className="hp-splash-btn-overlay">
                   <button
                     className={`hp-btn hp-btn-primary ${audioFinished ? 'hp-btn-highlight' : ''}`}
-                    style={{ fontSize: '1.2rem', padding: '16px 40px', opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
+                    style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                     disabled={!audioFinished}
                     onClick={startNewGame}
                   >
@@ -869,7 +937,6 @@ const HerPherGame = () => {
                     {t('game.replayAudio')}
                   </button>
                 </div>
-
               </div>
             </div>
           )}
@@ -877,58 +944,22 @@ const HerPherGame = () => {
           {/* ══════════════ GAME ══════════════ */}
           {screen === 'game' && qData && (
             <div className="hp-screen">
-              <div className="hp-screen-header">
-                <div>
-                  <div className="hp-screen-title">{t('home.games.herpher.title')}</div>
-                  <div className="hp-screen-subtitle">
-                    {questionLabel}
-                  </div>
-                </div>
-                <div className="hp-chips">
-                  {currentAttempt === 1 && !qData.isSample && (
-                    <span className="hp-chip" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
-                      Practice (not scored)
-                    </span>
-                  )}
-                  {currentAttempt === 2 && !qData.isSample && (
-                    <span className="hp-chip hp-chip-success">{t('game.scoredLabel')}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Info Bar */}
-              <div className="hp-info-bar">
-                <div className="hp-info-item">
-                  <span className="hp-info-label">{t('game.timerLabel')}</span>
-                  <span className="hp-info-value">{formatTime(questionTime)}</span>
-                </div>
-                <div className="hp-info-item">
-                  <span className="hp-info-label">📊 Progress:</span>
-                  <span className="hp-info-value hp-info-progress">
-                    {clickedCount}/{qData.imageCount}
-                  </span>
-                </div>
-                <div className="hp-info-item">
-                  <span className="hp-info-label">🗂 Category:</span>
-                  <span className="hp-info-value" style={{ textTransform: 'capitalize' }}>
-                    {qData.category}
-                  </span>
-                </div>
-              </div>
 
               {/* Image Grid */}
-              <div className={`hp-game-container ${qData.imageCount <= 6 ? 'hp-rows-2' : ''}`}>
-                {imageLayout.map(({ imageId, x, y }) => {
-                  const currentHeight = qData.imageCount <= 6 ? GRID_HEIGHT_2 : GRID_HEIGHT_3;
+              <div 
+                className="hp-game-container" 
+                style={{ aspectRatio: `${GRID_WIDTH} / ${imageLayout[0]?.gridHeight || 620}` }}
+              >
+                {imageLayout.map(({ imageId, x, y, size, gridHeight }) => {
                   return (
                     <button
                       key={`${imageId}-${x}-${y}`}
                       className={`hp-img-btn ${shuffleInProgress ? 'hp-shuffling' : ''}`}
                       style={{
                         left: `${(x / GRID_WIDTH) * 100}%`,
-                        top: `${(y / currentHeight) * 100}%`,
-                        width: `${(IMAGE_SIZE / GRID_WIDTH) * 100}%`,
-                        height: `${(IMAGE_SIZE / currentHeight) * 100}%`,
+                        top: `${(y / gridHeight) * 100}%`,
+                        width: `${(size / GRID_WIDTH) * 100}%`,
+                        height: `${(size / gridHeight) * 100}%`,
                       }}
                       disabled={buttonsDisabled}
                       onClick={() => handleImageClick(imageId)}
@@ -946,13 +977,23 @@ const HerPherGame = () => {
               </div>
 
               {/* Sample controls */}
-              {showControls && qData.isSample && (
-                <div className="hp-game-controls">
-                  <button className="hp-btn hp-btn-secondary" onClick={handleSampleRetake}>
-                    🔄 Retake Sample
+              {qData.isSample && (
+                <div className="hp-game-controls" style={{ marginTop: 'auto' }}>
+                  <button 
+                    className="hp-btn hp-btn-secondary" 
+                    onClick={handleSampleRetake}
+                    disabled={!showControls}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed' }}
+                  >
+                    Retake Sample
                   </button>
-                  <button className="hp-btn hp-btn-primary hp-btn-highlight" onClick={handleSampleNext}>
-                    Start Q1 →
+                  <button 
+                    className={`hp-btn hp-btn-primary ${showControls ? 'hp-btn-highlight' : ''}`} 
+                    onClick={handleSampleNext}
+                    disabled={!showControls}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed' }}
+                  >
+                    Start Game
                   </button>
                 </div>
               )}

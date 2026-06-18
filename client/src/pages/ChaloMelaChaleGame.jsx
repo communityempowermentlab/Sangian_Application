@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './ChaloMelaChaleGame.css';
 const GAME_NAME = 'rover_mela';
 const TOTAL_QUESTIONS = 18;
@@ -272,7 +274,7 @@ const getCoinsTotal = (id) => {
 };
 
 const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
-  const size  = coinsTotal > 10 ? 36 : coinsTotal > 8 ? 40 : 46;
+  const size  = coinsTotal > 10 ? 54 : coinsTotal > 8 ? 60 : 66;
   const gap   = coinsTotal > 8  ? 3  : 5;
   return (
     <div className="coin-bar" style={{ gap }}>
@@ -280,7 +282,7 @@ const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
         const isSpent = allCoinsDrained || i < moveCount;
         return (
           <div key={i} className="coin-slot" style={{ width: size, height: size }}>
-            <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="coin-img" alt="" />
+            <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" className="coin-img" alt="" />
             {isSpent && (
               <img
                 src="/assets/images/chalo_mela_chale/rover_cross.png"
@@ -388,6 +390,18 @@ const ChaloMelaChaleGame = () => {
   const timerSecondsRef                   = useRef(0);
   const sessionTimerRef                   = useRef(null);
   const [sessionActive, setSessionActive] = useState(false);
+
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!gameSessionId || assessmentSubmitted || !sessionActive) {
@@ -1056,6 +1070,9 @@ const ChaloMelaChaleGame = () => {
     try {
       const element = document.getElementById('dashboard-capture-area');
       if (!element) return;
+      
+      document.body.classList.add('pdf-capturing');
+      await new Promise(r => setTimeout(r, 100));
 
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
@@ -1118,6 +1135,7 @@ const ChaloMelaChaleGame = () => {
     } catch (e) {
       console.error('Failed to generate and upload PDF:', e);
     } finally {
+      document.body.classList.remove('pdf-capturing');
       if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
     }
   };
@@ -1324,7 +1342,7 @@ const ChaloMelaChaleGame = () => {
               </div>
               <div className="kpi-card kpi-coin">
                 <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 12, height: 12 }} alt="" />
+                  <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" style={{ width: 24, height: 24 }} alt="" />
                   Collected / Budget
                 </div>
                 <div className="kpi-val kpi-gold">{collectedCoins} / {FIXED_COIN_BUDGET}</div>
@@ -1436,13 +1454,13 @@ const ChaloMelaChaleGame = () => {
                     {!dimmed && qCoinsTotal > 0 && (
                       <div className="q-coin-trail">
                         <div className="q-coin-trail-label">
-                          <img src="/assets/images/chalo_mela_chale/rover_coin.png" style={{ width: 13, height: 13 }} alt="" />
+                          <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" style={{ width: 24, height: 24 }} alt="" />
                           <span>Budget {qCoinsTotal} · Used {qCoinsUsed} · Collected {qCoinsKept}</span>
                         </div>
                         <div className="q-coin-dots">
                           {Array.from({ length: qCoinsTotal }, (_, i) => (
                             <div key={i} className="q-coin-slot-mini">
-                              <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="q-coin-img-mini" alt="" />
+                              <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" className="q-coin-img-mini" alt="" />
                               {i < qCoinsUsed && <img src="/assets/images/chalo_mela_chale/rover_cross.png" className="q-coin-cross-mini" alt="" />}
                             </div>
                           ))}
@@ -1577,18 +1595,6 @@ const ChaloMelaChaleGame = () => {
       <div className="screen">
         <div className="screen-header">
           <div>
-            <div className="screen-title">
-              {questionState.id.startsWith('tq')
-                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-                    {`${t('game.teachingLabel')} ${t('game.question')} ${questionState.id.replace('tq', '')} ${t('game.of')} 4`}
-                    <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#1d4ed8', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', border: '1.5px solid #93c5fd', borderRadius: 20, padding: '3px 14px', letterSpacing: '0.04em', boxShadow: '0 1px 4px rgba(59,91,219,0.10)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', boxShadow: '0 0 0 2px #bfdbfe' }} />
-                      {t('game.trialLabel')} {questionState.currentTrial}
-                    </span>
-                  </span>
-                : `${t('game.question')} ${qNum} ${t('game.of')} ${TOTAL_Q}`
-              }
-            </div>
             <div className="screen-subtitle">
               {QUESTION_CONFIG[questionState.id]?.subtitle || ""}
             </div>
@@ -1597,27 +1603,7 @@ const ChaloMelaChaleGame = () => {
             {QUESTION_CONFIG[questionState.id]?.chips?.map(c => (
               <span key={c} className="chip">{c}</span>
             ))}
-            {!isTQ && (
-              <button
-                style={{ fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20, border: refreshCount >= 1 || questionState.nextUnlocked ? '1px solid #e2e8f0' : '1px solid #cbd5e1', background: refreshCount >= 1 || questionState.nextUnlocked ? '#f1f5f9' : '#fff', color: refreshCount >= 1 || questionState.nextUnlocked ? '#94a3b8' : '#475569', fontWeight: 600, cursor: refreshCount >= 1 || questionState.nextUnlocked ? 'not-allowed' : 'pointer', lineHeight: 1.4 }}
-                disabled={refreshCount >= 1 || questionState.nextUnlocked}
-                onClick={() => handleRefresh(questionState.currentTrial)}
-              >🔄 {t('game.refreshBtn')}</button>
-            )}
-            {isTQ && (
-              <button
-                style={{ fontSize: '0.7rem', padding: '3px 10px', borderRadius: 20, border: retakeCount >= 2 || questionState.nextUnlocked ? '1px solid #e2e8f0' : '1px solid #cbd5e1', background: retakeCount >= 2 || questionState.nextUnlocked ? '#f1f5f9' : '#fff', color: retakeCount >= 2 || questionState.nextUnlocked ? '#94a3b8' : '#475569', fontWeight: 600, cursor: retakeCount >= 2 || questionState.nextUnlocked ? 'not-allowed' : 'pointer', lineHeight: 1.4 }}
-                disabled={retakeCount >= 2 || questionState.nextUnlocked}
-                onClick={handleRetake}
-              >{t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)</button>
-            )}
-            {getCoinsTotal(questionState.id) > 0 && (
-              <span className="pc-coin-pill">
-                <img src="/assets/images/chalo_mela_chale/rover_coin.png" className="pc-coin-icon" alt="" />
-                {collectedCoins}
-              </span>
-            )}
-            <span className="pc-timer-pill" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>⊙ {fmtMmSs(questionState.timeRemaining)}</span>
+
           </div>
         </div>
         <div className="matrix-with-coins">
@@ -1657,7 +1643,28 @@ const ChaloMelaChaleGame = () => {
             />
           )}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 16, gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, gap: 8, padding: '0 10px' }}>
+          <div>
+            {isTQ ? (
+              <button
+                className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-highlight'}`}
+                style={{ background: retakeCount >= 2 || questionState.nextUnlocked ? '#e2e8f0' : '#f59e0b', color: retakeCount >= 2 || questionState.nextUnlocked ? '#94a3b8' : '#fff', border: 'none' }}
+                disabled={retakeCount >= 2 || questionState.nextUnlocked}
+                onClick={handleRetake}
+              >
+                ↺ {t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)
+              </button>
+            ) : (
+              <button
+                className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-highlight'}`}
+                style={{ background: refreshCount >= 1 || questionState.nextUnlocked ? '#e2e8f0' : '#3b82f6', color: refreshCount >= 1 || questionState.nextUnlocked ? '#94a3b8' : '#fff', border: 'none' }}
+                disabled={refreshCount >= 1 || questionState.nextUnlocked}
+                onClick={() => handleRefresh(questionState.currentTrial)}
+              >
+                🔄 {t('game.refreshBtn')}
+              </button>
+            )}
+          </div>
           <button
             className={`pattern-btn ${questionState.nextUnlocked ? 'pattern-btn-highlight' : 'pattern-btn-disabled'}`}
             disabled={!questionState.nextUnlocked}
@@ -1723,9 +1730,53 @@ const ChaloMelaChaleGame = () => {
             <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="mela-test-logo" />
             <span className="test-title">{t('home.games.mela.title')}</span>
           </div>
+          <div className="topbar-center" style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {screen === 'sampleA' && (
+              <div className="screen-title" style={{ margin: 0 }}>{t('game.sampleALabel')}</div>
+            )}
+            {screen === 'sampleB' && (
+              <div className="screen-title" style={{ margin: 0 }}>{t('game.sampleBLabel')}</div>
+            )}
+            {screen.startsWith('tq') && (
+              <div className="screen-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+                {`${t('game.teachingLabel')} ${t('game.question')} ${screen.substring(2)} ${t('game.of')} 4`}
+                <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#1d4ed8', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', border: '1.5px solid #93c5fd', borderRadius: 20, padding: '3px 14px', letterSpacing: '0.04em', boxShadow: '0 1px 4px rgba(59,91,219,0.10)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', boxShadow: '0 0 0 2px #bfdbfe' }} />
+                  {t('game.trialLabel')} {questionState.currentTrial}
+                </span>
+              </div>
+            )}
+            {screen.startsWith('q') && !screen.startsWith('tq') && (
+              <div className="screen-title" style={{ margin: 0 }}>
+                {t('game.question')} {parseInt(screen.replace('q', ''), 10) || 0} {t('game.of')} 18
+              </div>
+            )}
+          </div>
           <div className="stats">
-            <div className="stat-pill"><span className="stat-label">{t('game.childId')}</span><span className="stat-value">{childData?.child_id || '—'}</span></div>
-            <div className="stat-pill"><span className="stat-label">{t('game.score')}</span><span className="stat-value">{totalScore}</span></div>
+            <div className="stat-pill">
+              <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>👤</span>
+              <span className="stat-value">{childData?.child_id || '—'}</span>
+            </div>
+            {(screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && (
+              <div className="stat-pill">
+                <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>⏱</span>
+                <span className="stat-value" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>
+                  {fmtMmSs(questionState.timeRemaining)}
+                </span>
+              </div>
+            )}
+            {(screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && getCoinsTotal(questionState.id) > 0 && (
+              <div className="stat-pill">
+                <span className="stat-icon" style={{marginRight: '6px', display: 'flex', alignItems: 'center'}}>
+                  <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" style={{ width: 22, height: 22 }} alt="coin" />
+                </span>
+                <span className="stat-value">{collectedCoins}</span>
+              </div>
+            )}
+            <div className="stat-pill">
+              <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>🏆</span>
+              <span className="stat-value">{totalScore}</span>
+            </div>
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 
@@ -1740,25 +1791,15 @@ const ChaloMelaChaleGame = () => {
             )}
           </div>
         </header>
-        <main className="main">
+        <main className={`main${screen === 'splash' ? ' main-splash' : ''}`}>
           {screen === 'splash' && (
-            <div className="screen">
-              <div className="screen-header">
-                <div style={{ textAlign: 'center', width: '100%' }}>
-                  {/* Header text removed as requested */}
+            <div className="screen screen-splash">
+              <div className="splash-cover">
+                <img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+                <div className="splash-btn-overlay">
+                  <button style={{ padding: '16px 48px', fontSize: '1.4rem' }} className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }}>{t('game.startNow')}</button>
+                  <button style={{ padding: '16px 48px', fontSize: '1.4rem' }} className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }}>{t('game.replayAudio')}</button>
                 </div>
-              </div>
-              <div className="card splash-card">
-                <div className="splash-image-wrapper"><img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-image" /></div>
-                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                  {t('game.welcomeMela')}
-                </h2>
-
-                <div className="btn-row">
-                  <button className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.startNow')}</button>
-                  <button className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }} style={{ fontSize: '1.2rem', padding: '16px 40px' }}>{t('game.replayAudio')}</button>
-                </div>
-
               </div>
             </div>
           )}
@@ -1766,7 +1807,6 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">{t('game.sampleALabel')}</div>
                 </div>
               </div>
               <div className="matrix-wrap">
@@ -1796,7 +1836,7 @@ const ChaloMelaChaleGame = () => {
                   })}
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, padding: '0 10px' }}>
                 <button
                   className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
                   onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
@@ -1813,7 +1853,6 @@ const ChaloMelaChaleGame = () => {
             <div className="screen">
               <div className="screen-header">
                 <div>
-                  <div className="screen-title">{t('game.sampleBLabel')}</div>
                 </div>
               </div>
               <div className="matrix-wrap">
@@ -1844,7 +1883,7 @@ const ChaloMelaChaleGame = () => {
                   })}
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, padding: '0 10px' }}>
                 <button
                   className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
                   onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}

@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './ReadingSkillGame.css';
 
 const CONFIG = {
@@ -105,6 +107,18 @@ const ReadingSkillGame = () => {
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const dataStr = localStorage.getItem('currentChild');
@@ -539,10 +553,10 @@ const ReadingSkillGame = () => {
   };
 
   const getStyleForCategory = (cat) => {
-    if (cat === CATEGORY.SINGLE_LETTER || cat === CATEGORY.DOUBLE_LETTER) return { fontSize: 200, padding: 15 };
+    if (cat === CATEGORY.SINGLE_LETTER || cat === CATEGORY.DOUBLE_LETTER) return { fontSize: 280, padding: 15 };
     if (cat === CATEGORY.SENTENCE) return { fontSize: 140, padding: 12 };
-    if (cat === CATEGORY.STORY) return { fontSize: 74, padding: 10 };
-    if (cat === CATEGORY.PARAGRAPH) return { fontSize: 64, padding: 4 };
+    if (cat === CATEGORY.STORY) return { fontSize: 66, padding: 10 };
+    if (cat === CATEGORY.PARAGRAPH) return { fontSize: 62, padding: 4 };
     return { fontSize: 100, padding: 10 };
   };
 
@@ -558,41 +572,36 @@ const ReadingSkillGame = () => {
 
   return (
     <div className="rs-app">
-      <header className="rs-topbar" style={{ borderBottom: '1px solid #f1f5f9' }}>
+      <header className="rs-topbar">
         <div className="rs-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />
           <div className="rs-divider"></div>
           <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-test-logo" />
           <span className="rs-test-title">{t('home.games.literacy.title')}</span>
         </div>
+        <div className="rs-topbar-center">
+          {screen === 'game' && currentQuestion && (
+            <div className="rs-topbar-screen-title">{t('game.question')} {questionIndex + 1}</div>
+          )}
+        </div>
         <div className="rs-stats">
           {childData?.child_id && (
-            <div className="rs-stat-pill"><span className="rs-stat-label">{t('game.childId')}</span> <span className="rs-stat-value">{childData.child_id}</span></div>
+            <div className="rs-stat-pill"><span className="rs-stat-icon">👤</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
-          <div className="rs-stat-pill"><span className="rs-stat-label">{t('game.score')}</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
+          {screen === 'game' && (
+            <div className="rs-stat-pill"><span className="rs-stat-icon">⏱</span> <span className="rs-stat-value">{formatTime(qTimer)}</span></div>
+          )}
+          <div className="rs-stat-pill"><span className="rs-stat-icon">🏆</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
           {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> {t('game.pauseQuit')}</button>}
         </div>
       </header>
 
-      <main className="rs-main">
+      <main className={`rs-main${screen === 'splash' ? ' rs-main-splash' : ''}`}>
         {screen === 'splash' && (
-          <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="rs-screen-header">
-              <div style={{ textAlign: 'center', width: '100%' }}>
-                {/* Header text removed as requested */}
-              </div>
-            </div>
-            
-            <div className="rs-card rs-splash-card" style={{ border: 'none', boxShadow: 'none', padding: '10px 24px', flex: 'none', minHeight: 'auto' }}>
-              <div className="rs-splash-image-wrapper">
-                <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-image" onError={e => e.target.style.display='none'} />
-              </div>
-              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em' }}>
-                {t('game.welcomeLiteracy')}
-              </h2>
-
-
-              <div className="rs-btn-row">
+          <div className="rs-screen rs-screen-splash">
+            <div className="rs-splash-cover">
+              <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+              <div className="rs-splash-btn-overlay">
                 <button
                   className={`rs-btn rs-btn-primary ${audioFinished ? 'rs-btn-highlight' : ''}`}
                   disabled={!audioFinished}
@@ -602,11 +611,11 @@ const ReadingSkillGame = () => {
                   {t('game.startNow')}
                 </button>
                 <button className="rs-btn rs-btn-secondary" onClick={() => {
-                   if (audioRef.current) {
-                     setAudioFinished(false);
-                     audioRef.current.currentTime = 0;
-                     audioRef.current.play().catch(() => setAudioFinished(true));
-                   }
+                  if (audioRef.current) {
+                    setAudioFinished(false);
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play().catch(() => setAudioFinished(true));
+                  }
                 }}>{t('game.replayAudio')}</button>
               </div>
             </div>
@@ -615,23 +624,21 @@ const ReadingSkillGame = () => {
 
         {screen === 'game' && currentQuestion && (
           <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="rs-screen-header">
-              <div>
-                <div className="rs-screen-title" style={{fontSize: '1.4rem'}}>{getCategoryName(currentQuestion.categoryName)} ({questionIndex + 1} {t('game.of')} {QUESTIONS.length})</div>
-              </div>
-              <div className="rs-chips">
-
-                <span className="rs-chip" style={{ color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', display:'inline-flex', alignItems:'center', gap:'4px' }}>
-                  {t('game.timerLabel')} {formatTime(qTimer)}
-                </span>
-              </div>
-            </div>
-
             <div className="rs-card rs-question-card">
               <div className="rs-question-content">
-                <div style={{ ...getStyleForCategory(currentQuestion.category), lineHeight: (getStyleForCategory(currentQuestion.category).fontSize + 5) + 'px' }}>
-                  {currentQuestion.text}
-                </div>
+                {(() => {
+                  const isLongText = currentQuestion.category === CATEGORY.STORY || currentQuestion.category === CATEGORY.PARAGRAPH;
+                  const catStyle = getStyleForCategory(currentQuestion.category);
+                  return (
+                    <div style={{
+                      ...catStyle,
+                      lineHeight: (catStyle.fontSize + (isLongText ? 20 : 5)) + 'px',
+                      textAlign: isLongText ? 'justify' : 'center'
+                    }}>
+                      {currentQuestion.text}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -821,6 +828,7 @@ const ReadingSkillGame = () => {
       {showMidTestModal && currentQuestion && (
         <div className="rs-modal-overlay">
           <div className="rs-modal" style={{ maxWidth: '600px' }}>
+            <button className="rs-modal-close" aria-label="Close" onClick={() => setShowMidTestModal(false)}>✕</button>
             <div className="rs-modal-header" style={{ marginBottom: '20px' }}>
               <h3>{t('game.assessmentLabel')}</h3>
             </div>

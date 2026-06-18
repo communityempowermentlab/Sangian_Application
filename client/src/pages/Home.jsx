@@ -254,8 +254,6 @@ const Home = () => {
                                 <div className="game-card-details">
                                     <h3 className="game-card-title">{test.shortTitle}</h3>
                                     <p className="game-card-local">{test.local}</p>
-                                    <p className="game-card-desc">{test.desc}</p>
-                                    
                                     {isLoggedIn && (
                                         <div className="game-card-activity">
                                             <div className="card-activity-item">

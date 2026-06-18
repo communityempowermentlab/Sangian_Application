@@ -169,7 +169,7 @@ const AuditoryAttentionGame = () => {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const timerSecondsRef = useRef(0);
   const sessionTimerRef = useRef(null);
-  
+
   // Voice Recording Hook
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
@@ -313,7 +313,6 @@ const AuditoryAttentionGame = () => {
       setGameSessionId(res.data.sessionId);
       setAttemptNo(res.data.attempt_no || 1);
       
-      // Reset full state
       setQuestionScores({ 1: null, 2: null, 3: null, 4: null });
       setQuestionTimes({ 1: null, 2: null, 3: null, 4: null });
       setCanStartQ(false);
@@ -334,7 +333,6 @@ const AuditoryAttentionGame = () => {
     setGameSessionId(resumeData.id);
     setAttemptNo(resumeData.attempt_no || 1);
     
-    // Parse scores
     const saved = resumeData.saved_state || {};
     const qs = { 1: null, 2: null, 3: null, 4: null };
     const qt = { 1: null, 2: null, 3: null, 4: null };
@@ -343,7 +341,7 @@ const AuditoryAttentionGame = () => {
       saved.allScores.forEach(s => {
         if (s.qId >= 1 && s.qId <= 4) {
           qs[s.qId] = s.scoreObj || { correct: s.score, eoc: 0, eoi: 0, eoo: 0 };
-          qt[s.qId] = (s.timeTaken || 0) * 1000; // timeTaken saved in seconds, restore as ms
+          qt[s.qId] = (s.timeTaken || 0) * 1000;
         }
       });
     }
@@ -363,7 +361,6 @@ const AuditoryAttentionGame = () => {
         setScreen(aq.screen || 'splash');
       }
     } else {
-      // Auto jump to first uncompleted question
       if (!qs[1]) { setScreen('question1-landing'); setCurrentQIndex(1); currentQIndexRef.current = 1; }
       else if (!qs[2]) { setScreen('question2-landing'); setCurrentQIndex(2); currentQIndexRef.current = 2; }
       else if (!qs[3]) { setScreen('question3-landing'); setCurrentQIndex(3); currentQIndexRef.current = 3; }
@@ -377,7 +374,6 @@ const AuditoryAttentionGame = () => {
     setShowResumeModal(false);
     setScreen('splash');
     cleanupAudio();
-    // Reset all game state
     setQuestionScores({ 1: null, 2: null, 3: null, 4: null });
     setQuestionTimes({ 1: null, 2: null, 3: null, 4: null });
     setCurrentQIndex(0);
@@ -400,7 +396,7 @@ const AuditoryAttentionGame = () => {
           eoc: qs[qKey].eoc || 0,
           timeTaken: Math.max(1, Math.round((qt[qKey] || 0) / 1000)),
           actionLog: qs[qKey].actionLog || [],
-          scoreObj: qs[qKey] // internal reference
+          scoreObj: qs[qKey] 
         });
       }
     });
@@ -503,7 +499,6 @@ const AuditoryAttentionGame = () => {
     }
   }, [screen, canStartQ]);
 
-  // -- Word playing loop --
   const getQConfig = (idx = currentQIndex) => {
     if (idx===1) return CONFIG.QUESTION1;
     if (idx===2) return CONFIG.QUESTION2;
@@ -528,7 +523,6 @@ const AuditoryAttentionGame = () => {
     const config = getQConfig();
     if (!config) return;
 
-    // Check pending targets for EOO (expired)
     let eooCount = 0;
     const newArr = pendingTargetsRef.current.filter(pt => {
       if (!pt.responded && nextIndex > pt.wordIndex + CONFIG.RESPONSE_WINDOW_WORDS) {
@@ -552,7 +546,6 @@ const AuditoryAttentionGame = () => {
     const nextWord = currentWords[nextIndex];
     const targetIndex = config.TARGET_WORDS.indexOf(nextWord);
     
-    // If it's a target word, add to pending
     if (targetIndex !== -1) {
       newArr.push({
         targetWord: nextWord,
@@ -562,7 +555,6 @@ const AuditoryAttentionGame = () => {
       });
     }
 
-    // Log EVERY word
     actionLogRef.current.push({
       id: nextIndex,
       requestedWord: nextWord,
@@ -575,12 +567,11 @@ const AuditoryAttentionGame = () => {
     pendingTargetsRef.current = newArr;
     setPendingTargets([...newArr]);
 
-    // Play word audio
     if (wordAudioRef.current) {
       wordAudioRef.current.pause();
     }
     wordAudioRef.current = new Audio(`${CONFIG.AUDIO_PATH}/${nextWord.toLowerCase()}.wav`);
-    clickLockedRef.current = false;   // reset: allow one click for this word cycle
+    clickLockedRef.current = false;
     setIsPlayingWord(true);
     
     const finishWord = () => {
@@ -659,7 +650,6 @@ const AuditoryAttentionGame = () => {
     setIsPaused(false);
     clickLockedRef.current = false;
 
-    // Timer setup
     timerIntervalRef.current = setInterval(() => {
       setLevelTime(prev => {
         const nt = prev + 100;
@@ -675,7 +665,6 @@ const AuditoryAttentionGame = () => {
     setIsGameRunning(false);
     clearAllTimers();
     
-    // Add leftover pending as EOO
     setPendingTargets(prev => {
       const unresponded = prev.filter(pt => !pt.responded);
       if (unresponded.length > 0) {
@@ -684,10 +673,8 @@ const AuditoryAttentionGame = () => {
       return [];
     });
 
-    // We must use a callback style functional update to freeze scores reliably
     setLevelScores(finalScores => {
       setLevelTime(finalTime => {
-        // Prepare state update
         const finalObjWithLog = { ...finalScores, actionLog: [...actionLogRef.current] };
         const newQs = { ...questionScores, [currentQIndex]: finalObjWithLog };
         const newQt = { ...questionTimes, [currentQIndex]: finalTime };
@@ -721,9 +708,8 @@ const AuditoryAttentionGame = () => {
     }
   };
 
-  // Image clicks handlers
   const onSampleImageClick = (id) => {
-    if (landingAudioPlaying) return; // Prevent clicking while audio is playing
+    if (landingAudioPlaying) return;
     setSampleClicked(prev => {
       if (prev.includes(id)) return prev;
       return [...prev, id];
@@ -731,26 +717,20 @@ const AuditoryAttentionGame = () => {
   };
 
   const onGameImageClick = (imageId) => {
-    // Rule 1 & 2: block if game not running, paused, or no word played yet
     if (!isGameRunning || isPaused || wordIndexRef.current < 0) return;
-    // Rule 2: disable clicks while word audio is playing
     if (isPlayingWord) return;
-    // Rule 3 & 4: allow only one click per word cycle
     if (clickLockedRef.current) return;
-    clickLockedRef.current = true;   // lock immediately — no more clicks this cycle
+    clickLockedRef.current = true;
     
     const config = getQConfig();
     const currentWord = wordsList[wordIndexRef.current];
     const targetIdx = config.TARGET_WORDS.indexOf(currentWord);
     const isTargetWord = targetIdx !== -1;
 
-    // SCORING DECISION TREE IMPLEMENTATION
     if (isTargetWord) {
-      // 2. Target Word (Key Component)
       const expectedImage = config.TARGET_IMAGES[targetIdx];
       
       if (imageId === expectedImage) {
-        // 2.A.i: Correct Response
         setLevelScores(prev => ({...prev, correct: prev.correct + 1 }));
         
         const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
@@ -759,7 +739,6 @@ const AuditoryAttentionGame = () => {
           logE.result = 'Correct Response';
         }
       } else {
-        // 2.A.ii: Error of Inhibition (EOI)
         setLevelScores(prev => ({...prev, eoi: prev.eoi + 1 }));
         
         const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
@@ -769,7 +748,6 @@ const AuditoryAttentionGame = () => {
         }
       }
 
-      // Mark as responded so EOO (Error of Omission) doesn't trigger later for this stimulus
       const pendingIndex = pendingTargetsRef.current.findIndex(pt => !pt.responded && pt.wordIndex === wordIndexRef.current);
       if (pendingIndex !== -1) {
         pendingTargetsRef.current[pendingIndex].responded = true;
@@ -777,8 +755,6 @@ const AuditoryAttentionGame = () => {
       }
 
     } else {
-      // 3. Non-Target Word
-      // 3.A: Error of Commission (EOC)
       setLevelScores(prev => ({...prev, eoc: prev.eoc + 1 }));
       
       const logE = actionLogRef.current.find(l => l.id === wordIndexRef.current);
@@ -789,7 +765,6 @@ const AuditoryAttentionGame = () => {
     }
   };
 
-  // ─── Assessment Submission ───────────────────────
   const submitAssessmentForm = async () => {
     clearInterval(sessionTimerRef.current);
     setIsAssessmentSubmitting(true);
@@ -803,7 +778,6 @@ const AuditoryAttentionGame = () => {
       const finalStatus = quitReason ? 'quit' : 'completed';
       await syncSessionProgress(finalStatus, quitReason || null);
 
-      // Small delay to ensure the DOM (including the summary table) is fully settled
       setTimeout(async () => {
         try {
           const element = document.getElementById('dashboard-container');
@@ -837,7 +811,6 @@ const AuditoryAttentionGame = () => {
             formData.append('game_name', 'auditory_dhyan');
             
             await axios.post(`${API_URL}/games/pdfs/upload`, formData);
-            console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
           }
         } catch (err) {
           console.error("PDF generation failed:", err);
@@ -852,30 +825,23 @@ const AuditoryAttentionGame = () => {
       setIsAssessmentSubmitting(false);
     }
   };
-
-  // ─── UI Renders ──────────────────────────────────
   
-  // Progress Helper
   const displayWordCount = Math.min(wordsList.length, Math.max(0, wordIndex+1));
   const progressPct = wordsList.length ? Math.round((displayWordCount / wordsList.length) * 100) : 0;
   
   const renderNavButtons = () => {
      const isEnd = !isGameRunning && wordIndex >= wordsList.length - 1;
      
-     if (isEnd) {
-       if (currentQIndex === 4) {
-         return <button className="aa-btn aa-btn-highlight" onClick={() => setScreen('score')}>🏆 Score Dashboard →</button>
-       } else {
-         return <button className="aa-btn aa-btn-highlight" onClick={() => navigateToLanding(currentQIndex + 1)}>Question {currentQIndex + 1} →</button>
-       }
+     if (currentQIndex === 4) {
+       return <button disabled={!isEnd} className={`aa-btn ${isEnd ? 'aa-btn-success aa-btn-highlight' : 'aa-btn-secondary'}`} onClick={() => setScreen('score')}>Score Dashboard</button>
+     } else {
+       return <button disabled={!isEnd} className={`aa-btn ${isEnd ? 'aa-btn-success aa-btn-highlight' : 'aa-btn-secondary'}`} onClick={() => navigateToLanding(currentQIndex + 1)}>Start Question {currentQIndex + 1}</button>
      }
-     return null;
   };
 
   return (
     <div className="aa-wrap">
       <div className="aa-app">
-        {/* TOPBAR */}
         <header className="aa-topbar">
           <div className="aa-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />
@@ -883,17 +849,31 @@ const AuditoryAttentionGame = () => {
             <img src="/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg" alt="Dhyan Kahan Hai" className="aa-test-logo" />
             <span className="aa-test-title">{t('home.games.dhyan.title')}</span>
           </div>
+          <div className="aa-topbar-center">
+            {screen === 'sampleA' && (
+              <div className="aa-topbar-screen-title">{t('game.sampleQuestionA')}</div>
+            )}
+            {screen && (screen.endsWith('-landing') || screen.endsWith('-game') || screen.endsWith('-q')) && (
+              <div className="aa-topbar-screen-title">Question {currentQIndex}</div>
+            )}
+          </div>
           <div className="aa-stats">
             {childId && (
               <div className="aa-stat-pill">
-                <span className="aa-stat-label">{t('game.childId')}</span>
+                <span className="aa-stat-icon">👤</span>
                 <span className="aa-stat-value">{childId}</span>
               </div>
             )}
             <div className="aa-stat-pill">
-              <span className="aa-stat-label">{t('game.score')}</span>
+              <span className="aa-stat-icon">🏆</span>
               <span className="aa-stat-value">{Object.values(questionScores).reduce((a,c) => a + (c ? c.correct : 0), 0) + levelScores.correct}</span>
             </div>
+            {screen && screen.endsWith('-game') && (
+              <div className="aa-stat-pill">
+                <span className="aa-stat-icon">⏱</span>
+                <span className="aa-stat-value">{formatTime(Math.floor(levelTime/1000))}</span>
+              </div>
+            )}
             {screen !== 'checking' && screen !== 'splash' && screen !== 'score' && (
               <button 
                 className="btn-pause-quit" 
@@ -912,9 +892,8 @@ const AuditoryAttentionGame = () => {
           </div>
         </header>
 
-        <main className="aa-main">
+        <main className={`aa-main${screen === 'splash' ? ' aa-main-splash' : ''}`}>
           
-          {/* CHECKING STATE */}
           {screen === 'checking' && (
             <div className="aa-screen" style={{ backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
                <h2 className="aa-title">Loading...</h2>
@@ -923,58 +902,28 @@ const AuditoryAttentionGame = () => {
 
           {/* SPLASH */}
           {screen === 'splash' && (
-            <div className="aa-screen">
-               <div className="aa-header">
-                 <div style={{ textAlign: 'center', width: '100%' }}>
-                   {/* Header text removed as requested */}
-                 </div>
-               </div>
-               <div className="aa-card aa-splash-card">
-                 <div className="aa-splash-image-wrapper">
-                    <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-image" />
-                 </div>
-                 <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '28px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                   {t('game.welcomeDhyan')}
-                 </h2>
-
+            <div className="aa-screen aa-screen-splash">
+              <div className="aa-splash-cover">
+                <img src={`${CONFIG.IMAGE_PATH}/dhyan_kahan_hai.jpg`} alt="Dhyan" className="aa-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+                <div className="aa-splash-btn-overlay">
                   <button
                     className={`aa-btn aa-btn-primary ${canStartQ ? 'aa-btn-highlight' : ''}`}
                     disabled={!canStartQ}
-                    style={{ fontSize: '1.2rem', padding: '16px 40px', opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer' }}
+                    style={{ fontSize: '1.4rem', padding: '18px 48px', opacity: !canStartQ ? 0.6 : 1, cursor: !canStartQ ? 'not-allowed' : 'pointer', borderRadius: '50px' }}
                     onClick={startNewGameSession}
                   >
                     {t('game.startNow')}
                   </button>
-               </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* SAMPLE A */}
           {screen === 'sampleA' && (
             <div className="aa-screen">
-               <div className="aa-header">
-                 <div>
-                   <h2 className="aa-title">{t('game.sampleQuestionA')}</h2>
-                   <p className="aa-subtitle">Listen to instructions and click all images</p>
-                 </div>
-               </div>
                
-               <div className="aa-audio-panel">
-                 <div className="aa-audio-status">
-                   <div className={`aa-audio-indicator ${landingAudioPlaying ? 'playing' : ''}`}>
-                      <div className="aa-audio-waves">
-                        {[1,2,3,4,5].map(i => <div key={i} className="aa-audio-wave"></div>)}
-                      </div>
-                   </div>
-                 </div>
-                 <div className="aa-btn-row">
-                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={() => {
-                      setSampleClicked([]);
-                      playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
-                    }}>↻ Replay</button>
-                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={stopInstructionAudio}>■ Stop</button>
-                 </div>
-               </div>
+
 
 
                <div className="aa-image-area">
@@ -984,18 +933,24 @@ const AuditoryAttentionGame = () => {
                      return (
                      <div key={img.id} onClick={() => onSampleImageClick(img.id)} className={`aa-image-item ${isClicked ? 'selected' : ''}`}>
                         <img className="aa-selectable-image" src={`${CONFIG.IMAGE_PATH}/${isClicked ? img.highlighted : img.normal}`} alt={img.name} />
-                        <span className="aa-image-label">{img.name}</span>
                      </div>
                      );
                    })}
                  </div>
                </div>
 
-               <div className="aa-nav-panel">
-                 <div></div>
-                 {sampleClicked.length >= 4 && (
-                   <button className="aa-btn aa-btn-primary aa-btn-highlight" onClick={() => navigateToLanding(1)}>Question 1 →</button>
-                 )}
+               <div className="aa-nav-panel" style={{ marginTop: 'auto', borderTop: 'none', paddingTop: '16px' }}>
+                 <button className="aa-btn aa-btn-secondary" onClick={() => {
+                   setSampleClicked([]);
+                   playInstructionAudio(CONFIG.AUDIO.SAMPLE_INSTRUCTION);
+                 }}>↻ Replay</button>
+                 <button 
+                   disabled={sampleClicked.length < 4}
+                   className={`aa-btn ${sampleClicked.length >= 4 ? 'aa-btn-primary aa-btn-highlight' : 'aa-btn-secondary'}`} 
+                   onClick={() => navigateToLanding(1)}
+                 >
+                   Start Game
+                 </button>
                </div>
             </div>
           )}
@@ -1003,42 +958,27 @@ const AuditoryAttentionGame = () => {
           {/* LANDING SCREENS */}
           {screen && screen.endsWith('-landing') && (
             <div className="aa-screen">
-               <div className="aa-header">
-                 <div>
-                   <h2 className="aa-title">Question {currentQIndex}</h2>
-                   <p className="aa-subtitle">{t('game.listenInstructions')}</p>
-                 </div>
-               </div>
 
-               <div className="aa-audio-panel">
-                 <div className="aa-audio-status">
-                   <div className={`aa-audio-indicator ${landingAudioPlaying ? 'playing' : ''}`}>
-                      <div className="aa-audio-waves">{[1,2,3,4,5].map(i => <div key={i} className="aa-audio-wave"></div>)}</div>
-                   </div>
-                 </div>
-                 <div className="aa-btn-row">
-                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={() => playInstructionAudio(getQConfig().INSTRUCTION_AUDIO, () => setCanStartQ(true))}>↻ Replay</button>
-                    <button className="aa-btn aa-btn-secondary aa-btn-sm" onClick={stopInstructionAudio}>■ Stop</button>
-                 </div>
-               </div>
+
 
                <div className="aa-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                 <p style={{ color: 'var(--muted)', marginBottom: 24, fontSize: '1.2rem' }}>
-                   Click on the <strong style={{color: 'var(--danger)'}}>{getQConfig().TARGET_WORDS.join(' & ')}</strong> image whenever you hear it.
-                 </p>
+
                  <div className="aa-image-row" style={{ marginBottom: 30 }}>
                     {CONFIG.IMAGES.map(img => {
                       const isT = getQConfig().TARGET_IMAGES.includes(img.id);
                       return (
                         <div key={img.id} className={`aa-image-item ${isT ? 'target-item selected' : ''}`} style={{cursor: 'default'}}>
                            <img src={`${CONFIG.IMAGE_PATH}/${isT ? img.highlighted : img.normal}`} alt={img.name} className="aa-selectable-image" />
-                           <span className="aa-image-label">{img.name}</span>
                         </div>
                       );
                     })}
                  </div>
+               </div>
+
+               <div className="aa-nav-panel" style={{ marginTop: 'auto', borderTop: 'none', paddingTop: '16px' }}>
+                 <button className="aa-btn aa-btn-secondary" onClick={() => playInstructionAudio(getQConfig().INSTRUCTION_AUDIO, () => setCanStartQ(true))}>↻ Replay</button>
                  <button disabled={!canStartQ} className={`aa-btn ${canStartQ ? 'aa-btn-success aa-btn-highlight' : 'aa-btn-secondary'}`} onClick={() => startGameForLevel()}>
-                   ▶ Start Question {currentQIndex}
+                   Start Question {currentQIndex}
                  </button>
                </div>
             </div>
@@ -1047,30 +987,7 @@ const AuditoryAttentionGame = () => {
           {/* GAMEPLAY SCREENS */}
           {screen && screen.endsWith('-game') && (
             <div className="aa-screen">
-               <div className="aa-header">
-                 <div>
-                   <h2 className="aa-title">Question {currentQIndex}</h2>
-                 </div>
-                 <div className="aa-chips">
-                   <div className="aa-timer-display"><span className="aa-timer-icon">⏱</span> {formatTime(Math.floor(levelTime/1000))}</div>
-                 </div>
-               </div>
 
-               <div className="aa-game-info-bar">
-                 <div className="aa-info-group">
-                   <span className="aa-info-label">Word:</span>
-                   <span className="aa-info-value">{displayWordCount} / {wordsList.length}</span>
-                 </div>
-                 <div className="aa-info-group">
-                   <span className="aa-info-label">{t('game.progressFound')}:</span>
-                   <span className="aa-info-value" style={{color: 'var(--danger)'}}>{getQConfig().TARGET_WORDS.join(' & ')} ★</span>
-                 </div>
-               </div>
-
-               <div className="aa-progress-bar-container">
-                 <div className="aa-progress-bar-label"><span>Progress</span><span>{progressPct}%</span></div>
-                 <div className="aa-progress-bar"><div className="aa-progress-bar-fill" style={{ width: `${progressPct}%` }}></div></div>
-               </div>
 
 
                <div className="aa-image-area">
@@ -1078,20 +995,12 @@ const AuditoryAttentionGame = () => {
                    {CONFIG.IMAGES.map(img => (
                      <div key={img.id} id={`game-item-${img.id}`} className="aa-image-item" onClick={() => onGameImageClick(img.id)}>
                         <img src={`${CONFIG.IMAGE_PATH}/${img.normal}`} alt={img.name} className="aa-selectable-image" />
-                        <span className="aa-image-label">{img.name}</span>
                      </div>
                    ))}
                  </div>
                </div>
 
-               <div className="aa-score-panel">
-                 <div className="aa-score-item"><div className="aa-score-value correct">{levelScores.correct}</div><div className="aa-score-label">Correct</div></div>
-                 <div className="aa-score-item"><div className="aa-score-value eoc">{levelScores.eoc}</div><div className="aa-score-label">EOC</div></div>
-                 <div className="aa-score-item"><div className="aa-score-value eoi">{levelScores.eoi}</div><div className="aa-score-label">EOI</div></div>
-                 <div className="aa-score-item"><div className="aa-score-value eoo">{levelScores.eoo}</div><div className="aa-score-label">EOO</div></div>
-               </div>
-
-               <div className="aa-nav-panel">
+               <div className="aa-nav-panel" style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', paddingTop: '20px' }}>
                  {renderNavButtons()}
                </div>
             </div>
@@ -1305,6 +1214,7 @@ const AuditoryAttentionGame = () => {
         </div>
       )}
 
+      {/* Splash audio */}
       <audio 
         ref={audioRef} 
         src={undefined} // No audio on splash, other screens handle audio via playInstructionAudio

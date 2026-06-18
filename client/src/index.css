@@ -1427,3 +1427,20 @@ body {
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 
+/* Fix html2canvas cropping bug by expanding scrollable elements during capture */
+.pdf-capturing .ab-app,
+.pdf-capturing .ab-main,
+.pdf-capturing .ab-screen,
+.pdf-capturing .ab-result-card,
+.pdf-capturing .db-activity-list,
+.pdf-capturing .rs-table-container,
+.pdf-capturing .hp-score-table,
+.pdf-capturing .nr-q-table-wrap,
+.pdf-capturing .results-table-wrapper,
+.pdf-capturing .chor-table-wrapper {
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+  flex: none !important;
+}
+

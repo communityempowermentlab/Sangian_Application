@@ -9,6 +9,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './TriangleRachnaGame.css';
 
 const GAME_NAME  = 'triangle_rachna';
@@ -432,6 +434,18 @@ const TriangleRachnaGame = () => {
     setIsRecording(true);
     setRecordingTarget(target);
   };
+
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
 
   // ── Auth & Resume ──────────────────────────────────────────────
   useEffect(() => {
@@ -966,28 +980,18 @@ const TriangleRachnaGame = () => {
 
   // ── Splash ────────────────────────────────────────────────────
   const renderSplash = () => (
-    <div className="rg-screen">
-      <div className="rg-splash-card">
-        <div className="rg-splash-img-wrap">
-          <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img" />
-        </div>
-        <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          {t('game.welcomeRachna')}
-        </h2>
-        
-
-        <div className="rg-splash-footer">
-          <div className="rg-btn-row" style={{ marginTop: 18, justifyContent: 'center' }}>
-            <button
-              className="rg-btn rg-btn-primary rg-btn-highlight"
-              onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
-            >
-              {`▶ ${t('game.startNow')}`}
-            </button>
-          </div>
+    <div className="rg-screen rg-screen-splash">
+      <div className="rg-splash-cover">
+        <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+        <div className="rg-splash-btn-overlay">
+          <button
+            className="rg-btn rg-btn-primary rg-btn-highlight"
+            onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
+          >
+            {`▶ ${t('game.startNow')}`}
+          </button>
         </div>
       </div>
-      {/* Audio disabled */}
     </div>
   );
 
@@ -1003,13 +1007,11 @@ const TriangleRachnaGame = () => {
         {/* Header */}
         <div className="rg-screen-header">
           <div className="rg-header-left">
-            <div className="rg-screen-title">{getQuestionTitle(currentKey)}</div>
+            {/* Title moved to topbar */}
           </div>
           <div className="rg-header-right">
             <div className="rg-chips">
-              <span className={`rg-chip rg-chip-${q.type}`}>
-                {q.type.toUpperCase()}
-              </span>
+
 
               {limit !== 0 && (
                 <div className="rg-timer blue-timer">
@@ -1479,22 +1481,29 @@ const TriangleRachnaGame = () => {
     <div className="rg-root">
       <div className="rg-app">
         {/* Topbar */}
-        <header className="rg-topbar">
+        <header className="rg-topbar" style={{ position: 'relative' }}>
           <div className="rg-brand">
             <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
             <div className="rg-divider"></div>
             <img src="/assets/images/rachna/rachna.jpg" alt="Rachna" className="rg-test-logo" />
             <span className="rg-test-title">{t('home.games.rachna.title')}</span>
           </div>
+
+          {screen === 'game' && currentKey && (
+            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontWeight: '800', fontSize: '1.25rem', color: '#1e293b' }}>
+              {getQuestionTitle(currentKey)}
+            </div>
+          )}
+
           <div className="rg-stats">
             {childData?.child_id && (
               <div className="rg-stat-pill">
-                <span className="rg-stat-label">{t('game.childId')}</span>
+                <span className="rg-stat-icon">👤</span>
                 <span className="rg-stat-value">{childData.child_id}</span>
               </div>
             )}
             <div className="rg-stat-pill">
-              <span className="rg-stat-label">{t('game.score')}</span>
+              <span className="rg-stat-icon">🏆</span>
               <span className="rg-stat-value">{totalScore}</span>
             </div>
             {screen === 'game' && (
@@ -1506,7 +1515,7 @@ const TriangleRachnaGame = () => {
         </header>
 
         {/* Main content */}
-        <main className="rg-main">
+        <main className={`rg-main${screen === 'splash' ? ' rg-main-splash' : ''}`}>
           {screen === 'splash' && renderSplash()}
           {screen === 'game'   && renderGame()}
           {screen === 'score'  && renderScore()}

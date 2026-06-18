@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './ChorMachayeShorGame.css';
 
 const formatTime = (sec) => {
@@ -388,7 +390,19 @@ const ChorMachayeShorGame = () => {
   const sessionTimerRef = useRef(null);
 
   // Splash Audio Logic removed as this test has no splash audio file
-  
+
+  // ─── StatusBar: hide on native during this game ───────────────────────────
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const item = GAME_DATA.items[currentItemIndex];
     if (item && (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) && currentPhase === 1 && correctTouchCount >= 3) {
@@ -1306,31 +1320,21 @@ const ChorMachayeShorGame = () => {
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
-          <main className="chor-main">
-            <div className="chor-screen">
-              <div className="chor-card chor-splash-card">
-                <div className="chor-splash-image-wrapper">
-                  <img src={`${IMG_DIR}/chor_machaye_shor.jpg`} alt="Chor Machaye Shor" className="chor-splash-image" />
-                </div>
-
-                <h2 className="chor-welcome-text" style={{ fontSize: '2.4rem', textAlign: 'center' }}>
-                  {t('game.welcomeChor')}
-                </h2>
-
-                <div className="chor-splash-footer">
-                  <div className="chor-btn-row">
-                    <button 
-                      className="chor-btn chor-btn-primary chor-btn-highlight" 
-                      onClick={startGame} 
-                      style={{ fontSize: '1.2rem', padding: '16px 40px' }}
-                    >
-                      {t('game.startNow')}
-                    </button>
-                  </div>
+          <main className="chor-main chor-main-splash">
+            <div className="chor-screen chor-screen-splash">
+              <div className="chor-splash-cover">
+                <img src={`${IMG_DIR}/chor_machaye_shor.jpg`} alt="Chor Machaye Shor" className="chor-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+                <div className="chor-splash-btn-overlay">
+                  <button
+                    className="chor-btn chor-btn-primary chor-btn-highlight"
+                    onClick={startGame}
+                  >
+                    {t('game.startNow')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1389,9 +1393,9 @@ const ChorMachayeShorGame = () => {
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.time')}</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
+              <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
             </div>
           </header>
 
@@ -1519,34 +1523,33 @@ const ChorMachayeShorGame = () => {
             <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
             <span className="chor-test-title">{t('home.games.chor.title')}</span>
           </div>
+          
+          <div className="chor-topbar-center">
+             <div className="chor-topbar-screen-title">
+               Question {currentItemIndex + 1}
+               {currentItem.hasTrials && <div className="chor-chip chor-chip-game" style={{ background: '#4f46e5', color: '#fff', borderColor: '#4338ca' }}>Trial {currentTrial}</div>}
+               {phaseLabel && <div className="chor-chip chor-chip-splash">{phaseLabel}</div>}
+             </div>
+             <div className="chor-topbar-screen-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+               <span>Move: {currentMove} of {maxAtt}</span>
+               <div className="chor-progress-dots">
+                 {Array(getConsecutiveRequired()).fill(0).map((_, i) => (
+                   <span key={i} className={`chor-dot ${i < correctTouchCount ? 'active' : ''}`} style={{ width: '12px', height: '12px', borderWidth: '1.5px' }}></span>
+                 ))}
+               </div>
+             </div>
+          </div>
+
           <div className="chor-stats">
-            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.childId')}</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.time')}</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-label">{t('game.score')}</span><span className="chor-stat-value">{totalScore}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
+            <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
             <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
           </div>
         </header>
 
         <main className="chor-main">
           <div className="chor-screen">
-            <div className="chor-screen-header" style={{ alignItems: 'center' }}>
-              <div>
-                <div className="chor-screen-title" style={{display:'flex', gap:'10px', alignItems:'center'}}>
-                  Question {currentItemIndex + 1}
-                  {currentItem.hasTrials && <div className="chor-chip chor-chip-game" style={{ background: '#4f46e5', color: '#fff', borderColor: '#4338ca' }}>Trial {currentTrial}</div>}
-                  {phaseLabel && <div className="chor-chip chor-chip-splash">{phaseLabel}</div>}
-                </div>
-                <div className="chor-screen-subtitle">Move: {currentMove} of {maxAtt}</div>
-              </div>
-              <div className="chor-progress" style={{ margin: 0 }}>
-                <span className="chor-progress-label">Consecutive Correct:</span>
-                <div className="chor-progress-dots">
-                  {Array(getConsecutiveRequired()).fill(0).map((_, i) => (
-                    <span key={i} className={`chor-dot ${i < correctTouchCount ? 'active' : ''}`}></span>
-                  ))}
-                </div>
-              </div>
-            </div>
 
             {targetLabel && <div style={{textAlign:'center', fontWeight:600, color:'#3b82f6', marginTop:'5px'}}>{targetLabel}</div>}
 
@@ -1577,24 +1580,29 @@ const ChorMachayeShorGame = () => {
               )}
             </div>
 
-            <div className="chor-btn-row">
-              {currentItemIndex === 0 && <button className="chor-btn chor-btn-warning" onClick={handleRetake} disabled={interactionLocked}>Retake</button>}
-              {(currentItem.id === 6 || currentItem.id === 7 || currentItem.id === 8 || currentItem.id === 9 || currentItem.id === 10 || currentItem.id === 11) && currentPhase === 1 && (
+            <div className="chor-btn-row" style={{ justifyContent: 'space-between' }}>
+              <div>
+                {currentItemIndex === 0 && <button className="chor-btn chor-btn-warning" onClick={handleRetake} disabled={interactionLocked}>Retake</button>}
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {(currentItem.id === 6 || currentItem.id === 7 || currentItem.id === 8 || currentItem.id === 9 || currentItem.id === 10 || currentItem.id === 11) && currentPhase === 1 && (
+                  <button 
+                    className={`chor-btn ${phase1CompletedPending ? 'chor-btn-highlight' : 'chor-btn-secondary'}`}
+                    disabled={!phase1CompletedPending}
+                    onClick={handlePhase2Transition}
+                  >
+                    Phase 2
+                  </button>
+                )}
                 <button 
-                  className={`chor-btn ${phase1CompletedPending ? 'chor-btn-highlight' : 'chor-btn-secondary'}`}
-                  disabled={!phase1CompletedPending}
-                  onClick={handlePhase2Transition}
+                  className={`chor-btn ${canNext ? 'chor-btn-highlight' : 'chor-btn-success'}`} 
+                  onClick={handleNextClick} 
+                  disabled={!canNext}
                 >
-                  Phase 2
+                  {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? '🏁 Complete Game' : 'Next Question'}
                 </button>
-              )}
-              <button 
-                className={`chor-btn ${canNext ? 'chor-btn-highlight' : 'chor-btn-success'}`} 
-                onClick={handleNextClick} 
-                disabled={!canNext}
-              >
-                {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? '🏁 Complete Game' : 'Next Question'}
-              </button>
+              </div>
             </div>
           </div>
         </main>

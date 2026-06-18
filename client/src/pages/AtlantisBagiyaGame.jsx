@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
 import './AtlantisBagiyaGame.css';
 
 // ─── Constants ───────────────────────────────────────────
@@ -311,6 +313,18 @@ const AtlantisBagiyaGame = () => {
   useEffect(() => { subQIndexRef.current = subQIndex; }, [subQIndex]);
   useEffect(() => { qTimerRef.current = qTimer; }, [qTimer]);
   useEffect(() => { subQAnsweredRef.current = subQAnswered; }, [subQAnswered]);
+
+  // ── Hide iOS status bar for immersive game experience ───
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(() => {});
+    }
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => {});
+      }
+    };
+  }, []);
 
   // ── Login check + resume check ──────────────────────────
   useEffect(() => {
@@ -728,6 +742,9 @@ const AtlantisBagiyaGame = () => {
       const element = document.getElementById('dashboard-capture-area');
       if (!element) return;
       
+      document.body.classList.add('pdf-capturing');
+      await new Promise(r => setTimeout(r, 100));
+      
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
@@ -760,6 +777,8 @@ const AtlantisBagiyaGame = () => {
       await axios.post(`${API_URL}/games/pdfs/upload`, formData);
     } catch (e) {
       console.error('Failed to generate and upload PDF:', e);
+    } finally {
+      document.body.classList.remove('pdf-capturing');
     }
   };
 
@@ -823,15 +842,48 @@ const AtlantisBagiyaGame = () => {
           <img src="/assets/images/bagiya/bagiya.jpg" alt="Bagiya" className="ab-test-logo" />
           <span className="ab-test-title">{t('home.games.bagiya.title')}</span>
         </div>
+
+        {/* ── Centre: screen label ── */}
+        <div className="ab-topbar-center">
+          {screen === 'practice_q' && (
+            <div className="ab-topbar-screen-title">
+              {t('game.practiceQuestion')}
+              <span className="ab-chip" style={{ fontSize: '0.75rem', padding: '3px 10px' }}>{t('game.notScored')}</span>
+            </div>
+          )}
+          {screen === 'practice_r' && (
+            <div className="ab-topbar-screen-title">{t('game.practiceResponse')}</div>
+          )}
+          {screen === 'game' && mainPhase === 'question' && (
+            <div className="ab-topbar-screen-title">{t('game.question')} {mainScreenNum === 13 ? '12.B' : mainScreenNum} {t('game.of')} 12</div>
+          )}
+          {screen === 'game' && mainPhase === 'response' && currentConfig && (
+            <>
+              <div className="ab-topbar-screen-title">{t('game.responseLabel')} {mainScreenNum === 13 ? '12.B' : mainScreenNum}</div>
+              <div className="ab-topbar-screen-sub">
+                {currentConfig.subQStems.every((_, i) => subQAnswered[i])
+                  ? t('game.allAnswered')
+                  : `${t('game.subQuestion')} ${subQIndex + 1} ${t('game.of')} ${currentConfig.subQStems.length}`}
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="ab-stats">
           {childData?.child_id && (
             <div className="ab-stat-pill">
-              <span className="ab-stat-label">{t('game.childId')}</span>
+              <span className="ab-stat-icon">👤</span>
               <span className="ab-stat-value">{childData.child_id}</span>
             </div>
           )}
+          {screen === 'game' && mainPhase === 'response' && (
+            <div className="ab-stat-pill">
+              <span className="ab-stat-icon">⏱</span>
+              <span className="ab-stat-value">{formatTime(qTimer)}</span>
+            </div>
+          )}
           <div className="ab-stat-pill">
-            <span className="ab-stat-label">{t('game.score')}</span>
+            <span className="ab-stat-icon">🏆</span>
             <span className="ab-stat-value">{totalScore}</span>
           </div>
           {screen === 'game' && (
@@ -842,34 +894,23 @@ const AtlantisBagiyaGame = () => {
         </div>
       </header>
 
-      <main className="ab-main">
+      <main className={`ab-main${screen === 'splash' ? ' ab-main-splash' : ''}`}>
 
         {/* ── SPLASH ── */}
         {!isCheckingSession && screen === 'splash' && !showResumeModal && (
-          <div className="ab-screen">
-            <div className="ab-screen-header">
-              <div style={{ textAlign: 'center', width: '100%' }}>
-                {/* Header text removed as requested */}
-              </div>
-            </div>
-
-            <div className="ab-splash-centered">
-              <div className="ab-splash-img-box">
-                <img src={`${IMG}/bagiya.jpg`} alt="Bagiya" className="ab-splash-img-full"
-                  onError={e => { e.target.style.display = 'none'; }}
-                />
-              </div>
-              <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '25px', color: '#1e293b', letterSpacing: '-0.02em', textAlign: 'center' }}>
-                {t('game.welcomeBagiya')}
-              </h2>
-              
-
-              <div className="ab-btn-row" style={{ justifyContent: 'center', marginTop: 20 }}>
+          <div className="ab-screen ab-screen-splash">
+            <div className="ab-splash-cover">
+              <img
+                src={`${IMG}/bagiya.jpg`}
+                alt="Bagiya"
+                className="ab-splash-img-full"
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+              <div className="ab-splash-btn-overlay">
                 <button
                   className={`ab-btn ab-btn-primary${!audioFinished ? ' ab-btn-disabled' : ' ab-btn-highlight'}`}
                   disabled={!audioFinished}
                   onClick={startNewGame}
-                  style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
                   {t('game.startNow')}
                 </button>
@@ -882,7 +923,6 @@ const AtlantisBagiyaGame = () => {
                       splashAudioRef.current.play().catch(() => setAudioFinished(true));
                     }
                   }}
-                  style={{ fontSize: '1.2rem', padding: '16px 40px' }}
                 >
                   {t('game.replayAudio')}
                 </button>
@@ -894,20 +934,11 @@ const AtlantisBagiyaGame = () => {
         {/* ── PRACTICE QUESTION ── */}
         {screen === 'practice_q' && practiceItem && (
           <div className="ab-screen">
-            <div className="ab-screen-header">
-              <div>
-                <div className="ab-screen-title">{t('game.practiceQuestion')}</div>
-              </div>
-              <div className="ab-chips">
-                <span className="ab-chip">{t('game.notScored')}</span>
-              </div>
-            </div>
-
             <div className="ab-splash-centered">
               <div className="ab-question-img-box">
                 <img src={practiceItem.img} alt={practiceItem.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               </div>
-              <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 20 }}>
+              <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
                 <button
                   className="ab-btn ab-btn-secondary"
                   onClick={() => {
@@ -936,31 +967,7 @@ const AtlantisBagiyaGame = () => {
         {/* ── PRACTICE RESPONSE ── */}
         {screen === 'practice_r' && practiceItem && (
           <div className="ab-screen">
-            <div className="ab-screen-header">
-              <div>
-                <div className="ab-screen-title">{t('game.practiceResponse')}</div>
-              </div>
-              <div className="ab-chips">
-              </div>
-            </div>
-
             <div className="ab-card">
-              <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0, justifyContent: 'flex-start' }}>
-                <button
-                  className={`ab-btn ab-btn-secondary${practiceAnswered ? ' ab-btn-disabled' : ''}`}
-                  disabled={practiceAnswered}
-                  onClick={() => {
-                    setPracticeResponseAudioDone(false);
-                    const audio = new Audio(practiceItem.khaHai);
-                    activeAudioRef.current = audio;
-                    audio.play().catch(() => setPracticeResponseAudioDone(true));
-                    audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
-                    audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
-                  }}>
-                  {t('game.replayAudio')}
-                </button>
-              </div>
-
               <div className="ab-grid ab-grid-large">
                 {practiceResponseSet.map(item => (
                   <div
@@ -975,29 +982,44 @@ const AtlantisBagiyaGame = () => {
                 ))}
               </div>
 
-              <div className="ab-btn-row" style={{ marginTop: 20 }}>
-                <button 
-                  className={`ab-btn ${practiceAnswered && !practiceCorrect && !feedbackAudioPlaying ? 'ab-pulse-warning' : 'ab-btn-secondary'}${feedbackAudioPlaying ? ' ab-btn-disabled' : ''}`}
-                  disabled={feedbackAudioPlaying}
-                  onClick={() => { pickPracticeItem(); setScreen('practice_q'); }}
-                >
-                  {t('game.tryAgain')}
-                </button>
+              <div className="ab-btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
                 <button
-                  className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
-                  disabled={!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying)}
+                  className={`ab-btn ab-btn-secondary${practiceAnswered ? ' ab-btn-disabled' : ''}`}
+                  disabled={practiceAnswered}
                   onClick={() => {
-                    const sets = generateAllResponseSets();
-                    setResponseSets(sets);
-                    setMainScreenNum(1); mainScreenNumRef.current = 1;
-                    setMainPhase('question');
-                    setSubQIndex(0); subQIndexRef.current = 0;
-                    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
-                    setGridFeedback({});
-                    setScreen('game');
+                    setPracticeResponseAudioDone(false);
+                    const audio = new Audio(practiceItem.khaHai);
+                    activeAudioRef.current = audio;
+                    audio.play().catch(() => setPracticeResponseAudioDone(true));
+                    audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
+                    audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
                   }}>
-                  {t('game.startMainGame')}
+                  {t('game.replayAudio')}
                 </button>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                    className={`ab-btn ${practiceAnswered && !practiceCorrect && !feedbackAudioPlaying ? 'ab-pulse-warning' : 'ab-btn-secondary'}${feedbackAudioPlaying ? ' ab-btn-disabled' : ''}`}
+                    disabled={feedbackAudioPlaying}
+                    onClick={() => { pickPracticeItem(); setScreen('practice_q'); }}
+                  >
+                    {t('game.tryAgain')}
+                  </button>
+                  <button
+                    className={`ab-btn ab-btn-primary${!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
+                    disabled={!(practiceResponseAudioDone && practiceAnswered && practiceCorrect && !feedbackAudioPlaying)}
+                    onClick={() => {
+                      const sets = generateAllResponseSets();
+                      setResponseSets(sets);
+                      setMainScreenNum(1); mainScreenNumRef.current = 1;
+                      setMainPhase('question');
+                      setSubQIndex(0); subQIndexRef.current = 0;
+                      setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
+                      setGridFeedback({});
+                      setScreen('game');
+                    }}>
+                    {t('game.startMainGame')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1008,12 +1030,6 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen">
             {mainPhase === 'question' && (
               <>
-                <div className="ab-screen-header">
-                  <div>
-                    <div className="ab-screen-title">{t('game.question')} {mainScreenNum} {t('game.of')} 12</div>
-                  </div>
-                </div>
-
                 {(() => {
                   const qi = itemByStem[currentConfig.questionStem];
                   return (
@@ -1021,7 +1037,7 @@ const AtlantisBagiyaGame = () => {
                       <div className="ab-question-img-box">
                         <img src={qi.img} alt={qi.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                       </div>
-                      <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 20 }}>
+                      <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
                         <button className="ab-btn ab-btn-secondary"
                           onClick={() => {
                             if (qi?.audio) {
@@ -1065,39 +1081,7 @@ const AtlantisBagiyaGame = () => {
 
               return (
                 <>
-                  <div className="ab-screen-header">
-                    <div>
-                      <div className="ab-screen-title">{t('game.responseLabel')} {mainScreenNum}</div>
-                      <div className="ab-screen-subtitle">
-                        {allSubQsDone ? t('game.allAnswered') : `${t('game.subQuestion')} ${subQIndex + 1} ${t('game.of')} ${currentConfig.subQStems.length}`}
-                      </div>
-                    </div>
-                    <div className="ab-chips">
-                      <span className="ab-chip">⏱ {formatTime(qTimer)}</span>
-                    </div>
-                  </div>
-
                   <div className="ab-card">
-                    <div className="ab-btn-row" style={{ marginBottom: 16, marginTop: 0, justifyContent: 'flex-start' }}>
-                      <button
-                        className={`ab-btn ab-btn-secondary${subQAnswered[subQIndex] ? ' ab-btn-disabled' : ''}`}
-                        disabled={!!subQAnswered[subQIndex]}
-                        onClick={() => {
-                          replayCountsRef.current[subQIndex] = (replayCountsRef.current[subQIndex] || 0) + 1;
-                          setSubQAudioDone(false);
-                          const item = itemByStem[currentConfig.subQStems[subQIndex]];
-                          if (item?.khaHai) {
-                            const audio = new Audio(item.khaHai);
-                            activeAudioRef.current = audio;
-                            audio.play().catch(() => setSubQAudioDone(true));
-                            audio.addEventListener('ended', () => setSubQAudioDone(true));
-                            audio.addEventListener('error', () => setSubQAudioDone(true));
-                          }
-                        }}>
-                  {t('game.replayAudio')}
-                      </button>
-                    </div>
-
                     {/* Response grid */}
                     <div className="ab-grid ab-grid-large">
                       {responseItems.map(item => (
@@ -1113,9 +1097,26 @@ const AtlantisBagiyaGame = () => {
                       ))}
                     </div>
 
-                    {/* Next question button */}
-                    <div className="ab-btn-row" style={{ marginTop: 24, justifyContent: 'flex-end' }}>
-                      <button 
+                    {/* Bottom row: Replay Audio left, Next right */}
+                    <div className="ab-btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
+                      <button
+                        className={`ab-btn ab-btn-secondary${subQAnswered[subQIndex] ? ' ab-btn-disabled' : ''}`}
+                        disabled={!!subQAnswered[subQIndex]}
+                        onClick={() => {
+                          replayCountsRef.current[subQIndex] = (replayCountsRef.current[subQIndex] || 0) + 1;
+                          setSubQAudioDone(false);
+                          const item = itemByStem[currentConfig.subQStems[subQIndex]];
+                          if (item?.khaHai) {
+                            const audio = new Audio(item.khaHai);
+                            activeAudioRef.current = audio;
+                            audio.play().catch(() => setSubQAudioDone(true));
+                            audio.addEventListener('ended', () => setSubQAudioDone(true));
+                            audio.addEventListener('error', () => setSubQAudioDone(true));
+                          }
+                        }}>
+                        {t('game.replayAudio')}
+                      </button>
+                      <button
                         className={`ab-btn ab-btn-primary${!(subQAudioDone && subQAnswered[subQIndex] && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
                         disabled={!(subQAudioDone && subQAnswered[subQIndex] && !feedbackAudioPlaying)}
                         onClick={() => {
@@ -1123,7 +1124,7 @@ const AtlantisBagiyaGame = () => {
                             const nextIdx = subQIndex + 1;
                             setSubQIndex(nextIdx);
                             subQIndexRef.current = nextIdx;
-                            setGridFeedback({}); 
+                            setGridFeedback({});
                             setQTimer(0); qTimerRef.current = 0;
                           } else {
                             advanceToNextScreen();
@@ -1199,6 +1200,7 @@ const AtlantisBagiyaGame = () => {
                       <th>{t('game.statusHeader')}</th>
                       <th>{t('game.scoreTable.score')}</th>
                       <th>Duration</th>
+                      <th>Replay</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1209,7 +1211,7 @@ const AtlantisBagiyaGame = () => {
                       return (
                       <tr key={i} className={isFirstOfScreen && i > 0 ? 'ab-screen-group-start' : ''}>
                         <td>{i + 1}</td>
-                        <td>{isFirstOfScreen ? `S${s.screen}` : ''}</td>
+                        <td>{isFirstOfScreen ? (s.screen === 13 ? 'S12.B' : `S${s.screen}`) : ''}</td>
                         <td>
                           {isFirstOfScreen && exposureItem ? (
                             <div className="ab-exposure-cell">
@@ -1232,6 +1234,7 @@ const AtlantisBagiyaGame = () => {
                         </td>
                         <td>{s.score}</td>
                         <td>{fmtDuration(s.timeTaken)}</td>
+                        <td>{s.replayCount || 0}</td>
                       </tr>
                       );
                     })}
@@ -1278,7 +1281,7 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-modal">
             <h2>{t('game.progressFound')}</h2>
             <p>{t('game.progressDesc')}</p>
-            <div className="ab-btn-row" style={{ marginTop: 20 }}>
+            <div className="ab-btn-row" style={{ marginTop: 12 }}>
               <button className="ab-btn ab-btn-secondary" onClick={() => {
                 setShowResumeModal(false);
                 resetInternalState();
