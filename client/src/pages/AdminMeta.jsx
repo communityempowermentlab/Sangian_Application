@@ -37,16 +37,23 @@ const TOOLBAR = [
 ];
 
 const BILINGUAL_CMS_PAGES = ['terms', 'privacy'];
+const CMS_LANGUAGES = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'hi', label: 'Hindi',   flag: '🇮🇳' },
+    { code: 'mr', label: 'Marathi', flag: '🇮🇳' },
+    { code: 'te', label: 'Telugu',  flag: '🇮🇳' },
+    { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
+];
 
 const CmsEditor = ({ pageKey }) => {
     const editorRef      = useRef(null);
     const pendingContent = useRef('');
 
     const isBilingual = BILINGUAL_CMS_PAGES.includes(pageKey);
-    const [editorLang, setEditorLang] = useState('en'); // 'en' | 'hi'
+    const [editorLang, setEditorLang] = useState('en'); // 'en' | 'hi' | 'mr' | 'te' | 'kn'
 
-    // The actual key being edited — e.g. 'terms' or 'terms_hi'
-    const activeKey = isBilingual && editorLang === 'hi' ? `${pageKey}_hi` : pageKey;
+    // The actual key being edited — e.g. 'terms' or 'terms_mr'
+    const activeKey = isBilingual && editorLang !== 'en' ? `${pageKey}_${editorLang}` : pageKey;
 
     const [title,           setTitle]           = useState('');
     const [status,          setStatus]          = useState(1);
@@ -145,21 +152,18 @@ const CmsEditor = ({ pageKey }) => {
                 <div className="meta-lang-bar">
                     <span className="meta-lang-label">Language:</span>
                     <div className="meta-lang-toggle">
-                        <button
-                            className={`meta-lang-btn ${editorLang === 'en' ? 'active' : ''}`}
-                            onClick={() => setEditorLang('en')}
-                        >
-                            🇬🇧 English
-                        </button>
-                        <button
-                            className={`meta-lang-btn ${editorLang === 'hi' ? 'active' : ''}`}
-                            onClick={() => setEditorLang('hi')}
-                        >
-                            🇮🇳 Hindi
-                        </button>
+                        {CMS_LANGUAGES.map(l => (
+                            <button
+                                key={l.code}
+                                className={`meta-lang-btn ${editorLang === l.code ? 'active' : ''}`}
+                                onClick={() => setEditorLang(l.code)}
+                            >
+                                {l.flag} {l.label}
+                            </button>
+                        ))}
                     </div>
-                    {editorLang === 'hi' && (
-                        <span className="meta-lang-note">Only Title &amp; Content are saved for Hindi. SEO fields are language-independent.</span>
+                    {editorLang !== 'en' && (
+                        <span className="meta-lang-note">Only Title &amp; Content are saved for this language. SEO fields are language-independent.</span>
                     )}
                 </div>
             )}
@@ -652,6 +656,14 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
 };
 
 // ── FAQ Editor ────────────────────────────────────────────────────────────────
+const FAQ_LANGUAGES = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'hi', label: 'Hindi',   flag: '🇮🇳' },
+    { code: 'mr', label: 'Marathi', flag: '🇮🇳' },
+    { code: 'te', label: 'Telugu',  flag: '🇮🇳' },
+    { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
+];
+
 const HelpFaqAdmin = () => {
     const [lang,    setLang]    = useState('en');
     const [title,   setTitle]   = useState('');
@@ -742,8 +754,9 @@ const HelpFaqAdmin = () => {
             <div className="meta-lang-bar" style={{ marginBottom: 16 }}>
                 <span className="meta-lang-label">Language:</span>
                 <div className="meta-lang-toggle">
-                    <button className={`meta-lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>🇬🇧 English</button>
-                    <button className={`meta-lang-btn ${lang === 'hi' ? 'active' : ''}`} onClick={() => setLang('hi')}>🇮🇳 Hindi</button>
+                    {FAQ_LANGUAGES.map(l => (
+                        <button key={l.code} className={`meta-lang-btn ${lang === l.code ? 'active' : ''}`} onClick={() => setLang(l.code)}>{l.flag} {l.label}</button>
+                    ))}
                 </div>
             </div>
 

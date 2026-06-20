@@ -24,6 +24,7 @@ import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import AdminSettings from './pages/AdminSettings';
+import AdminMultilingual from './pages/AdminMultilingual';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
 import AdminAssessorsList from './pages/AdminAssessorsList';
@@ -39,8 +40,10 @@ import ContactPage from './pages/ContactPage';
 import HelpPage from './pages/HelpPage';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
+import RequireGameEnabled from './guards/RequireGameEnabled';
 
 import { LanguageProvider } from './contexts/LanguageContext';
+import { HeaderConfigProvider } from './contexts/HeaderConfigContext';
 import { GoogleAnalyticsProvider } from './contexts/GoogleAnalyticsContext';
 import { CrashAnalyticsProvider }  from './contexts/CrashAnalyticsContext';
 import './index.css';
@@ -56,6 +59,7 @@ const ADMIN_TITLES = {
     '/admin/docs':           'Documentation | Admin Panel',
     '/admin/analysis':       'Analysis | Admin Panel',
     '/admin/settings':       'Settings | Admin Panel',
+    '/admin/multilingual':   'Multilingual | Admin Panel',
     '/admin/meta':           'Meta | Admin Panel',
     '/admin/help-support':   'Help & Support | Admin Panel',
 };
@@ -144,6 +148,7 @@ function App() {
         <GoogleAnalyticsProvider>
         <CrashAnalyticsProvider>
         <LanguageProvider>
+        <HeaderConfigProvider>
             <Router>
                 <SEOManager />
                 <div className="App">
@@ -160,17 +165,19 @@ function App() {
                             <Route path="/help" element={<HelpPage />} />
                         </Route>
 
-                        {/* ── Protected Game Routes (child must be logged in) ── */}
+                        {/* ── Protected Game Routes (child must be logged in, test must be enabled) ── */}
                         <Route element={<RequireChildAuth />}>
-                            <Route path="/games/number_skill"      element={<NumberSkillGame />} />
-                            <Route path="/games/reading_skill"     element={<ReadingSkillGame />} />
-                            <Route path="/games/number_recall"     element={<NumberRecallGame />} />
-                            <Route path="/games/her_pher"          element={<HerPherGame />} />
-                            <Route path="/games/dhyan_kahan_hai"   element={<AuditoryAttentionGame />} />
-                            <Route path="/games/rachna"            element={<TriangleRachnaGame />} />
-                            <Route path="/games/bagiya"            element={<AtlantisBagiyaGame />} />
-                            <Route path="/games/chalo_mela_chale"  element={<ChaloMelaChaleGame />} />
-                            <Route path="/games/chor_machaye_shor" element={<ChorMachayeShorGame />} />
+                            <Route element={<RequireGameEnabled />}>
+                                <Route path="/games/number_skill"      element={<NumberSkillGame />} />
+                                <Route path="/games/reading_skill"     element={<ReadingSkillGame />} />
+                                <Route path="/games/number_recall"     element={<NumberRecallGame />} />
+                                <Route path="/games/her_pher"          element={<HerPherGame />} />
+                                <Route path="/games/dhyan_kahan_hai"   element={<AuditoryAttentionGame />} />
+                                <Route path="/games/rachna"            element={<TriangleRachnaGame />} />
+                                <Route path="/games/bagiya"            element={<AtlantisBagiyaGame />} />
+                                <Route path="/games/chalo_mela_chale"  element={<ChaloMelaChaleGame />} />
+                                <Route path="/games/chor_machaye_shor" element={<ChorMachayeShorGame />} />
+                            </Route>
                         </Route>
 
                         {/* ── Admin Login (public) ────────────────────── */}
@@ -194,6 +201,7 @@ function App() {
                                 <Route path="meta"                   element={<AdminMeta />} />
                                 <Route path="help-support"           element={<AdminHelpSupport />} />
                                 <Route path="settings"               element={<AdminSettings />} />
+                                <Route path="multilingual"           element={<AdminMultilingual />} />
                             </Route>
                         </Route>
 
@@ -203,6 +211,7 @@ function App() {
                     </Routes>
                 </div>
             </Router>
+        </HeaderConfigProvider>
         </LanguageProvider>
         </CrashAnalyticsProvider>
         </GoogleAnalyticsProvider>

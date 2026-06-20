@@ -1,7 +1,7 @@
 const { pool } = require('../config/db');
 
 const VALID_SECTIONS  = ['create_ticket', 'my_tickets', 'faq'];
-const VALID_LANGUAGES = ['en', 'hi'];
+const VALID_LANGUAGES = ['en', 'hi', 'mr', 'te', 'kn'];
 
 // ── Admin: GET /api/admin/help-content/:section/:lang ─────────────────────────
 const adminGetContent = async (req, res) => {

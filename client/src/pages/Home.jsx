@@ -140,6 +140,7 @@ const Home = () => {
     const [summaries, setSummaries]     = useState({});
     const [isLoggedIn, setIsLoggedIn]   = useState(false);
     const [childData, setChildData]     = useState(null);
+    const [enabledTests, setEnabledTests] = useState(null); // null = not loaded yet
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -153,7 +154,16 @@ const Home = () => {
                 }
             } catch (e) {}
         }
+        axios.get(`${API_URL}/public/test-config`)
+            .then(({ data }) => setEnabledTests(data))
+            .catch(() => setEnabledTests({})); // on error, show all games rather than hiding everything
     }, []);
+
+    // Hide any test the admin has disabled via Settings → Test Configuration.
+    // Before the config loads, show everything so the page isn't empty on slow connections.
+    const visibleTestModules = enabledTests
+        ? testModules.filter((test) => enabledTests[test.gameKey] !== false)
+        : testModules;
 
 
     const fetchSummaries = async (childId) => {
@@ -231,11 +241,11 @@ const Home = () => {
                             <h2>{t('home.modulesHeader')}</h2>
                             <p>{t('home.modulesSub')}</p>
                         </div>
-                        <span className="showcase-badge">{testModules.length} {t('home.modulesBadge')}</span>
+                        <span className="showcase-badge">{visibleTestModules.length} {t('home.modulesBadge')}</span>
                     </div>
 
                     <div className="games-grid-layout">
-                        {testModules.map((test) => (
+                        {visibleTestModules.map((test) => (
                             <article
                                 key={test.id}
                                 className="game-card-item"

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -160,6 +161,96 @@ function shuffle(arr) {
   return a;
 }
 
+// ─── Scatter layout (no rows/columns, no overlap, any item count) ─────────────
+// Deterministic seeded PRNG (mulberry32) — same seed always produces the same
+// layout, so a given sub-question's positions never shift on re-render, but a
+// different seed (new sub-question) produces a fresh arrangement.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Slices the container into a cols x rows cell grid sized to fit `count` items,
+// then places each item at its cell centre plus a bounded random jitter — so
+// items can never overlap (jitter never exceeds half the leftover cell margin)
+// or fall outside the container (every cell is fully inside it).
+function computeScatterPositions(count, containerWidth, containerHeight, seed) {
+  if (!count || containerWidth <= 0 || containerHeight <= 0) return [];
+  const rng = mulberry32(seed);
+
+  // Build a virtual grid with noticeably MORE cells than items (oversample),
+  // then randomly choose which cells are actually used. Because only some
+  // cells of this finer grid end up occupied, the occupied ones don't line up
+  // into full, even rows/columns the way a tightly-packed grid would — some
+  // rows have gaps, some have fewer items than others — so it reads as a
+  // natural scatter. Every cell (used or not) is still non-overlapping with
+  // its neighbours by construction, and jitter stays bounded inside whichever
+  // cell an item lands in, so no two chosen items can ever collide.
+  const oversample = 1.5;
+  const aspect = containerWidth / containerHeight;
+  const cols = Math.max(1, Math.round(Math.sqrt(count * oversample * aspect)));
+  const rows = Math.max(1, Math.ceil((count * oversample) / cols));
+  const totalCells = cols * rows;
+  const cellW = containerWidth / cols;
+  const cellH = containerHeight / rows;
+  const size = Math.max(80, Math.min(235, Math.min(cellW, cellH) * 0.95));
+  const maxJitterX = Math.max(0, (cellW - size) / 2);
+  const maxJitterY = Math.max(0, (cellH - size) / 2);
+
+  // Shuffle the full list of cell indices with the seeded RNG, then take the
+  // first `count` as the occupied set — deterministic per seed (stable within
+  // a sub-question), different whenever the seed (sub-question) changes.
+  const cellIndices = Array.from({ length: totalCells }, (_, i) => i);
+  for (let i = cellIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [cellIndices[i], cellIndices[j]] = [cellIndices[j], cellIndices[i]];
+  }
+  const chosenCells = cellIndices.slice(0, count);
+
+  return chosenCells.map((cellIndex) => {
+    const col = cellIndex % cols;
+    const row = Math.floor(cellIndex / cols);
+    const jitterX = (rng() * 2 - 1) * maxJitterX;
+    const jitterY = (rng() * 2 - 1) * maxJitterY;
+    return {
+      left: col * cellW + (cellW - size) / 2 + jitterX,
+      top: row * cellH + (cellH - size) / 2 + jitterY,
+      size,
+    };
+  });
+}
+
+// Measures a container element and returns deterministic, non-overlapping
+// (left, top, size) positions for `count` items — recomputed only when the
+// container resizes or `seed` changes (e.g. a new sub-question).
+function useScatterLayout(count, seed) {
+  // A plain useRef's .current changing (e.g. when this screen mounts after the
+  // user navigates to it) does NOT re-run effects, so a `useRef` here would only
+  // ever measure whatever was mounted at the very first render (often null, since
+  // this screen isn't shown yet). A callback ref via useState re-fires this
+  // effect every time the actual DOM node is attached, including on later
+  // navigations to this screen.
+  const [node, setNode] = useState(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!node) return;
+    const update = () => setSize({ width: node.offsetWidth, height: node.offsetHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node]);
+
+  const positions = computeScatterPositions(count, size.width, size.height, seed);
+  return { containerRef: setNode, positions };
+}
+
 function buildResponseSet(cfg) {
   if (cfg.fixedResponseStems) {
     return cfg.fixedResponseStems.map(s => itemByStem[s]).filter(Boolean);
@@ -233,6 +324,7 @@ const fmtDuration = (sec) => {
 // ─── Main Component ───────────────────────────────────────
 const AtlantisBagiyaGame = () => {
   const { t }    = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -253,6 +345,7 @@ const AtlantisBagiyaGame = () => {
   const [subQIndex, setSubQIndex] = useState(0);         // which subQ is active (0-based)
   const [subQAnswered, setSubQAnswered] = useState({});   // {subQIndex: true}
   const [responseSets, setResponseSets] = useState({});
+  const [displayResponseItems, setDisplayResponseItems] = useState([]); // responseSets[mainScreenNum], reshuffled per sub-question for display only
   const [gridFeedback, setGridFeedback] = useState({});  // {itemId: 'correct'|'wrong'}
   const [subQAudioDone, setSubQAudioDone] = useState(false);
   const [questionAudioDone, setQuestionAudioDone] = useState(false);
@@ -313,6 +406,22 @@ const AtlantisBagiyaGame = () => {
   useEffect(() => { subQIndexRef.current = subQIndex; }, [subQIndex]);
   useEffect(() => { qTimerRef.current = qTimer; }, [qTimer]);
   useEffect(() => { subQAnsweredRef.current = subQAnswered; }, [subQAnswered]);
+
+  // Re-shuffle the on-screen scatter order for every sub-question, so the same set of
+  // response items doesn't sit in memorisable fixed spots across the whole question —
+  // only the visual order changes; the underlying item set, images, and click handling
+  // (which always references the actual item object, not its position) are untouched.
+  useEffect(() => {
+    setDisplayResponseItems(shuffle(responseSets[mainScreenNum] || []));
+  }, [responseSets, mainScreenNum, subQIndex]);
+
+  // Scatter layouts — measured against the actual rendered grid container, so
+  // positions/sizes are always correct for however many items are present (and
+  // never overlap or fall outside the visible area). Called unconditionally at
+  // the top level per React's rules of hooks, even though each is only rendered
+  // on one specific screen.
+  const practiceScatter = useScatterLayout(practiceResponseSet.length, 1);
+  const mainScatter = useScatterLayout((responseSets[mainScreenNum] || []).length, mainScreenNum * 1000 + subQIndex);
 
   // ── Hide iOS status bar for immersive game experience ───
   useEffect(() => {
@@ -848,14 +957,13 @@ const AtlantisBagiyaGame = () => {
           {screen === 'practice_q' && (
             <div className="ab-topbar-screen-title">
               {t('game.practiceQuestion')}
-              <span className="ab-chip" style={{ fontSize: '0.75rem', padding: '3px 10px' }}>{t('game.notScored')}</span>
             </div>
           )}
           {screen === 'practice_r' && (
             <div className="ab-topbar-screen-title">{t('game.practiceResponse')}</div>
           )}
           {screen === 'game' && mainPhase === 'question' && (
-            <div className="ab-topbar-screen-title">{t('game.question')} {mainScreenNum === 13 ? '12.B' : mainScreenNum} {t('game.of')} 12</div>
+            <div className="ab-topbar-screen-title">{t('game.question')} {mainScreenNum === 13 ? '12.B' : mainScreenNum}</div>
           )}
           {screen === 'game' && mainPhase === 'response' && currentConfig && (
             <>
@@ -870,22 +978,24 @@ const AtlantisBagiyaGame = () => {
         </div>
 
         <div className="ab-stats">
-          {childData?.child_id && (
+          {showChildId && childData?.child_id && (
             <div className="ab-stat-pill">
               <span className="ab-stat-icon">👤</span>
               <span className="ab-stat-value">{childData.child_id}</span>
             </div>
           )}
-          {screen === 'game' && mainPhase === 'response' && (
+          {showTimer && screen === 'game' && mainPhase === 'response' && (
             <div className="ab-stat-pill">
               <span className="ab-stat-icon">⏱</span>
               <span className="ab-stat-value">{formatTime(qTimer)}</span>
             </div>
           )}
+          {showScore && (
           <div className="ab-stat-pill">
             <span className="ab-stat-icon">🏆</span>
             <span className="ab-stat-value">{totalScore}</span>
           </div>
+          )}
           {screen === 'game' && (
             <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}>
               <span>⏸</span> {t('game.pauseQuit')}
@@ -924,7 +1034,7 @@ const AtlantisBagiyaGame = () => {
                     }
                   }}
                 >
-                  {t('game.replayAudio')}
+                  {t('game.reply')}
                 </button>
               </div>
             </div>
@@ -950,7 +1060,7 @@ const AtlantisBagiyaGame = () => {
                     audio.addEventListener('error', () => setPracticeAudioDone(true));
                   }}
                 >
-                  {t('game.replayAudio')}
+                  {t('game.reply')}
                 </button>
                 <button
                   className={`ab-btn ab-btn-primary${!practiceAudioDone ? ' ab-btn-disabled' : ''}`}
@@ -968,18 +1078,22 @@ const AtlantisBagiyaGame = () => {
         {screen === 'practice_r' && practiceItem && (
           <div className="ab-screen">
             <div className="ab-card">
-              <div className="ab-grid ab-grid-large">
-                {practiceResponseSet.map(item => (
-                  <div
-                    key={item.id}
-                    className={`ab-grid-item${(practiceAnswered || !practiceResponseAudioDone) ? ' locked' : ''}`}
-                    onClick={() => {
-                      if (practiceResponseAudioDone) handlePracticeAnswer(item);
-                    }}
-                  >
-                    <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
-                  </div>
-                ))}
+              <div className="ab-grid ab-grid-large" ref={practiceScatter.containerRef}>
+                {practiceResponseSet.map((item, i) => {
+                  const pos = practiceScatter.positions[i];
+                  return (
+                    <div
+                      key={item.id}
+                      className={`ab-grid-item${(practiceAnswered || !practiceResponseAudioDone) ? ' locked' : ''}`}
+                      style={pos ? { left: pos.left, top: pos.top, width: pos.size, height: pos.size } : { visibility: 'hidden' }}
+                      onClick={() => {
+                        if (practiceResponseAudioDone) handlePracticeAnswer(item);
+                      }}
+                    >
+                      <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="ab-btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
@@ -994,7 +1108,7 @@ const AtlantisBagiyaGame = () => {
                     audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
                     audio.addEventListener('error', () => setPracticeResponseAudioDone(true));
                   }}>
-                  {t('game.replayAudio')}
+                  {t('game.reply')}
                 </button>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <button
@@ -1049,9 +1163,9 @@ const AtlantisBagiyaGame = () => {
                               audio.addEventListener('error', () => setQuestionAudioDone(true));
                             }
                           }}>
-                  {t('game.replayAudio')}
+                  {t('game.reply')}
                         </button>
-                        <button 
+                        <button
                           className={`ab-btn ab-btn-primary${!questionAudioDone ? ' ab-btn-disabled' : ''}`}
                           disabled={!questionAudioDone}
                           style={{ minWidth: 160, padding: '13px 36px', fontSize: '1rem' }}
@@ -1063,7 +1177,7 @@ const AtlantisBagiyaGame = () => {
                             setSubQAudioDone(false);
                             setQTimer(0); qTimerRef.current = 0;
                           }}>
-                          {t('game.nextQuestionArrow')}
+                          {t('game.nextQuestion')}
                         </button>
                       </div>
                     </div>
@@ -1073,7 +1187,10 @@ const AtlantisBagiyaGame = () => {
             )}
 
             {mainPhase === 'response' && (() => {
-              let responseItems = responseSets[mainScreenNum] || [];
+              const responseItems = responseSets[mainScreenNum] || [];
+              // Fall back to the unshuffled set for the single frame before the
+              // reshuffle effect (keyed on subQIndex) has run, so nothing is missing.
+              const itemsToRender = displayResponseItems.length ? displayResponseItems : responseItems;
 
               const allSubQsDone = currentConfig.subQStems.every((_, i) => subQAnswered[i]);
               const activeTargetStem = currentConfig.subQStems[subQIndex];
@@ -1083,18 +1200,22 @@ const AtlantisBagiyaGame = () => {
                 <>
                   <div className="ab-card">
                     {/* Response grid */}
-                    <div className="ab-grid ab-grid-large">
-                      {responseItems.map(item => (
-                        <div
-                          key={item.id}
-                          className={`ab-grid-item${(subQAnswered[subQIndex] || !subQAudioDone) ? ' locked' : ''}`}
-                          onClick={() => {
-                            if (subQAudioDone) handleMainAnswer(item);
-                          }}
-                        >
-                          <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
-                        </div>
-                      ))}
+                    <div className="ab-grid ab-grid-large" ref={mainScatter.containerRef}>
+                      {itemsToRender.map((item, i) => {
+                        const pos = mainScatter.positions[i];
+                        return (
+                          <div
+                            key={item.id}
+                            className={`ab-grid-item${(subQAnswered[subQIndex] || !subQAudioDone) ? ' locked' : ''}`}
+                            style={pos ? { left: pos.left, top: pos.top, width: pos.size, height: pos.size } : { visibility: 'hidden' }}
+                            onClick={() => {
+                              if (subQAudioDone) handleMainAnswer(item);
+                            }}
+                          >
+                            <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Bottom row: Replay Audio left, Next right */}
@@ -1114,7 +1235,7 @@ const AtlantisBagiyaGame = () => {
                             audio.addEventListener('error', () => setSubQAudioDone(true));
                           }
                         }}>
-                        {t('game.replayAudio')}
+                        {t('game.reply')}
                       </button>
                       <button
                         className={`ab-btn ab-btn-primary${!(subQAudioDone && subQAnswered[subQIndex] && !feedbackAudioPlaying) ? ' ab-btn-disabled' : ''}`}
@@ -1130,7 +1251,7 @@ const AtlantisBagiyaGame = () => {
                             advanceToNextScreen();
                           }
                         }}>
-                        {subQIndex < currentConfig.subQStems.length - 1 ? t('game.nextQuestionArrow') : (mainScreenNum < 13 ? t('game.nextScreenArrow') : t('game.finishGame'))}
+                        {subQIndex < currentConfig.subQStems.length - 1 ? t('game.nextQuestion') : (mainScreenNum < 13 ? t('game.nextScreen') : t('game.finishGame'))}
                       </button>
                     </div>
                   </div>

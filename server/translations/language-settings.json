@@ -1,0 +1,35 @@
+{
+  "defaultLanguage": "english",
+  "languages": [
+    {
+      "code": "english",
+      "shortCode": "en",
+      "label": "English",
+      "enabled": true
+    },
+    {
+      "code": "hindi",
+      "shortCode": "hi",
+      "label": "Hindi",
+      "enabled": true
+    },
+    {
+      "code": "marathi",
+      "shortCode": "mr",
+      "label": "Marathi",
+      "enabled": false
+    },
+    {
+      "code": "telugu",
+      "shortCode": "te",
+      "label": "Telugu",
+      "enabled": false
+    },
+    {
+      "code": "kannada",
+      "shortCode": "kn",
+      "label": "Kannada",
+      "enabled": false
+    }
+  ]
+}

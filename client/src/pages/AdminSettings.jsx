@@ -4,6 +4,8 @@ import axiosAdmin from '../services/axiosAdmin';
 import { useGoogleAnalytics } from '../contexts/GoogleAnalyticsContext';
 import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
 import { getAdminLogoUrl } from '../services/photoUtils';
+import AdminLanguageSettingsTab from './AdminLanguageSettingsTab';
+import AdminTestConfigTab from './AdminTestConfigTab';
 
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
@@ -15,6 +17,8 @@ const SETTINGS_MENU = [
     { key: 'smtp_settings',     icon: '📨', label: 'SMTP Settings',        color: '#0369a1', available: true  },
     { key: 'help_email',        icon: '🎫', label: 'Ticket Notifications',  color: '#7c3aed', available: true  },
     { key: 'admin_profile',     icon: '👤', label: 'Update Profile',       color: '#059669', available: true  },
+    { key: 'languages',         icon: '🌐', label: 'Languages',            color: '#0ea5e9', available: true  },
+    { key: 'test_config',       icon: '🧪', label: 'Test Configuration',   color: '#dc2626', available: true  },
     { key: 'integrations',      icon: '🔗', label: 'Integrations',        color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
     { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
@@ -2140,6 +2144,8 @@ const CONTENT_MAP = {
     smtp_settings:     <SmtpSettingsTab />,
     help_email:        <HelpEmailSettingsTab />,
     admin_profile:     <AdminProfileTab />,
+    languages:         <AdminLanguageSettingsTab />,
+    test_config:       <AdminTestConfigTab />,
 };
 
 const AdminSettings = () => {

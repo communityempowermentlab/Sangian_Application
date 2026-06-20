@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -346,6 +347,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
   const { t, language } = useLanguage();
+  const { showChildId, showScore } = useHeaderConfig();
   const navigate = useNavigate();
 
   const [childData, setChildData]           = useState(null);
@@ -1503,16 +1505,18 @@ const TriangleRachnaGame = () => {
           )}
 
           <div className="rg-stats">
-            {childData?.child_id && (
+            {showChildId && childData?.child_id && (
               <div className="rg-stat-pill">
                 <span className="rg-stat-icon">👤</span>
                 <span className="rg-stat-value">{childData.child_id}</span>
               </div>
             )}
+            {showScore && (
             <div className="rg-stat-pill">
               <span className="rg-stat-icon">🏆</span>
               <span className="rg-stat-value">{totalScore}</span>
             </div>
+            )}
             {screen === 'game' && (
               <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}>
                 <span>⏸</span> Pause/Quit

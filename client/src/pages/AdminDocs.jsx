@@ -3980,6 +3980,15 @@ const SERVER_BASE_SS = (() => {
     try { return API_URL.replace(/\/api$/, ''); } catch { return ''; }
 })();
 
+const DOCS_LANGUAGES = [
+    { code: 'en', label: '🇬🇧 English' },
+    { code: 'hi', label: '🇮🇳 Hindi' },
+    { code: 'mr', label: '🇮🇳 Marathi' },
+    { code: 'te', label: '🇮🇳 Telugu' },
+    { code: 'kn', label: '🇮🇳 Kannada' },
+];
+const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
+
 const ScreenshotLibraryViewer = ({ game }) => {
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
@@ -4094,7 +4103,7 @@ const ScreenshotLibraryViewer = ({ game }) => {
                         <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>{badge.label}</span>
                         {/* Language toggle */}
                         <div style={{ display: 'flex', background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
-                            {[['en','🇬🇧 English'],['hi','🇮🇳 Hindi']].map(([l,lbl]) => (
+                            {DOCS_LANGUAGES.map(({code:l,label:lbl}) => (
                                 <button key={l} onClick={() => setLang(l)} style={{ ...btnStyle, background: lang===l ? T.accent : 'transparent', color: lang===l ? '#fff' : T.muted, borderRadius: 0, padding: '5px 14px' }}>{lbl}</button>
                             ))}
                         </div>
@@ -4307,10 +4316,10 @@ const GameplayManualViewer = ({ game }) => {
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                         {pubDate && <span style={{ padding:'4px 12px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #bbf7d0' }}>✓ Published · {pubDate}</span>}
-                        <span style={{ padding:'4px 11px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{lang==='en'?'🇬🇧 English':'🇮🇳 Hindi'} · {screenshots.length} screens</span>
+                        <span style={{ padding:'4px 11px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{docsLangLabel(lang)} · {screenshots.length} screens</span>
                         {/* Language toggle */}
                         <div style={{ display:'flex', background:T.white, border:`1px solid ${T.border}`, borderRadius:8, overflow:'hidden' }}>
-                            {[['en','🇬🇧 English'],['hi','🇮🇳 Hindi']].map(([l,lbl])=>(
+                            {DOCS_LANGUAGES.map(({code:l,label:lbl})=>(
                                 <button key={l} onClick={()=>setLang(l)} style={{ ...btnStyle, background:lang===l?T.accent:'transparent', color:lang===l?'#fff':T.muted, borderRadius:0, padding:'5px 13px' }}>{lbl}</button>
                             ))}
                         </div>
@@ -4340,7 +4349,7 @@ const GameplayManualViewer = ({ game }) => {
                                 <div>
                                     <h2 style={{ margin:0, fontSize:'1.4rem', fontWeight:800, color:T.text }}>{game.title} — Gameplay Manual</h2>
                                     <div style={{ fontSize:'0.78rem', color:T.muted, marginTop:3 }}>
-                                        {lang==='en'?'🇬🇧 English':'🇮🇳 Hindi'} · {screenshots.length} published screenshot{screenshots.length!==1?'s':''} · SANGIAN Documentation System
+                                        {docsLangLabel(lang)} · {screenshots.length} published screenshot{screenshots.length!==1?'s':''} · SANGIAN Documentation System
                                         {pubDate && ` · Published ${pubDate}`}
                                     </div>
                                 </div>

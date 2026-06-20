@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -326,6 +327,7 @@ const House = ({ house, onClick, interactionLocked }) => {
 
 const ChorMachayeShorGame = () => {
   const { t } = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -1320,8 +1322,8 @@ const ChorMachayeShorGame = () => {
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
+              {showChildId && <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>}
+              {showScore && <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>}
             </div>
           </header>
           <main className="chor-main chor-main-splash">
@@ -1393,9 +1395,9 @@ const ChorMachayeShorGame = () => {
               <span className="chor-test-title">{t('home.games.chor.title')}</span>
             </div>
             <div className="chor-stats">
-              <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>
-              <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
+              {showChildId && <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>}
+              {showTimer && <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{String(Math.floor(tTime/60)).padStart(2,'0')}:{String(tTime%60).padStart(2,'0')}</span></div>}
+              {showScore && <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>}
             </div>
           </header>
 
@@ -1541,9 +1543,9 @@ const ChorMachayeShorGame = () => {
           </div>
 
           <div className="chor-stats">
-            <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>
-            <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>
+            {showChildId && <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>}
+            {showTimer && <div className="chor-stat-pill"><span className="chor-stat-icon">⏱</span><span className="chor-stat-value">{Math.floor(timerSeconds/60).toString().padStart(2,'0')}:{(timerSeconds%60).toString().padStart(2,'0')}</span></div>}
+            {showScore && <div className="chor-stat-pill"><span className="chor-stat-icon">🏆</span><span className="chor-stat-value">{totalScore}</span></div>}
             <button className="btn-pause-quit" onClick={handlePauseClick}><span>⏸</span> Pause/Quit</button>
           </div>
         </header>

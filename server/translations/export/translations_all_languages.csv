@@ -1,0 +1,466 @@
+Key,English,Hindi,Marathi,Telugu,Kannada
+common.selectLanguage,Select Language,भाषा चुनें,भाषा निवडा,భాష ఎంచుకోండి,ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ
+common.english,English,English,इंग्रजी,ఇంగ్లీష్,ಇಂಗ್ಲಿಷ್
+common.hindi,Hindi,हिंदी,हिंदी,హిందీ,ಹಿಂದಿ
+common.cancel,Cancel,रद्द करें,रद्द करा,రద్దు చేయండి,ರದ್ದುಮಾಡಿ
+common.logout,Logout,लॉग आउट,लॉगआउट,లాగ్ అవుట్,ಲಾಗ್ ಔಟ್
+common.login,Login,लॉग इन,लॉगिन,లాగిన్,ಲಾಗಿನ್
+common.register,Register,पंजीकरण,नोंदणी करा,నమోదు చేయండి,ನೋಂದಣಿ ಮಾಡಿ
+common.backToHub,Back to test hub,वापस जाएं,टेस्ट हबवर परत जा,టెస్ట్ హబ్‌కి తిరిగి వెళ్ళండి,ಟೆಸ್ಟ್ ಹಬ್‌ಗೆ ಹಿಂತಿರುಗಿ
+common.consentNote,"By registering this child, you confirm that consent has been obtained as per your institution's policy and that assessments will be supervised by trained staff.",इस बच्चे को दर्ज करके आप पुष्टि करते हैं कि आपकी संस्था की नीति के अनुसार सहमति ली गई है और परीक्षण प्रशिक्षित कर्मचारियों की निगरानी में होगा।,"या मुलाची नोंदणी करून, तुम्ही पुष्टी करता की तुमच्या संस्थेच्या धोरणानुसार सहमती घेतली आहे आणि मूल्यांकन प्रशिक्षित कर्मचाऱ्यांच्या देखरेखीखाली केले जाईल.","ఈ పిల్లవాడిని నమోదు చేయడం ద్వారా, మీ సంస్థ విధానం ప్రకారం అనుమతి తీసుకున్నారని మరియు అసెస్‌మెంట్‌లు శిక్షణ పొందిన సిబ్బంది పర్యవేక్షణలో జరుగుతాయని మీరు నిర్ధారిస్తున్నారు.","ಈ ಮಗುವನ್ನು ನೋಂದಾಯಿಸುವ ಮೂಲಕ, ನಿಮ್ಮ ಸಂಸ್ಥೆಯ ನೀತಿಯ ಪ್ರಕಾರ ಒಪ್ಪಿಗೆ ಪಡೆಯಲಾಗಿದೆ ಮತ್ತು ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ತರಬೇತಿ ಪಡೆದ ಸಿಬ್ಬಂದಿ ಮೇಲ್ವಿಚಾರಣೆ ಮಾಡುತ್ತಾರೆ ಎಂದು ನೀವು ದೃಢೀಕರಿಸುತ್ತೀರಿ."
+common.serverError,Error connecting to the server.,सर्वर से जुड़ने में दिक्कत हुई।,सर्व्हरशी कनेक्ट करताना त्रुटी आली.,సర్వర్‌తో కనెక్ట్ చేయడంలో పొరపాటు వచ్చింది.,ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ.
+common.sessionError,Could not establish a secure session. Please try again.,सत्र शुरू नहीं हो सका। फिर कोशिश करें।,सुरक्षित सेशन सुरू करता आले नाही. कृपया पुन्हा प्रयत्न करा.,సురక్షిత సెషన్‌ను ప్రారంభించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.,ಸುರಕ್ಷಿತ ಸೆಶನ್ ಸ್ಥಾಪಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+common.speechNotSupported,Your browser does not support Speech Recognition. Please type manually.,यह ब्राउज़र आवाज़ पहचान नहीं करता। कृपया टाइप करें।,तुमचा ब्राउझर स्पीच रेकग्निशनला सपोर्ट करत नाही. कृपया स्वतः टाइप करा.,మీ బ్రౌజర్ స్పీచ్ రికగ్నిషన్‌ను సపోర్ట్ చేయదు. దయచేసి టైప్ చేయండి.,ನಿಮ್ಮ ಬ್ರೌಸರ್ ಸ್ಪೀಚ್ ರೆಕಗ್ನಿಷನ್‌ಗೆ ಬೆಂಬಲ ನೀಡುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ವಂತವಾಗಿ ಟೈಪ್ ಮಾಡಿ.
+common.failedToStart,Failed to start session on server.,सत्र शुरू नहीं हो सका।,सर्व्हरवर सेशन सुरू करता आले नाही.,సర్వర్‌లో సెషన్‌ను ప్రారంభించలేకపోయాం.,ಸರ್ವರ್‌ನಲ್ಲಿ ಸೆಶನ್ ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.
+common.failedToSave,Failed to save assessment. Please try again.,मूल्यांकन सहेजा नहीं गया। फिर कोशिश करें।,मूल्यांकन सेव्ह करता आले नाही. कृपया पुन्हा प्रयत्न करा.,అసెస్‌మెంట్‌ను సేవ్ చేయలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.,ಮೌಲ್ಯಮಾಪನ ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+common.enterReason,Please enter a reason before stopping.,रोकने का कारण लिखें।,थांबवण्याआधी कृपया कारण लिहा.,ఆపే ముందు దయచేసి కారణం రాయండి.,ನಿಲ್ಲಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ಕಾರಣ ನಮೂದಿಸಿ.
+navbar.id,ID,आईडी,आयडी,ఐడీ,ಐಡಿ
+navbar.language,🌐 Language,🌐 भाषा,🌐 भाषा,🌐 భాష,🌐 ಭಾಷೆ
+footer.copyright,© 2026 Community Empowerment Lab · Sangian Cognitive Test Interface,© 2026 कम्युनिटी एम्पावरमेंट लैब · संगियान परीक्षण इंटरफ़ेस,© 2026 Community Empowerment Lab · संगियन कॉग्निटिव्ह टेस्ट इंटरफेस,© 2026 Community Empowerment Lab · సంగియన్ కాగ్నిటివ్ టెస్ట్ ఇంటర్‌ఫేస్,© 2026 Community Empowerment Lab · ಸಂಗಿಯನ್ ಕಾಗ್ನಿಟಿವ್ ಟೆಸ್ಟ್ ಇಂಟರ್ಫೇಸ್
+footer.terms,Terms & Conditions,नियम और शर्तें,नियम व शर्ती,నిబంధనలు & షరతులు,ನಿಯಮಗಳು & ಷರತ್ತುಗಳು
+footer.privacy,Privacy Policy,गोपनीयता नीति,गोपनीयता धोरण,గోప్యతా విధానం,ಗೌಪ್ಯತಾ ನೀತಿ
+footer.contact,Contact Us,संपर्क करें,आमच्याशी संपर्क करा,మమ్మల్ని సంప్రదించండి,ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ
+footer.help,Help & Support,सहायता,मदत व सहाय्य,సహాయం & మద్దతు,ಸಹಾಯ & ಬೆಂಬಲ
+breadcrumb.home,Home,होम,मुख्यपृष्ठ,హోమ్,ಮುಖಪುಟ
+breadcrumb.terms,Terms & Conditions,नियम एवं शर्तें,नियम व शर्ती,నిబంధనలు & షరతులు,ನಿಯಮಗಳು & ಷರತ್ತುಗಳು
+breadcrumb.privacy,Privacy Policy,गोपनीयता नीति,गोपनीयता धोरण,గోప్యతా విధానం,ಗೌಪ್ಯತಾ ನೀತಿ
+home.heroPill,🧠 Kauffman-inspired assessment • For supervised use only,🧠 काफ़मैन-प्रेरित मूल्यांकन • केवल निगरानी में उपयोग करें,🧠 कॉफमन-प्रेरित मूल्यांकन • फक्त देखरेखीखाली वापरासाठी,🧠 కాఫ్‌మన్-ప్రేరిత అసెస్‌మెంట్ • పర్యవేక్షణలో మాత్రమే వాడాలి,🧠 ಕಾಫ್‌ಮನ್-ಪ್ರೇರಿತ ಮೌಲ್ಯಮಾಪನ • ಮೇಲ್ವಿಚಾರಣೆಯ ಬಳಕೆಗೆ ಮಾತ್ರ
+home.welcome,Welcome to the,में आपका स्वागत है,स्वागत आहे,స్వాగతం,ಸ್ವಾಗತ
+home.title,Sangian Test Hub,संगियान टेस्ट हब,संगियन टेस्ट हब,సంగియన్ టెస్ట్ హబ్,ಸಂಗಿಯನ್ ಟೆಸ್ಟ್ ಹಬ್
+home.desc,Select a test module below to start the assessment.,परीक्षा शुरू करने के लिए नीचे दिए गए टेस्ट मॉड्यूल को चुनें।,मूल्यांकन सुरू करण्यासाठी खालील टेस्ट मॉड्यूल निवडा.,అసెస్‌మెంట్ ప్రారంభించడానికి దిగువ ఒక టెస్ట్ మాడ్యూల్ ఎంచుకోండి.,ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಲು ಕೆಳಗಿನ ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್ ಆಯ್ಕೆಮಾಡಿ.
+home.bullet1,✔ Seven core games mapped to culturally adapted names,✔ सात मुख्य खेल जो बच्चे की समझ को मापते हैं,✔ सात मुख्य गेम्स सांस्कृतिक नावांसह,✔ ఏడు ముఖ్య గేమ్‌లు సంస్కృతికి తగిన పేర్లతో,✔ ಸಾಂಸ್ಕೃತಿಕ ಹೆಸರುಗಳೊಂದಿಗೆ ಏಳು ಮುಖ್ಯ ಗೇಮ್‌ಗಳು
+home.bullet2,✔ Quick access to Numeracy & Literacy readiness checks,✔ गणित और भाषा की तैयारी की त्वरित जाँच,✔ गणित व वाचन तयारी तपासणीसाठी जलद प्रवेश,✔ గణితం & చదవడం సంసిద్ధత తనిఖీలకు త్వరిత యాక్సెస్,✔ ಗಣಿತ & ಓದು ಸಿದ್ಧತಾ ಪರೀಕ್ಷೆಗಳಿಗೆ ತ್ವರಿತ ಪ್ರವೇಶ
+home.bullet3,"✔ Designed for psychologists, teachers & researchers","✔ मनोवैज्ञानिकों, शिक्षकों और शोधकर्ताओं के लिए बनाया गया","✔ मानसशास्त्रज्ञ, शिक्षक व संशोधकांसाठी तयार केलेले","✔ మానసిక శాస్త్రవేత్తలు, ఉపాధ్యాయులు & పరిశోధకుల కోసం రూపొందించబడింది","✔ ಮನಃಶಾಸ್ತ್ರಜ್ಞರು, ಶಿಕ್ಷಕರು & ಸಂಶೋಧಕರಿಗಾಗಿ ರೂಪಿಸಲಾಗಿದೆ"
+home.startTest,Start Assessment,परीक्षा शुरू करें,मूल्यांकन सुरू करा,అసెస్‌మెంట్ ప్రారంభించండి,ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ
+home.registerChild,Register a Child,बच्चे को दर्ज करें,मुलाची नोंदणी करा,పిల్లవాడిని నమోదు చేయండి,ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ
+home.warningNote,This digital interface supports structured KABC-style assessments. Always follow your institutional protocol and training.,यह इंटरफ़ेस KABC-शैली की संरचित परीक्षा के लिए है। कृपया अपनी संस्था के दिशा-निर्देशों का पालन करें।,हे डिजिटल इंटरफेस संरचित KABC-शैलीतील मूल्यांकनांना सपोर्ट करते. नेहमी तुमच्या संस्थेच्या प्रोटोकॉल व प्रशिक्षणाचे पालन करा.,ఈ డిజిటల్ ఇంటర్‌ఫేస్ నిర్మాణాత్మక KABC-శైలి అసెస్‌మెంట్‌లకు మద్దతు ఇస్తుంది. మీ సంస్థ ప్రోటోకాల్ మరియు శిక్షణను ఎల్లప్పుడూ అనుసరించండి.,ಈ ಡಿಜಿಟಲ್ ಇಂಟರ್ಫೇಸ್ ರಚನಾತ್ಮಕ KABC-ಶೈಲಿಯ ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ಬೆಂಬಲಿಸುತ್ತದೆ. ಯಾವಾಗಲೂ ನಿಮ್ಮ ಸಂಸ್ಥೆಯ ಪ್ರೋಟೋಕಾಲ್ ಮತ್ತು ತರಬೇತಿಯನ್ನು ಅನುಸರಿಸಿ.
+home.modulesHeader,Test Modules,टेस्ट मॉड्यूल,टेस्ट मॉड्यूल्स,టెస్ట్ మాడ్యూల్స్,ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್‌ಗಳು
+home.modulesSub,Tap a card to see what the test measures.,कार्ड पर टैप करें और देखें यह टेस्ट क्या मापता है।,टेस्ट काय मोजते हे पाहण्यासाठी कार्डवर टॅप करा.,టెస్ట్ ఏమి కొలుస్తుందో చూడటానికి కార్డ్‌పై టాప్ చేయండి.,ಟೆಸ್ಟ್ ಏನನ್ನು ಅಳೆಯುತ್ತದೆ ಎಂದು ನೋಡಲು ಕಾರ್ಡ್ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ.
+home.modulesBadge,modules,मॉड्यूल,मॉड्यूल्स,మాడ్యూల్స్,ಮಾಡ್ಯೂಲ್‌ಗಳು
+home.lastPlayed,Last Played:,आखिरी बार खेला:,शेवटचे खेळले:,చివరిగా ఆడింది:,ಕೊನೆಯದಾಗಿ ಆಡಿದ್ದು:
+home.totalSessions,Total Sessions:,कुल सत्र:,एकूण सेशन्स:,మొత్తం సెషన్లు:,ಒಟ್ಟು ಸೆಶನ್‌ಗಳು:
+home.never,Never,कभी नहीं,कधीही नाही,ఎప్పుడూ లేదు,ಎಂದಿಗೂ ಇಲ್ಲ
+home.games.bagiya.title,Bagiya,बगिया,बगिया,బగియా,ಬಗಿಯಾ
+home.games.bagiya.local,,,,,
+home.games.bagiya.tag,,,,,
+home.games.bagiya.desc,Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed.,बच्चा एक बगीचे में जीव-जंतु देखता है और याद करने की कोशिश करता है कि हर एक कहाँ था।,मूल एका 'बागे'त मजेदार प्राणी पाहते आणि नंतर प्रत्येक कुठे ठेवला होता हे आठवण्याचा प्रयत्न करते.,"పిల్లవాడు ఒక 'తోట'లో సరదా జంతువులను చూసి, తరువాత ప్రతి దాన్ని ఎక్కడ పెట్టారో గుర్తుచేసుకోవడానికి ప్రయత్నిస్తాడు.",ಮಗು ಒಂದು 'ತೋಟ'ದಲ್ಲಿ ಮೋಜಿನ ಪ್ರಾಣಿಗಳನ್ನು ನೋಡುತ್ತದೆ ಮತ್ತು ನಂತರ ಪ್ರತಿಯೊಂದನ್ನು ಎಲ್ಲಿ ಇಡಲಾಗಿದೆ ಎಂದು ನೆನಪಿಸಿಕೊಳ್ಳಲು ಪ್ರಯತ್ನಿಸುತ್ತದೆ.
+home.games.bagiya.sub,,,,,
+home.games.lottery.title,Lottery Ka Ticket,लॉटरी का टिकट,लॉटरी का टिकट,లాటరీ కా టికెట్,ಲಾಟರಿ ಕಾ ಟಿಕೆಟ್
+home.games.lottery.local,,,,,
+home.games.lottery.tag,,,,,
+home.games.lottery.desc,Child listens to a series of numbers and repeats them in the same order.,बच्चा संख्याओं की एक कड़ी सुनता है और उन्हें उसी क्रम में दोहराता है।,मूल अंकांची मालिका ऐकते आणि तीच क्रमाने पुन्हा सांगते.,"పిల్లవాడు సంఖ్యల శ్రేణిని విని, అదే క్రమంలో తిరిగి చెబుతాడు.","ಮಗು ಸಂಖ್ಯೆಗಳ ಸರಣಿಯನ್ನು ಕೇಳಿ, ಅದೇ ಕ್ರಮದಲ್ಲಿ ಪುನರಾವರ್ತಿಸುತ್ತದೆ."
+home.games.lottery.sub,,,,,
+home.games.mela.title,Chalo Mela Chalen,चलो मेला चलें,चलो मेला चलें,చలో మేళా చలేం,ಚಲೋ ಮೇಲಾ ಚಲೇಂ
+home.games.mela.local,,,,,
+home.games.mela.tag,,,,,
+home.games.mela.desc,Child plans a path through simple visual mazes.,बच्चा सरल नक्शे के ज़रिए रास्ता खोजता है।,मूल साध्या व्हिज्युअल चक्रव्यूहातून मार्ग आखते.,పిల్లవాడు సాధారణ విజువల్ మేజ్‌ల ద్వారా మార్గాన్ని ప్లాన్ చేస్తాడు.,ಮಗು ಸರಳ ದೃಶ್ಯ ಜಟಿಲಗಳ ಮೂಲಕ ಮಾರ್ಗವನ್ನು ಯೋಜಿಸುತ್ತದೆ.
+home.games.mela.sub,,योजना बनाना और स्थान की समझ,,,
+home.games.rachna.title,Rachna,रचना,रचना,రచనా,ರಚನಾ
+home.games.rachna.local,,,,,
+home.games.rachna.tag,Construction skills,बनाने की क्षमता,रचना कौशल्य,నిర్మాణ నైపుణ్యాలు,ನಿರ್ಮಾಣ ಕೌಶಲ್ಯಗಳು
+home.games.rachna.desc,Child builds shapes and patterns using pieces.,बच्चा टुकड़ों से आकृति और पैटर्न बनाता है।,मूल तुकड्यांचा वापर करून आकार व नमुने तयार करते.,పిల్లవాడు ముక్కలను ఉపయోగించి ఆకారాలు మరియు నమూనాలను నిర్మిస్తాడు.,ಮಗು ತುಂಡುಗಳನ್ನು ಬಳಸಿ ಆಕಾರಗಳು ಮತ್ತು ಮಾದರಿಗಳನ್ನು ನಿರ್ಮಿಸುತ್ತದೆ.
+home.games.rachna.sub,,दृश्य निर्माण कौशल,,,
+home.games.dhyan.title,Dhyan Kahan Hai,ध्यान कहाँ है,ध्यान कहाँ है,ధ్యాన్ కహాఁ హై,ಧ್ಯಾನ್ ಕಹಾँ ಹೈ
+home.games.dhyan.local,,,,,
+home.games.dhyan.tag,,,,,
+home.games.dhyan.desc,Child responds only when they hear specific target words.,बच्चा सिर्फ़ तब जवाब देता है जब वह खास शब्द सुनता है।,मूल विशिष्ट शब्द ऐकल्यावरच प्रतिसाद देते.,పిల్లవాడు నిర్దిష్ట లక్ష్య పదాలు వినినప్పుడు మాత్రమే స్పందిస్తాడు.,ಮಗು ನಿರ್ದಿಷ್ಟ ಗುರಿ ಪದಗಳನ್ನು ಕೇಳಿದಾಗ ಮಾತ್ರ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತದೆ.
+home.games.dhyan.sub,,,,,
+home.games.herpher.title,Her Pher,हेर फेर,हेर फेर,హేర్ ఫేర్,ಹೇರ್ ಫೇರ್
+home.games.herpher.local,,,,,
+home.games.herpher.tag,,याददाश्त,,,
+home.games.herpher.desc,Child keeps rules or information in mind while answering.,बच्चा जवाब देते समय नियमों या जानकारी को ध्यान में रखता है।,मूल उत्तर देताना नियम किंवा माहिती लक्षात ठेवते.,పిల్లవాడు జవాబు చెప్పేటప్పుడు నియమాలు లేదా సమాచారాన్ని గుర్తుంచుకుంటాడు.,ಮಗು ಉತ್ತರಿಸುವಾಗ ನಿಯಮಗಳು ಅಥವಾ ಮಾಹಿತಿಯನ್ನು ನೆನಪಿನಲ್ಲಿಡುತ್ತದೆ.
+home.games.herpher.sub,,,,,
+home.games.chor.title,Chor Machaye Shor,चोर मचाए शोर,चोर मचाए शोर,చోర్ మచాయే శోర్,ಚೋರ್ ಮಚಾಯೇ ಶೋರ್
+home.games.chor.local,,,,,
+home.games.chor.tag,Rule switching,नियम बदलना,नियम बदलणे,నియమం మార్పు,ನಿಯಮ ಬದಲಾವಣೆ
+home.games.chor.desc,Child shifts between changing rules.,बच्चा बदलते नियमों के बीच ध्यान से काम करता है।,मूल बदलत्या नियमांमध्ये जुळवून घेते.,పిల్లవాడు మారుతున్న నియమాల మధ్య మారుతాడు.,ಮಗು ಬದಲಾಗುತ್ತಿರುವ ನಿಯಮಗಳ ನಡುವೆ ಬದಲಾಗುತ್ತದೆ.
+home.games.chor.sub,,,,,
+home.games.numeracy.title,Ankganit,अंकगणित,अंकगणित,అంకగణిత్,ಅಂಕಗಣಿತ್
+home.games.numeracy.local,,,,,
+home.games.numeracy.tag,,पढ़ाई – गणित,,,
+home.games.numeracy.desc,Age-appropriate tasks on counting and mathematics.,गिनती और गणित के उम्र के हिसाब से सवाल।,वय-योग्य गणना व गणिताची कामे.,వయసుకు తగిన లెక్కింపు మరియు గణిత పనులు.,ವಯಸ್ಸಿಗೆ ಸೂಕ್ತವಾದ ಎಣಿಕೆ ಮತ್ತು ಗಣಿತದ ಕೆಲಸಗಳು.
+home.games.numeracy.sub,,,,,
+home.games.literacy.title,Padh ke batao,पढ़ के बताओ,पढ़ के बताओ,పఢ్ కే బతావో,ಪಢ್ ಕೇ ಬತಾವೋ
+home.games.literacy.local,,,,,
+home.games.literacy.tag,,पढ़ाई – भाषा,,,
+home.games.literacy.desc,Tasks around letters and early language readiness.,अक्षर और शुरुआती भाषा से जुड़े सवाल।,अक्षरे व सुरुवातीच्या भाषा तयारीशी संबंधित कामे.,అక్షరాలు మరియు ప్రాథమిక భాషా సంసిద్ధతకు సంబంధించిన పనులు.,ಅಕ್ಷರಗಳು ಮತ್ತು ಆರಂಭಿಕ ಭಾಷಾ ಸಿದ್ಧತೆಗೆ ಸಂಬಂಧಿಸಿದ ಕೆಲಸಗಳು.
+home.games.literacy.sub,,,,,
+login.pill,Child lookup for assessment,बच्चे की जानकारी देखें,मूल्यांकनासाठी मूल शोध,అసెస్‌మెంట్ కోసం పిల్లవాడి శోధన,ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ ಮಗುವಿನ ಶೋಧ
+login.heading,Search a child,बच्चे को खोजें,मुलाला शोधा,పిల్లవాడిని వెతకండి,ಮಗುವನ್ನು ಹುಡುಕಿ
+login.headingSub,and start the assessment,और परीक्षा शुरू करें,आणि मूल्यांकन सुरू करा,మరియు అసెస్‌మెంట్ ప్రారంభించండి,ಮತ್ತು ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ
+login.description,"Use the unique Child ID to quickly bring up the child's details. Once you confirm the record, you can continue to the assessment.",बच्चे की खास ID डालें और उसकी जानकारी देखें। जाँचने के बाद परीक्षा शुरू करें।,मुलाचे तपशील पटकन मिळवण्यासाठी युनिक चाइल्ड आयडी वापरा. नोंद खात्री केल्यानंतर तुम्ही मूल्यांकनासाठी पुढे जाऊ शकता.,పిల్లవాడి వివరాలను త్వరగా తీసుకురావడానికి యూనిక్ చైల్డ్ ఐడీని ఉపయోగించండి. రికార్డ్‌ను నిర్ధారించాక మీరు అసెస్‌మెంట్‌తో కొనసాగవచ్చు.,ಮಗುವಿನ ವಿವರಗಳನ್ನು ತ್ವರಿತವಾಗಿ ತೆರೆಯಲು ವಿಶಿಷ್ಟ ಚೈಲ್ಡ್ ಐಡಿ ಬಳಸಿ. ದಾಖಲೆ ದೃಢೀಕರಿಸಿದ ನಂತರ ನೀವು ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುಂದುವರಿಸಬಹುದು.
+login.bullet1,Enter the Child ID assigned at registration,पंजीकरण के समय दी गई ID डालें,नोंदणी वेळी दिलेला चाइल्ड आयडी टाका,నమోదు సమయంలో ఇచ్చిన చైల్డ్ ఐడీని నమోదు చేయండి,ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಚೈಲ್ಡ್ ಐಡಿಯನ್ನು ನಮೂದಿಸಿ
+login.bullet2,"Verify name, gender, date of birth & mobile number","नाम, लिंग, जन्म तिथि और मोबाइल नंबर जाँचें","नाव, लिंग, जन्मतारीख व मोबाईल नंबर पडताळा","పేరు, లింగం, పుట్టిన తేదీ & మొబైల్ నంబర్‌ను నిర్ధారించండి","ಹೆಸರು, ಲಿಂಗ, ಜನ್ಮ ದಿನಾಂಕ & ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ"
+login.bullet3,Click 'Go to Assessment' to launch the test,'परीक्षा शुरू करें' दबाएं और टेस्ट खोलें,टेस्ट सुरू करण्यासाठी 'मूल्यांकनाकडे जा' वर क्लिक करा,టెస్ట్ ప్రారంభించడానికి 'అసెస్‌మెంట్‌కు వెళ్ళండి' క్లిక్ చేయండి,ಟೆಸ್ಟ್ ಪ್ರಾರಂಭಿಸಲು 'ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಹೋಗಿ' ಕ್ಲಿಕ್ ಮಾಡಿ
+login.demoTip,Demo tip: register a Child ID first before searching.,"सुझाव: पहले बच्चे को दर्ज करें, फिर यहाँ ID से खोजें।",टीप: शोधण्याआधी आधी एक चाइल्ड आयडी नोंदवा.,సూచన: శోధించే ముందు ఒక చైల్డ్ ఐడీని నమోదు చేయండి.,ಸುಳಿವು: ಹುಡುಕುವ ಮೊದಲು ಮೊದಲು ಒಂದು ಚೈಲ್ಡ್ ಐಡಿ ನೋಂದಾಯಿಸಿ.
+login.fieldLabel,Child ID,बच्चे की ID,चाइल्ड आयडी,చైల్డ్ ఐడీ,ಚೈಲ್ಡ್ ಐಡಿ
+login.placeholder,"Enter Child ID (e.g., CH001)",बच्चे की ID डालें (जैसे: CH001),चाइल्ड आयडी टाका (उदा. CH001),చైల్డ్ ఐడీ నమోదు చేయండి (ఉదా. CH001),ಚೈಲ್ಡ್ ಐಡಿ ನಮೂದಿಸಿ (ಉದಾ. CH001)
+login.searchBtn,Search,खोजें,शोधा,శోధించండి,ಹುಡುಕಿ
+login.searchingBtn,Searching...,खोज रहे हैं...,शोधत आहे...,శోధిస్తోంది...,ಹುಡುಕುತ್ತಿದೆ...
+login.goToAssessment,Go to Assessment,परीक्षा शुरू करें,मूल्यांकनाकडे जा,అసెస్‌మెంట్‌కు వెళ్ళండి,ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಹೋಗಿ
+login.cardTitle,Child details,बच्चे की जानकारी,मुलाचे तपशील,పిల్లవాడి వివరాలు,ಮಗುವಿನ ವಿವರಗಳು
+login.noChild,No child selected,कोई बच्चा नहीं चुना,कोणतेही मूल निवडलेले नाही,ఏ పిల్లవాడిని ఎంచుకోలేదు,ಯಾವುದೇ ಮಗುವನ್ನು ಆಯ್ಕೆಮಾಡಿಲ್ಲ
+login.detailsFound,Details found. Please verify before proceeding.,जानकारी मिली। आगे बढ़ने से पहले जाँच लें।,तपशील सापडले. पुढे जाण्यापूर्वी कृपया पडताळा.,వివరాలు కనుగొనబడ్డాయి. కొనసాగే ముందు దయచేసి నిర్ధారించండి.,ವಿವರಗಳು ಕಂಡುಬಂದಿವೆ. ಮುಂದುವರಿಯುವ ಮೊದಲು ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ.
+login.labelName,Name,नाम,नाव,పేరు,ಹೆಸರು
+login.labelGender,Gender,लिंग,लिंग,లింగం,ಲಿಂಗ
+login.labelDob,Date of Birth,जन्म तिथि,जन्मतारीख,పుట్టిన తేదీ,ಜನ್ಮ ದಿನಾಂಕ
+login.labelMobile,Mobile Number,मोबाइल नंबर,मोबाईल नंबर,మొబైల్ నంబర్,ಮೊಬೈಲ್ ಸಂಖ್ಯೆ
+login.errRequired,Please enter a Child ID.,कृपया बच्चे की ID डालें।,कृपया चाइल्ड आयडी टाका.,దయచేసి చైల్డ్ ఐడీ నమోదు చేయండి.,ದಯವಿಟ್ಟು ಚೈಲ್ಡ್ ಐಡಿ ನಮೂದಿಸಿ.
+login.errNotFound,Child ID not found. Please register the child first.,यह ID नहीं मिली। पहले बच्चे को दर्ज करें।,चाइल्ड आयडी सापडला नाही. कृपया आधी मुलाची नोंदणी करा.,చైల్డ్ ఐడీ కనుగొనబడలేదు. దయచేసి ముందుగా పిల్లవాడిని నమోదు చేయండి.,ಚೈಲ್ಡ್ ಐಡಿ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಮೊದಲು ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ.
+login.errServer,Error connecting to the server.,सर्वर से कनेक्ट करने में त्रुटि।,सर्व्हरशी कनेक्ट करताना त्रुटी आली.,సర్వర్‌తో కనెక్ట్ చేయడంలో పొరపాటు వచ్చింది.,ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ.
+login.errSession,Could not start session. Please try again.,सत्र शुरू नहीं हो सका। फिर कोशिश करें।,सेशन सुरू करता आले नाही. कृपया पुन्हा प्रयत्न करा.,సెషన్‌ను ప్రారంభించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.,ಸೆಶನ್ ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+register.pill,Child registration module,बच्चे का पंजीकरण,मूल नोंदणी मॉड्यूल,పిల్లల నమోదు మాడ్యూల్,ಮಗುವಿನ ನೋಂದಣಿ ಮಾಡ್ಯೂಲ್
+register.heading,Register the child,बच्चे को दर्ज करें,मुलाची नोंदणी करा,పిల్లవాడిని నమోదు చేయండి,ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ
+register.headingSub,for Sangian assessment,संगियान परीक्षा के लिए,संगियन मूल्यांकनासाठी,సంగియన్ అసెస్‌మెంట్ కోసం,ಸಂಗಿಯನ್ ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ
+register.description,Enter the details of the child whose cognitive assessment will be done using the Sangian test modules.,यहाँ उस बच्चे की जानकारी भरें जिसका संगियान टेस्ट होगा। यह जानकारी बच्चे की पहचान और उसकी प्रगति को जोड़ने में मदद करती है।,संगियन टेस्ट मॉड्यूल्स वापरून ज्या मुलाचे कॉग्निटिव्ह मूल्यांकन केले जाईल त्याचे तपशील टाका.,సంగియన్ టెస్ట్ మాడ్యూల్స్ ఉపయోగించి కాగ్నిటివ్ అసెస్‌మెంట్ చేయబడే పిల్లవాడి వివరాలను నమోదు చేయండి.,ಸಂಗಿಯನ್ ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್‌ಗಳನ್ನು ಬಳಸಿ ಕಾಗ್ನಿಟಿವ್ ಮೌಲ್ಯಮಾಪನ ಮಾಡಲಾಗುವ ಮಗುವಿನ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ.
+register.bullet1,Use the child's full official name wherever possible,बच्चे का पूरा और सही नाम लिखें,शक्य असेल तिथे मुलाचे पूर्ण अधिकृत नाव वापरा,సాధ్యమైనప్పుడల్లా పిల్లవాడి పూర్తి అధికారిక పేరును ఉపయోగించండి,ಸಾಧ್ಯವಾದಲ್ಲೆಲ್ಲಾ ಮಗುವಿನ ಪೂರ್ಣ ಅಧಿಕೃತ ಹೆಸರನ್ನು ಬಳಸಿ
+register.bullet2,Confirm date of birth with records before starting,रिकॉर्ड से मिलाकर जन्म तिथि भरें,सुरुवात करण्यापूर्वी जन्मतारीख नोंदींसह तपासा,ప్రారంభించే ముందు రికార్డులతో పుట్టిన తేదీని నిర్ధారించండి,ಪ್ರಾರಂಭಿಸುವ ಮೊದಲು ದಾಖಲೆಗಳೊಂದಿಗೆ ಜನ್ಮ ದಿನಾಂಕವನ್ನು ದೃಢೀಕರಿಸಿ
+register.bullet3,Mobile number can be parent / guardian's primary contact,मोबाइल नंबर माता-पिता या अभिभावक का हो सकता है,मोबाईल नंबर पालक/पालकाचा मुख्य संपर्क असू शकतो,మొబైల్ నంబర్ తల్లిదండ్రుల / గార్డియన్ యొక్క ముఖ్య సంప్రదింపు కావచ్చు,ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಪೋಷಕರ / ಪಾಲಕರ ಪ್ರಮುಖ ಸಂಪರ್ಕವಾಗಿರಬಹುದು
+register.photoLabel,Child Photo,बच्चे की फ़ोटो,मुलाचा फोटो,పిల్లవాడి ఫోటో,ಮಗುವಿನ ಫೋಟೋ
+register.nameLabel,Child's Full Name,बच्चे का पूरा नाम,मुलाचे पूर्ण नाव,పిల్లవాడి పూర్తి పేరు,ಮಗುವಿನ ಪೂರ್ಣ ಹೆಸರು
+register.namePlaceholder,Enter child's full name,बच्चे का पूरा नाम लिखें,मुलाचे पूर्ण नाव टाका,పిల్లవాడి పూర్తి పేరు నమోదు చేయండి,ಮಗುವಿನ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ
+register.dobLabel,Date of Birth,जन्म तिथि,जन्मतारीख,పుట్టిన తేదీ,ಜನ್ಮ ದಿನಾಂಕ
+register.genderLabel,Gender,लिंग,लिंग,లింగం,ಲಿಂಗ
+register.genderDefault,Select gender,लिंग चुनें,लिंग निवडा,లింగం ఎంచుకోండి,ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ
+register.genderFemale,Female,लड़की,मुलगी,ఆడ,ಹೆಣ್ಣು
+register.genderMale,Male,लड़का,मुलगा,మగ,ಗಂಡು
+register.genderOther,Other,अन्य,इतर,ఇతర,ಇತರೆ
+register.genderPrefer,Prefer not to say,बताना नहीं चाहते,सांगणे पसंत नाही,చెప్పదలచుకోలేదు,ಹೇಳಲು ಬಯಸುವುದಿಲ್ಲ
+register.mobileLabel,Mobile Number,मोबाइल नंबर,मोबाईल नंबर,మొబైల్ నంబర్,ಮೊಬೈಲ್ ಸಂಖ್ಯೆ
+register.mobilePlaceholder,Parent / guardian 10-digit mobile number,माता-पिता या अभिभावक का 10 अंकों का नंबर,पालक/पालकाचा 10-अंकी मोबाईल नंबर,తల్లిదండ్రుల / గార్డియన్ 10-అంకెల మొబైల్ నంబర్,ಪೋಷಕರ / ಪಾಲಕರ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ
+register.mobileHint,Use a valid 10-digit mobile number (India).,भारत का सही 10 अंकों का मोबाइल नंबर डालें।,वैध 10-अंकी मोबाईल नंबर (भारत) वापरा.,చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్ (భారతదేశం) ఉపయోగించండి.,ಮಾನ್ಯವಾದ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (ಭಾರತ) ಬಳಸಿ.
+register.submitBtn,Register Child,दर्ज करें,मुलाची नोंदणी करा,పిల్లవాడిని నమోదు చేయండి,ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ
+register.submittingBtn,Registering...,दर्ज हो रहा है...,नोंदणी होत आहे...,నమోదు చేస్తోంది...,ನೋಂದಣಿ ಮಾಡುತ್ತಿದೆ...
+register.successMsg,Child registered successfully! Child ID: {id},बच्चे का पंजीकरण हो गया! बच्चे की ID: {id},मुलाची नोंदणी यशस्वी झाली! चाइल्ड आयडी: {id},పిల్లవాడి నమోదు విజయవంతమైంది! చైల్డ్ ఐడీ: {id},ಮಗುವಿನ ನೋಂದಣಿ ಯಶಸ್ವಿಯಾಗಿದೆ! ಚೈಲ್ಡ್ ಐಡಿ: {id}
+register.errName,Child's name is required.,बच्चे का नाम ज़रूरी है।,मुलाचे नाव आवश्यक आहे.,పిల్లవాడి పేరు అవసరం.,ಮಗುವಿನ ಹೆಸರು ಅಗತ್ಯವಿದೆ.
+register.errDobRequired,Date of Birth is required.,जन्म तिथि ज़रूरी है।,जन्मतारीख आवश्यक आहे.,పుట్టిన తేదీ అవసరం.,ಜನ್ಮ ದಿನಾಂಕ ಅಗತ್ಯವಿದೆ.
+register.errDobAge,Child's age must be between 8 and 10 years.,बच्चे की उम्र 8 से 10 साल के बीच होनी चाहिए।,मुलाचे वय 8 ते 10 वर्षांच्या दरम्यान असावे.,పిల్లవాడి వయసు 8 నుండి 10 సంవత్సరాల మధ్య ఉండాలి.,ಮಗುವಿನ ವಯಸ್ಸು 8 ರಿಂದ 10 ವರ್ಷಗಳ ನಡುವೆ ಇರಬೇಕು.
+register.errGender,Please select a gender.,कृपया लिंग चुनें।,कृपया लिंग निवडा.,దయచేసి లింగం ఎంచుకోండి.,ದಯವಿಟ್ಟು ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ.
+register.errMobileRequired,Mobile number is required.,मोबाइल नंबर ज़रूरी है।,मोबाईल नंबर आवश्यक आहे.,మొబైల్ నంబర్ అవసరం.,ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಅಗತ್ಯವಿದೆ.
+register.errMobileInvalid,Enter a valid 10-digit mobile number.,सही 10 अंकों का मोबाइल नंबर डालें।,वैध 10-अंकी मोबाईल नंबर टाका.,చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్ నమోదు చేయండి.,ಮಾನ್ಯವಾದ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ.
+register.errGeneral,An error occurred during registration. Please try again.,पंजीकरण में दिक्कत हुई। फिर कोशिश करें।,नोंदणी करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.,నమోదు చేసేటప్పుడు పొరపాటు వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.,ನೋಂದಣಿ ಮಾಡುವಾಗ ದೋಷ ಸಂಭವಿಸಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+game.numeracyLabel,Ankganit,अंकगणित,अंकगणित,అంకగణిత్,ಅಂಕಗಣಿತ್
+game.childId,Child ID,बच्चे की ID,चाइल्ड आयडी,చైల్డ్ ఐడీ,ಚೈಲ್ಡ್ ಐಡಿ
+game.score,Score,अंक,स्कोर,స్కోర్,ಸ್ಕೋರ್
+game.attemptLabel,Attempt #,प्रयास #,प्रयत्न #,ప్రయత్నం #,ಪ್ರಯತ್ನ #
+game.pauseQuit,Pause/Quit,रोकें / छोड़ें,थांबवा/बंद करा,ఆపు/నిష్క్రమించు,ನಿಲ್ಲಿಸಿ/ನಿರ್ಗಮಿಸಿ
+game.splashSubtitle,"Listen to the instructions, then start the assessment.","निर्देश सुनें, फिर परीक्षा शुरू करें।","सूचना ऐका, नंतर मूल्यांकन सुरू करा.","సూచనలు వినండి, తరువాత అసెస్‌మెంట్ ప్రారంభించండి.","ಸೂಚನೆಗಳನ್ನು ಕೇಳಿ, ನಂತರ ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ."
+game.welcome,Welcome to Ankganit,"अंकगणित, में आपका स्वागत है",अंकगणितमध्ये स्वागत आहे,అంకగణిత్‌కు స్వాగతం,ಅಂಕಗಣಿತ್‌ಗೆ ಸ್ವಾಗತ
+game.splashDesc,"Please listen to the instructions. When the audio finishes, you can start the assessment.",कृपया निर्देश सुनें। ऑडियो खत्म होने के बाद 'अभी शुरू करें' बटन चालू हो जाएगा।,कृपया सूचना ऐका. ऑडिओ संपल्यावर तुम्ही मूल्यांकन सुरू करू शकता.,దయచేసి సూచనలు వినండి. ఆడియో ముగిసిన తర్వాత మీరు అసెస్‌మెంట్ ప్రారంభించవచ్చు.,ದಯವಿಟ್ಟು ಸೂಚನೆಗಳನ್ನು ಕೇಳಿ. ಆಡಿಯೋ ಮುಗಿದ ನಂತರ ನೀವು ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಬಹುದು.
+game.startNow,Start Now,अभी शुरू करें,आता सुरू करा,ఇప్పుడు ప్రారంభించండి,ಈಗ ಪ್ರಾರಂಭಿಸಿ
+game.replayAudio,Replay Audio,दोबारा सुनें,ऑडिओ पुन्हा ऐका,ఆడియో మళ్లీ వినండి,ಆಡಿಯೋ ಮತ್ತೆ ಕೇಳಿ
+game.audioNote,"The audio will play automatically. Once it ends, the Start Now button will become active.",ऑडियो अपने आप चलेगा। खत्म होने पर 'अभी शुरू करें' का बटन चालू होगा।,ऑडिओ स्वतः सुरू होईल. ते संपल्यावर 'आता सुरू करा' बटण सक्रिय होईल.,ఆడియో స్వయంగా ప్లే అవుతుంది. అది ముగిసిన తర్వాత 'ఇప్పుడు ప్రారంభించండి' బటన్ యాక్టివ్ అవుతుంది.,ಆಡಿಯೋ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪ್ಲೇ ಆಗುತ್ತದೆ. ಅದು ಮುಗಿದ ನಂತರ 'ಈಗ ಪ್ರಾರಂಭಿಸಿ' ಬಟನ್ ಸಕ್ರಿಯವಾಗುತ್ತದೆ.
+game.question,Question,सवाल,प्रश्न,ప్రశ్న,ಪ್ರಶ್ನೆ
+game.of,of,में से,पैकी,లో,ರಲ್ಲಿ
+game.category,Category,वर्ग,प्रकार,వర్గం,ವಿಭಾಗ
+game.catSingle,Single Number,एक अंक,एक अंकी संख्या,ఒక అంకె సంఖ్య,ಒಂದು ಅಂಕಿಯ ಸಂಖ್ಯೆ
+game.catDouble,Double Number,दो अंक,दोन अंकी संख्या,రెండు అంకెల సంఖ్య,ಎರಡು ಅಂಕಿಗಳ ಸಂಖ್ಯೆ
+game.catSub,Subtraction,घटाव,वजाबाकी,తీసివేత,ವ್ಯವಕಲನ
+game.catDiv,Division,भाग,भागाकार,భాగహారం,ಭಾಗಾಕಾರ
+game.timer,Timer,समय,टायमर,టైమర్,ಟೈಮರ್
+game.correct,Correct,सही,बरोबर,సరైనది,ಸರಿ
+game.incorrect,Incorrect,गलत,चुकीचे,తప్పు,ತಪ್ಪು
+game.quotient,Quotient,भागफल,भागफल,భాగఫలం,ಭಾಗಲಬ್ಧ
+game.remainder,Remainder,शेषफल,बाकी,శేషం,ಶೇಷ
+game.answer,Answer,उत्तर,उत्तर,జవాబు,ಉತ್ತರ
+game.submitAnswer,Submit Answer,उत्तर जमा करें,उत्तर सबमिट करा,జవాబు సమర్పించండి,ಉತ್ತರ ಸಲ್ಲಿಸಿ
+game.clear,Clear,मिटाएं,साफ करा,క్లియర్ చేయండి,ಅಳಿಸಿ
+game.assessmentComplete,Assessment Report,मूल्यांकन रिपोर्ट,मूल्यांकन अहवाल,అసెస్‌మెంట్ నివేదిక,ಮೌಲ್ಯಮಾಪನ ವರದಿ
+game.assessmentTerminated,Assessment Terminated,परीक्षण समाप्त,मूल्यांकन बंद केले,అసెస్‌మెంట్ ముగించబడింది,ಮೌಲ್ಯಮಾಪನ ಕೊನೆಗೊಂಡಿದೆ
+game.allQuestionsCompleted,All questions completed,सभी सवाल पूरे हुए,सर्व प्रश्न पूर्ण झाले,అన్ని ప్రశ్నలు పూర్తయ్యాయి,ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ
+game.finalResults,Final Results,अंतिम परिणाम,अंतिम निकाल,చివరి ఫలితాలు,ಅಂತಿಮ ಫಲಿತಾಂಶಗಳು
+game.welcomeBagiya,Welcome to Bagiya,"बगिया, में आपका स्वागत है",बगियामध्ये स्वागत आहे,బగియాకు స్వాగతం,ಬಗಿಯಾಗೆ ಸ್ವಾಗತ
+game.welcomeLottery,Welcome to Lottery Ka Ticket,"लॉटरी का टिकट, में आपका स्वागत है",लॉटरी का टिकटमध्ये स्वागत आहे,లాటరీ కా టికెట్‌కు స్వాగతం,ಲಾಟರಿ ಕಾ ಟಿಕೆಟ್‌ಗೆ ಸ್ವಾಗತ
+game.welcomeMela,Welcome to Chalo Mela Chalen,"चलो मेला चलें, में आपका स्वागत है",चलो मेला चलेंमध्ये स्वागत आहे,చలో మేళా చలేంకు స్వాగతం,ಚಲೋ ಮೇಲಾ ಚಲೇಂಗೆ ಸ್ವಾಗತ
+game.welcomeDhyan,Welcome to Dhyan Kahan Hai,"ध्यान कहाँ है, में आपका स्वागत है",ध्यान कहाँ हैमध्ये स्वागत आहे,ధ్యాన్ కహాఁ హైకు స్వాగతం,ಧ್ಯಾನ್ ಕಹಾँ ಹೈಗೆ ಸ್ವಾಗತ
+game.welcomeHerPher,Welcome to Her Pher,"हेर फेर, में आपका स्वागत है",हेर फेरमध्ये स्वागत आहे,హేర్ ఫేర్‌కు స్వాగతం,ಹೇರ್ ಫೇರ್‌ಗೆ ಸ್ವಾಗತ
+game.welcomeRachna,Welcome to Rachna,"रचना, में आपका स्वागत है",रचनामध्ये स्वागत आहे,రచనాకు స్వాగతం,ರಚನಾಗೆ ಸ್ವಾಗತ
+game.welcomeChor,Welcome to Chor Machaye Shor,"चोर मचाए शोर, में आपका स्वागत है",चोर मचाए शोरमध्ये स्वागत आहे,చోర్ మచాయే శోర్‌కు స్వాగతం,ಚೋರ್ ಮಚಾಯೇ ಶೋರ್‌ಗೆ ಸ್ವಾಗತ
+game.notScored,Not Scored,अंक नहीं,गुण दिले नाहीत,స్కోర్ చేయలేదు,ಸ್ಕೋರ್ ಮಾಡಿಲ್ಲ
+game.practiceLabel,Practice,अभ्यास,सराव,అభ్యాసం,ಅಭ್ಯಾಸ
+game.scoredLabel,Scored,अंकित,गुण दिले,స్కోర్ చేయబడింది,ಸ್ಕೋರ್ ಮಾಡಲಾಗಿದೆ
+game.replayBtn,🔊 Replay Audio,🔊 दोबारा सुनें,🔊 ऑडिओ पुन्हा ऐका,🔊 ఆడియో మళ్లీ వినండి,🔊 ಆಡಿಯೋ ಮತ್ತೆ ಕೇಳಿ
+game.practiceQuestion,Practice · Question,अभ्यास · सवाल,सराव · प्रश्न,అభ్యాసం · ప్రశ్న,ಅಭ್ಯಾಸ · ಪ್ರಶ್ನೆ
+game.practiceResponse,Practice · Response,अभ्यास · जवाब,सराव · उत्तर,అభ్యాసం · జవాబు,ಅಭ್ಯಾಸ · ಉತ್ತರ
+game.tryAgain,Try Again,फिर से कोशिश करें,पुन्हा प्रयत्न करा,మళ్లీ ప్రయత్నించండి,ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ
+game.startMainGame,Start Main Game,मुख्य खेल शुरू करें,मुख्य गेम सुरू करा,ముఖ్య గేమ్ ప్రారంభించండి,ಮುಖ್ಯ ಗೇಮ್ ಪ್ರಾರಂಭಿಸಿ
+game.responseLabel,Response,जवाब,उत्तर,జవాబు,ಉತ್ತರ
+game.subQuestion,Sub-question,उप-सवाल,उप-प्रश्न,ఉప-ప్రశ్న,ಉಪ-ಪ್ರಶ್ನೆ
+game.allAnswered,All questions answered!,सभी सवालों के जवाब दे दिए!,सर्व प्रश्नांची उत्तरे दिली!,అన్ని ప్రశ్నలకు జవాబు ఇచ్చారు!,ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಲಾಗಿದೆ!
+game.nextQuestionArrow,Next Question →,अगला सवाल →,पुढील प्रश्न →,తదుపరి ప్రశ్న →,ಮುಂದಿನ ಪ್ರಶ್ನೆ →
+game.nextScreenArrow,Next Screen →,अगली स्क्रीन →,पुढील स्क्रीन →,తదుపరి స్క్రీన్ →,ಮುಂದಿನ ಸ್ಕ್ರೀನ್ →
+game.finishGame,Finish Game,खेल खत्म करें,गेम संपवा,గేమ్ ముగించండి,ಗೇಮ್ ಮುಗಿಸಿ
+game.validationRequired,This field is required. Please select an option.,यह ज़रूरी है। कोई विकल्प चुनें।,हे क्षेत्र आवश्यक आहे. कृपया एक पर्याय निवडा.,ఈ ఫీల్డ్ అవసరం. దయచేసి ఒక ఎంపికను ఎంచుకోండి.,ಈ ಕ್ಷೇತ್ರ ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಒಂದು ಆಯ್ಕೆ ಮಾಡಿ.
+game.validationQ5,Please select at least one observed behaviour.,कृपया कम से कम एक व्यवहार चुनें।,कृपया किमान एक निरीक्षित वर्तन निवडा.,దయచేసి కనీసం ఒక గమనించిన ప్రవర్తనను ఎంచుకోండి.,ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ಗಮನಿಸಿದ ವರ್ತನೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.
+game.sampleQuestionA,Sample Question A,नमूना सवाल क,नमुना प्रश्न अ,నమూనా ప్రశ్న ఎ,ನಮೂನೆ ಪ್ರಶ್ನೆ ಎ
+game.sampleQuestionLabel,Sample Question,नमूना सवाल,नमुना प्रश्न,నమూనా ప్రశ్న,ನಮೂನೆ ಪ್ರಶ್ನೆ
+game.listenInstructions,Listen to the instructions carefully,निर्देश ध्यान से सुनें,सूचना काळजीपूर्वक ऐका,సూచనలను జాగ్రత్తగా వినండి,ಸೂಚನೆಗಳನ್ನು ಎಚ್ಚರಿಕೆಯಿಂದ ಕೇಳಿ
+game.listenRemember,Listen & Remember,सुनें और याद रखें,ऐका व लक्षात ठेवा,వినండి & గుర్తుంచుకోండి,ಕೇಳಿ & ನೆನಪಿಡಿ
+game.listeningLabel,🔊 Listening…,🔊 सुन रहे हैं…,🔊 ऐकत आहे…,🔊 వింటున్నారు…,🔊 ಕೇಳುತ್ತಿದೆ…
+game.correctFeedback,✅ Correct!,✅ सही!,✅ बरोबर!,✅ సరైనది!,✅ ಸರಿ!
+game.incorrectFeedback,❌ Not quite. Listen to the correct sequence again.,❌ सही नहीं। सही क्रम फिर से सुनें।,❌ बरोबर नाही. योग्य क्रम पुन्हा ऐका.,❌ సరిగా లేదు. సరైన క్రమాన్ని మళ్లీ వినండి.,❌ ಸರಿಯಲ್ಲ. ಸರಿಯಾದ ಕ್ರಮವನ್ನು ಮತ್ತೆ ಕೇಳಿ.
+game.sampleRound,Sample Round,अभ्यास दौर,नमुना फेरी,నమూనా రౌండ్,ನಮೂನೆ ಸುತ್ತು
+game.timerLabel,⏱ Timer:,⏱ समय:,⏱ टायमर:,⏱ టైమర్:,⏱ ಟೈಮರ್:
+game.outstandingMemory,Outstanding performance! You're a memory star! ⭐,बहुत बढ़िया! आप याददाश्त के सितारे हैं! ⭐,उत्कृष्ट कामगिरी! तू स्मरणशक्तीचा तारा आहेस! ⭐,అద్భుతమైన పనితీరు! నువ్వు మెమొరీ స్టార్‌వు! ⭐,ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ನೀನು ಮೆಮೊರಿ ಸ್ಟಾರ್! ⭐
+game.outstandingRachna,Outstanding performance! 🌟,बहुत बढ़िया! 🌟,उत्कृष्ट कामगिरी! 🌟,అద్భుతమైన పనితీరు! 🌟,ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! 🌟
+game.sessionDropped,Session Dropped (Clinical Rule),सत्र समाप्त (नियम के अनुसार),सेशन थांबवले (क्लिनिकल नियम),సెషన్ ఆపివేయబడింది (క్లినికల్ నియమం),ಸೆಶನ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ (ಕ್ಲಿನಿಕಲ್ ನಿಯಮ)
+game.sessionTerminated,Session Terminated,सत्र समाप्त,सेशन संपवले,సెషన్ ముగించబడింది,ಸೆಶನ್ ಕೊನೆಗೊಂಡಿದೆ
+game.assessmentCompleted2,Assessment Completed,परीक्षा पूरी हुई,मूल्यांकन पूर्ण झाले,అసెస్‌మెంట్ పూర్తయింది,ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಂಡಿದೆ
+game.retakeBtn,↺ Retake,↺ दोबारा करें,↺ पुन्हा घ्या,↺ మళ్లీ తీయండి,↺ ಮತ್ತೆ ತೆಗೆದುಕೊಳ್ಳಿ
+game.replayShort,↻ Replay,↻ दोबारा,↻ पुन्हा ऐका,↻ మళ్లీ వినండి,↻ ಮತ್ತೆ ಕೇಳಿ
+game.stopBtn,■ Stop,■ रोकें,■ थांबा,■ ఆపండి,■ ನಿಲ್ಲಿಸಿ
+game.doneBtn,↻ Done,↻ हो गया,↻ पूर्ण,↻ పూర్తి,↻ ಮುಗಿದಿದೆ
+game.targetPattern,Target Pattern,लक्ष्य पैटर्न,लक्ष्य नमुना,లక్ష్య నమూనా,ಗುರಿ ಮಾದರಿ
+game.buildThis,Build this,यह बनाएं,हे तयार करा,దీన్ని నిర్మించండి,ಇದನ್ನು ನಿರ್ಮಿಸಿ
+game.workspaceLabel,Workspace,कार्यक्षेत्र,वर्कस्पेस,వర్క్‌స్పేస్,ವರ್ಕ್‌ಸ್ಪೇಸ್
+game.dropShapes,Drop shapes here to build the pattern,पैटर्न बनाने के लिए आकृतियाँ यहाँ रखें,नमुना तयार करण्यासाठी आकार येथे टाका,నమూనాను నిర్మించడానికి ఆకారాలను ఇక్కడ వదలండి,ಮಾದರಿಯನ್ನು ನಿರ್ಮಿಸಲು ಆಕಾರಗಳನ್ನು ಇಲ್ಲಿ ಬಿಡಿ
+game.sourceShapes,Source Shapes,आकृति चुनें,मूळ आकार,మూల ఆకారాలు,ಮೂಲ ಆಕಾರಗಳು
+game.dragToWorkspace,Drag to workspace,कार्यक्षेत्र पर खींचें,वर्कस्पेसमध्ये ओढा,వర్క్‌స్పేస్‌కు లాగండి,ವರ್ಕ್‌ಸ್ಪೇಸ್‌ಗೆ ಎಳೆಯಿರಿ
+game.correctFeedbackChor,✔ Correct!,✔ सही!,✔ बरोबर!,✔ సరైనది!,✔ ಸರಿ!
+game.incorrectFeedbackChor,✖ Try again. Observe carefully.,✖ फिर से कोशिश करें। ध्यान से देखें।,✖ पुन्हा प्रयत्न करा. काळजीपूर्वक पाहा.,✖ మళ్లీ ప్రయత్నించండి. జాగ్రత్తగా చూడండి.,✖ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. ಎಚ್ಚರಿಕೆಯಿಂದ ನೋಡಿ.
+game.foundPattern,✅ Great! You found the pattern,✅ बहुत अच्छे! पैटर्न मिल गया,✅ छान! तुला नमुना सापडला,✅ బాగుంది! మీరు నమూనాను కనుగొన్నారు,✅ ಚೆನ್ನಾಗಿದೆ! ನೀನು ಮಾದರಿಯನ್ನು ಕಂಡುಕೊಂಡೆ
+game.phase1Complete,Phase 1 Completed! Click Phase 2 to continue.,चरण 1 पूरा! चरण 2 के लिए क्लिक करें।,टप्पा 1 पूर्ण झाला! टप्पा 2 साठी क्लिक करा.,దశ 1 పూర్తయింది! దశ 2 కోసం క్లిక్ చేయండి.,ಹಂತ 1 ಪೂರ್ಣಗೊಂಡಿದೆ! ಹಂತ 2 ಗಾಗಿ ಕ್ಲಿಕ್ ಮಾಡಿ.
+game.trial2Label,🔄 Trial 2,🔄 दूसरा प्रयास,🔄 प्रयत्न 2,🔄 ప్రయత్నం 2,🔄 ಪ್ರಯತ್ನ 2
+game.totalMoves,Total Moves,कुल चालें,एकूण हलचाली,మొత్తం కదలికలు,ಒಟ್ಟು ಚಲನೆಗಳು
+game.detailedBreakdown,Detailed Question Breakdown,सवाल-दर-सवाल विवरण,तपशीलवार प्रश्न विश्लेषण,వివరణాత్మక ప్రశ్న విభజన,ವಿವರವಾದ ಪ್ರಶ್ನೆ ವಿಭಜನೆ
+game.movesLabel,Moves,चालें,हलचाली,కదలికలు,ಚಲನೆಗಳು
+game.sNo,S. No,क्र.सं.,क्र.,క్రమ సంఖ్య,ಕ್ರ.ಸಂ
+game.questionImage,Question Image,प्रश्न चित्र,प्रश्नाचे चित्र,ప్రశ్న చిత్రం,ಪ್ರಶ್ನೆ ಚಿತ್ರ
+game.exactLabel,✓ Correct (2pts),✓ बिल्कुल सही (2 अंक),✓ बरोबर (2 गुण),✓ సరైనది (2 పాయింట్లు),✓ ಸರಿ (2 ಅಂಕಗಳು)
+game.partialLabel,~ Partial (1pt),~ आंशिक सही (1 अंक),~ अर्धवट (1 गुण),~ పాక్షికం (1 పాయింట్),~ ಭಾಗಶಃ (1 ಅಂಕ)
+game.wrongLabel,✗ Incorrect (0pts),✗ गलत (0 अंक),✗ चुकीचे (0 गुण),✗ తప్పు (0 పాయింట్లు),✗ ತಪ್ಪು (0 ಅಂಕಗಳು)
+game.accuracyLabel,% Accuracy,% सटीकता,% अचूकता,% ఖచ్చితత్వం,% ನಿಖರತೆ
+game.timeLabel,⏱ Time,⏱ समय,⏱ वेळ,⏱ సమయం,⏱ ಸಮಯ
+game.screensLabel,Screens,स्क्रीन,स्क्रीन्स,స్క్రీన్‌లు,ಸ್ಕ್ರೀನ್‌ಗಳು
+game.screenHeader,Screen,स्क्रीन,स्क्रीन,స్క్రీన్,ಸ್ಕ್ರೀನ್
+game.subQHeader,Sub-Q,उप-प्र,उप-प्र,ఉప-ప్ర,ಉಪ-ಪ್ರ
+game.targetHeader,Target,लक्ष्य,लक्ष्य,లక్ష్యం,ಗುರಿ
+game.childChoseHeader,Child Choose,बच्चे ने चुना,मुलाने निवडले,పిల్లవాడు ఎంచుకున్నది,ಮಗು ಆಯ್ಕೆಮಾಡಿದ್ದು
+game.statusHeader,Status,स्थिति,स्थिती,స్థితి,ಸ್ಥಿತಿ
+game.ptsLabel,pts,अंक,गुण,పాయింట్లు,ಅಂಕಗಳು
+game.statusCorrect,Correct,सही,बरोबर,సరైనది,ಸರಿ
+game.statusPartial,Partial,आंशिक,अर्धवट,పాక్షికం,ಭಾಗಶಃ
+game.statusWrong,Incorrect,गलत,चुकीचे,తప్పు,ತಪ್ಪು
+game.timeChip,Screentime:,स्क्रीनटाइम:,स्क्रीनवेळ:,స్క్రీన్ సమయం:,ಸ್ಕ್ರೀನ್ ಸಮಯ:
+game.totalCorrect,Total / Correct,कुल / सही,एकूण / बरोबर,మొత్తం / సరైనవి,ಒಟ್ಟು / ಸರಿ
+game.correctMetric,✓ Correct,✓ सही,✓ बरोबर,✓ సరైనది,✓ ಸರಿ
+game.incorrectMetric,✗ Incorrect,✗ गलत,✗ चुकीचे,✗ తప్పు,✗ ತಪ್ಪು
+game.totalTimeMetric,Duration,अवधि,कालावधी,వ్యవధి,ಅವಧಿ
+game.avgQMetric,⚡ Avg/Q,⚡ औसत/प्रश्न,⚡ सरासरी/प्र,⚡ సగటు/ప్ర,⚡ ಸರಾಸರಿ/ಪ್ರ
+game.qNumHeader,Q#,प्र#,प्र#,ప్ర#,ಪ್ರ#
+game.yourResponse,Your Response,आपका जवाब,तुमचे उत्तर,మీ జవాబు,ನಿಮ್ಮ ಉತ್ತರ
+game.replaysHeader,Replays,दोहराव,पुन्हा ऐकले,మళ్లీ వినడాలు,ಮತ್ತೆ ಕೇಳಿದ್ದು
+game.outstandingLottery,Outstanding performance! Great memory span! ⭐,बहुत बढ़िया! शानदार याददाश्त! ⭐,उत्कृष्ट कामगिरी! उत्तम स्मरणक्षमता! ⭐,అద్భుతమైన పనితీరు! గొప్ప మెమొరీ! ⭐,ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ಉತ್ತಮ ಮೆಮೊರಿ! ⭐
+game.stoppedMsg,Stopped after 3 consecutive incorrect answers,3 लगातार गलत जवाब के बाद रुका,सलग 3 चुकीच्या उत्तरांनंतर थांबवले,వరుసగా 3 తప్పు జవాబుల తర్వాత ఆపివేయబడింది,ಸತತ 3 ತಪ್ಪು ಉತ್ತರಗಳ ನಂತರ ನಿಲ್ಲಿಸಲಾಗಿದೆ
+game.testCompleted,Test completed,परीक्षा पूरी हुई,टेस्ट पूर्ण झाली,టెస్ట్ పూర్తయింది,ಟೆಸ್ಟ್ ಪೂರ್ಣಗೊಂಡಿದೆ
+game.teachingLabel,Teaching,शिक्षण,शिकवणी,బోధన,ಬೋಧನೆ
+game.teachingQ1Label,Teaching Question 1,शिक्षण सवाल 1,शिकवणी प्रश्न 1,బోధన ప్రశ్న 1,ಬೋಧನಾ ಪ್ರಶ್ನೆ 1
+game.teachingQ2Label,Teaching Question 2,शिक्षण सवाल 2,शिकवणी प्रश्न 2,బోధన ప్రశ్న 2,ಬೋಧನಾ ಪ್ರಶ್ನೆ 2
+game.startMainQuestions,Start Main Questions,मुख्य सवाल शुरू करें,मुख्य प्रश्न सुरू करा,ముఖ్య ప్రశ్నలు ప్రారంభించండి,ಮುಖ್ಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರಾರಂಭಿಸಿ
+game.pleaseWaitAudio,🔊 Please wait for the correction audio…,🔊 कृपया सुधार ऑडियो का इंतज़ार करें…,🔊 कृपया सुधारणा ऑडिओसाठी थांबा…,🔊 దయచేసి సరిచేసే ఆడియో కోసం వేచి ఉండండి…,🔊 ದಯವಿಟ್ಟು ತಿದ್ದುಪಡಿ ಆಡಿಯೋಗಾಗಿ ಕಾಯಿರಿ…
+game.sampleLabel,Sample,नमूना,नमुना,నమూనా,ನಮೂನೆ
+game.audioAutoPlay,Audio plays automatically,ऑडियो अपने आप चलेगा,ऑडिओ स्वतः सुरू होतो,ఆడియో స్వయంగా ప్లే అవుతుంది,ಆಡಿಯೋ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪ್ಲೇ ಆಗುತ್ತದೆ
+game.selectNumbers,Select {n} numbers in order,{n} संख्याएँ क्रम में चुनें,{n} अंक क्रमाने निवडा,{n} సంఖ్యలను క్రమంలో ఎంచుకోండి,{n} ಸಂಖ್ಯೆಗಳನ್ನು ಕ್ರಮವಾಗಿ ಆಯ್ಕೆಮಾಡಿ
+game.selectionComplete,Selection complete,चयन पूरा,निवड पूर्ण झाली,ఎంపిక పూర్తయింది,ಆಯ್ಕೆ ಪೂರ್ಣಗೊಂಡಿದೆ
+game.questionsLabel,Questions,प्रश्न,प्रश्न,ప్రశ్నలు,ಪ್ರಶ್ನೆಗಳು
+game.performanceMeter,Performance Meter,प्रदर्शन मीटर,कामगिरी मीटर,పనితీరు మీటర్,ಪ್ರದರ್ಶನ ಮೀಟರ್
+game.targetedMoves,Targeted Moves:,लक्षित चाल:,लक्ष्य हलचाली:,లక్ష్య కదలికలు:,ಗುರಿ ಚಲನೆಗಳು:
+game.userMoves,User Moves:,बच्चे की चाल:,वापरकर्ता हलचाली:,వినియోగదారు కదలికలు:,ಬಳಕೆದಾರ ಚಲನೆಗಳು:
+game.timeTakenLabel,Duration:,अवधि:,कालावधी:,వ్యవధి:,ಅವಧಿ:
+game.userSelectedPath,User Selected Path,बच्चे का चुना रास्ता,वापरकर्त्याने निवडलेला मार्ग,వినియోగదారు ఎంచుకున్న మార్గం,ಬಳಕೆದಾರ ಆಯ್ಕೆ ಮಾಡಿದ ಮಾರ್ಗ
+game.path1,Path 1,रास्ता 1,मार्ग 1,మార్గం 1,ಮಾರ್ಗ 1
+game.path2,Path 2,रास्ता 2,मार्ग 2,మార్గం 2,ಮಾರ್ಗ 2
+game.path3,Path 3,रास्ता 3,मार्ग 3,మార్గం 3,ಮಾರ್ಗ 3
+game.sampleALabel,Sample A,नमूना A,नमुना अ,నమూనా ఎ,ನಮೂನೆ ಎ
+game.sampleBLabel,Sample B,नमूना B,नमुना ब,నమూనా బి,ನಮೂನೆ ಬಿ
+game.teachingQ3Label,Teaching Question 3,शिक्षण सवाल 3,शिकवणी प्रश्न 3,బోధన ప్రశ్న 3,ಬೋಧನಾ ಪ್ರಶ್ನೆ 3
+game.teachingQ4Label,Teaching Question 4,शिक्षण सवाल 4,शिकवणी प्रश्न 4,బోధన ప్రశ్న 4,ಬೋಧನಾ ಪ್ರಶ್ನೆ 4
+game.trialLabel,Trial,प्रयास,प्रयत्न,ప్రయత్నం,ಪ್ರಯತ್ನ
+game.refreshBtn,Refresh,दोबारा देखें,रिफ्रेश करा,రిఫ్రెష్ చేయండి,ರಿಫ್ರೆಶ್ ಮಾಡಿ
+game.currentTrialLabel,CURRENT TRIAL,वर्तमान प्रयास,सध्याचा प्रयत्न,ప్రస్తుత ప్రయత్నం,ಪ್ರಸ್ತುತ ಪ್ರಯತ್ನ
+game.movesInfoLabel,MOVES,चाल,हलचाली,కదలికలు,ಚಲನೆಗಳು
+game.timeInfoLabel,TIME,समय,वेळ,సమయం,ಸಮಯ
+game.questionEndedMoves,Question Ended Due to Illegal Moves,गलत चाल के कारण प्रश्न समाप्त,अवैध हलचालींमुळे प्रश्न संपला,చెల్లని కదలికల వలన ప్రశ్న ముగిసింది,ಅಮಾನ್ಯ ಚಲನೆಗಳಿಂದ ಪ್ರಶ್ನೆ ಕೊನೆಗೊಂಡಿದೆ
+game.timeoutDestination,Time Out – Destination Not Achieved,समय समाप्त – मंजिल नहीं पहुंचे,वेळ संपली – ठिकाण गाठले नाही,సమయం ముగిసింది – గమ్యం చేరుకోలేదు,ಸಮಯ ಮುಗಿದಿದೆ – ಗುರಿ ತಲುಪಿಲ್ಲ
+game.destinationNotAchieved,Destination Not Achieved,मंजिल नहीं पहुंचे,ठिकाण गाठले नाही,గమ్యం చేరుకోలేదు,ಗುರಿ ತಲುಪಿಲ್ಲ
+game.sessionTerminatedPartial,Assessment Report,मूल्यांकन रिपोर्ट,मूल्यांकन अहवाल,అసెస్‌మెంట్ నివేదిక,ಮೌಲ್ಯಮಾಪನ ವರದಿ
+game.droppedSubtitle,Q1-Q3 score < 2: System-enforced drop,Q1-Q3 अंक < 2: नियम के अनुसार बाहर,प्र1-प्र3 गुण < 2: सिस्टमने थांबवले,ప్ర1-ప్ర3 స్కోర్ < 2: సిస్టమ్ నిలిపివేసింది,ಪ್ರ1-ಪ್ರ3 ಸ್ಕೋರ್ < 2: ಸಿಸ್ಟಂ ನಿಲ್ಲಿಸಿದೆ
+game.assessorExit,Assessor requested early exit,मूल्यांकनकर्ता ने जल्दी समाप्त किया,मूल्यांकनकर्त्याने लवकर थांबवण्याची विनंती केली,మూల్యాంకనకర్త ముందస్తు నిష్క్రమణ కోరారు,ಮೌಲ್ಯಮಾಪಕರು ಮುಂಚಿತ ನಿರ್ಗಮನ ಕೋರಿದರು
+game.testFinished,Test finished successfully,परीक्षण सफलतापूर्वक पूरा हुआ,टेस्ट यशस्वीरित्या पूर्ण झाली,టెస్ట్ విజయవంతంగా పూర్తయింది,ಟೆಸ್ಟ್ ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಂಡಿದೆ
+game.nextQuestion,Next Question,अगला प्रश्न,पुढील प्रश्न,తదుపరి ప్రశ్న,ಮುಂದಿನ ಪ್ರಶ್ನೆ
+game.requiredStar,* (Required),* (अनिवार्य),* (आवश्यक),* (అవసరం),* (ಅಗತ್ಯ)
+game.welcomeLiteracy,Welcome to Padh ke batao,"पढ़ के बताओ, में आपका स्वागत है",पढ़ के बताओमध्ये स्वागत आहे,పఢ్ కే బతావోకు స్వాగతం,ಪಢ್ ಕೇ ಬತಾವೋಗೆ ಸ್ವಾಗತ
+game.doneReading,Done Reading,पढ़ लिया,वाचन पूर्ण झाले,చదవడం పూర్తయింది,ಓದುವುದು ಮುಗಿದಿದೆ
+game.assessorStopped,Assessor stopped:,मूल्यांकनकर्ता ने रोका:,मूल्यांकनकर्त्याने थांबवले:,మూల్యాంకనకర్త ఆపివేశారు:,ಮೌಲ್ಯಮಾಪಕರು ನಿಲ್ಲಿಸಿದರು:
+game.questionNo,Question No.,प्रश्न सं.,प्रश्न क्र.,ప్రశ్న సంఖ్య,ಪ್ರಶ್ನೆ ಸಂ.
+game.questionType,Question Type,प्रश्न प्रकार,प्रश्न प्रकार,ప్రశ్న రకం,ಪ್ರಶ್ನೆ ಪ್ರಕಾರ
+game.attemptStatus,Attempt Status,प्रयास स्थिति,प्रयत्न स्थिती,ప్రయత్న స్థితి,ಪ್ರಯತ್ನ ಸ್ಥಿತಿ
+game.allCriteriaMet,All Criteria Met,सभी मानदंड पूरे,सर्व निकष पूर्ण झाले,అన్ని ప్రమాణాలు నెరవేరాయి,ಎಲ್ಲಾ ಮಾನದಂಡಗಳನ್ನು ಪೂರೈಸಲಾಗಿದೆ
+game.attempted,Attempted,प्रयास किया,प्रयत्न केला,ప్రయత్నించారు,ಪ್ರಯತ್ನಿಸಲಾಗಿದೆ
+game.ssrQuestion,Assessment Question,मूल्यांकन प्रश्न,मूल्यांकन प्रश्न,అసెస్‌మెంట్ ప్రశ్న,ಮೌಲ್ಯಮಾಪನ ಪ್ರಶ್ನೆ
+game.userAnswer,User Answer,बच्चे का उत्तर,वापरकर्त्याचे उत्तर,వినియోగదారు జవాబు,ಬಳಕೆದಾರ ಉತ್ತರ
+game.assessmentLabel,Assessment Report,मूल्यांकन रिपोर्ट,मूल्यांकन अहवाल,అసెస్‌మెంట్ నివేదిక,ಮೌಲ್ಯಮಾಪನ ವರದಿ
+game.yesLabel,Yes,हाँ,होय,అవును,ಹೌದು
+game.noLabel,No,नहीं,नाही,కాదు,ಇಲ್ಲ
+game.finishAssessment,Finish Assessment,मूल्यांकन समाप्त करें,मूल्यांकन पूर्ण करा,అసెస్‌మెంట్ పూర్తి చేయండి,ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಳಿಸಿ
+game.droppedChip,⛔ Dropped,⛔ बाहर,⛔ थांबवले,⛔ ఆపివేయబడింది,⛔ ನಿಲ್ಲಿಸಲಾಗಿದೆ
+game.time,Time,समय,वेळ,సమయం,ಸಮಯ
+game.performance,Ankganit Performance,अंकगणित प्रदर्शन,अंकगणित कामगिरी,అంకగణిత్ పనితీరు,ಅಂಕಗಣಿತ್ ಪ್ರದರ್ಶನ
+game.performanceLabel,Performance,प्रदर्शन,कामगिरी,పనితీరు,ಪ್ರದರ್ಶನ
+game.assessmentCompleted,Assessment Completed,परीक्षा पूरी हुई,मूल्यांकन पूर्ण झाले,అసెస్‌మెంట్ పూర్తయింది,ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಂಡಿದೆ
+game.totalScore,Total Score,कुल अंक,एकूण गुण,మొత్తం స్కోర్,ಒಟ್ಟು ಸ್ಕೋರ್
+game.correct2,Correct,सही,बरोबर,సరైనది,ಸರಿ
+game.incorrect2,Incorrect,गलत,चुकीचे,తప్పు,ತಪ್ಪು
+game.percentage,Accuracy,सटीकता,अचूकता,ఖచ్చితత్వం,ನಿಖರತೆ
+game.totalTime,Duration,अवधि,कालावधी,వ్యవధి,ಅವಧಿ
+game.avgTimeQ,Avg Time/Q,औसत समय/सवाल,सरासरी वेळ/प्र,సగటు సమయం/ప్ర,ಸರಾಸರಿ ಸಮಯ/ಪ್ರ
+game.outstanding,Outstanding performance! You're a math star! ⭐,बहुत बढ़िया! आप गणित के सितारे हैं! ⭐,उत्कृष्ट कामगिरी! तू गणिताचा तारा आहेस! ⭐,అద్భుతమైన పనితీరు! నువ్వు గణిత స్టార్‌వు! ⭐,ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ನೀನು ಗಣಿತ ಸ್ಟಾರ್! ⭐
+game.showGrid,Show per-question results with time,हर सवाल का समय और नतीजा देखें,वेळेसह प्रश्न-निहाय निकाल दाखवा,సమయంతో ప్రశ్న-వారీ ఫలితాలు చూపండి,ಸಮಯದೊಂದಿಗೆ ಪ್ರಶ್ನೆ-ವಾರು ಫಲಿತಾಂಶಗಳನ್ನು ತೋರಿಸಿ
+game.reasonLabel,Reason:,कारण:,कारण:,కారణం:,ಕಾರಣ:
+game.sessionDetails,Session Assessment Details,सत्र का विवरण,सेशन मूल्यांकन तपशील,సెషన్ అసెస్‌మెంట్ వివరాలు,ಸೆಶನ್ ಮೌಲ್ಯಮಾಪನ ವಿವರಗಳು
+game.assessorInstruction,This section must be filled by the Assessor.,यह सेक्शन केवल Assessor द्वारा भरा जाना चाहिए।,हा भाग मूल्यांकनकर्त्याने भरावा.,ఈ భాగాన్ని మూల్యాంకనకర్త పూరించాలి.,ಈ ಭಾಗವನ್ನು ಮೌಲ್ಯಮಾಪಕರು ಭರ್ತಿ ಮಾಡಬೇಕು.
+game.q1Label,Q1. Did you enjoy playing the game?,प्र1. क्या आपको खेल खेलने में मज़ा आया?,प्र1. तुला गेम खेळायला आवडले का?,ప్ర1. మీకు గేమ్ ఆడటం ఇష్టమైందా?,ಪ್ರ1. ನೀನು ಗೇಮ್ ಆಡುವುದನ್ನು ಆನಂದಿಸಿದೆಯಾ?
+game.q2Label,Q2. How did the game feel for you?,प्र2. खेल आपको कैसा लगा?,प्र2. गेम खेळताना तुला कसे वाटले?,ప్ర2. గేమ్ ఆడేటప్పుడు మీకు ఎలా అనిపించింది?,ಪ್ರ2. ಗೇಮ್ ಆಡುವಾಗ ನಿನಗೆ ಹೇಗೆ ಅನಿಸಿತು?
+game.q3Label,Q3. Did you feel tired while playing the game?,प्र3. क्या खेलते-खेलते थकान हुई?,प्र3. गेम खेळताना तुला थकवा आला का?,ప్ర3. గేమ్ ఆడేటప్పుడు మీకు అలసట అనిపించిందా?,ಪ್ರ3. ಗೇಮ್ ಆಡುವಾಗ ನಿನಗೆ ಆಯಾಸ ಅನಿಸಿತಾ?
+game.q4Label,Q4. Would you like to play the game again?,प्र4. क्या आप यह खेल फिर खेलना चाहेंगे?,प्र4. तुला हा गेम पुन्हा खेळायला आवडेल का?,ప్ర4. మీరు ఈ గేమ్‌ను మళ్లీ ఆడాలనుకుంటున్నారా?,ಪ್ರ4. ನೀನು ಈ ಗೇಮ್ ಅನ್ನು ಮತ್ತೆ ಆಡಲು ಬಯಸುತ್ತೀಯಾ?
+game.optYes,"Yes, a lot","हाँ, बहुत","हो, खूप","అవును, చాలా","ಹೌದು, ತುಂಬಾ"
+game.optLittle,A little,थोड़ा सा,थोडे,కొంచెం,ಸ್ವಲ್ಪ
+game.optNotMuch,Not much,ज़्यादा नहीं,जास्त नाही,ఎక్కువ కాదు,ಹೆಚ್ಚಿಲ್ಲ
+game.q5Label,Q5. Observed Behaviours during the session (Multiple selection allowed),प्र5. सत्र के दौरान देखे गए व्यवहार (एक से ज़्यादा चुन सकते हैं),प्र5. सेशनमध्ये निरीक्षित वर्तन (अनेक पर्याय निवडता येतील),ప్ర5. సెషన్‌లో గమనించిన ప్రవర్తనలు (అనేకం ఎంచుకోవచ్చు),ಪ್ರ5. ಸೆಶನ್‌ನಲ್ಲಿ ಗಮನಿಸಿದ ವರ್ತನೆಗಳು (ಹಲವು ಆಯ್ಕೆ ಸಾಧ್ಯ)
+game.b1,Difficulty sustaining attention,ध्यान टिकाने में मुश्किल,लक्ष टिकवण्यात अडचण,దృష్టి నిలుపుకోవడంలో కష్టం,ಗಮನ ಉಳಿಸಿಕೊಳ್ಳುವಲ್ಲಿ ಕಷ್ಟ
+game.b2,Impulsive or random responding,बिना सोचे जल्दी जवाब देना,आवेगी किंवा यादृच्छिक प्रतिसाद,ఆకస్మిక లేదా యాదృచ్ఛిక స్పందన,ಆತುರದ ಅಥವಾ ಯಾದೃಚ್ಛಿಕ ಪ್ರತಿಕ್ರಿಯೆ
+game.b3,Negative reaction to correction,सुधार पर नाराज़ होना,सुधारणेवर नकारात्मक प्रतिक्रिया,సరిచేయడంపై ప్రతికూల స్పందన,ತಿದ್ದುಪಡಿಯ ಮೇಲೆ ನಕಾರಾತ್ಮಕ ಪ್ರತಿಕ್ರಿಯೆ
+game.b4,Hesitation in responding,जवाब देने में झिझक,उत्तर देताना संकोच,జవాబు ఇవ్వడంలో సంశయం,ಉತ್ತರಿಸುವಲ್ಲಿ ಸಂಕೋಚ
+game.b5,High focus or persistence,ध्यान लगाकर काम करना,उच्च लक्ष किंवा सातत्य,ఎక్కువ దృష్టి లేదా పట్టుదల,ಹೆಚ್ಚಿನ ಗಮನ ಅಥವಾ ನಿರಂತರತೆ
+game.b6,Verbalisation of a memory strategy,याद करने का तरीका बोलकर बताना,स्मरण रणनीतीचे शब्दात वर्णन,మెమొరీ వ్యూహాన్ని మాటల్లో చెప్పడం,ಮೆಮೊರಿ ತಂತ್ರವನ್ನು ಮಾತಿನಲ್ಲಿ ವಿವರಿಸುವುದು
+game.b7,Needed frequent reassurance,बार-बार आश्वासन चाहिए,वारंवार आश्वासनाची गरज,తరచూ భరోసా అవసరం,ಆಗಾಗ್ಗೆ ಭರವಸೆ ಬೇಕಾಗಿತ್ತು
+game.b8,Calm and engaged throughout,शांत और लगातार लगे रहना,संपूर्ण वेळ शांत व सहभागी,మొత్తం సమయం శాంతంగా & నిమగ్నమై ఉండటం,ಪೂರ್ತಿ ಸಮಯ ಶಾಂತ ಮತ್ತು ತೊಡಗಿಸಿಕೊಂಡಿರುವುದು
+game.extraNotes,Additional Notes,अन्य टिप्पणी,अतिरिक्त टिपणी,అదనపు గమనికలు,ಹೆಚ್ಚುವರಿ ಟಿಪ್ಪಣಿಗಳು
+game.useMic,Use Mic,माइक से बोलें,माईक वापरा,మైక్ ఉపయోగించండి,ಮೈಕ್ ಬಳಸಿ
+game.recordingStop,Recording... (Stop),रिकॉर्ड हो रहा है... (रोकें),रेकॉर्डिंग... (थांबवा),రికార్డింగ్... (ఆపండి),ರೆಕಾರ್ಡಿಂಗ್... (ನಿಲ್ಲಿಸಿ)
+game.dictatePlaceholder,Type or dictate observations...,टिप्पणी यहाँ लिखें या बोलें...,निरीक्षणे टाइप करा किंवा बोला...,గమనికలను టైప్ చేయండి లేదా చెప్పండి...,ಗಮನಿಕೆಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಹೇಳಿ...
+game.retest,↻ Retest,↻ दोबारा परीक्षा,↺ पुन्हा टेस्ट करा,↺ తిరిగి టెస్ట్ చేయండి,↺ ಮತ್ತೆ ಟೆಸ್ಟ್ ಮಾಡಿ
+game.home,🏠 Home,🏠 होम,🏠 मुख्यपृष्ठ,🏠 హోమ్,🏠 ಮುಖಪುಟ
+game.submitAssessment,Submit Assessment,मूल्यांकन जमा करें,मूल्यांकन सबमिट करा,అసెస్‌మెంట్ సమర్పించండి,ಮೌಲ್ಯಮಾಪನ ಸಲ್ಲಿಸಿ
+game.confirmSubmitMsg,Are you sure you want to submit the assessment?,क्या आप वाकई मूल्यांकन जमा करना चाहते हैं?,तुम्हाला खात्री आहे की तुम्ही मूल्यांकन सबमिट करायचे आहे?,మీరు అసెస్‌మెంట్‌ను సమర్పించాలని నిర్ధారిస్తున్నారా?,ಮೌಲ್ಯಮಾಪನವನ್ನು ಸಲ್ಲಿಸಲು ನೀವು ಖಚಿತವಾ?
+game.confirm,Confirm,पुष्टि करें,पुष्टी करा,నిర్ధారించండి,ಖಚಿತಪಡಿಸಿ
+game.assessmentSubmitted,Assessment submitted successfully!,मूल्यांकन सफलतापूर्वक जमा हो गया!,मूल्यांकन यशस्वीरित्या सबमिट झाले!,అసెస్‌మెంట్ విజయవంతంగా సమర్పించబడింది!,ಮೌಲ್ಯಮಾಪನ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ!
+game.saving,Saving...,सहेजा जा रहा है...,सेव्ह होत आहे...,సేవ్ చేస్తోంది...,ಉಳಿಸುತ್ತಿದೆ...
+game.progressFound,Saved Progress Found,पहले की प्रगति मिली,सेव्ह केलेली प्रगती सापडली,సేవ్ చేసిన ప్రోగ్రెస్ కనుగొనబడింది,ಉಳಿಸಿದ ಪ್ರಗತಿ ಕಂಡುಬಂದಿದೆ
+game.progressDesc,You have a previously paused game session.,आपका एक पुराना सत्र रुका हुआ है।,तुमच्याकडे आधी थांबवलेले गेम सेशन आहे.,మీకు ముందుగా ఆపివేసిన గేమ్ సెషన్ ఉంది.,ನಿಮಗೆ ಈ ಹಿಂದೆ ನಿಲ್ಲಿಸಿದ ಗೇಮ್ ಸೆಶನ್ ಇದೆ.
+game.restartFresh,Restart Fresh,नए सिरे से शुरू करें,नवीन सुरुवात करा,కొత్తగా ప్రారంభించండి,ಹೊಸದಾಗಿ ಪ್ರಾರಂಭಿಸಿ
+game.resumeGame,Resume Game,वहीं से जारी रखें,गेम पुन्हा सुरू करा,గేమ్ తిరిగి ప్రారంభించండి,ಗೇಮ್ ಮುಂದುವರಿಸಿ
+game.pauseQuitTitle,Pause or Quit,रोकें या छोड़ें,थांबवा किंवा बंद करा,ఆపండి లేదా నిష్క్రమించండి,ನಿಲ್ಲಿಸಿ ಅಥವಾ ನಿರ್ಗಮಿಸಿ
+game.pauseDesc,Why are you stopping the game?,आप खेल क्यों रोक रहे हैं?,तुम्ही गेम का थांबवत आहात?,మీరు గేమ్‌ను ఎందుకు ఆపుతున్నారు?,ನೀವು ಗೇಮ್ ಅನ್ನು ಏಕೆ ನಿಲ್ಲಿಸುತ್ತಿದ್ದೀರಿ?
+game.pausePlaceholder,"E.g., Child is tired, disconnected, etc.","जैसे: बच्चा थक गया, नेटवर्क नहीं है, आदि।","उदा. मूल थकले आहे, डिस्कनेक्ट झाले, इत्यादी.","ఉదా. పిల్లవాడు అలసిపోయాడు, డిస్‌కనెక్ట్ అయింది, మొదలైనవి.","ಉದಾ. ಮಗು ಆಯಾಸಗೊಂಡಿದೆ, ಸಂಪರ್ಕ ಕಡಿತಗೊಂಡಿದೆ, ಇತ್ಯಾದಿ."
+game.cancel,Cancel,रद्द करें,रद्द करा,రద్దు చేయండి,ರದ್ದುಮಾಡಿ
+game.pauseSave,Pause & Save,रोकें और सहेजें,थांबवा व सेव्ह करा,ఆపి సేవ్ చేయండి,ನಿಲ್ಲಿಸಿ & ಉಳಿಸಿ
+game.quitEnd,Quit & End,छोड़ें और समाप्त करें,बंद करा व संपवा,నిష్క్రమించి ముగించండి,ನಿರ್ಗಮಿಸಿ & ಮುಗಿಸಿ
+game.scoreTable.questionNo,Question No,सवाल संख्या,प्रश्न क्र,ప్రశ్న సంఖ్య,ಪ್ರಶ್ನೆ ಸಂ
+game.scoreTable.question,Question,सवाल,प्रश्न,ప్రశ్న,ಪ್ರಶ್ನೆ
+game.scoreTable.correctAnswer,Correct Answer,सही उत्तर,बरोबर उत्तर,సరైన జవాబు,ಸರಿಯಾದ ಉತ್ತರ
+game.scoreTable.score,Score,अंक,स्कोर,స్కోర్,ಸ್ಕೋರ್
+game.scoreTable.timeTaken,Time Taken,लगा समय,लागलेला वेळ,తీసుకున్న సమయం,ತೆಗೆದುಕೊಂಡ ಸಮಯ
+game.scoreTable.duration,Duration,अवधि,कालावधी,వ్యవధి,ಅವಧಿ
+game.scoreTable.status,Status,स्थिति,स्थिती,స్థితి,ಸ್ಥಿತಿ
+game.scoreTable.correct,Correct,सही,बरोबर,సరైనది,ಸರಿ
+game.scoreTable.incorrect,Incorrect,गलत,चुकीचे,తప్పు,ತಪ್ಪು
+game.categories.singleLetter,Single Letter,एक अक्षर,एक अक्षर,ఒక అక్షరం,ಒಂದು ಅಕ್ಷರ
+game.categories.doubleLetter,Double Letter,दो अक्षर,दोन अक्षरे,రెండు అక్షరాలు,ಎರಡು ಅಕ್ಷರಗಳು
+game.categories.sentence,Sentence,वाक्य,वाक्य,వాక్యం,ವಾಕ್ಯ
+game.categories.story,Story,कहानी,गोष्ट,కథ,ಕಥೆ
+game.categories.paragraph,Paragraph,अनुच्छेद,परिच्छेद,పేరా,ಪ್ಯಾರಾಗ್ರಾಫ್
+game.categories.singleNumber,Single Number,एक अंक,एक अंकी संख्या,ఒక అంకె సంఖ్య,ಒಂದು ಅಂಕಿಯ ಸಂಖ್ಯೆ
+game.categories.doubleNumber,Double Number,दो अंक,दोन अंकी संख्या,రెండు అంకెల సంఖ్య,ಎರಡು ಅಂಕಿಗಳ ಸಂಖ್ಯೆ
+game.categories.subtraction,Subtraction,घटाव,वजाबाकी,తీసివేత,ವ್ಯವಕಲನ
+game.categories.division,Division,भाग,भागाकार,భాగహారం,ಭಾಗಾಕಾರ
+game.readingCriteria.skipWords,Did the child skip any words?,क्या बच्चे ने कोई शब्द छोड़ा?,मुलाने कोणतेही शब्द वगळले का?,పిల్లవాడు ఏవైనా పదాలు దాటవేశాడా?,ಮಗು ಯಾವುದೇ ಪದಗಳನ್ನು ಬಿಟ್ಟಿತೆ?
+game.readingCriteria.pronunciation,Did the child make pronunciation errors?,क्या बच्चे ने उच्चारण में गलती की?,मुलाने उच्चारणात चुका केल्या का?,పిల్లవాడు ఉచ్చారణలో తప్పులు చేశాడా?,ಮಗು ಉಚ್ಚಾರಣೆಯಲ್ಲಿ ತಪ್ಪುಗಳನ್ನು ಮಾಡಿತೆ?
+game.readingCriteria.neededHelp,Did the child need help reading?,क्या बच्चे को पढ़ने में मदद चाहिए थी?,मुलाला वाचण्यासाठी मदत हवी होती का?,పిల్లవాడికి చదవడానికి సహాయం అవసరమైందా?,ಮಗುವಿಗೆ ಓದಲು ಸಹಾಯ ಬೇಕಾಗಿತ್ತೆ?
+modal.disclaimer,This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.,यह जानकारी केवल सामान्य समझ के लिए है। परीक्षण करते समय अपने आधिकारिक KABC मैनुअल और संस्थागत नियमों का पालन करें।,ही माहिती केवळ संदर्भासाठी आहे. टेस्ट घेताना नेहमी तुमच्या अधिकृत KABC मॅन्युअल व संस्थेच्या प्रोटोकॉलचे पालन करा.,ఈ వివరణ సమాచారం కోసం మాత్రమే. టెస్ట్‌లు నిర్వహించేటప్పుడు మీ అధికారిక KABC మాన్యువల్ మరియు సంస్థ ప్రోటోకాల్‌లను ఎల్లప్పుడూ అనుసరించండి.,ಈ ವಿವರಣೆ ಮಾಹಿತಿಗಾಗಿ ಮಾತ್ರ. ಟೆಸ್ಟ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸುವಾಗ ಯಾವಾಗಲೂ ನಿಮ್ಮ ಅಧಿಕೃತ KABC ಕೈಪಿಡಿ ಮತ್ತು ಸಂಸ್ಥೆಯ ಪ್ರೋಟೋಕಾಲ್‌ಗಳನ್ನು ಅನುಸರಿಸಿ.
+modal.close,Close,बंद करें,बंद करा,మూసివేయండి,ಮುಚ್ಚಿ
+modal.startGame,Start Game,खेल शुरू करें,गेम सुरू करा,గేమ్ ప్రారంభించండి,ಗೇಮ್ ಪ್ರಾರಂಭಿಸಿ
+modal.noUrl,Start URL is not configured for this test yet.,इस टेस्ट के लिए अभी लिंक नहीं बना है।,या टेस्टसाठी सुरुवात URL अद्याप सेट केलेले नाही.,ఈ టెస్ట్ కోసం ప్రారంభ URL ఇంకా సెట్ చేయలేదు.,ಈ ಟೆಸ್ಟ್‌ಗಾಗಿ ಪ್ರಾರಂಭ URL ಇನ್ನೂ ಹೊಂದಿಸಲಾಗಿಲ್ಲ.
+help.statusOpen,Open,नया,उघडे,తెరిచి ఉంది,ತೆರೆದಿದೆ
+help.statusInProgress,In Progress,प्रगति में,प्रगतीपथावर,పురోగతిలో ఉంది,ಪ್ರಗತಿಯಲ್ಲಿದೆ
+help.statusWaitingForReply,Waiting for Reply,जवाब का इंतज़ार,उत्तराच्या प्रतीक्षेत,జవాబు కోసం వేచి ఉంది,ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ
+help.statusResolved,Resolved,हल हो गया,निराकरण झाले,పరిష్కరించబడింది,ಪರಿಹರಿಸಲಾಗಿದೆ
+help.statusClosed,Closed,बंद,बंद,మూసివేయబడింది,ಮುಚ್ಚಲಾಗಿದೆ
+help.badge,🎫 Help & Support,🎫 सहायता और समर्थन,🎫 मदत व सहाय्य,🎫 సహాయం & మద్దతు,🎫 ಸಹಾಯ & ಬೆಂಬಲ
+help.title,How can we help you?,हम आपकी कैसे मदद कर सकते हैं?,आम्ही तुमची कशी मदत करू शकतो?,మేము మీకు ఎలా సహాయం చేయగలం?,ನಾವು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?
+help.subtitle,Our support team is here to assist you with any issues related to the Sangian Assessment Platform. Create a ticket and we'll respond within 1–2 business days.,हमारी सपोर्ट टीम संगियान मूल्यांकन प्लेटफ़ॉर्म से संबंधित किसी भी समस्या में आपकी मदद के लिए यहाँ है। टिकट बनाएं और हम 1–2 कार्य दिवसों में जवाब देंगे।,संगियन असेसमेंट प्लॅटफॉर्मशी संबंधित कोणत्याही समस्येसाठी आमचा सहाय्य गट तयार आहे. तिकीट तयार करा आणि आम्ही 1–2 कामकाजाच्या दिवसांत उत्तर देऊ.,"సంగియన్ అసెస్‌మెంట్ ప్లాట్‌ఫామ్‌కు సంబంధించిన ఏ సమస్యకైనా మా మద్దతు బృందం సహాయం చేస్తుంది. టికెట్ సృష్టించండి, మేము 1–2 పని దినాలలో జవాబు ఇస్తాం.","ಸಂಗಿಯನ್ ಅಸೆಸ್‌ಮೆಂಟ್ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗೆ ಸಂಬಂಧಿಸಿದ ಯಾವುದೇ ಸಮಸ್ಯೆಗಳಿಗೆ ನಮ್ಮ ಬೆಂಬಲ ತಂಡ ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಟಿಕೆಟ್ ರಚಿಸಿ, ನಾವು 1–2 ಕೆಲಸದ ದಿನಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ."
+help.createCardTitle,Create New Ticket,नया टिकट बनाएं,नवीन तिकीट तयार करा,కొత్త టికెట్ సృష్టించండి,ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ
+help.createCardDesc,Have an issue or question? Submit a support ticket and we'll get back to you as soon as possible.,कोई समस्या है? सपोर्ट टिकट जमा करें और हम जल्द से जल्द आपसे संपर्क करेंगे।,"समस्या किंवा प्रश्न आहे? सहाय्य तिकीट सबमिट करा, आम्ही लवकरात लवकर उत्तर देऊ.","సమస్య లేదా ప్రశ్న ఉందా? సహాయ టికెట్ సమర్పించండి, మేము వీలైనంత త్వరగా జవాబు ఇస్తాం.","ಸಮಸ್ಯೆ ಅಥವಾ ಪ್ರಶ್ನೆ ಇದೆಯೇ? ಬೆಂಬಲ ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿ, ನಾವು ಆದಷ್ಟು ಬೇಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ."
+help.createCardItem1,Email verification required,ईमेल सत्यापन आवश्यक है,ईमेल पडताळणी आवश्यक,ఇమెయిల్ నిర్ధారణ అవసరం,ಇಮೇಲ್ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ
+help.createCardItem2,Attach up to 3 screenshots,3 तक स्क्रीनशॉट जोड़ें,3 स्क्रीनशॉट्सपर्यंत जोडता येतात,3 స్క్రీన్‌షాట్‌ల వరకు జోడించవచ్చు,3 ಸ್ಕ್ರೀನ್‌ಶಾಟ್‌ಗಳವರೆಗೆ ಲಗತ್ತಿಸಬಹುದು
+help.createCardItem3,Unique Ticket ID assigned,अनूठा टिकट ID मिलेगा,युनिक तिकीट आयडी दिला जातो,ప్రత్యేక టికెట్ ఐడీ ఇవ్వబడుతుంది,ವಿಶಿಷ್ಟ ಟಿಕೆಟ್ ಐಡಿ ನೀಡಲಾಗುತ್ತದೆ
+help.createCardItem4,Email confirmation sent,ईमेल पुष्टि भेजी जाएगी,ईमेल पुष्टीकरण पाठवले जाते,ఇమెయిల్ నిర్ధారణ పంపబడుతుంది,ಇಮೇಲ್ ದೃಢೀಕರಣ ಕಳುಹಿಸಲಾಗುತ್ತದೆ
+help.createBtn,Create Ticket →,टिकट बनाएं →,तिकीट तयार करा →,టికెట్ సృష్టించండి →,ಟಿಕೆಟ್ ರಚಿಸಿ →
+help.myCardTitle,My Tickets,मेरे टिकट,माझी तिकिटे,నా టికెట్లు,ನನ್ನ ಟಿಕೆಟ್‌ಗಳು
+help.myCardDesc,Already submitted a ticket? Access your ticket history and continue the conversation with our team.,पहले से टिकट बनाया है? अपना टिकट इतिहास देखें और हमारी टीम से बात करते रहें।,आधीच तिकीट सबमिट केले आहे? तुमचा तिकीट इतिहास पाहा व संभाषण सुरू ठेवा.,"ఇప్పటికే టికెట్ సమర్పించారా? మీ టికెట్ చరిత్రను చూసి, బృందంతో సంభాషణ కొనసాగించండి.",ಈಗಾಗಲೇ ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿದ್ದೀರಾ? ನಿಮ್ಮ ಟಿಕೆಟ್ ಇತಿಹಾಸವನ್ನು ಪ್ರವೇಶಿಸಿ ಮತ್ತು ನಮ್ಮ ತಂಡದೊಂದಿಗೆ ಸಂಭಾಷಣೆ ಮುಂದುವರಿಸಿ.
+help.myCardItem1,View all your tickets,सभी टिकट देखें,तुमची सर्व तिकिटे पाहा,మీ టికెట్లన్నీ చూడండి,ನಿಮ್ಮ ಎಲ್ಲಾ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ
+help.myCardItem2,Full conversation history,पूरी बातचीत का इतिहास,संपूर्ण संभाषण इतिहास,పూర్తి సంభాషణ చరిత్ర,ಪೂರ್ಣ ಸಂಭಾಷಣೆ ಇತಿಹಾಸ
+help.myCardItem3,Reply and add attachments,जवाब दें और तस्वीरें जोड़ें,उत्तर द्या व फाईल जोडा,జవాబు ఇవ్వండి & ఫైల్‌లు జోడించండి,ಪ್ರತ್ಯುತ್ತರಿಸಿ ಮತ್ತು ಲಗತ್ತುಗಳನ್ನು ಸೇರಿಸಿ
+help.myCardItem4,Track ticket status live,टिकट की स्थिति देखें,तिकिटाची स्थिती लाईव्ह पाहा,టికెట్ స్థితిని లైవ్‌గా ట్రాక్ చేయండి,ಟಿಕೆಟ್ ಸ್ಥಿತಿಯನ್ನು ಲೈವ್ ಆಗಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ
+help.myTicketBtn,View My Tickets →,मेरे टिकट देखें →,माझी तिकिटे पाहा →,నా టికెట్లు చూడండి →,ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ →
+help.defaultFaqTitle,Frequently Asked Questions,अक्सर पूछे जाने वाले प्रश्न,नेहमी विचारले जाणारे प्रश्न,తరచుగా అడిగే ప్రశ్నలు,ಪದೇ ಪದೇ ಕೇಳುವ ಪ್ರಶ್ನೆಗಳು
+help.otpTitle,Verify Your Email,ईमेल सत्यापित करें,तुमचा ईमेल पडताळा,మీ ఇమెయిల్‌ను నిర్ధారించండి,ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ
+help.otpSubPrefix,We'll send a one-time code to confirm your email before you can,आगे बढ़ने से पहले हम आपके ईमेल पर एक कोड भेजेंगे —,पुढे जाण्यापूर्वी आम्ही तुमचा ईमेल पडताळण्यासाठी एक-वेळचा कोड पाठवू,మీరు కొనసాగే ముందు మీ ఇమెయిల్‌ను నిర్ధారించడానికి మేము ఒక-సారి కోడ్‌ను పంపుతాం,ಮುಂದುವರಿಯುವ ಮೊದಲು ನಿಮ್ಮ ಇಮೇಲ್ ಖಚಿತಪಡಿಸಲು ನಾವು ಒಂದು-ಬಾರಿ ಕೋಡ್ ಕಳುಹಿಸುತ್ತೇವೆ
+help.otpPurposeCreate,Create New Ticket,नया टिकट बनाएं,नवीन तिकीट तयार करा,కొత్త టికెట్ సృష్టించండి,ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ
+help.otpPurposeView,Access My Tickets,मेरे टिकट देखें,माझी तिकिटे पाहा,నా టికెట్లు చూడండి,ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ
+help.otpEmailLabel,Email Address,ईमेल पता,ईमेल पत्ता,ఇమెయిల్ చిరునామా,ಇಮೇಲ್ ವಿಳಾಸ
+help.otpEmailPlaceholder,you@example.com,आपका@ईमेल.com,you@example.com,you@example.com,you@example.com
+help.otpSendBtn,Send Verification Code,वेरिफिकेशन कोड भेजें,पडताळणी कोड पाठवा,నిర్ధారణ కోడ్ పంపండి,ಪರಿಶೀಲನಾ ಕೋಡ್ ಕಳುಹಿಸಿ
+help.otpSending,Sending…,भेज रहे हैं…,पाठवत आहे…,పంపుతోంది…,ಕಳುಹಿಸುತ್ತಿದೆ…
+help.otpSentTo,Code sent to,कोड भेजा गया,कोड पाठवला,కోడ్ పంపబడింది,ಕೋಡ್ ಕಳುಹಿಸಲಾಗಿದೆ
+help.otpDevMode,⚠️ Dev Mode — SMTP not configured,⚠️ डेव मोड — SMTP कॉन्फ़िगर नहीं,⚠️ डेव्ह मोड — SMTP सेट केलेले नाही,⚠️ డెవ్ మోడ్ — SMTP సెట్ చేయలేదు,⚠️ ಡೆವ್ ಮೋಡ್ — SMTP ಹೊಂದಿಸಲಾಗಿಲ್ಲ
+help.otpAutoFill,Auto-fill,ऑटो-भरें,स्वयं-भरा,ఆటో-ఫిల్,ಸ್ವಯಂ-ಭರ್ತಿ
+help.otpCodeLabel,6-Digit Code,6-अंकीय कोड,6-अंकी कोड,6-అంకెల కోడ్,6-ಅಂಕಿಯ ಕೋಡ್
+help.otpCodePlaceholder,• • • • • •,• • • • • •,• • • • • •,• • • • • •,• • • • • •
+help.otpVerifyBtn,Verify & Continue,सत्यापित करें और जारी रखें,पडताळा व पुढे जा,నిర్ధారించి కొనసాగండి,ಪರಿಶೀಲಿಸಿ & ಮುಂದುವರಿಸಿ
+help.otpVerifying,Verifying…,जाँच हो रही है…,पडताळत आहे…,నిర్ధారిస్తోంది…,ಪರಿಶೀಲಿಸುತ್ತಿದೆ…
+help.otpResendIn,Resend OTP in {n}s,{n} सेकंड में दोबारा भेजें,{n}सेकंदांत OTP पुन्हा पाठवा,{n} సెకన్లలో OTP తిరిగి పంపండి,{n} ಸೆಕೆಂಡುಗಳಲ್ಲಿ OTP ಮತ್ತೆ ಕಳುಹಿಸಿ
+help.otpResend,Resend OTP,OTP दोबारा भेजें,OTP पुन्हा पाठवा,OTP తిరిగి పంపండి,OTP ಮತ್ತೆ ಕಳುಹಿಸಿ
+help.otpErrEmail,Please enter a valid email address.,कृपया सही ईमेल पता डालें।,कृपया वैध ईमेल पत्ता टाका.,దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామా నమోదు చేయండి.,ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಇಮೇಲ್ ವಿಳಾಸ ನಮೂದಿಸಿ.
+help.otpErrEnter,Please enter the OTP.,कृपया OTP डालें।,कृपया OTP टाका.,దయచేసి OTP నమోదు చేయండి.,ದಯವಿಟ್ಟು OTP ನಮೂದಿಸಿ.
+help.otpErrSend,Failed to send OTP. Please try again.,OTP भेजने में दिक्कत हुई। फिर कोशिश करें।,OTP पाठवता आला नाही. कृपया पुन्हा प्रयत्न करा.,OTP పంపలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.,OTP ಕಳುಹಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+help.otpErrVerify,Invalid OTP. Please try again.,गलत OTP। फिर कोशिश करें।,अवैध OTP. कृपया पुन्हा प्रयत्न करा.,చెల్లని OTP. దయచేసి మళ్లీ ప్రయత్నించండి.,ಅಮಾನ್ಯ OTP. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+help.createTitle,Create New Ticket,नया टिकट बनाएं,नवीन तिकीट तयार करा,కొత్త టికెట్ సృష్టించండి,ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ
+help.verifiedAs,Verified as,सत्यापित ईमेल,असे पडताळले,ఇలా నిర్ధారించబడింది,ಹೀಗೆ ಪರಿಶೀಲಿಸಲಾಗಿದೆ
+help.fieldSubject,Subject / Title,विषय / शीर्षक,विषय / शीर्षक,విషయం / శీర్షిక,ವಿಷಯ / ಶೀರ್ಷಿಕೆ
+help.fieldSubjectPlaceholder,Brief description of your issue…,अपनी समस्या का संक्षिप्त विवरण…,तुमच्या समस्येचे थोडक्यात वर्णन…,మీ సమస్య యొక్క సంక్షిప్త వివరణ…,ನಿಮ್ಮ ಸಮಸ್ಯೆಯ ಸಂಕ್ಷಿಪ್ತ ವಿವರಣೆ…
+help.fieldDesc,Description,विवरण,वर्णन,వివరణ,ವಿವರಣೆ
+help.fieldDescPlaceholder,"Describe your issue in detail — what happened, what you expected, and any steps to reproduce…","अपनी समस्या का पूरा विवरण लिखें — क्या हुआ, क्या होना चाहिए था, और समस्या दोबारा कैसे आती है…","तुमची समस्या तपशीलवार सांगा — काय झाले, तुम्हाला काय अपेक्षित होते आणि पुन्हा घडवण्याचे टप्पे…","మీ సమస్యను వివరంగా చెప్పండి — ఏం జరిగింది, మీరు ఏమి ఆశించారు, మరియు తిరిగి జరగడానికి దశలు…","ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ವಿವರವಾಗಿ ವಿವರಿಸಿ — ಏನಾಯಿತು, ನೀವು ಏನು ಬಯಸಿದ್ದೀರಿ, ಮತ್ತು ಪುನರಾವರ್ತಿಸಲು ಹಂತಗಳು…"
+help.fieldAttachments,Attachments,संलग्नक,जोडलेल्या फाईल्स,జోడింపులు,ಲಗತ್ತುಗಳು
+help.optional,(optional),(वैकल्पिक),(पर्यायी),(ఐచ్ఛికం),(ಐಚ್ಛಿಕ)
+help.addImage,📎 Add Image,📎 तस्वीर जोड़ें,📎 चित्र जोडा,📎 చిత్రం జోడించండి,📎 ಚಿತ್ರ ಸೇರಿಸಿ
+help.fileHint,"{cur}/{max} · JPG, PNG, WEBP · max 5 MB each","{cur}/{max} · JPG, PNG, WEBP · अधिकतम 5 MB","{cur}/{max} · JPG, PNG, WEBP · कमाल 5 MB प्रत्येक","{cur}/{max} · JPG, PNG, WEBP · ఒక్కొక్కటి గరిష్టంగా 5 MB","{cur}/{max} · JPG, PNG, WEBP · ಪ್ರತಿಯೊಂದಕ್ಕೂ ಗರಿಷ್ಠ 5 MB"
+help.submitBtn,🎫 Submit Ticket,🎫 टिकट जमा करें,🎫 तिकीट सबमिट करा,🎫 టికెట్ సమర్పించండి,🎫 ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿ
+help.submitting,Submitting…,जमा हो रहा है…,सबमिट होत आहे…,సమర్పిస్తోంది…,ಸಲ್ಲಿಸುತ್ತಿದೆ…
+help.back,← Back,← वापस,← मागे,← వెనుకకు,← ಹಿಂದೆ
+help.errTitle,Ticket title is required.,टिकट का शीर्षक ज़रूरी है।,तिकिटाचे शीर्षक आवश्यक आहे.,టికెట్ శీర్షిక అవసరం.,ಟಿಕೆಟ್ ಶೀರ್ಷಿಕೆ ಅಗತ್ಯವಿದೆ.
+help.errDesc,Description is required.,विवरण ज़रूरी है।,वर्णन आवश्यक आहे.,వివరణ అవసరం.,ವಿವರಣೆ ಅಗತ್ಯವಿದೆ.
+help.errCreate,Failed to create ticket. Please try again.,टिकट नहीं बन सका। फिर कोशिश करें।,तिकीट तयार करता आले नाही. कृपया पुन्हा प्रयत्न करा.,టికెట్ సృష్టించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.,ಟಿಕೆಟ್ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+help.successTitle,Ticket Submitted!,टिकट जमा हो गया!,तिकीट सबमिट झाले!,టికెట్ సమర్పించబడింది!,ಟಿಕೆಟ್ ಸಲ್ಲಿಸಲಾಗಿದೆ!
+help.successSub,Your support ticket has been created. We'll get back to you within 1–2 business days.,आपका सपोर्ट टिकट बन गया है। हम 1–2 कार्य दिवसों में वापस आएंगे।,तुमचे सहाय्य तिकीट तयार झाले आहे. आम्ही 1–2 कामकाजाच्या दिवसांत उत्तर देऊ.,మీ సహాయ టికెట్ సృష్టించబడింది. మేము 1–2 పని దినాలలో జవాబు ఇస్తాం.,ನಿಮ್ಮ ಬೆಂಬಲ ಟಿಕೆಟ್ ರಚಿಸಲಾಗಿದೆ. ನಾವು 1–2 ಕೆಲಸದ ದಿನಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ.
+help.successIdLabel,Your Ticket ID,आपका टिकट ID,तुमचा तिकीट आयडी,మీ టికెట్ ఐడీ,ನಿಮ್ಮ ಟಿಕೆಟ್ ಐಡಿ
+help.successNote,Keep this ID handy — you'll need it to track your ticket.,यह ID संभाल कर रखें — टिकट ट्रैक करने के लिए इसकी ज़रूरत होगी।,हा आयडी जपून ठेवा — तिकीट ट्रॅक करण्यासाठी तो लागेल.,ఈ ఐడీని భద్రంగా ఉంచండి — టికెట్‌ను ట్రాక్ చేయడానికి అది అవసరం.,ಈ ಐಡಿಯನ್ನು ಜಾಗ್ರತೆಯಾಗಿ ಇಡಿ — ಟಿಕೆಟ್ ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಇದು ಬೇಕಾಗುತ್ತದೆ.
+help.viewMyTickets,View My Tickets,मेरे टिकट देखें,माझी तिकिटे पाहा,నా టికెట్లు చూడండి,ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ
+help.createAnother,Create Another Ticket,एक और टिकट बनाएं,आणखी एक तिकीट तयार करा,మరో టికెట్ సృష్టించండి,ಇನ್ನೊಂದು ಟಿಕೆಟ್ ರಚಿಸಿ
+help.myTicketsTitle,My Tickets,मेरे टिकट,माझी तिकिटे,నా టికెట్లు,ನನ್ನ ಟಿಕೆಟ್‌ಗಳು
+help.viewingFor,Viewing tickets for,ईमेल के लिए टिकट,यासाठी तिकिटे पाहत आहात,దీని కోసం టికెట్లు చూస్తున్నారు,ಇದಕ್ಕಾಗಿ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡುತ್ತಿದ್ದೀರಿ
+help.noTickets,No tickets found for this email address.,इस ईमेल के लिए कोई टिकट नहीं मिला।,या ईमेल पत्त्यासाठी कोणतीही तिकिटे सापडली नाहीत.,ఈ ఇమెయిల్ చిరునామా కోసం టికెట్లు కనుగొనబడలేదు.,ಈ ಇಮೇಲ್ ವಿಳಾಸಕ್ಕೆ ಯಾವುದೇ ಟಿಕೆಟ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ.
+help.createdOn,Created,बनाया,तयार केले,సృష్టించబడింది,ರಚಿಸಲಾಗಿದೆ
+help.unreadNew,new,नया,नवीन,కొత్తది,ಹೊಸದು
+help.errLoad,Failed to load tickets.,टिकट लोड नहीं हो सके।,तिकिटे लोड करता आली नाहीत.,టికెట్లు లోడ్ చేయలేకపోయాం.,ಟಿಕೆಟ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.
+help.backToTickets,← My Tickets,← मेरे टिकट,← माझी तिकिटे,← నా టికెట్లు,← ನನ್ನ ಟಿಕೆಟ್‌ಗಳು
+help.openedOn,Opened,खोला गया,उघडले,తెరవబడింది,ತೆರೆಯಲಾಗಿದೆ
+help.you,👤 You,👤 आप,👤 तुम्ही,👤 మీరు,👤 ನೀವು
+help.supportTeam,🛡️ Support Team,🛡️ सपोर्ट टीम,🛡️ सहाय्य गट,🛡️ మద్దతు బృందం,🛡️ ಬೆಂಬಲ ತಂಡ
+help.closedNote,This ticket is closed. Please create a new ticket if you need further assistance.,यह टिकट बंद हो गया है। आगे मदद के लिए नया टिकट बनाएं।,हे तिकीट बंद आहे. अधिक मदतीसाठी कृपया नवीन तिकीट तयार करा.,ఈ టికెట్ మూసివేయబడింది. మరింత సహాయం కోసం దయచేసి కొత్త టికెట్ సృష్టించండి.,ಈ ಟಿಕೆಟ್ ಮುಚ್ಚಲಾಗಿದೆ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ ದಯವಿಟ್ಟು ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ.
+help.replyPlaceholder,Write your reply…,अपना जवाब लिखें…,तुमचे उत्तर लिहा…,మీ జవాబు రాయండి…,ನಿಮ್ಮ ಪ್ರತ್ಯುತ್ತರ ಬರೆಯಿರಿ…
+help.sendReply,📤 Send Reply,📤 जवाब भेजें,📤 उत्तर पाठवा,📤 జవాబు పంపండి,📤 ಪ್ರತ್ಯುತ್ತರ ಕಳುಹಿಸಿ
+help.sending,Sending…,भेज रहे हैं…,पाठवत आहे…,పంపుతోంది…,ಕಳುಹಿಸುತ್ತಿದೆ…
+help.errReply,Please type a message before sending.,भेजने से पहले संदेश लिखें।,पाठवण्यापूर्वी कृपया संदेश टाइप करा.,పంపే ముందు దయచేసి సందేశం టైప్ చేయండి.,ಕಳುಹಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ.
+help.errSendReply,Failed to send reply.,जवाब नहीं भेजा जा सका।,उत्तर पाठवता आले नाही.,జవాబు పంపలేకపోయాం.,ಪ್ರತ್ಯುತ್ತರ ಕಳುಹಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.
+help.errLoadTicket,Failed to load ticket.,टिकट लोड नहीं हो सका।,तिकीट लोड करता आले नाही.,టికెట్ లోడ్ చేయలేకపోయాం.,ಟಿಕೆಟ್ ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.

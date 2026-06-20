@@ -6,7 +6,7 @@ import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const Navbar = () => {
     const [currentUser, setCurrentUser] = useState(null);
-    const { t, changeLanguage, language } = useLanguage();
+    const { t, changeLanguage, language, availableLanguages } = useLanguage();
     const [showLangModal, setShowLangModal] = useState(false);
 
     useEffect(() => {
@@ -76,18 +76,15 @@ const Navbar = () => {
                         <h3 style={{ fontSize: '1.1rem', color: '#6b7280', marginBottom: '24px' }}>अपनी पसंदीदा भाषा चुनें</h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <button
-                                onClick={() => { changeLanguage('en'); setShowLangModal(false); }}
-                                style={{ padding: '12px', fontSize: '1.1rem', background: language === 'en' ? '#2563eb' : '#f3f4f6', color: language === 'en' ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === 'en' ? 'bold' : 'normal' }}
-                            >
-                                English
-                            </button>
-                            <button
-                                onClick={() => { changeLanguage('hi'); setShowLangModal(false); }}
-                                style={{ padding: '12px', fontSize: '1.1rem', background: language === 'hi' ? '#2563eb' : '#f3f4f6', color: language === 'hi' ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === 'hi' ? 'bold' : 'normal' }}
-                            >
-                                हिंदी
-                            </button>
+                            {availableLanguages.map((lang) => (
+                                <button
+                                    key={lang.shortCode}
+                                    onClick={() => { changeLanguage(lang.shortCode); setShowLangModal(false); }}
+                                    style={{ padding: '12px', fontSize: '1.1rem', background: language === lang.shortCode ? '#2563eb' : '#f3f4f6', color: language === lang.shortCode ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === lang.shortCode ? 'bold' : 'normal' }}
+                                >
+                                    {lang.label}
+                                </button>
+                            ))}
                         </div>
 
                         <button onClick={() => setShowLangModal(false)} style={{ marginTop: '24px', padding: '8px 16px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>

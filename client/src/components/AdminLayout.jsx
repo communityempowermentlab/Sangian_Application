@@ -38,6 +38,7 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/reports')       ? 'reports'      :
         location.pathname.includes('/admin/docs')          ? 'docs'         :
         location.pathname.includes('/admin/help-support')  ? 'help-support' :
+        location.pathname.includes('/admin/multilingual')  ? 'multilingual' :
         location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
 
@@ -219,16 +220,18 @@ const AdminLayoutInner = () => {
                         </Link>
 
                         <Link
+                            to="/admin/multilingual"
+                            className={`admin-menu-item ${activeGroup === 'multilingual' ? 'active' : ''}`}
+                        >
+                            🌐 Multilingual
+                        </Link>
+
+                        <Link
                             to="/admin/settings"
                             className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}
                         >
                             ⚙️ Settings
                         </Link>
-                    </div>
-
-                    <div className="admin-search">
-                        <input type="text" placeholder="Search (UI)..." id="searchBox" />
-                        <button className="admin-btn admin-btn-ghost">🔍</button>
                     </div>
                 </nav>
 

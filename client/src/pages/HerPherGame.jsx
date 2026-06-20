@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
@@ -167,6 +168,7 @@ function calcScore(questionNum, correctCount) {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const HerPherGame = () => {
   const { t }       = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [GAME_DATA, setGAME_DATA] = useState(() => buildGameData()); // stable per session
@@ -870,14 +872,18 @@ const HerPherGame = () => {
             )}
           </div>
           <div className="hp-stats">
+            {showChildId && (
             <div className="hp-stat-pill">
               <span className="hp-stat-icon">👤</span>
               <span className="hp-stat-value">{childData?.child_id || '—'}</span>
             </div>
+            )}
+            {showScore && (
             <div className="hp-stat-pill">
               <span className="hp-stat-icon">🏆</span>
               <span className="hp-stat-value">{totalScore}</span>
             </div>
+            )}
 
             {screen === 'game' && qData && (
               <div className="hp-stat-pill">
@@ -885,7 +891,7 @@ const HerPherGame = () => {
               </div>
             )}
 
-            {screen === 'game' && (
+            {showTimer && screen === 'game' && (
               <div className="hp-stat-pill">
                 <span className="hp-stat-icon">⏱</span>
                 <span className="hp-stat-value">{formatTime(questionTime)}</span>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -67,6 +68,7 @@ const QUESTIONS = [
 
 const ReadingSkillGame = () => {
   const { t } = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -585,13 +587,15 @@ const ReadingSkillGame = () => {
           )}
         </div>
         <div className="rs-stats">
-          {childData?.child_id && (
+          {showChildId && childData?.child_id && (
             <div className="rs-stat-pill"><span className="rs-stat-icon">👤</span> <span className="rs-stat-value">{childData.child_id}</span></div>
           )}
-          {screen === 'game' && (
+          {showTimer && screen === 'game' && (
             <div className="rs-stat-pill"><span className="rs-stat-icon">⏱</span> <span className="rs-stat-value">{formatTime(qTimer)}</span></div>
           )}
+          {showScore && (
           <div className="rs-stat-pill"><span className="rs-stat-icon">🏆</span> <span className="rs-stat-value">{totalScoreVal}</span></div>
+          )}
           {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> {t('game.pauseQuit')}</button>}
         </div>
       </header>

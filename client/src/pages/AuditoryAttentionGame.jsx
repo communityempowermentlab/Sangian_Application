@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './AuditoryAttentionGame.css';
 
@@ -95,6 +96,7 @@ const fmtDuration = (sec) => {
 
 const AuditoryAttentionGame = () => {
   const { t }    = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
 
@@ -858,17 +860,19 @@ const AuditoryAttentionGame = () => {
             )}
           </div>
           <div className="aa-stats">
-            {childId && (
+            {showChildId && childId && (
               <div className="aa-stat-pill">
                 <span className="aa-stat-icon">👤</span>
                 <span className="aa-stat-value">{childId}</span>
               </div>
             )}
+            {showScore && (
             <div className="aa-stat-pill">
               <span className="aa-stat-icon">🏆</span>
               <span className="aa-stat-value">{Object.values(questionScores).reduce((a,c) => a + (c ? c.correct : 0), 0) + levelScores.correct}</span>
             </div>
-            {screen && screen.endsWith('-game') && (
+            )}
+            {showTimer && screen && screen.endsWith('-game') && (
               <div className="aa-stat-pill">
                 <span className="aa-stat-icon">⏱</span>
                 <span className="aa-stat-value">{formatTime(Math.floor(levelTime/1000))}</span>

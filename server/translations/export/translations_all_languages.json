@@ -1,0 +1,3722 @@
+[
+  {
+    "Key": "common.selectLanguage",
+    "English": "Select Language",
+    "Hindi": "भाषा चुनें",
+    "Marathi": "भाषा निवडा",
+    "Telugu": "భాష ఎంచుకోండి",
+    "Kannada": "ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ"
+  },
+  {
+    "Key": "common.english",
+    "English": "English",
+    "Hindi": "English",
+    "Marathi": "इंग्रजी",
+    "Telugu": "ఇంగ్లీష్",
+    "Kannada": "ಇಂಗ್ಲಿಷ್"
+  },
+  {
+    "Key": "common.hindi",
+    "English": "Hindi",
+    "Hindi": "हिंदी",
+    "Marathi": "हिंदी",
+    "Telugu": "హిందీ",
+    "Kannada": "ಹಿಂದಿ"
+  },
+  {
+    "Key": "common.cancel",
+    "English": "Cancel",
+    "Hindi": "रद्द करें",
+    "Marathi": "रद्द करा",
+    "Telugu": "రద్దు చేయండి",
+    "Kannada": "ರದ್ದುಮಾಡಿ"
+  },
+  {
+    "Key": "common.logout",
+    "English": "Logout",
+    "Hindi": "लॉग आउट",
+    "Marathi": "लॉगआउट",
+    "Telugu": "లాగ్ అవుట్",
+    "Kannada": "ಲಾಗ್ ಔಟ್"
+  },
+  {
+    "Key": "common.login",
+    "English": "Login",
+    "Hindi": "लॉग इन",
+    "Marathi": "लॉगिन",
+    "Telugu": "లాగిన్",
+    "Kannada": "ಲಾಗಿನ್"
+  },
+  {
+    "Key": "common.register",
+    "English": "Register",
+    "Hindi": "पंजीकरण",
+    "Marathi": "नोंदणी करा",
+    "Telugu": "నమోదు చేయండి",
+    "Kannada": "ನೋಂದಣಿ ಮಾಡಿ"
+  },
+  {
+    "Key": "common.backToHub",
+    "English": "Back to test hub",
+    "Hindi": "वापस जाएं",
+    "Marathi": "टेस्ट हबवर परत जा",
+    "Telugu": "టెస్ట్ హబ్‌కి తిరిగి వెళ్ళండి",
+    "Kannada": "ಟೆಸ್ಟ್ ಹಬ್‌ಗೆ ಹಿಂತಿರುಗಿ"
+  },
+  {
+    "Key": "common.consentNote",
+    "English": "By registering this child, you confirm that consent has been obtained as per your institution's policy and that assessments will be supervised by trained staff.",
+    "Hindi": "इस बच्चे को दर्ज करके आप पुष्टि करते हैं कि आपकी संस्था की नीति के अनुसार सहमति ली गई है और परीक्षण प्रशिक्षित कर्मचारियों की निगरानी में होगा।",
+    "Marathi": "या मुलाची नोंदणी करून, तुम्ही पुष्टी करता की तुमच्या संस्थेच्या धोरणानुसार सहमती घेतली आहे आणि मूल्यांकन प्रशिक्षित कर्मचाऱ्यांच्या देखरेखीखाली केले जाईल.",
+    "Telugu": "ఈ పిల్లవాడిని నమోదు చేయడం ద్వారా, మీ సంస్థ విధానం ప్రకారం అనుమతి తీసుకున్నారని మరియు అసెస్‌మెంట్‌లు శిక్షణ పొందిన సిబ్బంది పర్యవేక్షణలో జరుగుతాయని మీరు నిర్ధారిస్తున్నారు.",
+    "Kannada": "ಈ ಮಗುವನ್ನು ನೋಂದಾಯಿಸುವ ಮೂಲಕ, ನಿಮ್ಮ ಸಂಸ್ಥೆಯ ನೀತಿಯ ಪ್ರಕಾರ ಒಪ್ಪಿಗೆ ಪಡೆಯಲಾಗಿದೆ ಮತ್ತು ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ತರಬೇತಿ ಪಡೆದ ಸಿಬ್ಬಂದಿ ಮೇಲ್ವಿಚಾರಣೆ ಮಾಡುತ್ತಾರೆ ಎಂದು ನೀವು ದೃಢೀಕರಿಸುತ್ತೀರಿ."
+  },
+  {
+    "Key": "common.serverError",
+    "English": "Error connecting to the server.",
+    "Hindi": "सर्वर से जुड़ने में दिक्कत हुई।",
+    "Marathi": "सर्व्हरशी कनेक्ट करताना त्रुटी आली.",
+    "Telugu": "సర్వర్‌తో కనెక్ట్ చేయడంలో పొరపాటు వచ్చింది.",
+    "Kannada": "ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ."
+  },
+  {
+    "Key": "common.sessionError",
+    "English": "Could not establish a secure session. Please try again.",
+    "Hindi": "सत्र शुरू नहीं हो सका। फिर कोशिश करें।",
+    "Marathi": "सुरक्षित सेशन सुरू करता आले नाही. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "సురక్షిత సెషన్‌ను ప్రారంభించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ಸುರಕ್ಷಿತ ಸೆಶನ್ ಸ್ಥಾಪಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "common.speechNotSupported",
+    "English": "Your browser does not support Speech Recognition. Please type manually.",
+    "Hindi": "यह ब्राउज़र आवाज़ पहचान नहीं करता। कृपया टाइप करें।",
+    "Marathi": "तुमचा ब्राउझर स्पीच रेकग्निशनला सपोर्ट करत नाही. कृपया स्वतः टाइप करा.",
+    "Telugu": "మీ బ్రౌజర్ స్పీచ్ రికగ్నిషన్‌ను సపోర్ట్ చేయదు. దయచేసి టైప్ చేయండి.",
+    "Kannada": "ನಿಮ್ಮ ಬ್ರೌಸರ್ ಸ್ಪೀಚ್ ರೆಕಗ್ನಿಷನ್‌ಗೆ ಬೆಂಬಲ ನೀಡುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ವಂತವಾಗಿ ಟೈಪ್ ಮಾಡಿ."
+  },
+  {
+    "Key": "common.failedToStart",
+    "English": "Failed to start session on server.",
+    "Hindi": "सत्र शुरू नहीं हो सका।",
+    "Marathi": "सर्व्हरवर सेशन सुरू करता आले नाही.",
+    "Telugu": "సర్వర్‌లో సెషన్‌ను ప్రారంభించలేకపోయాం.",
+    "Kannada": "ಸರ್ವರ್‌ನಲ್ಲಿ ಸೆಶನ್ ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  },
+  {
+    "Key": "common.failedToSave",
+    "English": "Failed to save assessment. Please try again.",
+    "Hindi": "मूल्यांकन सहेजा नहीं गया। फिर कोशिश करें।",
+    "Marathi": "मूल्यांकन सेव्ह करता आले नाही. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "అసెస్‌మెంట్‌ను సేవ్ చేయలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "common.enterReason",
+    "English": "Please enter a reason before stopping.",
+    "Hindi": "रोकने का कारण लिखें।",
+    "Marathi": "थांबवण्याआधी कृपया कारण लिहा.",
+    "Telugu": "ఆపే ముందు దయచేసి కారణం రాయండి.",
+    "Kannada": "ನಿಲ್ಲಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ಕಾರಣ ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "navbar.id",
+    "English": "ID",
+    "Hindi": "आईडी",
+    "Marathi": "आयडी",
+    "Telugu": "ఐడీ",
+    "Kannada": "ಐಡಿ"
+  },
+  {
+    "Key": "navbar.language",
+    "English": "🌐 Language",
+    "Hindi": "🌐 भाषा",
+    "Marathi": "🌐 भाषा",
+    "Telugu": "🌐 భాష",
+    "Kannada": "🌐 ಭಾಷೆ"
+  },
+  {
+    "Key": "footer.copyright",
+    "English": "© 2026 Community Empowerment Lab · Sangian Cognitive Test Interface",
+    "Hindi": "© 2026 कम्युनिटी एम्पावरमेंट लैब · संगियान परीक्षण इंटरफ़ेस",
+    "Marathi": "© 2026 Community Empowerment Lab · संगियन कॉग्निटिव्ह टेस्ट इंटरफेस",
+    "Telugu": "© 2026 Community Empowerment Lab · సంగియన్ కాగ్నిటివ్ టెస్ట్ ఇంటర్‌ఫేస్",
+    "Kannada": "© 2026 Community Empowerment Lab · ಸಂಗಿಯನ್ ಕಾಗ್ನಿಟಿವ್ ಟೆಸ್ಟ್ ಇಂಟರ್ಫೇಸ್"
+  },
+  {
+    "Key": "footer.terms",
+    "English": "Terms & Conditions",
+    "Hindi": "नियम और शर्तें",
+    "Marathi": "नियम व शर्ती",
+    "Telugu": "నిబంధనలు & షరతులు",
+    "Kannada": "ನಿಯಮಗಳು & ಷರತ್ತುಗಳು"
+  },
+  {
+    "Key": "footer.privacy",
+    "English": "Privacy Policy",
+    "Hindi": "गोपनीयता नीति",
+    "Marathi": "गोपनीयता धोरण",
+    "Telugu": "గోప్యతా విధానం",
+    "Kannada": "ಗೌಪ್ಯತಾ ನೀತಿ"
+  },
+  {
+    "Key": "footer.contact",
+    "English": "Contact Us",
+    "Hindi": "संपर्क करें",
+    "Marathi": "आमच्याशी संपर्क करा",
+    "Telugu": "మమ్మల్ని సంప్రదించండి",
+    "Kannada": "ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ"
+  },
+  {
+    "Key": "footer.help",
+    "English": "Help & Support",
+    "Hindi": "सहायता",
+    "Marathi": "मदत व सहाय्य",
+    "Telugu": "సహాయం & మద్దతు",
+    "Kannada": "ಸಹಾಯ & ಬೆಂಬಲ"
+  },
+  {
+    "Key": "breadcrumb.home",
+    "English": "Home",
+    "Hindi": "होम",
+    "Marathi": "मुख्यपृष्ठ",
+    "Telugu": "హోమ్",
+    "Kannada": "ಮುಖಪುಟ"
+  },
+  {
+    "Key": "breadcrumb.terms",
+    "English": "Terms & Conditions",
+    "Hindi": "नियम एवं शर्तें",
+    "Marathi": "नियम व शर्ती",
+    "Telugu": "నిబంధనలు & షరతులు",
+    "Kannada": "ನಿಯಮಗಳು & ಷರತ್ತುಗಳು"
+  },
+  {
+    "Key": "breadcrumb.privacy",
+    "English": "Privacy Policy",
+    "Hindi": "गोपनीयता नीति",
+    "Marathi": "गोपनीयता धोरण",
+    "Telugu": "గోప్యతా విధానం",
+    "Kannada": "ಗೌಪ್ಯತಾ ನೀತಿ"
+  },
+  {
+    "Key": "home.heroPill",
+    "English": "🧠 Kauffman-inspired assessment • For supervised use only",
+    "Hindi": "🧠 काफ़मैन-प्रेरित मूल्यांकन • केवल निगरानी में उपयोग करें",
+    "Marathi": "🧠 कॉफमन-प्रेरित मूल्यांकन • फक्त देखरेखीखाली वापरासाठी",
+    "Telugu": "🧠 కాఫ్‌మన్-ప్రేరిత అసెస్‌మెంట్ • పర్యవేక్షణలో మాత్రమే వాడాలి",
+    "Kannada": "🧠 ಕಾಫ್‌ಮನ್-ಪ್ರೇರಿತ ಮೌಲ್ಯಮಾಪನ • ಮೇಲ್ವಿಚಾರಣೆಯ ಬಳಕೆಗೆ ಮಾತ್ರ"
+  },
+  {
+    "Key": "home.welcome",
+    "English": "Welcome to the",
+    "Hindi": "में आपका स्वागत है",
+    "Marathi": "स्वागत आहे",
+    "Telugu": "స్వాగతం",
+    "Kannada": "ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "home.title",
+    "English": "Sangian Test Hub",
+    "Hindi": "संगियान टेस्ट हब",
+    "Marathi": "संगियन टेस्ट हब",
+    "Telugu": "సంగియన్ టెస్ట్ హబ్",
+    "Kannada": "ಸಂಗಿಯನ್ ಟೆಸ್ಟ್ ಹಬ್"
+  },
+  {
+    "Key": "home.desc",
+    "English": "Select a test module below to start the assessment.",
+    "Hindi": "परीक्षा शुरू करने के लिए नीचे दिए गए टेस्ट मॉड्यूल को चुनें।",
+    "Marathi": "मूल्यांकन सुरू करण्यासाठी खालील टेस्ट मॉड्यूल निवडा.",
+    "Telugu": "అసెస్‌మెంట్ ప్రారంభించడానికి దిగువ ఒక టెస్ట్ మాడ్యూల్ ఎంచుకోండి.",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಲು ಕೆಳಗಿನ ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್ ಆಯ್ಕೆಮಾಡಿ."
+  },
+  {
+    "Key": "home.bullet1",
+    "English": "✔ Seven core games mapped to culturally adapted names",
+    "Hindi": "✔ सात मुख्य खेल जो बच्चे की समझ को मापते हैं",
+    "Marathi": "✔ सात मुख्य गेम्स सांस्कृतिक नावांसह",
+    "Telugu": "✔ ఏడు ముఖ్య గేమ్‌లు సంస్కృతికి తగిన పేర్లతో",
+    "Kannada": "✔ ಸಾಂಸ್ಕೃತಿಕ ಹೆಸರುಗಳೊಂದಿಗೆ ಏಳು ಮುಖ್ಯ ಗೇಮ್‌ಗಳು"
+  },
+  {
+    "Key": "home.bullet2",
+    "English": "✔ Quick access to Numeracy & Literacy readiness checks",
+    "Hindi": "✔ गणित और भाषा की तैयारी की त्वरित जाँच",
+    "Marathi": "✔ गणित व वाचन तयारी तपासणीसाठी जलद प्रवेश",
+    "Telugu": "✔ గణితం & చదవడం సంసిద్ధత తనిఖీలకు త్వరిత యాక్సెస్",
+    "Kannada": "✔ ಗಣಿತ & ಓದು ಸಿದ್ಧತಾ ಪರೀಕ್ಷೆಗಳಿಗೆ ತ್ವರಿತ ಪ್ರವೇಶ"
+  },
+  {
+    "Key": "home.bullet3",
+    "English": "✔ Designed for psychologists, teachers & researchers",
+    "Hindi": "✔ मनोवैज्ञानिकों, शिक्षकों और शोधकर्ताओं के लिए बनाया गया",
+    "Marathi": "✔ मानसशास्त्रज्ञ, शिक्षक व संशोधकांसाठी तयार केलेले",
+    "Telugu": "✔ మానసిక శాస్త్రవేత్తలు, ఉపాధ్యాయులు & పరిశోధకుల కోసం రూపొందించబడింది",
+    "Kannada": "✔ ಮನಃಶಾಸ್ತ್ರಜ್ಞರು, ಶಿಕ್ಷಕರು & ಸಂಶೋಧಕರಿಗಾಗಿ ರೂಪಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "home.startTest",
+    "English": "Start Assessment",
+    "Hindi": "परीक्षा शुरू करें",
+    "Marathi": "मूल्यांकन सुरू करा",
+    "Telugu": "అసెస్‌మెంట్ ప్రారంభించండి",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "home.registerChild",
+    "English": "Register a Child",
+    "Hindi": "बच्चे को दर्ज करें",
+    "Marathi": "मुलाची नोंदणी करा",
+    "Telugu": "పిల్లవాడిని నమోదు చేయండి",
+    "Kannada": "ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ"
+  },
+  {
+    "Key": "home.warningNote",
+    "English": "This digital interface supports structured KABC-style assessments. Always follow your institutional protocol and training.",
+    "Hindi": "यह इंटरफ़ेस KABC-शैली की संरचित परीक्षा के लिए है। कृपया अपनी संस्था के दिशा-निर्देशों का पालन करें।",
+    "Marathi": "हे डिजिटल इंटरफेस संरचित KABC-शैलीतील मूल्यांकनांना सपोर्ट करते. नेहमी तुमच्या संस्थेच्या प्रोटोकॉल व प्रशिक्षणाचे पालन करा.",
+    "Telugu": "ఈ డిజిటల్ ఇంటర్‌ఫేస్ నిర్మాణాత్మక KABC-శైలి అసెస్‌మెంట్‌లకు మద్దతు ఇస్తుంది. మీ సంస్థ ప్రోటోకాల్ మరియు శిక్షణను ఎల్లప్పుడూ అనుసరించండి.",
+    "Kannada": "ಈ ಡಿಜಿಟಲ್ ಇಂಟರ್ಫೇಸ್ ರಚನಾತ್ಮಕ KABC-ಶೈಲಿಯ ಮೌಲ್ಯಮಾಪನಗಳನ್ನು ಬೆಂಬಲಿಸುತ್ತದೆ. ಯಾವಾಗಲೂ ನಿಮ್ಮ ಸಂಸ್ಥೆಯ ಪ್ರೋಟೋಕಾಲ್ ಮತ್ತು ತರಬೇತಿಯನ್ನು ಅನುಸರಿಸಿ."
+  },
+  {
+    "Key": "home.modulesHeader",
+    "English": "Test Modules",
+    "Hindi": "टेस्ट मॉड्यूल",
+    "Marathi": "टेस्ट मॉड्यूल्स",
+    "Telugu": "టెస్ట్ మాడ్యూల్స్",
+    "Kannada": "ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್‌ಗಳು"
+  },
+  {
+    "Key": "home.modulesSub",
+    "English": "Tap a card to see what the test measures.",
+    "Hindi": "कार्ड पर टैप करें और देखें यह टेस्ट क्या मापता है।",
+    "Marathi": "टेस्ट काय मोजते हे पाहण्यासाठी कार्डवर टॅप करा.",
+    "Telugu": "టెస్ట్ ఏమి కొలుస్తుందో చూడటానికి కార్డ్‌పై టాప్ చేయండి.",
+    "Kannada": "ಟೆಸ್ಟ್ ಏನನ್ನು ಅಳೆಯುತ್ತದೆ ಎಂದು ನೋಡಲು ಕಾರ್ಡ್ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ."
+  },
+  {
+    "Key": "home.modulesBadge",
+    "English": "modules",
+    "Hindi": "मॉड्यूल",
+    "Marathi": "मॉड्यूल्स",
+    "Telugu": "మాడ్యూల్స్",
+    "Kannada": "ಮಾಡ್ಯೂಲ್‌ಗಳು"
+  },
+  {
+    "Key": "home.lastPlayed",
+    "English": "Last Played:",
+    "Hindi": "आखिरी बार खेला:",
+    "Marathi": "शेवटचे खेळले:",
+    "Telugu": "చివరిగా ఆడింది:",
+    "Kannada": "ಕೊನೆಯದಾಗಿ ಆಡಿದ್ದು:"
+  },
+  {
+    "Key": "home.totalSessions",
+    "English": "Total Sessions:",
+    "Hindi": "कुल सत्र:",
+    "Marathi": "एकूण सेशन्स:",
+    "Telugu": "మొత్తం సెషన్లు:",
+    "Kannada": "ಒಟ್ಟು ಸೆಶನ್‌ಗಳು:"
+  },
+  {
+    "Key": "home.never",
+    "English": "Never",
+    "Hindi": "कभी नहीं",
+    "Marathi": "कधीही नाही",
+    "Telugu": "ఎప్పుడూ లేదు",
+    "Kannada": "ಎಂದಿಗೂ ಇಲ್ಲ"
+  },
+  {
+    "Key": "home.games.bagiya.title",
+    "English": "Bagiya",
+    "Hindi": "बगिया",
+    "Marathi": "बगिया",
+    "Telugu": "బగియా",
+    "Kannada": "ಬಗಿಯಾ"
+  },
+  {
+    "Key": "home.games.bagiya.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.bagiya.tag",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.bagiya.desc",
+    "English": "Child looks at a set of fun creatures in a 'garden' and later tries to remember where each one was placed.",
+    "Hindi": "बच्चा एक बगीचे में जीव-जंतु देखता है और याद करने की कोशिश करता है कि हर एक कहाँ था।",
+    "Marathi": "मूल एका 'बागे'त मजेदार प्राणी पाहते आणि नंतर प्रत्येक कुठे ठेवला होता हे आठवण्याचा प्रयत्न करते.",
+    "Telugu": "పిల్లవాడు ఒక 'తోట'లో సరదా జంతువులను చూసి, తరువాత ప్రతి దాన్ని ఎక్కడ పెట్టారో గుర్తుచేసుకోవడానికి ప్రయత్నిస్తాడు.",
+    "Kannada": "ಮಗು ಒಂದು 'ತೋಟ'ದಲ್ಲಿ ಮೋಜಿನ ಪ್ರಾಣಿಗಳನ್ನು ನೋಡುತ್ತದೆ ಮತ್ತು ನಂತರ ಪ್ರತಿಯೊಂದನ್ನು ಎಲ್ಲಿ ಇಡಲಾಗಿದೆ ಎಂದು ನೆನಪಿಸಿಕೊಳ್ಳಲು ಪ್ರಯತ್ನಿಸುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.bagiya.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.lottery.title",
+    "English": "Lottery Ka Ticket",
+    "Hindi": "लॉटरी का टिकट",
+    "Marathi": "लॉटरी का टिकट",
+    "Telugu": "లాటరీ కా టికెట్",
+    "Kannada": "ಲಾಟರಿ ಕಾ ಟಿಕೆಟ್"
+  },
+  {
+    "Key": "home.games.lottery.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.lottery.tag",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.lottery.desc",
+    "English": "Child listens to a series of numbers and repeats them in the same order.",
+    "Hindi": "बच्चा संख्याओं की एक कड़ी सुनता है और उन्हें उसी क्रम में दोहराता है।",
+    "Marathi": "मूल अंकांची मालिका ऐकते आणि तीच क्रमाने पुन्हा सांगते.",
+    "Telugu": "పిల్లవాడు సంఖ్యల శ్రేణిని విని, అదే క్రమంలో తిరిగి చెబుతాడు.",
+    "Kannada": "ಮಗು ಸಂಖ್ಯೆಗಳ ಸರಣಿಯನ್ನು ಕೇಳಿ, ಅದೇ ಕ್ರಮದಲ್ಲಿ ಪುನರಾವರ್ತಿಸುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.lottery.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.mela.title",
+    "English": "Chalo Mela Chalen",
+    "Hindi": "चलो मेला चलें",
+    "Marathi": "चलो मेला चलें",
+    "Telugu": "చలో మేళా చలేం",
+    "Kannada": "ಚಲೋ ಮೇಲಾ ಚಲೇಂ"
+  },
+  {
+    "Key": "home.games.mela.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.mela.tag",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.mela.desc",
+    "English": "Child plans a path through simple visual mazes.",
+    "Hindi": "बच्चा सरल नक्शे के ज़रिए रास्ता खोजता है।",
+    "Marathi": "मूल साध्या व्हिज्युअल चक्रव्यूहातून मार्ग आखते.",
+    "Telugu": "పిల్లవాడు సాధారణ విజువల్ మేజ్‌ల ద్వారా మార్గాన్ని ప్లాన్ చేస్తాడు.",
+    "Kannada": "ಮಗು ಸರಳ ದೃಶ್ಯ ಜಟಿಲಗಳ ಮೂಲಕ ಮಾರ್ಗವನ್ನು ಯೋಜಿಸುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.mela.sub",
+    "English": "",
+    "Hindi": "योजना बनाना और स्थान की समझ",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.rachna.title",
+    "English": "Rachna",
+    "Hindi": "रचना",
+    "Marathi": "रचना",
+    "Telugu": "రచనా",
+    "Kannada": "ರಚನಾ"
+  },
+  {
+    "Key": "home.games.rachna.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.rachna.tag",
+    "English": "Construction skills",
+    "Hindi": "बनाने की क्षमता",
+    "Marathi": "रचना कौशल्य",
+    "Telugu": "నిర్మాణ నైపుణ్యాలు",
+    "Kannada": "ನಿರ್ಮಾಣ ಕೌಶಲ್ಯಗಳು"
+  },
+  {
+    "Key": "home.games.rachna.desc",
+    "English": "Child builds shapes and patterns using pieces.",
+    "Hindi": "बच्चा टुकड़ों से आकृति और पैटर्न बनाता है।",
+    "Marathi": "मूल तुकड्यांचा वापर करून आकार व नमुने तयार करते.",
+    "Telugu": "పిల్లవాడు ముక్కలను ఉపయోగించి ఆకారాలు మరియు నమూనాలను నిర్మిస్తాడు.",
+    "Kannada": "ಮಗು ತುಂಡುಗಳನ್ನು ಬಳಸಿ ಆಕಾರಗಳು ಮತ್ತು ಮಾದರಿಗಳನ್ನು ನಿರ್ಮಿಸುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.rachna.sub",
+    "English": "",
+    "Hindi": "दृश्य निर्माण कौशल",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.dhyan.title",
+    "English": "Dhyan Kahan Hai",
+    "Hindi": "ध्यान कहाँ है",
+    "Marathi": "ध्यान कहाँ है",
+    "Telugu": "ధ్యాన్ కహాఁ హై",
+    "Kannada": "ಧ್ಯಾನ್ ಕಹಾँ ಹೈ"
+  },
+  {
+    "Key": "home.games.dhyan.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.dhyan.tag",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.dhyan.desc",
+    "English": "Child responds only when they hear specific target words.",
+    "Hindi": "बच्चा सिर्फ़ तब जवाब देता है जब वह खास शब्द सुनता है।",
+    "Marathi": "मूल विशिष्ट शब्द ऐकल्यावरच प्रतिसाद देते.",
+    "Telugu": "పిల్లవాడు నిర్దిష్ట లక్ష్య పదాలు వినినప్పుడు మాత్రమే స్పందిస్తాడు.",
+    "Kannada": "ಮಗು ನಿರ್ದಿಷ್ಟ ಗುರಿ ಪದಗಳನ್ನು ಕೇಳಿದಾಗ ಮಾತ್ರ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.dhyan.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.herpher.title",
+    "English": "Her Pher",
+    "Hindi": "हेर फेर",
+    "Marathi": "हेर फेर",
+    "Telugu": "హేర్ ఫేర్",
+    "Kannada": "ಹೇರ್ ಫೇರ್"
+  },
+  {
+    "Key": "home.games.herpher.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.herpher.tag",
+    "English": "",
+    "Hindi": "याददाश्त",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.herpher.desc",
+    "English": "Child keeps rules or information in mind while answering.",
+    "Hindi": "बच्चा जवाब देते समय नियमों या जानकारी को ध्यान में रखता है।",
+    "Marathi": "मूल उत्तर देताना नियम किंवा माहिती लक्षात ठेवते.",
+    "Telugu": "పిల్లవాడు జవాబు చెప్పేటప్పుడు నియమాలు లేదా సమాచారాన్ని గుర్తుంచుకుంటాడు.",
+    "Kannada": "ಮಗು ಉತ್ತರಿಸುವಾಗ ನಿಯಮಗಳು ಅಥವಾ ಮಾಹಿತಿಯನ್ನು ನೆನಪಿನಲ್ಲಿಡುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.herpher.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.chor.title",
+    "English": "Chor Machaye Shor",
+    "Hindi": "चोर मचाए शोर",
+    "Marathi": "चोर मचाए शोर",
+    "Telugu": "చోర్ మచాయే శోర్",
+    "Kannada": "ಚೋರ್ ಮಚಾಯೇ ಶೋರ್"
+  },
+  {
+    "Key": "home.games.chor.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.chor.tag",
+    "English": "Rule switching",
+    "Hindi": "नियम बदलना",
+    "Marathi": "नियम बदलणे",
+    "Telugu": "నియమం మార్పు",
+    "Kannada": "ನಿಯಮ ಬದಲಾವಣೆ"
+  },
+  {
+    "Key": "home.games.chor.desc",
+    "English": "Child shifts between changing rules.",
+    "Hindi": "बच्चा बदलते नियमों के बीच ध्यान से काम करता है।",
+    "Marathi": "मूल बदलत्या नियमांमध्ये जुळवून घेते.",
+    "Telugu": "పిల్లవాడు మారుతున్న నియమాల మధ్య మారుతాడు.",
+    "Kannada": "ಮಗು ಬದಲಾಗುತ್ತಿರುವ ನಿಯಮಗಳ ನಡುವೆ ಬದಲಾಗುತ್ತದೆ."
+  },
+  {
+    "Key": "home.games.chor.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.numeracy.title",
+    "English": "Ankganit",
+    "Hindi": "अंकगणित",
+    "Marathi": "अंकगणित",
+    "Telugu": "అంకగణిత్",
+    "Kannada": "ಅಂಕಗಣಿತ್"
+  },
+  {
+    "Key": "home.games.numeracy.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.numeracy.tag",
+    "English": "",
+    "Hindi": "पढ़ाई – गणित",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.numeracy.desc",
+    "English": "Age-appropriate tasks on counting and mathematics.",
+    "Hindi": "गिनती और गणित के उम्र के हिसाब से सवाल।",
+    "Marathi": "वय-योग्य गणना व गणिताची कामे.",
+    "Telugu": "వయసుకు తగిన లెక్కింపు మరియు గణిత పనులు.",
+    "Kannada": "ವಯಸ್ಸಿಗೆ ಸೂಕ್ತವಾದ ಎಣಿಕೆ ಮತ್ತು ಗಣಿತದ ಕೆಲಸಗಳು."
+  },
+  {
+    "Key": "home.games.numeracy.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.literacy.title",
+    "English": "Padh ke batao",
+    "Hindi": "पढ़ के बताओ",
+    "Marathi": "पढ़ के बताओ",
+    "Telugu": "పఢ్ కే బతావో",
+    "Kannada": "ಪಢ್ ಕೇ ಬತಾವೋ"
+  },
+  {
+    "Key": "home.games.literacy.local",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.literacy.tag",
+    "English": "",
+    "Hindi": "पढ़ाई – भाषा",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "home.games.literacy.desc",
+    "English": "Tasks around letters and early language readiness.",
+    "Hindi": "अक्षर और शुरुआती भाषा से जुड़े सवाल।",
+    "Marathi": "अक्षरे व सुरुवातीच्या भाषा तयारीशी संबंधित कामे.",
+    "Telugu": "అక్షరాలు మరియు ప్రాథమిక భాషా సంసిద్ధతకు సంబంధించిన పనులు.",
+    "Kannada": "ಅಕ್ಷರಗಳು ಮತ್ತು ಆರಂಭಿಕ ಭಾಷಾ ಸಿದ್ಧತೆಗೆ ಸಂಬಂಧಿಸಿದ ಕೆಲಸಗಳು."
+  },
+  {
+    "Key": "home.games.literacy.sub",
+    "English": "",
+    "Hindi": "",
+    "Marathi": "",
+    "Telugu": "",
+    "Kannada": ""
+  },
+  {
+    "Key": "login.pill",
+    "English": "Child lookup for assessment",
+    "Hindi": "बच्चे की जानकारी देखें",
+    "Marathi": "मूल्यांकनासाठी मूल शोध",
+    "Telugu": "అసెస్‌మెంట్ కోసం పిల్లవాడి శోధన",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ ಮಗುವಿನ ಶೋಧ"
+  },
+  {
+    "Key": "login.heading",
+    "English": "Search a child",
+    "Hindi": "बच्चे को खोजें",
+    "Marathi": "मुलाला शोधा",
+    "Telugu": "పిల్లవాడిని వెతకండి",
+    "Kannada": "ಮಗುವನ್ನು ಹುಡುಕಿ"
+  },
+  {
+    "Key": "login.headingSub",
+    "English": "and start the assessment",
+    "Hindi": "और परीक्षा शुरू करें",
+    "Marathi": "आणि मूल्यांकन सुरू करा",
+    "Telugu": "మరియు అసెస్‌మెంట్ ప్రారంభించండి",
+    "Kannada": "ಮತ್ತು ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "login.description",
+    "English": "Use the unique Child ID to quickly bring up the child's details. Once you confirm the record, you can continue to the assessment.",
+    "Hindi": "बच्चे की खास ID डालें और उसकी जानकारी देखें। जाँचने के बाद परीक्षा शुरू करें।",
+    "Marathi": "मुलाचे तपशील पटकन मिळवण्यासाठी युनिक चाइल्ड आयडी वापरा. नोंद खात्री केल्यानंतर तुम्ही मूल्यांकनासाठी पुढे जाऊ शकता.",
+    "Telugu": "పిల్లవాడి వివరాలను త్వరగా తీసుకురావడానికి యూనిక్ చైల్డ్ ఐడీని ఉపయోగించండి. రికార్డ్‌ను నిర్ధారించాక మీరు అసెస్‌మెంట్‌తో కొనసాగవచ్చు.",
+    "Kannada": "ಮಗುವಿನ ವಿವರಗಳನ್ನು ತ್ವರಿತವಾಗಿ ತೆರೆಯಲು ವಿಶಿಷ್ಟ ಚೈಲ್ಡ್ ಐಡಿ ಬಳಸಿ. ದಾಖಲೆ ದೃಢೀಕರಿಸಿದ ನಂತರ ನೀವು ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುಂದುವರಿಸಬಹುದು."
+  },
+  {
+    "Key": "login.bullet1",
+    "English": "Enter the Child ID assigned at registration",
+    "Hindi": "पंजीकरण के समय दी गई ID डालें",
+    "Marathi": "नोंदणी वेळी दिलेला चाइल्ड आयडी टाका",
+    "Telugu": "నమోదు సమయంలో ఇచ్చిన చైల్డ్ ఐడీని నమోదు చేయండి",
+    "Kannada": "ನೋಂದಣಿ ಸಮಯದಲ್ಲಿ ನೀಡಿದ ಚೈಲ್ಡ್ ಐಡಿಯನ್ನು ನಮೂದಿಸಿ"
+  },
+  {
+    "Key": "login.bullet2",
+    "English": "Verify name, gender, date of birth & mobile number",
+    "Hindi": "नाम, लिंग, जन्म तिथि और मोबाइल नंबर जाँचें",
+    "Marathi": "नाव, लिंग, जन्मतारीख व मोबाईल नंबर पडताळा",
+    "Telugu": "పేరు, లింగం, పుట్టిన తేదీ & మొబైల్ నంబర్‌ను నిర్ధారించండి",
+    "Kannada": "ಹೆಸರು, ಲಿಂಗ, ಜನ್ಮ ದಿನಾಂಕ & ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಿ"
+  },
+  {
+    "Key": "login.bullet3",
+    "English": "Click 'Go to Assessment' to launch the test",
+    "Hindi": "'परीक्षा शुरू करें' दबाएं और टेस्ट खोलें",
+    "Marathi": "टेस्ट सुरू करण्यासाठी 'मूल्यांकनाकडे जा' वर क्लिक करा",
+    "Telugu": "టెస్ట్ ప్రారంభించడానికి 'అసెస్‌మెంట్‌కు వెళ్ళండి' క్లిక్ చేయండి",
+    "Kannada": "ಟೆಸ್ಟ್ ಪ್ರಾರಂಭಿಸಲು 'ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಹೋಗಿ' ಕ್ಲಿಕ್ ಮಾಡಿ"
+  },
+  {
+    "Key": "login.demoTip",
+    "English": "Demo tip: register a Child ID first before searching.",
+    "Hindi": "सुझाव: पहले बच्चे को दर्ज करें, फिर यहाँ ID से खोजें।",
+    "Marathi": "टीप: शोधण्याआधी आधी एक चाइल्ड आयडी नोंदवा.",
+    "Telugu": "సూచన: శోధించే ముందు ఒక చైల్డ్ ఐడీని నమోదు చేయండి.",
+    "Kannada": "ಸುಳಿವು: ಹುಡುಕುವ ಮೊದಲು ಮೊದಲು ಒಂದು ಚೈಲ್ಡ್ ಐಡಿ ನೋಂದಾಯಿಸಿ."
+  },
+  {
+    "Key": "login.fieldLabel",
+    "English": "Child ID",
+    "Hindi": "बच्चे की ID",
+    "Marathi": "चाइल्ड आयडी",
+    "Telugu": "చైల్డ్ ఐడీ",
+    "Kannada": "ಚೈಲ್ಡ್ ಐಡಿ"
+  },
+  {
+    "Key": "login.placeholder",
+    "English": "Enter Child ID (e.g., CH001)",
+    "Hindi": "बच्चे की ID डालें (जैसे: CH001)",
+    "Marathi": "चाइल्ड आयडी टाका (उदा. CH001)",
+    "Telugu": "చైల్డ్ ఐడీ నమోదు చేయండి (ఉదా. CH001)",
+    "Kannada": "ಚೈಲ್ಡ್ ಐಡಿ ನಮೂದಿಸಿ (ಉದಾ. CH001)"
+  },
+  {
+    "Key": "login.searchBtn",
+    "English": "Search",
+    "Hindi": "खोजें",
+    "Marathi": "शोधा",
+    "Telugu": "శోధించండి",
+    "Kannada": "ಹುಡುಕಿ"
+  },
+  {
+    "Key": "login.searchingBtn",
+    "English": "Searching...",
+    "Hindi": "खोज रहे हैं...",
+    "Marathi": "शोधत आहे...",
+    "Telugu": "శోధిస్తోంది...",
+    "Kannada": "ಹುಡುಕುತ್ತಿದೆ..."
+  },
+  {
+    "Key": "login.goToAssessment",
+    "English": "Go to Assessment",
+    "Hindi": "परीक्षा शुरू करें",
+    "Marathi": "मूल्यांकनाकडे जा",
+    "Telugu": "అసెస్‌మెంట్‌కు వెళ్ళండి",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಹೋಗಿ"
+  },
+  {
+    "Key": "login.cardTitle",
+    "English": "Child details",
+    "Hindi": "बच्चे की जानकारी",
+    "Marathi": "मुलाचे तपशील",
+    "Telugu": "పిల్లవాడి వివరాలు",
+    "Kannada": "ಮಗುವಿನ ವಿವರಗಳು"
+  },
+  {
+    "Key": "login.noChild",
+    "English": "No child selected",
+    "Hindi": "कोई बच्चा नहीं चुना",
+    "Marathi": "कोणतेही मूल निवडलेले नाही",
+    "Telugu": "ఏ పిల్లవాడిని ఎంచుకోలేదు",
+    "Kannada": "ಯಾವುದೇ ಮಗುವನ್ನು ಆಯ್ಕೆಮಾಡಿಲ್ಲ"
+  },
+  {
+    "Key": "login.detailsFound",
+    "English": "Details found. Please verify before proceeding.",
+    "Hindi": "जानकारी मिली। आगे बढ़ने से पहले जाँच लें।",
+    "Marathi": "तपशील सापडले. पुढे जाण्यापूर्वी कृपया पडताळा.",
+    "Telugu": "వివరాలు కనుగొనబడ్డాయి. కొనసాగే ముందు దయచేసి నిర్ధారించండి.",
+    "Kannada": "ವಿವರಗಳು ಕಂಡುಬಂದಿವೆ. ಮುಂದುವರಿಯುವ ಮೊದಲು ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ."
+  },
+  {
+    "Key": "login.labelName",
+    "English": "Name",
+    "Hindi": "नाम",
+    "Marathi": "नाव",
+    "Telugu": "పేరు",
+    "Kannada": "ಹೆಸರು"
+  },
+  {
+    "Key": "login.labelGender",
+    "English": "Gender",
+    "Hindi": "लिंग",
+    "Marathi": "लिंग",
+    "Telugu": "లింగం",
+    "Kannada": "ಲಿಂಗ"
+  },
+  {
+    "Key": "login.labelDob",
+    "English": "Date of Birth",
+    "Hindi": "जन्म तिथि",
+    "Marathi": "जन्मतारीख",
+    "Telugu": "పుట్టిన తేదీ",
+    "Kannada": "ಜನ್ಮ ದಿನಾಂಕ"
+  },
+  {
+    "Key": "login.labelMobile",
+    "English": "Mobile Number",
+    "Hindi": "मोबाइल नंबर",
+    "Marathi": "मोबाईल नंबर",
+    "Telugu": "మొబైల్ నంబర్",
+    "Kannada": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "login.errRequired",
+    "English": "Please enter a Child ID.",
+    "Hindi": "कृपया बच्चे की ID डालें।",
+    "Marathi": "कृपया चाइल्ड आयडी टाका.",
+    "Telugu": "దయచేసి చైల్డ్ ఐడీ నమోదు చేయండి.",
+    "Kannada": "ದಯವಿಟ್ಟು ಚೈಲ್ಡ್ ಐಡಿ ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "login.errNotFound",
+    "English": "Child ID not found. Please register the child first.",
+    "Hindi": "यह ID नहीं मिली। पहले बच्चे को दर्ज करें।",
+    "Marathi": "चाइल्ड आयडी सापडला नाही. कृपया आधी मुलाची नोंदणी करा.",
+    "Telugu": "చైల్డ్ ఐడీ కనుగొనబడలేదు. దయచేసి ముందుగా పిల్లవాడిని నమోదు చేయండి.",
+    "Kannada": "ಚೈಲ್ಡ್ ಐಡಿ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಮೊದಲು ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ."
+  },
+  {
+    "Key": "login.errServer",
+    "English": "Error connecting to the server.",
+    "Hindi": "सर्वर से कनेक्ट करने में त्रुटि।",
+    "Marathi": "सर्व्हरशी कनेक्ट करताना त्रुटी आली.",
+    "Telugu": "సర్వర్‌తో కనెక్ట్ చేయడంలో పొరపాటు వచ్చింది.",
+    "Kannada": "ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ."
+  },
+  {
+    "Key": "login.errSession",
+    "English": "Could not start session. Please try again.",
+    "Hindi": "सत्र शुरू नहीं हो सका। फिर कोशिश करें।",
+    "Marathi": "सेशन सुरू करता आले नाही. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "సెషన్‌ను ప్రారంభించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ಸೆಶನ್ ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "register.pill",
+    "English": "Child registration module",
+    "Hindi": "बच्चे का पंजीकरण",
+    "Marathi": "मूल नोंदणी मॉड्यूल",
+    "Telugu": "పిల్లల నమోదు మాడ్యూల్",
+    "Kannada": "ಮಗುವಿನ ನೋಂದಣಿ ಮಾಡ್ಯೂಲ್"
+  },
+  {
+    "Key": "register.heading",
+    "English": "Register the child",
+    "Hindi": "बच्चे को दर्ज करें",
+    "Marathi": "मुलाची नोंदणी करा",
+    "Telugu": "పిల్లవాడిని నమోదు చేయండి",
+    "Kannada": "ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ"
+  },
+  {
+    "Key": "register.headingSub",
+    "English": "for Sangian assessment",
+    "Hindi": "संगियान परीक्षा के लिए",
+    "Marathi": "संगियन मूल्यांकनासाठी",
+    "Telugu": "సంగియన్ అసెస్‌మెంట్ కోసం",
+    "Kannada": "ಸಂಗಿಯನ್ ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ"
+  },
+  {
+    "Key": "register.description",
+    "English": "Enter the details of the child whose cognitive assessment will be done using the Sangian test modules.",
+    "Hindi": "यहाँ उस बच्चे की जानकारी भरें जिसका संगियान टेस्ट होगा। यह जानकारी बच्चे की पहचान और उसकी प्रगति को जोड़ने में मदद करती है।",
+    "Marathi": "संगियन टेस्ट मॉड्यूल्स वापरून ज्या मुलाचे कॉग्निटिव्ह मूल्यांकन केले जाईल त्याचे तपशील टाका.",
+    "Telugu": "సంగియన్ టెస్ట్ మాడ్యూల్స్ ఉపయోగించి కాగ్నిటివ్ అసెస్‌మెంట్ చేయబడే పిల్లవాడి వివరాలను నమోదు చేయండి.",
+    "Kannada": "ಸಂಗಿಯನ್ ಟೆಸ್ಟ್ ಮಾಡ್ಯೂಲ್‌ಗಳನ್ನು ಬಳಸಿ ಕಾಗ್ನಿಟಿವ್ ಮೌಲ್ಯಮಾಪನ ಮಾಡಲಾಗುವ ಮಗುವಿನ ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "register.bullet1",
+    "English": "Use the child's full official name wherever possible",
+    "Hindi": "बच्चे का पूरा और सही नाम लिखें",
+    "Marathi": "शक्य असेल तिथे मुलाचे पूर्ण अधिकृत नाव वापरा",
+    "Telugu": "సాధ్యమైనప్పుడల్లా పిల్లవాడి పూర్తి అధికారిక పేరును ఉపయోగించండి",
+    "Kannada": "ಸಾಧ್ಯವಾದಲ್ಲೆಲ್ಲಾ ಮಗುವಿನ ಪೂರ್ಣ ಅಧಿಕೃತ ಹೆಸರನ್ನು ಬಳಸಿ"
+  },
+  {
+    "Key": "register.bullet2",
+    "English": "Confirm date of birth with records before starting",
+    "Hindi": "रिकॉर्ड से मिलाकर जन्म तिथि भरें",
+    "Marathi": "सुरुवात करण्यापूर्वी जन्मतारीख नोंदींसह तपासा",
+    "Telugu": "ప్రారంభించే ముందు రికార్డులతో పుట్టిన తేదీని నిర్ధారించండి",
+    "Kannada": "ಪ್ರಾರಂಭಿಸುವ ಮೊದಲು ದಾಖಲೆಗಳೊಂದಿಗೆ ಜನ್ಮ ದಿನಾಂಕವನ್ನು ದೃಢೀಕರಿಸಿ"
+  },
+  {
+    "Key": "register.bullet3",
+    "English": "Mobile number can be parent / guardian's primary contact",
+    "Hindi": "मोबाइल नंबर माता-पिता या अभिभावक का हो सकता है",
+    "Marathi": "मोबाईल नंबर पालक/पालकाचा मुख्य संपर्क असू शकतो",
+    "Telugu": "మొబైల్ నంబర్ తల్లిదండ్రుల / గార్డియన్ యొక్క ముఖ్య సంప్రదింపు కావచ్చు",
+    "Kannada": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಪೋಷಕರ / ಪಾಲಕರ ಪ್ರಮುಖ ಸಂಪರ್ಕವಾಗಿರಬಹುದು"
+  },
+  {
+    "Key": "register.photoLabel",
+    "English": "Child Photo",
+    "Hindi": "बच्चे की फ़ोटो",
+    "Marathi": "मुलाचा फोटो",
+    "Telugu": "పిల్లవాడి ఫోటో",
+    "Kannada": "ಮಗುವಿನ ಫೋಟೋ"
+  },
+  {
+    "Key": "register.nameLabel",
+    "English": "Child's Full Name",
+    "Hindi": "बच्चे का पूरा नाम",
+    "Marathi": "मुलाचे पूर्ण नाव",
+    "Telugu": "పిల్లవాడి పూర్తి పేరు",
+    "Kannada": "ಮಗುವಿನ ಪೂರ್ಣ ಹೆಸರು"
+  },
+  {
+    "Key": "register.namePlaceholder",
+    "English": "Enter child's full name",
+    "Hindi": "बच्चे का पूरा नाम लिखें",
+    "Marathi": "मुलाचे पूर्ण नाव टाका",
+    "Telugu": "పిల్లవాడి పూర్తి పేరు నమోదు చేయండి",
+    "Kannada": "ಮಗುವಿನ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ"
+  },
+  {
+    "Key": "register.dobLabel",
+    "English": "Date of Birth",
+    "Hindi": "जन्म तिथि",
+    "Marathi": "जन्मतारीख",
+    "Telugu": "పుట్టిన తేదీ",
+    "Kannada": "ಜನ್ಮ ದಿನಾಂಕ"
+  },
+  {
+    "Key": "register.genderLabel",
+    "English": "Gender",
+    "Hindi": "लिंग",
+    "Marathi": "लिंग",
+    "Telugu": "లింగం",
+    "Kannada": "ಲಿಂಗ"
+  },
+  {
+    "Key": "register.genderDefault",
+    "English": "Select gender",
+    "Hindi": "लिंग चुनें",
+    "Marathi": "लिंग निवडा",
+    "Telugu": "లింగం ఎంచుకోండి",
+    "Kannada": "ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ"
+  },
+  {
+    "Key": "register.genderFemale",
+    "English": "Female",
+    "Hindi": "लड़की",
+    "Marathi": "मुलगी",
+    "Telugu": "ఆడ",
+    "Kannada": "ಹೆಣ್ಣು"
+  },
+  {
+    "Key": "register.genderMale",
+    "English": "Male",
+    "Hindi": "लड़का",
+    "Marathi": "मुलगा",
+    "Telugu": "మగ",
+    "Kannada": "ಗಂಡು"
+  },
+  {
+    "Key": "register.genderOther",
+    "English": "Other",
+    "Hindi": "अन्य",
+    "Marathi": "इतर",
+    "Telugu": "ఇతర",
+    "Kannada": "ಇತರೆ"
+  },
+  {
+    "Key": "register.genderPrefer",
+    "English": "Prefer not to say",
+    "Hindi": "बताना नहीं चाहते",
+    "Marathi": "सांगणे पसंत नाही",
+    "Telugu": "చెప్పదలచుకోలేదు",
+    "Kannada": "ಹೇಳಲು ಬಯಸುವುದಿಲ್ಲ"
+  },
+  {
+    "Key": "register.mobileLabel",
+    "English": "Mobile Number",
+    "Hindi": "मोबाइल नंबर",
+    "Marathi": "मोबाईल नंबर",
+    "Telugu": "మొబైల్ నంబర్",
+    "Kannada": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "register.mobilePlaceholder",
+    "English": "Parent / guardian 10-digit mobile number",
+    "Hindi": "माता-पिता या अभिभावक का 10 अंकों का नंबर",
+    "Marathi": "पालक/पालकाचा 10-अंकी मोबाईल नंबर",
+    "Telugu": "తల్లిదండ్రుల / గార్డియన్ 10-అంకెల మొబైల్ నంబర్",
+    "Kannada": "ಪೋಷಕರ / ಪಾಲಕರ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "register.mobileHint",
+    "English": "Use a valid 10-digit mobile number (India).",
+    "Hindi": "भारत का सही 10 अंकों का मोबाइल नंबर डालें।",
+    "Marathi": "वैध 10-अंकी मोबाईल नंबर (भारत) वापरा.",
+    "Telugu": "చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్ (భారతదేశం) ఉపయోగించండి.",
+    "Kannada": "ಮಾನ್ಯವಾದ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ (ಭಾರತ) ಬಳಸಿ."
+  },
+  {
+    "Key": "register.submitBtn",
+    "English": "Register Child",
+    "Hindi": "दर्ज करें",
+    "Marathi": "मुलाची नोंदणी करा",
+    "Telugu": "పిల్లవాడిని నమోదు చేయండి",
+    "Kannada": "ಮಗುವನ್ನು ನೋಂದಾಯಿಸಿ"
+  },
+  {
+    "Key": "register.submittingBtn",
+    "English": "Registering...",
+    "Hindi": "दर्ज हो रहा है...",
+    "Marathi": "नोंदणी होत आहे...",
+    "Telugu": "నమోదు చేస్తోంది...",
+    "Kannada": "ನೋಂದಣಿ ಮಾಡುತ್ತಿದೆ..."
+  },
+  {
+    "Key": "register.successMsg",
+    "English": "Child registered successfully! Child ID: {id}",
+    "Hindi": "बच्चे का पंजीकरण हो गया! बच्चे की ID: {id}",
+    "Marathi": "मुलाची नोंदणी यशस्वी झाली! चाइल्ड आयडी: {id}",
+    "Telugu": "పిల్లవాడి నమోదు విజయవంతమైంది! చైల్డ్ ఐడీ: {id}",
+    "Kannada": "ಮಗುವಿನ ನೋಂದಣಿ ಯಶಸ್ವಿಯಾಗಿದೆ! ಚೈಲ್ಡ್ ಐಡಿ: {id}"
+  },
+  {
+    "Key": "register.errName",
+    "English": "Child's name is required.",
+    "Hindi": "बच्चे का नाम ज़रूरी है।",
+    "Marathi": "मुलाचे नाव आवश्यक आहे.",
+    "Telugu": "పిల్లవాడి పేరు అవసరం.",
+    "Kannada": "ಮಗುವಿನ ಹೆಸರು ಅಗತ್ಯವಿದೆ."
+  },
+  {
+    "Key": "register.errDobRequired",
+    "English": "Date of Birth is required.",
+    "Hindi": "जन्म तिथि ज़रूरी है।",
+    "Marathi": "जन्मतारीख आवश्यक आहे.",
+    "Telugu": "పుట్టిన తేదీ అవసరం.",
+    "Kannada": "ಜನ್ಮ ದಿನಾಂಕ ಅಗತ್ಯವಿದೆ."
+  },
+  {
+    "Key": "register.errDobAge",
+    "English": "Child's age must be between 8 and 10 years.",
+    "Hindi": "बच्चे की उम्र 8 से 10 साल के बीच होनी चाहिए।",
+    "Marathi": "मुलाचे वय 8 ते 10 वर्षांच्या दरम्यान असावे.",
+    "Telugu": "పిల్లవాడి వయసు 8 నుండి 10 సంవత్సరాల మధ్య ఉండాలి.",
+    "Kannada": "ಮಗುವಿನ ವಯಸ್ಸು 8 ರಿಂದ 10 ವರ್ಷಗಳ ನಡುವೆ ಇರಬೇಕು."
+  },
+  {
+    "Key": "register.errGender",
+    "English": "Please select a gender.",
+    "Hindi": "कृपया लिंग चुनें।",
+    "Marathi": "कृपया लिंग निवडा.",
+    "Telugu": "దయచేసి లింగం ఎంచుకోండి.",
+    "Kannada": "ದಯವಿಟ್ಟು ಲಿಂಗ ಆಯ್ಕೆಮಾಡಿ."
+  },
+  {
+    "Key": "register.errMobileRequired",
+    "English": "Mobile number is required.",
+    "Hindi": "मोबाइल नंबर ज़रूरी है।",
+    "Marathi": "मोबाईल नंबर आवश्यक आहे.",
+    "Telugu": "మొబైల్ నంబర్ అవసరం.",
+    "Kannada": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಅಗತ್ಯವಿದೆ."
+  },
+  {
+    "Key": "register.errMobileInvalid",
+    "English": "Enter a valid 10-digit mobile number.",
+    "Hindi": "सही 10 अंकों का मोबाइल नंबर डालें।",
+    "Marathi": "वैध 10-अंकी मोबाईल नंबर टाका.",
+    "Telugu": "చెల్లుబాటు అయ్యే 10-అంకెల మొబైల్ నంబర్ నమోదు చేయండి.",
+    "Kannada": "ಮಾನ್ಯವಾದ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "register.errGeneral",
+    "English": "An error occurred during registration. Please try again.",
+    "Hindi": "पंजीकरण में दिक्कत हुई। फिर कोशिश करें।",
+    "Marathi": "नोंदणी करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "నమోదు చేసేటప్పుడు పొరపాటు వచ్చింది. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ನೋಂದಣಿ ಮಾಡುವಾಗ ದೋಷ ಸಂಭವಿಸಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "game.numeracyLabel",
+    "English": "Ankganit",
+    "Hindi": "अंकगणित",
+    "Marathi": "अंकगणित",
+    "Telugu": "అంకగణిత్",
+    "Kannada": "ಅಂಕಗಣಿತ್"
+  },
+  {
+    "Key": "game.childId",
+    "English": "Child ID",
+    "Hindi": "बच्चे की ID",
+    "Marathi": "चाइल्ड आयडी",
+    "Telugu": "చైల్డ్ ఐడీ",
+    "Kannada": "ಚೈಲ್ಡ್ ಐಡಿ"
+  },
+  {
+    "Key": "game.score",
+    "English": "Score",
+    "Hindi": "अंक",
+    "Marathi": "स्कोर",
+    "Telugu": "స్కోర్",
+    "Kannada": "ಸ್ಕೋರ್"
+  },
+  {
+    "Key": "game.attemptLabel",
+    "English": "Attempt #",
+    "Hindi": "प्रयास #",
+    "Marathi": "प्रयत्न #",
+    "Telugu": "ప్రయత్నం #",
+    "Kannada": "ಪ್ರಯತ್ನ #"
+  },
+  {
+    "Key": "game.pauseQuit",
+    "English": "Pause/Quit",
+    "Hindi": "रोकें / छोड़ें",
+    "Marathi": "थांबवा/बंद करा",
+    "Telugu": "ఆపు/నిష్క్రమించు",
+    "Kannada": "ನಿಲ್ಲಿಸಿ/ನಿರ್ಗಮಿಸಿ"
+  },
+  {
+    "Key": "game.splashSubtitle",
+    "English": "Listen to the instructions, then start the assessment.",
+    "Hindi": "निर्देश सुनें, फिर परीक्षा शुरू करें।",
+    "Marathi": "सूचना ऐका, नंतर मूल्यांकन सुरू करा.",
+    "Telugu": "సూచనలు వినండి, తరువాత అసెస్‌మెంట్ ప్రారంభించండి.",
+    "Kannada": "ಸೂಚನೆಗಳನ್ನು ಕೇಳಿ, ನಂತರ ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಿ."
+  },
+  {
+    "Key": "game.welcome",
+    "English": "Welcome to Ankganit",
+    "Hindi": "अंकगणित, में आपका स्वागत है",
+    "Marathi": "अंकगणितमध्ये स्वागत आहे",
+    "Telugu": "అంకగణిత్‌కు స్వాగతం",
+    "Kannada": "ಅಂಕಗಣಿತ್‌ಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.splashDesc",
+    "English": "Please listen to the instructions. When the audio finishes, you can start the assessment.",
+    "Hindi": "कृपया निर्देश सुनें। ऑडियो खत्म होने के बाद 'अभी शुरू करें' बटन चालू हो जाएगा।",
+    "Marathi": "कृपया सूचना ऐका. ऑडिओ संपल्यावर तुम्ही मूल्यांकन सुरू करू शकता.",
+    "Telugu": "దయచేసి సూచనలు వినండి. ఆడియో ముగిసిన తర్వాత మీరు అసెస్‌మెంట్ ప్రారంభించవచ్చు.",
+    "Kannada": "ದಯವಿಟ್ಟು ಸೂಚನೆಗಳನ್ನು ಕೇಳಿ. ಆಡಿಯೋ ಮುಗಿದ ನಂತರ ನೀವು ಮೌಲ್ಯಮಾಪನ ಪ್ರಾರಂಭಿಸಬಹುದು."
+  },
+  {
+    "Key": "game.startNow",
+    "English": "Start Now",
+    "Hindi": "अभी शुरू करें",
+    "Marathi": "आता सुरू करा",
+    "Telugu": "ఇప్పుడు ప్రారంభించండి",
+    "Kannada": "ಈಗ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "game.replayAudio",
+    "English": "Replay Audio",
+    "Hindi": "दोबारा सुनें",
+    "Marathi": "ऑडिओ पुन्हा ऐका",
+    "Telugu": "ఆడియో మళ్లీ వినండి",
+    "Kannada": "ಆಡಿಯೋ ಮತ್ತೆ ಕೇಳಿ"
+  },
+  {
+    "Key": "game.audioNote",
+    "English": "The audio will play automatically. Once it ends, the Start Now button will become active.",
+    "Hindi": "ऑडियो अपने आप चलेगा। खत्म होने पर 'अभी शुरू करें' का बटन चालू होगा।",
+    "Marathi": "ऑडिओ स्वतः सुरू होईल. ते संपल्यावर 'आता सुरू करा' बटण सक्रिय होईल.",
+    "Telugu": "ఆడియో స్వయంగా ప్లే అవుతుంది. అది ముగిసిన తర్వాత 'ఇప్పుడు ప్రారంభించండి' బటన్ యాక్టివ్ అవుతుంది.",
+    "Kannada": "ಆಡಿಯೋ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪ್ಲೇ ಆಗುತ್ತದೆ. ಅದು ಮುಗಿದ ನಂತರ 'ಈಗ ಪ್ರಾರಂಭಿಸಿ' ಬಟನ್ ಸಕ್ರಿಯವಾಗುತ್ತದೆ."
+  },
+  {
+    "Key": "game.question",
+    "English": "Question",
+    "Hindi": "सवाल",
+    "Marathi": "प्रश्न",
+    "Telugu": "ప్రశ్న",
+    "Kannada": "ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.of",
+    "English": "of",
+    "Hindi": "में से",
+    "Marathi": "पैकी",
+    "Telugu": "లో",
+    "Kannada": "ರಲ್ಲಿ"
+  },
+  {
+    "Key": "game.category",
+    "English": "Category",
+    "Hindi": "वर्ग",
+    "Marathi": "प्रकार",
+    "Telugu": "వర్గం",
+    "Kannada": "ವಿಭಾಗ"
+  },
+  {
+    "Key": "game.catSingle",
+    "English": "Single Number",
+    "Hindi": "एक अंक",
+    "Marathi": "एक अंकी संख्या",
+    "Telugu": "ఒక అంకె సంఖ్య",
+    "Kannada": "ಒಂದು ಅಂಕಿಯ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "game.catDouble",
+    "English": "Double Number",
+    "Hindi": "दो अंक",
+    "Marathi": "दोन अंकी संख्या",
+    "Telugu": "రెండు అంకెల సంఖ్య",
+    "Kannada": "ಎರಡು ಅಂಕಿಗಳ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "game.catSub",
+    "English": "Subtraction",
+    "Hindi": "घटाव",
+    "Marathi": "वजाबाकी",
+    "Telugu": "తీసివేత",
+    "Kannada": "ವ್ಯವಕಲನ"
+  },
+  {
+    "Key": "game.catDiv",
+    "English": "Division",
+    "Hindi": "भाग",
+    "Marathi": "भागाकार",
+    "Telugu": "భాగహారం",
+    "Kannada": "ಭಾಗಾಕಾರ"
+  },
+  {
+    "Key": "game.timer",
+    "English": "Timer",
+    "Hindi": "समय",
+    "Marathi": "टायमर",
+    "Telugu": "టైమర్",
+    "Kannada": "ಟೈಮರ್"
+  },
+  {
+    "Key": "game.correct",
+    "English": "Correct",
+    "Hindi": "सही",
+    "Marathi": "बरोबर",
+    "Telugu": "సరైనది",
+    "Kannada": "ಸರಿ"
+  },
+  {
+    "Key": "game.incorrect",
+    "English": "Incorrect",
+    "Hindi": "गलत",
+    "Marathi": "चुकीचे",
+    "Telugu": "తప్పు",
+    "Kannada": "ತಪ್ಪು"
+  },
+  {
+    "Key": "game.quotient",
+    "English": "Quotient",
+    "Hindi": "भागफल",
+    "Marathi": "भागफल",
+    "Telugu": "భాగఫలం",
+    "Kannada": "ಭಾಗಲಬ್ಧ"
+  },
+  {
+    "Key": "game.remainder",
+    "English": "Remainder",
+    "Hindi": "शेषफल",
+    "Marathi": "बाकी",
+    "Telugu": "శేషం",
+    "Kannada": "ಶೇಷ"
+  },
+  {
+    "Key": "game.answer",
+    "English": "Answer",
+    "Hindi": "उत्तर",
+    "Marathi": "उत्तर",
+    "Telugu": "జవాబు",
+    "Kannada": "ಉತ್ತರ"
+  },
+  {
+    "Key": "game.submitAnswer",
+    "English": "Submit Answer",
+    "Hindi": "उत्तर जमा करें",
+    "Marathi": "उत्तर सबमिट करा",
+    "Telugu": "జవాబు సమర్పించండి",
+    "Kannada": "ಉತ್ತರ ಸಲ್ಲಿಸಿ"
+  },
+  {
+    "Key": "game.clear",
+    "English": "Clear",
+    "Hindi": "मिटाएं",
+    "Marathi": "साफ करा",
+    "Telugu": "క్లియర్ చేయండి",
+    "Kannada": "ಅಳಿಸಿ"
+  },
+  {
+    "Key": "game.assessmentComplete",
+    "English": "Assessment Report",
+    "Hindi": "मूल्यांकन रिपोर्ट",
+    "Marathi": "मूल्यांकन अहवाल",
+    "Telugu": "అసెస్‌మెంట్ నివేదిక",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ವರದಿ"
+  },
+  {
+    "Key": "game.assessmentTerminated",
+    "English": "Assessment Terminated",
+    "Hindi": "परीक्षण समाप्त",
+    "Marathi": "मूल्यांकन बंद केले",
+    "Telugu": "అసెస్‌మెంట్ ముగించబడింది",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಕೊನೆಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.allQuestionsCompleted",
+    "English": "All questions completed",
+    "Hindi": "सभी सवाल पूरे हुए",
+    "Marathi": "सर्व प्रश्न पूर्ण झाले",
+    "Telugu": "అన్ని ప్రశ్నలు పూర్తయ్యాయి",
+    "Kannada": "ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ"
+  },
+  {
+    "Key": "game.finalResults",
+    "English": "Final Results",
+    "Hindi": "अंतिम परिणाम",
+    "Marathi": "अंतिम निकाल",
+    "Telugu": "చివరి ఫలితాలు",
+    "Kannada": "ಅಂತಿಮ ಫಲಿತಾಂಶಗಳು"
+  },
+  {
+    "Key": "game.welcomeBagiya",
+    "English": "Welcome to Bagiya",
+    "Hindi": "बगिया, में आपका स्वागत है",
+    "Marathi": "बगियामध्ये स्वागत आहे",
+    "Telugu": "బగియాకు స్వాగతం",
+    "Kannada": "ಬಗಿಯಾಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeLottery",
+    "English": "Welcome to Lottery Ka Ticket",
+    "Hindi": "लॉटरी का टिकट, में आपका स्वागत है",
+    "Marathi": "लॉटरी का टिकटमध्ये स्वागत आहे",
+    "Telugu": "లాటరీ కా టికెట్‌కు స్వాగతం",
+    "Kannada": "ಲಾಟರಿ ಕಾ ಟಿಕೆಟ್‌ಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeMela",
+    "English": "Welcome to Chalo Mela Chalen",
+    "Hindi": "चलो मेला चलें, में आपका स्वागत है",
+    "Marathi": "चलो मेला चलेंमध्ये स्वागत आहे",
+    "Telugu": "చలో మేళా చలేంకు స్వాగతం",
+    "Kannada": "ಚಲೋ ಮೇಲಾ ಚಲೇಂಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeDhyan",
+    "English": "Welcome to Dhyan Kahan Hai",
+    "Hindi": "ध्यान कहाँ है, में आपका स्वागत है",
+    "Marathi": "ध्यान कहाँ हैमध्ये स्वागत आहे",
+    "Telugu": "ధ్యాన్ కహాఁ హైకు స్వాగతం",
+    "Kannada": "ಧ್ಯಾನ್ ಕಹಾँ ಹೈಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeHerPher",
+    "English": "Welcome to Her Pher",
+    "Hindi": "हेर फेर, में आपका स्वागत है",
+    "Marathi": "हेर फेरमध्ये स्वागत आहे",
+    "Telugu": "హేర్ ఫేర్‌కు స్వాగతం",
+    "Kannada": "ಹೇರ್ ಫೇರ್‌ಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeRachna",
+    "English": "Welcome to Rachna",
+    "Hindi": "रचना, में आपका स्वागत है",
+    "Marathi": "रचनामध्ये स्वागत आहे",
+    "Telugu": "రచనాకు స్వాగతం",
+    "Kannada": "ರಚನಾಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.welcomeChor",
+    "English": "Welcome to Chor Machaye Shor",
+    "Hindi": "चोर मचाए शोर, में आपका स्वागत है",
+    "Marathi": "चोर मचाए शोरमध्ये स्वागत आहे",
+    "Telugu": "చోర్ మచాయే శోర్‌కు స్వాగతం",
+    "Kannada": "ಚೋರ್ ಮಚಾಯೇ ಶೋರ್‌ಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.notScored",
+    "English": "Not Scored",
+    "Hindi": "अंक नहीं",
+    "Marathi": "गुण दिले नाहीत",
+    "Telugu": "స్కోర్ చేయలేదు",
+    "Kannada": "ಸ್ಕೋರ್ ಮಾಡಿಲ್ಲ"
+  },
+  {
+    "Key": "game.practiceLabel",
+    "English": "Practice",
+    "Hindi": "अभ्यास",
+    "Marathi": "सराव",
+    "Telugu": "అభ్యాసం",
+    "Kannada": "ಅಭ್ಯಾಸ"
+  },
+  {
+    "Key": "game.scoredLabel",
+    "English": "Scored",
+    "Hindi": "अंकित",
+    "Marathi": "गुण दिले",
+    "Telugu": "స్కోర్ చేయబడింది",
+    "Kannada": "ಸ್ಕೋರ್ ಮಾಡಲಾಗಿದೆ"
+  },
+  {
+    "Key": "game.replayBtn",
+    "English": "🔊 Replay Audio",
+    "Hindi": "🔊 दोबारा सुनें",
+    "Marathi": "🔊 ऑडिओ पुन्हा ऐका",
+    "Telugu": "🔊 ఆడియో మళ్లీ వినండి",
+    "Kannada": "🔊 ಆಡಿಯೋ ಮತ್ತೆ ಕೇಳಿ"
+  },
+  {
+    "Key": "game.practiceQuestion",
+    "English": "Practice · Question",
+    "Hindi": "अभ्यास · सवाल",
+    "Marathi": "सराव · प्रश्न",
+    "Telugu": "అభ్యాసం · ప్రశ్న",
+    "Kannada": "ಅಭ್ಯಾಸ · ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.practiceResponse",
+    "English": "Practice · Response",
+    "Hindi": "अभ्यास · जवाब",
+    "Marathi": "सराव · उत्तर",
+    "Telugu": "అభ్యాసం · జవాబు",
+    "Kannada": "ಅಭ್ಯಾಸ · ಉತ್ತರ"
+  },
+  {
+    "Key": "game.tryAgain",
+    "English": "Try Again",
+    "Hindi": "फिर से कोशिश करें",
+    "Marathi": "पुन्हा प्रयत्न करा",
+    "Telugu": "మళ్లీ ప్రయత్నించండి",
+    "Kannada": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ"
+  },
+  {
+    "Key": "game.startMainGame",
+    "English": "Start Main Game",
+    "Hindi": "मुख्य खेल शुरू करें",
+    "Marathi": "मुख्य गेम सुरू करा",
+    "Telugu": "ముఖ్య గేమ్ ప్రారంభించండి",
+    "Kannada": "ಮುಖ್ಯ ಗೇಮ್ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "game.responseLabel",
+    "English": "Response",
+    "Hindi": "जवाब",
+    "Marathi": "उत्तर",
+    "Telugu": "జవాబు",
+    "Kannada": "ಉತ್ತರ"
+  },
+  {
+    "Key": "game.subQuestion",
+    "English": "Sub-question",
+    "Hindi": "उप-सवाल",
+    "Marathi": "उप-प्रश्न",
+    "Telugu": "ఉప-ప్రశ్న",
+    "Kannada": "ಉಪ-ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.allAnswered",
+    "English": "All questions answered!",
+    "Hindi": "सभी सवालों के जवाब दे दिए!",
+    "Marathi": "सर्व प्रश्नांची उत्तरे दिली!",
+    "Telugu": "అన్ని ప్రశ్నలకు జవాబు ఇచ్చారు!",
+    "Kannada": "ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಲಾಗಿದೆ!"
+  },
+  {
+    "Key": "game.nextQuestionArrow",
+    "English": "Next Question →",
+    "Hindi": "अगला सवाल →",
+    "Marathi": "पुढील प्रश्न →",
+    "Telugu": "తదుపరి ప్రశ్న →",
+    "Kannada": "ಮುಂದಿನ ಪ್ರಶ್ನೆ →"
+  },
+  {
+    "Key": "game.nextScreenArrow",
+    "English": "Next Screen →",
+    "Hindi": "अगली स्क्रीन →",
+    "Marathi": "पुढील स्क्रीन →",
+    "Telugu": "తదుపరి స్క్రీన్ →",
+    "Kannada": "ಮುಂದಿನ ಸ್ಕ್ರೀನ್ →"
+  },
+  {
+    "Key": "game.finishGame",
+    "English": "Finish Game",
+    "Hindi": "खेल खत्म करें",
+    "Marathi": "गेम संपवा",
+    "Telugu": "గేమ్ ముగించండి",
+    "Kannada": "ಗೇಮ್ ಮುಗಿಸಿ"
+  },
+  {
+    "Key": "game.validationRequired",
+    "English": "This field is required. Please select an option.",
+    "Hindi": "यह ज़रूरी है। कोई विकल्प चुनें।",
+    "Marathi": "हे क्षेत्र आवश्यक आहे. कृपया एक पर्याय निवडा.",
+    "Telugu": "ఈ ఫీల్డ్ అవసరం. దయచేసి ఒక ఎంపికను ఎంచుకోండి.",
+    "Kannada": "ಈ ಕ್ಷೇತ್ರ ಅಗತ್ಯವಿದೆ. ದಯವಿಟ್ಟು ಒಂದು ಆಯ್ಕೆ ಮಾಡಿ."
+  },
+  {
+    "Key": "game.validationQ5",
+    "English": "Please select at least one observed behaviour.",
+    "Hindi": "कृपया कम से कम एक व्यवहार चुनें।",
+    "Marathi": "कृपया किमान एक निरीक्षित वर्तन निवडा.",
+    "Telugu": "దయచేసి కనీసం ఒక గమనించిన ప్రవర్తనను ఎంచుకోండి.",
+    "Kannada": "ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ಗಮನಿಸಿದ ವರ್ತನೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ."
+  },
+  {
+    "Key": "game.sampleQuestionA",
+    "English": "Sample Question A",
+    "Hindi": "नमूना सवाल क",
+    "Marathi": "नमुना प्रश्न अ",
+    "Telugu": "నమూనా ప్రశ్న ఎ",
+    "Kannada": "ನಮೂನೆ ಪ್ರಶ್ನೆ ಎ"
+  },
+  {
+    "Key": "game.sampleQuestionLabel",
+    "English": "Sample Question",
+    "Hindi": "नमूना सवाल",
+    "Marathi": "नमुना प्रश्न",
+    "Telugu": "నమూనా ప్రశ్న",
+    "Kannada": "ನಮೂನೆ ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.listenInstructions",
+    "English": "Listen to the instructions carefully",
+    "Hindi": "निर्देश ध्यान से सुनें",
+    "Marathi": "सूचना काळजीपूर्वक ऐका",
+    "Telugu": "సూచనలను జాగ్రత్తగా వినండి",
+    "Kannada": "ಸೂಚನೆಗಳನ್ನು ಎಚ್ಚರಿಕೆಯಿಂದ ಕೇಳಿ"
+  },
+  {
+    "Key": "game.listenRemember",
+    "English": "Listen & Remember",
+    "Hindi": "सुनें और याद रखें",
+    "Marathi": "ऐका व लक्षात ठेवा",
+    "Telugu": "వినండి & గుర్తుంచుకోండి",
+    "Kannada": "ಕೇಳಿ & ನೆನಪಿಡಿ"
+  },
+  {
+    "Key": "game.listeningLabel",
+    "English": "🔊 Listening…",
+    "Hindi": "🔊 सुन रहे हैं…",
+    "Marathi": "🔊 ऐकत आहे…",
+    "Telugu": "🔊 వింటున్నారు…",
+    "Kannada": "🔊 ಕೇಳುತ್ತಿದೆ…"
+  },
+  {
+    "Key": "game.correctFeedback",
+    "English": "✅ Correct!",
+    "Hindi": "✅ सही!",
+    "Marathi": "✅ बरोबर!",
+    "Telugu": "✅ సరైనది!",
+    "Kannada": "✅ ಸರಿ!"
+  },
+  {
+    "Key": "game.incorrectFeedback",
+    "English": "❌ Not quite. Listen to the correct sequence again.",
+    "Hindi": "❌ सही नहीं। सही क्रम फिर से सुनें।",
+    "Marathi": "❌ बरोबर नाही. योग्य क्रम पुन्हा ऐका.",
+    "Telugu": "❌ సరిగా లేదు. సరైన క్రమాన్ని మళ్లీ వినండి.",
+    "Kannada": "❌ ಸರಿಯಲ್ಲ. ಸರಿಯಾದ ಕ್ರಮವನ್ನು ಮತ್ತೆ ಕೇಳಿ."
+  },
+  {
+    "Key": "game.sampleRound",
+    "English": "Sample Round",
+    "Hindi": "अभ्यास दौर",
+    "Marathi": "नमुना फेरी",
+    "Telugu": "నమూనా రౌండ్",
+    "Kannada": "ನಮೂನೆ ಸುತ್ತು"
+  },
+  {
+    "Key": "game.timerLabel",
+    "English": "⏱ Timer:",
+    "Hindi": "⏱ समय:",
+    "Marathi": "⏱ टायमर:",
+    "Telugu": "⏱ టైమర్:",
+    "Kannada": "⏱ ಟೈಮರ್:"
+  },
+  {
+    "Key": "game.outstandingMemory",
+    "English": "Outstanding performance! You're a memory star! ⭐",
+    "Hindi": "बहुत बढ़िया! आप याददाश्त के सितारे हैं! ⭐",
+    "Marathi": "उत्कृष्ट कामगिरी! तू स्मरणशक्तीचा तारा आहेस! ⭐",
+    "Telugu": "అద్భుతమైన పనితీరు! నువ్వు మెమొరీ స్టార్‌వు! ⭐",
+    "Kannada": "ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ನೀನು ಮೆಮೊರಿ ಸ್ಟಾರ್! ⭐"
+  },
+  {
+    "Key": "game.outstandingRachna",
+    "English": "Outstanding performance! 🌟",
+    "Hindi": "बहुत बढ़िया! 🌟",
+    "Marathi": "उत्कृष्ट कामगिरी! 🌟",
+    "Telugu": "అద్భుతమైన పనితీరు! 🌟",
+    "Kannada": "ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! 🌟"
+  },
+  {
+    "Key": "game.sessionDropped",
+    "English": "Session Dropped (Clinical Rule)",
+    "Hindi": "सत्र समाप्त (नियम के अनुसार)",
+    "Marathi": "सेशन थांबवले (क्लिनिकल नियम)",
+    "Telugu": "సెషన్ ఆపివేయబడింది (క్లినికల్ నియమం)",
+    "Kannada": "ಸೆಶನ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ (ಕ್ಲಿನಿಕಲ್ ನಿಯಮ)"
+  },
+  {
+    "Key": "game.sessionTerminated",
+    "English": "Session Terminated",
+    "Hindi": "सत्र समाप्त",
+    "Marathi": "सेशन संपवले",
+    "Telugu": "సెషన్ ముగించబడింది",
+    "Kannada": "ಸೆಶನ್ ಕೊನೆಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.assessmentCompleted2",
+    "English": "Assessment Completed",
+    "Hindi": "परीक्षा पूरी हुई",
+    "Marathi": "मूल्यांकन पूर्ण झाले",
+    "Telugu": "అసెస్‌మెంట్ పూర్తయింది",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.retakeBtn",
+    "English": "↺ Retake",
+    "Hindi": "↺ दोबारा करें",
+    "Marathi": "↺ पुन्हा घ्या",
+    "Telugu": "↺ మళ్లీ తీయండి",
+    "Kannada": "↺ ಮತ್ತೆ ತೆಗೆದುಕೊಳ್ಳಿ"
+  },
+  {
+    "Key": "game.replayShort",
+    "English": "↻ Replay",
+    "Hindi": "↻ दोबारा",
+    "Marathi": "↻ पुन्हा ऐका",
+    "Telugu": "↻ మళ్లీ వినండి",
+    "Kannada": "↻ ಮತ್ತೆ ಕೇಳಿ"
+  },
+  {
+    "Key": "game.stopBtn",
+    "English": "■ Stop",
+    "Hindi": "■ रोकें",
+    "Marathi": "■ थांबा",
+    "Telugu": "■ ఆపండి",
+    "Kannada": "■ ನಿಲ್ಲಿಸಿ"
+  },
+  {
+    "Key": "game.doneBtn",
+    "English": "↻ Done",
+    "Hindi": "↻ हो गया",
+    "Marathi": "↻ पूर्ण",
+    "Telugu": "↻ పూర్తి",
+    "Kannada": "↻ ಮುಗಿದಿದೆ"
+  },
+  {
+    "Key": "game.targetPattern",
+    "English": "Target Pattern",
+    "Hindi": "लक्ष्य पैटर्न",
+    "Marathi": "लक्ष्य नमुना",
+    "Telugu": "లక్ష్య నమూనా",
+    "Kannada": "ಗುರಿ ಮಾದರಿ"
+  },
+  {
+    "Key": "game.buildThis",
+    "English": "Build this",
+    "Hindi": "यह बनाएं",
+    "Marathi": "हे तयार करा",
+    "Telugu": "దీన్ని నిర్మించండి",
+    "Kannada": "ಇದನ್ನು ನಿರ್ಮಿಸಿ"
+  },
+  {
+    "Key": "game.workspaceLabel",
+    "English": "Workspace",
+    "Hindi": "कार्यक्षेत्र",
+    "Marathi": "वर्कस्पेस",
+    "Telugu": "వర్క్‌స్పేస్",
+    "Kannada": "ವರ್ಕ್‌ಸ್ಪೇಸ್"
+  },
+  {
+    "Key": "game.dropShapes",
+    "English": "Drop shapes here to build the pattern",
+    "Hindi": "पैटर्न बनाने के लिए आकृतियाँ यहाँ रखें",
+    "Marathi": "नमुना तयार करण्यासाठी आकार येथे टाका",
+    "Telugu": "నమూనాను నిర్మించడానికి ఆకారాలను ఇక్కడ వదలండి",
+    "Kannada": "ಮಾದರಿಯನ್ನು ನಿರ್ಮಿಸಲು ಆಕಾರಗಳನ್ನು ಇಲ್ಲಿ ಬಿಡಿ"
+  },
+  {
+    "Key": "game.sourceShapes",
+    "English": "Source Shapes",
+    "Hindi": "आकृति चुनें",
+    "Marathi": "मूळ आकार",
+    "Telugu": "మూల ఆకారాలు",
+    "Kannada": "ಮೂಲ ಆಕಾರಗಳು"
+  },
+  {
+    "Key": "game.dragToWorkspace",
+    "English": "Drag to workspace",
+    "Hindi": "कार्यक्षेत्र पर खींचें",
+    "Marathi": "वर्कस्पेसमध्ये ओढा",
+    "Telugu": "వర్క్‌స్పేస్‌కు లాగండి",
+    "Kannada": "ವರ್ಕ್‌ಸ್ಪೇಸ್‌ಗೆ ಎಳೆಯಿರಿ"
+  },
+  {
+    "Key": "game.correctFeedbackChor",
+    "English": "✔ Correct!",
+    "Hindi": "✔ सही!",
+    "Marathi": "✔ बरोबर!",
+    "Telugu": "✔ సరైనది!",
+    "Kannada": "✔ ಸರಿ!"
+  },
+  {
+    "Key": "game.incorrectFeedbackChor",
+    "English": "✖ Try again. Observe carefully.",
+    "Hindi": "✖ फिर से कोशिश करें। ध्यान से देखें।",
+    "Marathi": "✖ पुन्हा प्रयत्न करा. काळजीपूर्वक पाहा.",
+    "Telugu": "✖ మళ్లీ ప్రయత్నించండి. జాగ్రత్తగా చూడండి.",
+    "Kannada": "✖ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. ಎಚ್ಚರಿಕೆಯಿಂದ ನೋಡಿ."
+  },
+  {
+    "Key": "game.foundPattern",
+    "English": "✅ Great! You found the pattern",
+    "Hindi": "✅ बहुत अच्छे! पैटर्न मिल गया",
+    "Marathi": "✅ छान! तुला नमुना सापडला",
+    "Telugu": "✅ బాగుంది! మీరు నమూనాను కనుగొన్నారు",
+    "Kannada": "✅ ಚೆನ್ನಾಗಿದೆ! ನೀನು ಮಾದರಿಯನ್ನು ಕಂಡುಕೊಂಡೆ"
+  },
+  {
+    "Key": "game.phase1Complete",
+    "English": "Phase 1 Completed! Click Phase 2 to continue.",
+    "Hindi": "चरण 1 पूरा! चरण 2 के लिए क्लिक करें।",
+    "Marathi": "टप्पा 1 पूर्ण झाला! टप्पा 2 साठी क्लिक करा.",
+    "Telugu": "దశ 1 పూర్తయింది! దశ 2 కోసం క్లిక్ చేయండి.",
+    "Kannada": "ಹಂತ 1 ಪೂರ್ಣಗೊಂಡಿದೆ! ಹಂತ 2 ಗಾಗಿ ಕ್ಲಿಕ್ ಮಾಡಿ."
+  },
+  {
+    "Key": "game.trial2Label",
+    "English": "🔄 Trial 2",
+    "Hindi": "🔄 दूसरा प्रयास",
+    "Marathi": "🔄 प्रयत्न 2",
+    "Telugu": "🔄 ప్రయత్నం 2",
+    "Kannada": "🔄 ಪ್ರಯತ್ನ 2"
+  },
+  {
+    "Key": "game.totalMoves",
+    "English": "Total Moves",
+    "Hindi": "कुल चालें",
+    "Marathi": "एकूण हलचाली",
+    "Telugu": "మొత్తం కదలికలు",
+    "Kannada": "ಒಟ್ಟು ಚಲನೆಗಳು"
+  },
+  {
+    "Key": "game.detailedBreakdown",
+    "English": "Detailed Question Breakdown",
+    "Hindi": "सवाल-दर-सवाल विवरण",
+    "Marathi": "तपशीलवार प्रश्न विश्लेषण",
+    "Telugu": "వివరణాత్మక ప్రశ్న విభజన",
+    "Kannada": "ವಿವರವಾದ ಪ್ರಶ್ನೆ ವಿಭಜನೆ"
+  },
+  {
+    "Key": "game.movesLabel",
+    "English": "Moves",
+    "Hindi": "चालें",
+    "Marathi": "हलचाली",
+    "Telugu": "కదలికలు",
+    "Kannada": "ಚಲನೆಗಳು"
+  },
+  {
+    "Key": "game.sNo",
+    "English": "S. No",
+    "Hindi": "क्र.सं.",
+    "Marathi": "क्र.",
+    "Telugu": "క్రమ సంఖ్య",
+    "Kannada": "ಕ್ರ.ಸಂ"
+  },
+  {
+    "Key": "game.questionImage",
+    "English": "Question Image",
+    "Hindi": "प्रश्न चित्र",
+    "Marathi": "प्रश्नाचे चित्र",
+    "Telugu": "ప్రశ్న చిత్రం",
+    "Kannada": "ಪ್ರಶ್ನೆ ಚಿತ್ರ"
+  },
+  {
+    "Key": "game.exactLabel",
+    "English": "✓ Correct (2pts)",
+    "Hindi": "✓ बिल्कुल सही (2 अंक)",
+    "Marathi": "✓ बरोबर (2 गुण)",
+    "Telugu": "✓ సరైనది (2 పాయింట్లు)",
+    "Kannada": "✓ ಸರಿ (2 ಅಂಕಗಳು)"
+  },
+  {
+    "Key": "game.partialLabel",
+    "English": "~ Partial (1pt)",
+    "Hindi": "~ आंशिक सही (1 अंक)",
+    "Marathi": "~ अर्धवट (1 गुण)",
+    "Telugu": "~ పాక్షికం (1 పాయింట్)",
+    "Kannada": "~ ಭಾಗಶಃ (1 ಅಂಕ)"
+  },
+  {
+    "Key": "game.wrongLabel",
+    "English": "✗ Incorrect (0pts)",
+    "Hindi": "✗ गलत (0 अंक)",
+    "Marathi": "✗ चुकीचे (0 गुण)",
+    "Telugu": "✗ తప్పు (0 పాయింట్లు)",
+    "Kannada": "✗ ತಪ್ಪು (0 ಅಂಕಗಳು)"
+  },
+  {
+    "Key": "game.accuracyLabel",
+    "English": "% Accuracy",
+    "Hindi": "% सटीकता",
+    "Marathi": "% अचूकता",
+    "Telugu": "% ఖచ్చితత్వం",
+    "Kannada": "% ನಿಖರತೆ"
+  },
+  {
+    "Key": "game.timeLabel",
+    "English": "⏱ Time",
+    "Hindi": "⏱ समय",
+    "Marathi": "⏱ वेळ",
+    "Telugu": "⏱ సమయం",
+    "Kannada": "⏱ ಸಮಯ"
+  },
+  {
+    "Key": "game.screensLabel",
+    "English": "Screens",
+    "Hindi": "स्क्रीन",
+    "Marathi": "स्क्रीन्स",
+    "Telugu": "స్క్రీన్‌లు",
+    "Kannada": "ಸ್ಕ್ರೀನ್‌ಗಳು"
+  },
+  {
+    "Key": "game.screenHeader",
+    "English": "Screen",
+    "Hindi": "स्क्रीन",
+    "Marathi": "स्क्रीन",
+    "Telugu": "స్క్రీన్",
+    "Kannada": "ಸ್ಕ್ರೀನ್"
+  },
+  {
+    "Key": "game.subQHeader",
+    "English": "Sub-Q",
+    "Hindi": "उप-प्र",
+    "Marathi": "उप-प्र",
+    "Telugu": "ఉప-ప్ర",
+    "Kannada": "ಉಪ-ಪ್ರ"
+  },
+  {
+    "Key": "game.targetHeader",
+    "English": "Target",
+    "Hindi": "लक्ष्य",
+    "Marathi": "लक्ष्य",
+    "Telugu": "లక్ష్యం",
+    "Kannada": "ಗುರಿ"
+  },
+  {
+    "Key": "game.childChoseHeader",
+    "English": "Child Choose",
+    "Hindi": "बच्चे ने चुना",
+    "Marathi": "मुलाने निवडले",
+    "Telugu": "పిల్లవాడు ఎంచుకున్నది",
+    "Kannada": "ಮಗು ಆಯ್ಕೆಮಾಡಿದ್ದು"
+  },
+  {
+    "Key": "game.statusHeader",
+    "English": "Status",
+    "Hindi": "स्थिति",
+    "Marathi": "स्थिती",
+    "Telugu": "స్థితి",
+    "Kannada": "ಸ್ಥಿತಿ"
+  },
+  {
+    "Key": "game.ptsLabel",
+    "English": "pts",
+    "Hindi": "अंक",
+    "Marathi": "गुण",
+    "Telugu": "పాయింట్లు",
+    "Kannada": "ಅಂಕಗಳು"
+  },
+  {
+    "Key": "game.statusCorrect",
+    "English": "Correct",
+    "Hindi": "सही",
+    "Marathi": "बरोबर",
+    "Telugu": "సరైనది",
+    "Kannada": "ಸರಿ"
+  },
+  {
+    "Key": "game.statusPartial",
+    "English": "Partial",
+    "Hindi": "आंशिक",
+    "Marathi": "अर्धवट",
+    "Telugu": "పాక్షికం",
+    "Kannada": "ಭಾಗಶಃ"
+  },
+  {
+    "Key": "game.statusWrong",
+    "English": "Incorrect",
+    "Hindi": "गलत",
+    "Marathi": "चुकीचे",
+    "Telugu": "తప్పు",
+    "Kannada": "ತಪ್ಪು"
+  },
+  {
+    "Key": "game.timeChip",
+    "English": "Screentime:",
+    "Hindi": "स्क्रीनटाइम:",
+    "Marathi": "स्क्रीनवेळ:",
+    "Telugu": "స్క్రీన్ సమయం:",
+    "Kannada": "ಸ್ಕ್ರೀನ್ ಸಮಯ:"
+  },
+  {
+    "Key": "game.totalCorrect",
+    "English": "Total / Correct",
+    "Hindi": "कुल / सही",
+    "Marathi": "एकूण / बरोबर",
+    "Telugu": "మొత్తం / సరైనవి",
+    "Kannada": "ಒಟ್ಟು / ಸರಿ"
+  },
+  {
+    "Key": "game.correctMetric",
+    "English": "✓ Correct",
+    "Hindi": "✓ सही",
+    "Marathi": "✓ बरोबर",
+    "Telugu": "✓ సరైనది",
+    "Kannada": "✓ ಸರಿ"
+  },
+  {
+    "Key": "game.incorrectMetric",
+    "English": "✗ Incorrect",
+    "Hindi": "✗ गलत",
+    "Marathi": "✗ चुकीचे",
+    "Telugu": "✗ తప్పు",
+    "Kannada": "✗ ತಪ್ಪು"
+  },
+  {
+    "Key": "game.totalTimeMetric",
+    "English": "Duration",
+    "Hindi": "अवधि",
+    "Marathi": "कालावधी",
+    "Telugu": "వ్యవధి",
+    "Kannada": "ಅವಧಿ"
+  },
+  {
+    "Key": "game.avgQMetric",
+    "English": "⚡ Avg/Q",
+    "Hindi": "⚡ औसत/प्रश्न",
+    "Marathi": "⚡ सरासरी/प्र",
+    "Telugu": "⚡ సగటు/ప్ర",
+    "Kannada": "⚡ ಸರಾಸರಿ/ಪ್ರ"
+  },
+  {
+    "Key": "game.qNumHeader",
+    "English": "Q#",
+    "Hindi": "प्र#",
+    "Marathi": "प्र#",
+    "Telugu": "ప్ర#",
+    "Kannada": "ಪ್ರ#"
+  },
+  {
+    "Key": "game.yourResponse",
+    "English": "Your Response",
+    "Hindi": "आपका जवाब",
+    "Marathi": "तुमचे उत्तर",
+    "Telugu": "మీ జవాబు",
+    "Kannada": "ನಿಮ್ಮ ಉತ್ತರ"
+  },
+  {
+    "Key": "game.replaysHeader",
+    "English": "Replays",
+    "Hindi": "दोहराव",
+    "Marathi": "पुन्हा ऐकले",
+    "Telugu": "మళ్లీ వినడాలు",
+    "Kannada": "ಮತ್ತೆ ಕೇಳಿದ್ದು"
+  },
+  {
+    "Key": "game.outstandingLottery",
+    "English": "Outstanding performance! Great memory span! ⭐",
+    "Hindi": "बहुत बढ़िया! शानदार याददाश्त! ⭐",
+    "Marathi": "उत्कृष्ट कामगिरी! उत्तम स्मरणक्षमता! ⭐",
+    "Telugu": "అద్భుతమైన పనితీరు! గొప్ప మెమొరీ! ⭐",
+    "Kannada": "ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ಉತ್ತಮ ಮೆಮೊರಿ! ⭐"
+  },
+  {
+    "Key": "game.stoppedMsg",
+    "English": "Stopped after 3 consecutive incorrect answers",
+    "Hindi": "3 लगातार गलत जवाब के बाद रुका",
+    "Marathi": "सलग 3 चुकीच्या उत्तरांनंतर थांबवले",
+    "Telugu": "వరుసగా 3 తప్పు జవాబుల తర్వాత ఆపివేయబడింది",
+    "Kannada": "ಸತತ 3 ತಪ್ಪು ಉತ್ತರಗಳ ನಂತರ ನಿಲ್ಲಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "game.testCompleted",
+    "English": "Test completed",
+    "Hindi": "परीक्षा पूरी हुई",
+    "Marathi": "टेस्ट पूर्ण झाली",
+    "Telugu": "టెస్ట్ పూర్తయింది",
+    "Kannada": "ಟೆಸ್ಟ್ ಪೂರ್ಣಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.teachingLabel",
+    "English": "Teaching",
+    "Hindi": "शिक्षण",
+    "Marathi": "शिकवणी",
+    "Telugu": "బోధన",
+    "Kannada": "ಬೋಧನೆ"
+  },
+  {
+    "Key": "game.teachingQ1Label",
+    "English": "Teaching Question 1",
+    "Hindi": "शिक्षण सवाल 1",
+    "Marathi": "शिकवणी प्रश्न 1",
+    "Telugu": "బోధన ప్రశ్న 1",
+    "Kannada": "ಬೋಧನಾ ಪ್ರಶ್ನೆ 1"
+  },
+  {
+    "Key": "game.teachingQ2Label",
+    "English": "Teaching Question 2",
+    "Hindi": "शिक्षण सवाल 2",
+    "Marathi": "शिकवणी प्रश्न 2",
+    "Telugu": "బోధన ప్రశ్న 2",
+    "Kannada": "ಬೋಧನಾ ಪ್ರಶ್ನೆ 2"
+  },
+  {
+    "Key": "game.startMainQuestions",
+    "English": "Start Main Questions",
+    "Hindi": "मुख्य सवाल शुरू करें",
+    "Marathi": "मुख्य प्रश्न सुरू करा",
+    "Telugu": "ముఖ్య ప్రశ్నలు ప్రారంభించండి",
+    "Kannada": "ಮುಖ್ಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "game.pleaseWaitAudio",
+    "English": "🔊 Please wait for the correction audio…",
+    "Hindi": "🔊 कृपया सुधार ऑडियो का इंतज़ार करें…",
+    "Marathi": "🔊 कृपया सुधारणा ऑडिओसाठी थांबा…",
+    "Telugu": "🔊 దయచేసి సరిచేసే ఆడియో కోసం వేచి ఉండండి…",
+    "Kannada": "🔊 ದಯವಿಟ್ಟು ತಿದ್ದುಪಡಿ ಆಡಿಯೋಗಾಗಿ ಕಾಯಿರಿ…"
+  },
+  {
+    "Key": "game.sampleLabel",
+    "English": "Sample",
+    "Hindi": "नमूना",
+    "Marathi": "नमुना",
+    "Telugu": "నమూనా",
+    "Kannada": "ನಮೂನೆ"
+  },
+  {
+    "Key": "game.audioAutoPlay",
+    "English": "Audio plays automatically",
+    "Hindi": "ऑडियो अपने आप चलेगा",
+    "Marathi": "ऑडिओ स्वतः सुरू होतो",
+    "Telugu": "ఆడియో స్వయంగా ప్లే అవుతుంది",
+    "Kannada": "ಆಡಿಯೋ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪ್ಲೇ ಆಗುತ್ತದೆ"
+  },
+  {
+    "Key": "game.selectNumbers",
+    "English": "Select {n} numbers in order",
+    "Hindi": "{n} संख्याएँ क्रम में चुनें",
+    "Marathi": "{n} अंक क्रमाने निवडा",
+    "Telugu": "{n} సంఖ్యలను క్రమంలో ఎంచుకోండి",
+    "Kannada": "{n} ಸಂಖ್ಯೆಗಳನ್ನು ಕ್ರಮವಾಗಿ ಆಯ್ಕೆಮಾಡಿ"
+  },
+  {
+    "Key": "game.selectionComplete",
+    "English": "Selection complete",
+    "Hindi": "चयन पूरा",
+    "Marathi": "निवड पूर्ण झाली",
+    "Telugu": "ఎంపిక పూర్తయింది",
+    "Kannada": "ಆಯ್ಕೆ ಪೂರ್ಣಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.questionsLabel",
+    "English": "Questions",
+    "Hindi": "प्रश्न",
+    "Marathi": "प्रश्न",
+    "Telugu": "ప్రశ్నలు",
+    "Kannada": "ಪ್ರಶ್ನೆಗಳು"
+  },
+  {
+    "Key": "game.performanceMeter",
+    "English": "Performance Meter",
+    "Hindi": "प्रदर्शन मीटर",
+    "Marathi": "कामगिरी मीटर",
+    "Telugu": "పనితీరు మీటర్",
+    "Kannada": "ಪ್ರದರ್ಶನ ಮೀಟರ್"
+  },
+  {
+    "Key": "game.targetedMoves",
+    "English": "Targeted Moves:",
+    "Hindi": "लक्षित चाल:",
+    "Marathi": "लक्ष्य हलचाली:",
+    "Telugu": "లక్ష్య కదలికలు:",
+    "Kannada": "ಗುರಿ ಚಲನೆಗಳು:"
+  },
+  {
+    "Key": "game.userMoves",
+    "English": "User Moves:",
+    "Hindi": "बच्चे की चाल:",
+    "Marathi": "वापरकर्ता हलचाली:",
+    "Telugu": "వినియోగదారు కదలికలు:",
+    "Kannada": "ಬಳಕೆದಾರ ಚಲನೆಗಳು:"
+  },
+  {
+    "Key": "game.timeTakenLabel",
+    "English": "Duration:",
+    "Hindi": "अवधि:",
+    "Marathi": "कालावधी:",
+    "Telugu": "వ్యవధి:",
+    "Kannada": "ಅವಧಿ:"
+  },
+  {
+    "Key": "game.userSelectedPath",
+    "English": "User Selected Path",
+    "Hindi": "बच्चे का चुना रास्ता",
+    "Marathi": "वापरकर्त्याने निवडलेला मार्ग",
+    "Telugu": "వినియోగదారు ఎంచుకున్న మార్గం",
+    "Kannada": "ಬಳಕೆದಾರ ಆಯ್ಕೆ ಮಾಡಿದ ಮಾರ್ಗ"
+  },
+  {
+    "Key": "game.path1",
+    "English": "Path 1",
+    "Hindi": "रास्ता 1",
+    "Marathi": "मार्ग 1",
+    "Telugu": "మార్గం 1",
+    "Kannada": "ಮಾರ್ಗ 1"
+  },
+  {
+    "Key": "game.path2",
+    "English": "Path 2",
+    "Hindi": "रास्ता 2",
+    "Marathi": "मार्ग 2",
+    "Telugu": "మార్గం 2",
+    "Kannada": "ಮಾರ್ಗ 2"
+  },
+  {
+    "Key": "game.path3",
+    "English": "Path 3",
+    "Hindi": "रास्ता 3",
+    "Marathi": "मार्ग 3",
+    "Telugu": "మార్గం 3",
+    "Kannada": "ಮಾರ್ಗ 3"
+  },
+  {
+    "Key": "game.sampleALabel",
+    "English": "Sample A",
+    "Hindi": "नमूना A",
+    "Marathi": "नमुना अ",
+    "Telugu": "నమూనా ఎ",
+    "Kannada": "ನಮೂನೆ ಎ"
+  },
+  {
+    "Key": "game.sampleBLabel",
+    "English": "Sample B",
+    "Hindi": "नमूना B",
+    "Marathi": "नमुना ब",
+    "Telugu": "నమూనా బి",
+    "Kannada": "ನಮೂನೆ ಬಿ"
+  },
+  {
+    "Key": "game.teachingQ3Label",
+    "English": "Teaching Question 3",
+    "Hindi": "शिक्षण सवाल 3",
+    "Marathi": "शिकवणी प्रश्न 3",
+    "Telugu": "బోధన ప్రశ్న 3",
+    "Kannada": "ಬೋಧನಾ ಪ್ರಶ್ನೆ 3"
+  },
+  {
+    "Key": "game.teachingQ4Label",
+    "English": "Teaching Question 4",
+    "Hindi": "शिक्षण सवाल 4",
+    "Marathi": "शिकवणी प्रश्न 4",
+    "Telugu": "బోధన ప్రశ్న 4",
+    "Kannada": "ಬೋಧನಾ ಪ್ರಶ್ನೆ 4"
+  },
+  {
+    "Key": "game.trialLabel",
+    "English": "Trial",
+    "Hindi": "प्रयास",
+    "Marathi": "प्रयत्न",
+    "Telugu": "ప్రయత్నం",
+    "Kannada": "ಪ್ರಯತ್ನ"
+  },
+  {
+    "Key": "game.refreshBtn",
+    "English": "Refresh",
+    "Hindi": "दोबारा देखें",
+    "Marathi": "रिफ्रेश करा",
+    "Telugu": "రిఫ్రెష్ చేయండి",
+    "Kannada": "ರಿಫ್ರೆಶ್ ಮಾಡಿ"
+  },
+  {
+    "Key": "game.currentTrialLabel",
+    "English": "CURRENT TRIAL",
+    "Hindi": "वर्तमान प्रयास",
+    "Marathi": "सध्याचा प्रयत्न",
+    "Telugu": "ప్రస్తుత ప్రయత్నం",
+    "Kannada": "ಪ್ರಸ್ತುತ ಪ್ರಯತ್ನ"
+  },
+  {
+    "Key": "game.movesInfoLabel",
+    "English": "MOVES",
+    "Hindi": "चाल",
+    "Marathi": "हलचाली",
+    "Telugu": "కదలికలు",
+    "Kannada": "ಚಲನೆಗಳು"
+  },
+  {
+    "Key": "game.timeInfoLabel",
+    "English": "TIME",
+    "Hindi": "समय",
+    "Marathi": "वेळ",
+    "Telugu": "సమయం",
+    "Kannada": "ಸಮಯ"
+  },
+  {
+    "Key": "game.questionEndedMoves",
+    "English": "Question Ended Due to Illegal Moves",
+    "Hindi": "गलत चाल के कारण प्रश्न समाप्त",
+    "Marathi": "अवैध हलचालींमुळे प्रश्न संपला",
+    "Telugu": "చెల్లని కదలికల వలన ప్రశ్న ముగిసింది",
+    "Kannada": "ಅಮಾನ್ಯ ಚಲನೆಗಳಿಂದ ಪ್ರಶ್ನೆ ಕೊನೆಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.timeoutDestination",
+    "English": "Time Out – Destination Not Achieved",
+    "Hindi": "समय समाप्त – मंजिल नहीं पहुंचे",
+    "Marathi": "वेळ संपली – ठिकाण गाठले नाही",
+    "Telugu": "సమయం ముగిసింది – గమ్యం చేరుకోలేదు",
+    "Kannada": "ಸಮಯ ಮುಗಿದಿದೆ – ಗುರಿ ತಲುಪಿಲ್ಲ"
+  },
+  {
+    "Key": "game.destinationNotAchieved",
+    "English": "Destination Not Achieved",
+    "Hindi": "मंजिल नहीं पहुंचे",
+    "Marathi": "ठिकाण गाठले नाही",
+    "Telugu": "గమ్యం చేరుకోలేదు",
+    "Kannada": "ಗುರಿ ತಲುಪಿಲ್ಲ"
+  },
+  {
+    "Key": "game.sessionTerminatedPartial",
+    "English": "Assessment Report",
+    "Hindi": "मूल्यांकन रिपोर्ट",
+    "Marathi": "मूल्यांकन अहवाल",
+    "Telugu": "అసెస్‌మెంట్ నివేదిక",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ವರದಿ"
+  },
+  {
+    "Key": "game.droppedSubtitle",
+    "English": "Q1-Q3 score < 2: System-enforced drop",
+    "Hindi": "Q1-Q3 अंक < 2: नियम के अनुसार बाहर",
+    "Marathi": "प्र1-प्र3 गुण < 2: सिस्टमने थांबवले",
+    "Telugu": "ప్ర1-ప్ర3 స్కోర్ < 2: సిస్టమ్ నిలిపివేసింది",
+    "Kannada": "ಪ್ರ1-ಪ್ರ3 ಸ್ಕೋರ್ < 2: ಸಿಸ್ಟಂ ನಿಲ್ಲಿಸಿದೆ"
+  },
+  {
+    "Key": "game.assessorExit",
+    "English": "Assessor requested early exit",
+    "Hindi": "मूल्यांकनकर्ता ने जल्दी समाप्त किया",
+    "Marathi": "मूल्यांकनकर्त्याने लवकर थांबवण्याची विनंती केली",
+    "Telugu": "మూల్యాంకనకర్త ముందస్తు నిష్క్రమణ కోరారు",
+    "Kannada": "ಮೌಲ್ಯಮಾಪಕರು ಮುಂಚಿತ ನಿರ್ಗಮನ ಕೋರಿದರು"
+  },
+  {
+    "Key": "game.testFinished",
+    "English": "Test finished successfully",
+    "Hindi": "परीक्षण सफलतापूर्वक पूरा हुआ",
+    "Marathi": "टेस्ट यशस्वीरित्या पूर्ण झाली",
+    "Telugu": "టెస్ట్ విజయవంతంగా పూర్తయింది",
+    "Kannada": "ಟೆಸ್ಟ್ ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.nextQuestion",
+    "English": "Next Question",
+    "Hindi": "अगला प्रश्न",
+    "Marathi": "पुढील प्रश्न",
+    "Telugu": "తదుపరి ప్రశ్న",
+    "Kannada": "ಮುಂದಿನ ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.requiredStar",
+    "English": "* (Required)",
+    "Hindi": "* (अनिवार्य)",
+    "Marathi": "* (आवश्यक)",
+    "Telugu": "* (అవసరం)",
+    "Kannada": "* (ಅಗತ್ಯ)"
+  },
+  {
+    "Key": "game.welcomeLiteracy",
+    "English": "Welcome to Padh ke batao",
+    "Hindi": "पढ़ के बताओ, में आपका स्वागत है",
+    "Marathi": "पढ़ के बताओमध्ये स्वागत आहे",
+    "Telugu": "పఢ్ కే బతావోకు స్వాగతం",
+    "Kannada": "ಪಢ್ ಕೇ ಬತಾವೋಗೆ ಸ್ವಾಗತ"
+  },
+  {
+    "Key": "game.doneReading",
+    "English": "Done Reading",
+    "Hindi": "पढ़ लिया",
+    "Marathi": "वाचन पूर्ण झाले",
+    "Telugu": "చదవడం పూర్తయింది",
+    "Kannada": "ಓದುವುದು ಮುಗಿದಿದೆ"
+  },
+  {
+    "Key": "game.assessorStopped",
+    "English": "Assessor stopped:",
+    "Hindi": "मूल्यांकनकर्ता ने रोका:",
+    "Marathi": "मूल्यांकनकर्त्याने थांबवले:",
+    "Telugu": "మూల్యాంకనకర్త ఆపివేశారు:",
+    "Kannada": "ಮೌಲ್ಯಮಾಪಕರು ನಿಲ್ಲಿಸಿದರು:"
+  },
+  {
+    "Key": "game.questionNo",
+    "English": "Question No.",
+    "Hindi": "प्रश्न सं.",
+    "Marathi": "प्रश्न क्र.",
+    "Telugu": "ప్రశ్న సంఖ్య",
+    "Kannada": "ಪ್ರಶ್ನೆ ಸಂ."
+  },
+  {
+    "Key": "game.questionType",
+    "English": "Question Type",
+    "Hindi": "प्रश्न प्रकार",
+    "Marathi": "प्रश्न प्रकार",
+    "Telugu": "ప్రశ్న రకం",
+    "Kannada": "ಪ್ರಶ್ನೆ ಪ್ರಕಾರ"
+  },
+  {
+    "Key": "game.attemptStatus",
+    "English": "Attempt Status",
+    "Hindi": "प्रयास स्थिति",
+    "Marathi": "प्रयत्न स्थिती",
+    "Telugu": "ప్రయత్న స్థితి",
+    "Kannada": "ಪ್ರಯತ್ನ ಸ್ಥಿತಿ"
+  },
+  {
+    "Key": "game.allCriteriaMet",
+    "English": "All Criteria Met",
+    "Hindi": "सभी मानदंड पूरे",
+    "Marathi": "सर्व निकष पूर्ण झाले",
+    "Telugu": "అన్ని ప్రమాణాలు నెరవేరాయి",
+    "Kannada": "ಎಲ್ಲಾ ಮಾನದಂಡಗಳನ್ನು ಪೂರೈಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "game.attempted",
+    "English": "Attempted",
+    "Hindi": "प्रयास किया",
+    "Marathi": "प्रयत्न केला",
+    "Telugu": "ప్రయత్నించారు",
+    "Kannada": "ಪ್ರಯತ್ನಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "game.ssrQuestion",
+    "English": "Assessment Question",
+    "Hindi": "मूल्यांकन प्रश्न",
+    "Marathi": "मूल्यांकन प्रश्न",
+    "Telugu": "అసెస్‌మెంట్ ప్రశ్న",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.userAnswer",
+    "English": "User Answer",
+    "Hindi": "बच्चे का उत्तर",
+    "Marathi": "वापरकर्त्याचे उत्तर",
+    "Telugu": "వినియోగదారు జవాబు",
+    "Kannada": "ಬಳಕೆದಾರ ಉತ್ತರ"
+  },
+  {
+    "Key": "game.assessmentLabel",
+    "English": "Assessment Report",
+    "Hindi": "मूल्यांकन रिपोर्ट",
+    "Marathi": "मूल्यांकन अहवाल",
+    "Telugu": "అసెస్‌మెంట్ నివేదిక",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ವರದಿ"
+  },
+  {
+    "Key": "game.yesLabel",
+    "English": "Yes",
+    "Hindi": "हाँ",
+    "Marathi": "होय",
+    "Telugu": "అవును",
+    "Kannada": "ಹೌದು"
+  },
+  {
+    "Key": "game.noLabel",
+    "English": "No",
+    "Hindi": "नहीं",
+    "Marathi": "नाही",
+    "Telugu": "కాదు",
+    "Kannada": "ಇಲ್ಲ"
+  },
+  {
+    "Key": "game.finishAssessment",
+    "English": "Finish Assessment",
+    "Hindi": "मूल्यांकन समाप्त करें",
+    "Marathi": "मूल्यांकन पूर्ण करा",
+    "Telugu": "అసెస్‌మెంట్ పూర్తి చేయండి",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಳಿಸಿ"
+  },
+  {
+    "Key": "game.droppedChip",
+    "English": "⛔ Dropped",
+    "Hindi": "⛔ बाहर",
+    "Marathi": "⛔ थांबवले",
+    "Telugu": "⛔ ఆపివేయబడింది",
+    "Kannada": "⛔ ನಿಲ್ಲಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "game.time",
+    "English": "Time",
+    "Hindi": "समय",
+    "Marathi": "वेळ",
+    "Telugu": "సమయం",
+    "Kannada": "ಸಮಯ"
+  },
+  {
+    "Key": "game.performance",
+    "English": "Ankganit Performance",
+    "Hindi": "अंकगणित प्रदर्शन",
+    "Marathi": "अंकगणित कामगिरी",
+    "Telugu": "అంకగణిత్ పనితీరు",
+    "Kannada": "ಅಂಕಗಣಿತ್ ಪ್ರದರ್ಶನ"
+  },
+  {
+    "Key": "game.performanceLabel",
+    "English": "Performance",
+    "Hindi": "प्रदर्शन",
+    "Marathi": "कामगिरी",
+    "Telugu": "పనితీరు",
+    "Kannada": "ಪ್ರದರ್ಶನ"
+  },
+  {
+    "Key": "game.assessmentCompleted",
+    "English": "Assessment Completed",
+    "Hindi": "परीक्षा पूरी हुई",
+    "Marathi": "मूल्यांकन पूर्ण झाले",
+    "Telugu": "అసెస్‌మెంట్ పూర్తయింది",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಂಡಿದೆ"
+  },
+  {
+    "Key": "game.totalScore",
+    "English": "Total Score",
+    "Hindi": "कुल अंक",
+    "Marathi": "एकूण गुण",
+    "Telugu": "మొత్తం స్కోర్",
+    "Kannada": "ಒಟ್ಟು ಸ್ಕೋರ್"
+  },
+  {
+    "Key": "game.correct2",
+    "English": "Correct",
+    "Hindi": "सही",
+    "Marathi": "बरोबर",
+    "Telugu": "సరైనది",
+    "Kannada": "ಸರಿ"
+  },
+  {
+    "Key": "game.incorrect2",
+    "English": "Incorrect",
+    "Hindi": "गलत",
+    "Marathi": "चुकीचे",
+    "Telugu": "తప్పు",
+    "Kannada": "ತಪ್ಪು"
+  },
+  {
+    "Key": "game.percentage",
+    "English": "Accuracy",
+    "Hindi": "सटीकता",
+    "Marathi": "अचूकता",
+    "Telugu": "ఖచ్చితత్వం",
+    "Kannada": "ನಿಖರತೆ"
+  },
+  {
+    "Key": "game.totalTime",
+    "English": "Duration",
+    "Hindi": "अवधि",
+    "Marathi": "कालावधी",
+    "Telugu": "వ్యవధి",
+    "Kannada": "ಅವಧಿ"
+  },
+  {
+    "Key": "game.avgTimeQ",
+    "English": "Avg Time/Q",
+    "Hindi": "औसत समय/सवाल",
+    "Marathi": "सरासरी वेळ/प्र",
+    "Telugu": "సగటు సమయం/ప్ర",
+    "Kannada": "ಸರಾಸರಿ ಸಮಯ/ಪ್ರ"
+  },
+  {
+    "Key": "game.outstanding",
+    "English": "Outstanding performance! You're a math star! ⭐",
+    "Hindi": "बहुत बढ़िया! आप गणित के सितारे हैं! ⭐",
+    "Marathi": "उत्कृष्ट कामगिरी! तू गणिताचा तारा आहेस! ⭐",
+    "Telugu": "అద్భుతమైన పనితీరు! నువ్వు గణిత స్టార్‌వు! ⭐",
+    "Kannada": "ಅತ್ಯುತ್ತಮ ಪ್ರದರ್ಶನ! ನೀನು ಗಣಿತ ಸ್ಟಾರ್! ⭐"
+  },
+  {
+    "Key": "game.showGrid",
+    "English": "Show per-question results with time",
+    "Hindi": "हर सवाल का समय और नतीजा देखें",
+    "Marathi": "वेळेसह प्रश्न-निहाय निकाल दाखवा",
+    "Telugu": "సమయంతో ప్రశ్న-వారీ ఫలితాలు చూపండి",
+    "Kannada": "ಸಮಯದೊಂದಿಗೆ ಪ್ರಶ್ನೆ-ವಾರು ಫಲಿತಾಂಶಗಳನ್ನು ತೋರಿಸಿ"
+  },
+  {
+    "Key": "game.reasonLabel",
+    "English": "Reason:",
+    "Hindi": "कारण:",
+    "Marathi": "कारण:",
+    "Telugu": "కారణం:",
+    "Kannada": "ಕಾರಣ:"
+  },
+  {
+    "Key": "game.sessionDetails",
+    "English": "Session Assessment Details",
+    "Hindi": "सत्र का विवरण",
+    "Marathi": "सेशन मूल्यांकन तपशील",
+    "Telugu": "సెషన్ అసెస్‌మెంట్ వివరాలు",
+    "Kannada": "ಸೆಶನ್ ಮೌಲ್ಯಮಾಪನ ವಿವರಗಳು"
+  },
+  {
+    "Key": "game.assessorInstruction",
+    "English": "This section must be filled by the Assessor.",
+    "Hindi": "यह सेक्शन केवल Assessor द्वारा भरा जाना चाहिए।",
+    "Marathi": "हा भाग मूल्यांकनकर्त्याने भरावा.",
+    "Telugu": "ఈ భాగాన్ని మూల్యాంకనకర్త పూరించాలి.",
+    "Kannada": "ಈ ಭಾಗವನ್ನು ಮೌಲ್ಯಮಾಪಕರು ಭರ್ತಿ ಮಾಡಬೇಕು."
+  },
+  {
+    "Key": "game.q1Label",
+    "English": "Q1. Did you enjoy playing the game?",
+    "Hindi": "प्र1. क्या आपको खेल खेलने में मज़ा आया?",
+    "Marathi": "प्र1. तुला गेम खेळायला आवडले का?",
+    "Telugu": "ప్ర1. మీకు గేమ్ ఆడటం ఇష్టమైందా?",
+    "Kannada": "ಪ್ರ1. ನೀನು ಗೇಮ್ ಆಡುವುದನ್ನು ಆನಂದಿಸಿದೆಯಾ?"
+  },
+  {
+    "Key": "game.q2Label",
+    "English": "Q2. How did the game feel for you?",
+    "Hindi": "प्र2. खेल आपको कैसा लगा?",
+    "Marathi": "प्र2. गेम खेळताना तुला कसे वाटले?",
+    "Telugu": "ప్ర2. గేమ్ ఆడేటప్పుడు మీకు ఎలా అనిపించింది?",
+    "Kannada": "ಪ್ರ2. ಗೇಮ್ ಆಡುವಾಗ ನಿನಗೆ ಹೇಗೆ ಅನಿಸಿತು?"
+  },
+  {
+    "Key": "game.q3Label",
+    "English": "Q3. Did you feel tired while playing the game?",
+    "Hindi": "प्र3. क्या खेलते-खेलते थकान हुई?",
+    "Marathi": "प्र3. गेम खेळताना तुला थकवा आला का?",
+    "Telugu": "ప్ర3. గేమ్ ఆడేటప్పుడు మీకు అలసట అనిపించిందా?",
+    "Kannada": "ಪ್ರ3. ಗೇಮ್ ಆಡುವಾಗ ನಿನಗೆ ಆಯಾಸ ಅನಿಸಿತಾ?"
+  },
+  {
+    "Key": "game.q4Label",
+    "English": "Q4. Would you like to play the game again?",
+    "Hindi": "प्र4. क्या आप यह खेल फिर खेलना चाहेंगे?",
+    "Marathi": "प्र4. तुला हा गेम पुन्हा खेळायला आवडेल का?",
+    "Telugu": "ప్ర4. మీరు ఈ గేమ్‌ను మళ్లీ ఆడాలనుకుంటున్నారా?",
+    "Kannada": "ಪ್ರ4. ನೀನು ಈ ಗೇಮ್ ಅನ್ನು ಮತ್ತೆ ಆಡಲು ಬಯಸುತ್ತೀಯಾ?"
+  },
+  {
+    "Key": "game.optYes",
+    "English": "Yes, a lot",
+    "Hindi": "हाँ, बहुत",
+    "Marathi": "हो, खूप",
+    "Telugu": "అవును, చాలా",
+    "Kannada": "ಹೌದು, ತುಂಬಾ"
+  },
+  {
+    "Key": "game.optLittle",
+    "English": "A little",
+    "Hindi": "थोड़ा सा",
+    "Marathi": "थोडे",
+    "Telugu": "కొంచెం",
+    "Kannada": "ಸ್ವಲ್ಪ"
+  },
+  {
+    "Key": "game.optNotMuch",
+    "English": "Not much",
+    "Hindi": "ज़्यादा नहीं",
+    "Marathi": "जास्त नाही",
+    "Telugu": "ఎక్కువ కాదు",
+    "Kannada": "ಹೆಚ್ಚಿಲ್ಲ"
+  },
+  {
+    "Key": "game.q5Label",
+    "English": "Q5. Observed Behaviours during the session (Multiple selection allowed)",
+    "Hindi": "प्र5. सत्र के दौरान देखे गए व्यवहार (एक से ज़्यादा चुन सकते हैं)",
+    "Marathi": "प्र5. सेशनमध्ये निरीक्षित वर्तन (अनेक पर्याय निवडता येतील)",
+    "Telugu": "ప్ర5. సెషన్‌లో గమనించిన ప్రవర్తనలు (అనేకం ఎంచుకోవచ్చు)",
+    "Kannada": "ಪ್ರ5. ಸೆಶನ್‌ನಲ್ಲಿ ಗಮನಿಸಿದ ವರ್ತನೆಗಳು (ಹಲವು ಆಯ್ಕೆ ಸಾಧ್ಯ)"
+  },
+  {
+    "Key": "game.b1",
+    "English": "Difficulty sustaining attention",
+    "Hindi": "ध्यान टिकाने में मुश्किल",
+    "Marathi": "लक्ष टिकवण्यात अडचण",
+    "Telugu": "దృష్టి నిలుపుకోవడంలో కష్టం",
+    "Kannada": "ಗಮನ ಉಳಿಸಿಕೊಳ್ಳುವಲ್ಲಿ ಕಷ್ಟ"
+  },
+  {
+    "Key": "game.b2",
+    "English": "Impulsive or random responding",
+    "Hindi": "बिना सोचे जल्दी जवाब देना",
+    "Marathi": "आवेगी किंवा यादृच्छिक प्रतिसाद",
+    "Telugu": "ఆకస్మిక లేదా యాదృచ్ఛిక స్పందన",
+    "Kannada": "ಆತುರದ ಅಥವಾ ಯಾದೃಚ್ಛಿಕ ಪ್ರತಿಕ್ರಿಯೆ"
+  },
+  {
+    "Key": "game.b3",
+    "English": "Negative reaction to correction",
+    "Hindi": "सुधार पर नाराज़ होना",
+    "Marathi": "सुधारणेवर नकारात्मक प्रतिक्रिया",
+    "Telugu": "సరిచేయడంపై ప్రతికూల స్పందన",
+    "Kannada": "ತಿದ್ದುಪಡಿಯ ಮೇಲೆ ನಕಾರಾತ್ಮಕ ಪ್ರತಿಕ್ರಿಯೆ"
+  },
+  {
+    "Key": "game.b4",
+    "English": "Hesitation in responding",
+    "Hindi": "जवाब देने में झिझक",
+    "Marathi": "उत्तर देताना संकोच",
+    "Telugu": "జవాబు ఇవ్వడంలో సంశయం",
+    "Kannada": "ಉತ್ತರಿಸುವಲ್ಲಿ ಸಂಕೋಚ"
+  },
+  {
+    "Key": "game.b5",
+    "English": "High focus or persistence",
+    "Hindi": "ध्यान लगाकर काम करना",
+    "Marathi": "उच्च लक्ष किंवा सातत्य",
+    "Telugu": "ఎక్కువ దృష్టి లేదా పట్టుదల",
+    "Kannada": "ಹೆಚ್ಚಿನ ಗಮನ ಅಥವಾ ನಿರಂತರತೆ"
+  },
+  {
+    "Key": "game.b6",
+    "English": "Verbalisation of a memory strategy",
+    "Hindi": "याद करने का तरीका बोलकर बताना",
+    "Marathi": "स्मरण रणनीतीचे शब्दात वर्णन",
+    "Telugu": "మెమొరీ వ్యూహాన్ని మాటల్లో చెప్పడం",
+    "Kannada": "ಮೆಮೊರಿ ತಂತ್ರವನ್ನು ಮಾತಿನಲ್ಲಿ ವಿವರಿಸುವುದು"
+  },
+  {
+    "Key": "game.b7",
+    "English": "Needed frequent reassurance",
+    "Hindi": "बार-बार आश्वासन चाहिए",
+    "Marathi": "वारंवार आश्वासनाची गरज",
+    "Telugu": "తరచూ భరోసా అవసరం",
+    "Kannada": "ಆಗಾಗ್ಗೆ ಭರವಸೆ ಬೇಕಾಗಿತ್ತು"
+  },
+  {
+    "Key": "game.b8",
+    "English": "Calm and engaged throughout",
+    "Hindi": "शांत और लगातार लगे रहना",
+    "Marathi": "संपूर्ण वेळ शांत व सहभागी",
+    "Telugu": "మొత్తం సమయం శాంతంగా & నిమగ్నమై ఉండటం",
+    "Kannada": "ಪೂರ್ತಿ ಸಮಯ ಶಾಂತ ಮತ್ತು ತೊಡಗಿಸಿಕೊಂಡಿರುವುದು"
+  },
+  {
+    "Key": "game.extraNotes",
+    "English": "Additional Notes",
+    "Hindi": "अन्य टिप्पणी",
+    "Marathi": "अतिरिक्त टिपणी",
+    "Telugu": "అదనపు గమనికలు",
+    "Kannada": "ಹೆಚ್ಚುವರಿ ಟಿಪ್ಪಣಿಗಳು"
+  },
+  {
+    "Key": "game.useMic",
+    "English": "Use Mic",
+    "Hindi": "माइक से बोलें",
+    "Marathi": "माईक वापरा",
+    "Telugu": "మైక్ ఉపయోగించండి",
+    "Kannada": "ಮೈಕ್ ಬಳಸಿ"
+  },
+  {
+    "Key": "game.recordingStop",
+    "English": "Recording... (Stop)",
+    "Hindi": "रिकॉर्ड हो रहा है... (रोकें)",
+    "Marathi": "रेकॉर्डिंग... (थांबवा)",
+    "Telugu": "రికార్డింగ్... (ఆపండి)",
+    "Kannada": "ರೆಕಾರ್ಡಿಂಗ್... (ನಿಲ್ಲಿಸಿ)"
+  },
+  {
+    "Key": "game.dictatePlaceholder",
+    "English": "Type or dictate observations...",
+    "Hindi": "टिप्पणी यहाँ लिखें या बोलें...",
+    "Marathi": "निरीक्षणे टाइप करा किंवा बोला...",
+    "Telugu": "గమనికలను టైప్ చేయండి లేదా చెప్పండి...",
+    "Kannada": "ಗಮನಿಕೆಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಹೇಳಿ..."
+  },
+  {
+    "Key": "game.retest",
+    "English": "↻ Retest",
+    "Hindi": "↻ दोबारा परीक्षा",
+    "Marathi": "↺ पुन्हा टेस्ट करा",
+    "Telugu": "↺ తిరిగి టెస్ట్ చేయండి",
+    "Kannada": "↺ ಮತ್ತೆ ಟೆಸ್ಟ್ ಮಾಡಿ"
+  },
+  {
+    "Key": "game.home",
+    "English": "🏠 Home",
+    "Hindi": "🏠 होम",
+    "Marathi": "🏠 मुख्यपृष्ठ",
+    "Telugu": "🏠 హోమ్",
+    "Kannada": "🏠 ಮುಖಪುಟ"
+  },
+  {
+    "Key": "game.submitAssessment",
+    "English": "Submit Assessment",
+    "Hindi": "मूल्यांकन जमा करें",
+    "Marathi": "मूल्यांकन सबमिट करा",
+    "Telugu": "అసెస్‌మెంట్ సమర్పించండి",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಸಲ್ಲಿಸಿ"
+  },
+  {
+    "Key": "game.confirmSubmitMsg",
+    "English": "Are you sure you want to submit the assessment?",
+    "Hindi": "क्या आप वाकई मूल्यांकन जमा करना चाहते हैं?",
+    "Marathi": "तुम्हाला खात्री आहे की तुम्ही मूल्यांकन सबमिट करायचे आहे?",
+    "Telugu": "మీరు అసెస్‌మెంట్‌ను సమర్పించాలని నిర్ధారిస్తున్నారా?",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನವನ್ನು ಸಲ್ಲಿಸಲು ನೀವು ಖಚಿತವಾ?"
+  },
+  {
+    "Key": "game.confirm",
+    "English": "Confirm",
+    "Hindi": "पुष्टि करें",
+    "Marathi": "पुष्टी करा",
+    "Telugu": "నిర్ధారించండి",
+    "Kannada": "ಖಚಿತಪಡಿಸಿ"
+  },
+  {
+    "Key": "game.assessmentSubmitted",
+    "English": "Assessment submitted successfully!",
+    "Hindi": "मूल्यांकन सफलतापूर्वक जमा हो गया!",
+    "Marathi": "मूल्यांकन यशस्वीरित्या सबमिट झाले!",
+    "Telugu": "అసెస్‌మెంట్ విజయవంతంగా సమర్పించబడింది!",
+    "Kannada": "ಮೌಲ್ಯಮಾಪನ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ!"
+  },
+  {
+    "Key": "game.saving",
+    "English": "Saving...",
+    "Hindi": "सहेजा जा रहा है...",
+    "Marathi": "सेव्ह होत आहे...",
+    "Telugu": "సేవ్ చేస్తోంది...",
+    "Kannada": "ಉಳಿಸುತ್ತಿದೆ..."
+  },
+  {
+    "Key": "game.progressFound",
+    "English": "Saved Progress Found",
+    "Hindi": "पहले की प्रगति मिली",
+    "Marathi": "सेव्ह केलेली प्रगती सापडली",
+    "Telugu": "సేవ్ చేసిన ప్రోగ్రెస్ కనుగొనబడింది",
+    "Kannada": "ಉಳಿಸಿದ ಪ್ರಗತಿ ಕಂಡುಬಂದಿದೆ"
+  },
+  {
+    "Key": "game.progressDesc",
+    "English": "You have a previously paused game session.",
+    "Hindi": "आपका एक पुराना सत्र रुका हुआ है।",
+    "Marathi": "तुमच्याकडे आधी थांबवलेले गेम सेशन आहे.",
+    "Telugu": "మీకు ముందుగా ఆపివేసిన గేమ్ సెషన్ ఉంది.",
+    "Kannada": "ನಿಮಗೆ ಈ ಹಿಂದೆ ನಿಲ್ಲಿಸಿದ ಗೇಮ್ ಸೆಶನ್ ಇದೆ."
+  },
+  {
+    "Key": "game.restartFresh",
+    "English": "Restart Fresh",
+    "Hindi": "नए सिरे से शुरू करें",
+    "Marathi": "नवीन सुरुवात करा",
+    "Telugu": "కొత్తగా ప్రారంభించండి",
+    "Kannada": "ಹೊಸದಾಗಿ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "game.resumeGame",
+    "English": "Resume Game",
+    "Hindi": "वहीं से जारी रखें",
+    "Marathi": "गेम पुन्हा सुरू करा",
+    "Telugu": "గేమ్ తిరిగి ప్రారంభించండి",
+    "Kannada": "ಗೇಮ್ ಮುಂದುವರಿಸಿ"
+  },
+  {
+    "Key": "game.pauseQuitTitle",
+    "English": "Pause or Quit",
+    "Hindi": "रोकें या छोड़ें",
+    "Marathi": "थांबवा किंवा बंद करा",
+    "Telugu": "ఆపండి లేదా నిష్క్రమించండి",
+    "Kannada": "ನಿಲ್ಲಿಸಿ ಅಥವಾ ನಿರ್ಗಮಿಸಿ"
+  },
+  {
+    "Key": "game.pauseDesc",
+    "English": "Why are you stopping the game?",
+    "Hindi": "आप खेल क्यों रोक रहे हैं?",
+    "Marathi": "तुम्ही गेम का थांबवत आहात?",
+    "Telugu": "మీరు గేమ్‌ను ఎందుకు ఆపుతున్నారు?",
+    "Kannada": "ನೀವು ಗೇಮ್ ಅನ್ನು ಏಕೆ ನಿಲ್ಲಿಸುತ್ತಿದ್ದೀರಿ?"
+  },
+  {
+    "Key": "game.pausePlaceholder",
+    "English": "E.g., Child is tired, disconnected, etc.",
+    "Hindi": "जैसे: बच्चा थक गया, नेटवर्क नहीं है, आदि।",
+    "Marathi": "उदा. मूल थकले आहे, डिस्कनेक्ट झाले, इत्यादी.",
+    "Telugu": "ఉదా. పిల్లవాడు అలసిపోయాడు, డిస్‌కనెక్ట్ అయింది, మొదలైనవి.",
+    "Kannada": "ಉದಾ. ಮಗು ಆಯಾಸಗೊಂಡಿದೆ, ಸಂಪರ್ಕ ಕಡಿತಗೊಂಡಿದೆ, ಇತ್ಯಾದಿ."
+  },
+  {
+    "Key": "game.cancel",
+    "English": "Cancel",
+    "Hindi": "रद्द करें",
+    "Marathi": "रद्द करा",
+    "Telugu": "రద్దు చేయండి",
+    "Kannada": "ರದ್ದುಮಾಡಿ"
+  },
+  {
+    "Key": "game.pauseSave",
+    "English": "Pause & Save",
+    "Hindi": "रोकें और सहेजें",
+    "Marathi": "थांबवा व सेव्ह करा",
+    "Telugu": "ఆపి సేవ్ చేయండి",
+    "Kannada": "ನಿಲ್ಲಿಸಿ & ಉಳಿಸಿ"
+  },
+  {
+    "Key": "game.quitEnd",
+    "English": "Quit & End",
+    "Hindi": "छोड़ें और समाप्त करें",
+    "Marathi": "बंद करा व संपवा",
+    "Telugu": "నిష్క్రమించి ముగించండి",
+    "Kannada": "ನಿರ್ಗಮಿಸಿ & ಮುಗಿಸಿ"
+  },
+  {
+    "Key": "game.scoreTable.questionNo",
+    "English": "Question No",
+    "Hindi": "सवाल संख्या",
+    "Marathi": "प्रश्न क्र",
+    "Telugu": "ప్రశ్న సంఖ్య",
+    "Kannada": "ಪ್ರಶ್ನೆ ಸಂ"
+  },
+  {
+    "Key": "game.scoreTable.question",
+    "English": "Question",
+    "Hindi": "सवाल",
+    "Marathi": "प्रश्न",
+    "Telugu": "ప్రశ్న",
+    "Kannada": "ಪ್ರಶ್ನೆ"
+  },
+  {
+    "Key": "game.scoreTable.correctAnswer",
+    "English": "Correct Answer",
+    "Hindi": "सही उत्तर",
+    "Marathi": "बरोबर उत्तर",
+    "Telugu": "సరైన జవాబు",
+    "Kannada": "ಸರಿಯಾದ ಉತ್ತರ"
+  },
+  {
+    "Key": "game.scoreTable.score",
+    "English": "Score",
+    "Hindi": "अंक",
+    "Marathi": "स्कोर",
+    "Telugu": "స్కోర్",
+    "Kannada": "ಸ್ಕೋರ್"
+  },
+  {
+    "Key": "game.scoreTable.timeTaken",
+    "English": "Time Taken",
+    "Hindi": "लगा समय",
+    "Marathi": "लागलेला वेळ",
+    "Telugu": "తీసుకున్న సమయం",
+    "Kannada": "ತೆಗೆದುಕೊಂಡ ಸಮಯ"
+  },
+  {
+    "Key": "game.scoreTable.duration",
+    "English": "Duration",
+    "Hindi": "अवधि",
+    "Marathi": "कालावधी",
+    "Telugu": "వ్యవధి",
+    "Kannada": "ಅವಧಿ"
+  },
+  {
+    "Key": "game.scoreTable.status",
+    "English": "Status",
+    "Hindi": "स्थिति",
+    "Marathi": "स्थिती",
+    "Telugu": "స్థితి",
+    "Kannada": "ಸ್ಥಿತಿ"
+  },
+  {
+    "Key": "game.scoreTable.correct",
+    "English": "Correct",
+    "Hindi": "सही",
+    "Marathi": "बरोबर",
+    "Telugu": "సరైనది",
+    "Kannada": "ಸರಿ"
+  },
+  {
+    "Key": "game.scoreTable.incorrect",
+    "English": "Incorrect",
+    "Hindi": "गलत",
+    "Marathi": "चुकीचे",
+    "Telugu": "తప్పు",
+    "Kannada": "ತಪ್ಪು"
+  },
+  {
+    "Key": "game.categories.singleLetter",
+    "English": "Single Letter",
+    "Hindi": "एक अक्षर",
+    "Marathi": "एक अक्षर",
+    "Telugu": "ఒక అక్షరం",
+    "Kannada": "ಒಂದು ಅಕ್ಷರ"
+  },
+  {
+    "Key": "game.categories.doubleLetter",
+    "English": "Double Letter",
+    "Hindi": "दो अक्षर",
+    "Marathi": "दोन अक्षरे",
+    "Telugu": "రెండు అక్షరాలు",
+    "Kannada": "ಎರಡು ಅಕ್ಷರಗಳು"
+  },
+  {
+    "Key": "game.categories.sentence",
+    "English": "Sentence",
+    "Hindi": "वाक्य",
+    "Marathi": "वाक्य",
+    "Telugu": "వాక్యం",
+    "Kannada": "ವಾಕ್ಯ"
+  },
+  {
+    "Key": "game.categories.story",
+    "English": "Story",
+    "Hindi": "कहानी",
+    "Marathi": "गोष्ट",
+    "Telugu": "కథ",
+    "Kannada": "ಕಥೆ"
+  },
+  {
+    "Key": "game.categories.paragraph",
+    "English": "Paragraph",
+    "Hindi": "अनुच्छेद",
+    "Marathi": "परिच्छेद",
+    "Telugu": "పేరా",
+    "Kannada": "ಪ್ಯಾರಾಗ್ರಾಫ್"
+  },
+  {
+    "Key": "game.categories.singleNumber",
+    "English": "Single Number",
+    "Hindi": "एक अंक",
+    "Marathi": "एक अंकी संख्या",
+    "Telugu": "ఒక అంకె సంఖ్య",
+    "Kannada": "ಒಂದು ಅಂಕಿಯ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "game.categories.doubleNumber",
+    "English": "Double Number",
+    "Hindi": "दो अंक",
+    "Marathi": "दोन अंकी संख्या",
+    "Telugu": "రెండు అంకెల సంఖ్య",
+    "Kannada": "ಎರಡು ಅಂಕಿಗಳ ಸಂಖ್ಯೆ"
+  },
+  {
+    "Key": "game.categories.subtraction",
+    "English": "Subtraction",
+    "Hindi": "घटाव",
+    "Marathi": "वजाबाकी",
+    "Telugu": "తీసివేత",
+    "Kannada": "ವ್ಯವಕಲನ"
+  },
+  {
+    "Key": "game.categories.division",
+    "English": "Division",
+    "Hindi": "भाग",
+    "Marathi": "भागाकार",
+    "Telugu": "భాగహారం",
+    "Kannada": "ಭಾಗಾಕಾರ"
+  },
+  {
+    "Key": "game.readingCriteria.skipWords",
+    "English": "Did the child skip any words?",
+    "Hindi": "क्या बच्चे ने कोई शब्द छोड़ा?",
+    "Marathi": "मुलाने कोणतेही शब्द वगळले का?",
+    "Telugu": "పిల్లవాడు ఏవైనా పదాలు దాటవేశాడా?",
+    "Kannada": "ಮಗು ಯಾವುದೇ ಪದಗಳನ್ನು ಬಿಟ್ಟಿತೆ?"
+  },
+  {
+    "Key": "game.readingCriteria.pronunciation",
+    "English": "Did the child make pronunciation errors?",
+    "Hindi": "क्या बच्चे ने उच्चारण में गलती की?",
+    "Marathi": "मुलाने उच्चारणात चुका केल्या का?",
+    "Telugu": "పిల్లవాడు ఉచ్చారణలో తప్పులు చేశాడా?",
+    "Kannada": "ಮಗು ಉಚ್ಚಾರಣೆಯಲ್ಲಿ ತಪ್ಪುಗಳನ್ನು ಮಾಡಿತೆ?"
+  },
+  {
+    "Key": "game.readingCriteria.neededHelp",
+    "English": "Did the child need help reading?",
+    "Hindi": "क्या बच्चे को पढ़ने में मदद चाहिए थी?",
+    "Marathi": "मुलाला वाचण्यासाठी मदत हवी होती का?",
+    "Telugu": "పిల్లవాడికి చదవడానికి సహాయం అవసరమైందా?",
+    "Kannada": "ಮಗುವಿಗೆ ಓದಲು ಸಹಾಯ ಬೇಕಾಗಿತ್ತೆ?"
+  },
+  {
+    "Key": "modal.disclaimer",
+    "English": "This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.",
+    "Hindi": "यह जानकारी केवल सामान्य समझ के लिए है। परीक्षण करते समय अपने आधिकारिक KABC मैनुअल और संस्थागत नियमों का पालन करें।",
+    "Marathi": "ही माहिती केवळ संदर्भासाठी आहे. टेस्ट घेताना नेहमी तुमच्या अधिकृत KABC मॅन्युअल व संस्थेच्या प्रोटोकॉलचे पालन करा.",
+    "Telugu": "ఈ వివరణ సమాచారం కోసం మాత్రమే. టెస్ట్‌లు నిర్వహించేటప్పుడు మీ అధికారిక KABC మాన్యువల్ మరియు సంస్థ ప్రోటోకాల్‌లను ఎల్లప్పుడూ అనుసరించండి.",
+    "Kannada": "ಈ ವಿವರಣೆ ಮಾಹಿತಿಗಾಗಿ ಮಾತ್ರ. ಟೆಸ್ಟ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸುವಾಗ ಯಾವಾಗಲೂ ನಿಮ್ಮ ಅಧಿಕೃತ KABC ಕೈಪಿಡಿ ಮತ್ತು ಸಂಸ್ಥೆಯ ಪ್ರೋಟೋಕಾಲ್‌ಗಳನ್ನು ಅನುಸರಿಸಿ."
+  },
+  {
+    "Key": "modal.close",
+    "English": "Close",
+    "Hindi": "बंद करें",
+    "Marathi": "बंद करा",
+    "Telugu": "మూసివేయండి",
+    "Kannada": "ಮುಚ್ಚಿ"
+  },
+  {
+    "Key": "modal.startGame",
+    "English": "Start Game",
+    "Hindi": "खेल शुरू करें",
+    "Marathi": "गेम सुरू करा",
+    "Telugu": "గేమ్ ప్రారంభించండి",
+    "Kannada": "ಗೇಮ್ ಪ್ರಾರಂಭಿಸಿ"
+  },
+  {
+    "Key": "modal.noUrl",
+    "English": "Start URL is not configured for this test yet.",
+    "Hindi": "इस टेस्ट के लिए अभी लिंक नहीं बना है।",
+    "Marathi": "या टेस्टसाठी सुरुवात URL अद्याप सेट केलेले नाही.",
+    "Telugu": "ఈ టెస్ట్ కోసం ప్రారంభ URL ఇంకా సెట్ చేయలేదు.",
+    "Kannada": "ಈ ಟೆಸ್ಟ್‌ಗಾಗಿ ಪ್ರಾರಂಭ URL ಇನ್ನೂ ಹೊಂದಿಸಲಾಗಿಲ್ಲ."
+  },
+  {
+    "Key": "help.statusOpen",
+    "English": "Open",
+    "Hindi": "नया",
+    "Marathi": "उघडे",
+    "Telugu": "తెరిచి ఉంది",
+    "Kannada": "ತೆರೆದಿದೆ"
+  },
+  {
+    "Key": "help.statusInProgress",
+    "English": "In Progress",
+    "Hindi": "प्रगति में",
+    "Marathi": "प्रगतीपथावर",
+    "Telugu": "పురోగతిలో ఉంది",
+    "Kannada": "ಪ್ರಗತಿಯಲ್ಲಿದೆ"
+  },
+  {
+    "Key": "help.statusWaitingForReply",
+    "English": "Waiting for Reply",
+    "Hindi": "जवाब का इंतज़ार",
+    "Marathi": "उत्तराच्या प्रतीक्षेत",
+    "Telugu": "జవాబు కోసం వేచి ఉంది",
+    "Kannada": "ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ"
+  },
+  {
+    "Key": "help.statusResolved",
+    "English": "Resolved",
+    "Hindi": "हल हो गया",
+    "Marathi": "निराकरण झाले",
+    "Telugu": "పరిష్కరించబడింది",
+    "Kannada": "ಪರಿಹರಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.statusClosed",
+    "English": "Closed",
+    "Hindi": "बंद",
+    "Marathi": "बंद",
+    "Telugu": "మూసివేయబడింది",
+    "Kannada": "ಮುಚ್ಚಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.badge",
+    "English": "🎫 Help & Support",
+    "Hindi": "🎫 सहायता और समर्थन",
+    "Marathi": "🎫 मदत व सहाय्य",
+    "Telugu": "🎫 సహాయం & మద్దతు",
+    "Kannada": "🎫 ಸಹಾಯ & ಬೆಂಬಲ"
+  },
+  {
+    "Key": "help.title",
+    "English": "How can we help you?",
+    "Hindi": "हम आपकी कैसे मदद कर सकते हैं?",
+    "Marathi": "आम्ही तुमची कशी मदत करू शकतो?",
+    "Telugu": "మేము మీకు ఎలా సహాయం చేయగలం?",
+    "Kannada": "ನಾವು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?"
+  },
+  {
+    "Key": "help.subtitle",
+    "English": "Our support team is here to assist you with any issues related to the Sangian Assessment Platform. Create a ticket and we'll respond within 1–2 business days.",
+    "Hindi": "हमारी सपोर्ट टीम संगियान मूल्यांकन प्लेटफ़ॉर्म से संबंधित किसी भी समस्या में आपकी मदद के लिए यहाँ है। टिकट बनाएं और हम 1–2 कार्य दिवसों में जवाब देंगे।",
+    "Marathi": "संगियन असेसमेंट प्लॅटफॉर्मशी संबंधित कोणत्याही समस्येसाठी आमचा सहाय्य गट तयार आहे. तिकीट तयार करा आणि आम्ही 1–2 कामकाजाच्या दिवसांत उत्तर देऊ.",
+    "Telugu": "సంగియన్ అసెస్‌మెంట్ ప్లాట్‌ఫామ్‌కు సంబంధించిన ఏ సమస్యకైనా మా మద్దతు బృందం సహాయం చేస్తుంది. టికెట్ సృష్టించండి, మేము 1–2 పని దినాలలో జవాబు ఇస్తాం.",
+    "Kannada": "ಸಂಗಿಯನ್ ಅಸೆಸ್‌ಮೆಂಟ್ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗೆ ಸಂಬಂಧಿಸಿದ ಯಾವುದೇ ಸಮಸ್ಯೆಗಳಿಗೆ ನಮ್ಮ ಬೆಂಬಲ ತಂಡ ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಟಿಕೆಟ್ ರಚಿಸಿ, ನಾವು 1–2 ಕೆಲಸದ ದಿನಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ."
+  },
+  {
+    "Key": "help.createCardTitle",
+    "English": "Create New Ticket",
+    "Hindi": "नया टिकट बनाएं",
+    "Marathi": "नवीन तिकीट तयार करा",
+    "Telugu": "కొత్త టికెట్ సృష్టించండి",
+    "Kannada": "ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ"
+  },
+  {
+    "Key": "help.createCardDesc",
+    "English": "Have an issue or question? Submit a support ticket and we'll get back to you as soon as possible.",
+    "Hindi": "कोई समस्या है? सपोर्ट टिकट जमा करें और हम जल्द से जल्द आपसे संपर्क करेंगे।",
+    "Marathi": "समस्या किंवा प्रश्न आहे? सहाय्य तिकीट सबमिट करा, आम्ही लवकरात लवकर उत्तर देऊ.",
+    "Telugu": "సమస్య లేదా ప్రశ్న ఉందా? సహాయ టికెట్ సమర్పించండి, మేము వీలైనంత త్వరగా జవాబు ఇస్తాం.",
+    "Kannada": "ಸಮಸ್ಯೆ ಅಥವಾ ಪ್ರಶ್ನೆ ಇದೆಯೇ? ಬೆಂಬಲ ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿ, ನಾವು ಆದಷ್ಟು ಬೇಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ."
+  },
+  {
+    "Key": "help.createCardItem1",
+    "English": "Email verification required",
+    "Hindi": "ईमेल सत्यापन आवश्यक है",
+    "Marathi": "ईमेल पडताळणी आवश्यक",
+    "Telugu": "ఇమెయిల్ నిర్ధారణ అవసరం",
+    "Kannada": "ಇಮೇಲ್ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ"
+  },
+  {
+    "Key": "help.createCardItem2",
+    "English": "Attach up to 3 screenshots",
+    "Hindi": "3 तक स्क्रीनशॉट जोड़ें",
+    "Marathi": "3 स्क्रीनशॉट्सपर्यंत जोडता येतात",
+    "Telugu": "3 స్క్రీన్‌షాట్‌ల వరకు జోడించవచ్చు",
+    "Kannada": "3 ಸ್ಕ್ರೀನ್‌ಶಾಟ್‌ಗಳವರೆಗೆ ಲಗತ್ತಿಸಬಹುದು"
+  },
+  {
+    "Key": "help.createCardItem3",
+    "English": "Unique Ticket ID assigned",
+    "Hindi": "अनूठा टिकट ID मिलेगा",
+    "Marathi": "युनिक तिकीट आयडी दिला जातो",
+    "Telugu": "ప్రత్యేక టికెట్ ఐడీ ఇవ్వబడుతుంది",
+    "Kannada": "ವಿಶಿಷ್ಟ ಟಿಕೆಟ್ ಐಡಿ ನೀಡಲಾಗುತ್ತದೆ"
+  },
+  {
+    "Key": "help.createCardItem4",
+    "English": "Email confirmation sent",
+    "Hindi": "ईमेल पुष्टि भेजी जाएगी",
+    "Marathi": "ईमेल पुष्टीकरण पाठवले जाते",
+    "Telugu": "ఇమెయిల్ నిర్ధారణ పంపబడుతుంది",
+    "Kannada": "ಇಮೇಲ್ ದೃಢೀಕರಣ ಕಳುಹಿಸಲಾಗುತ್ತದೆ"
+  },
+  {
+    "Key": "help.createBtn",
+    "English": "Create Ticket →",
+    "Hindi": "टिकट बनाएं →",
+    "Marathi": "तिकीट तयार करा →",
+    "Telugu": "టికెట్ సృష్టించండి →",
+    "Kannada": "ಟಿಕೆಟ್ ರಚಿಸಿ →"
+  },
+  {
+    "Key": "help.myCardTitle",
+    "English": "My Tickets",
+    "Hindi": "मेरे टिकट",
+    "Marathi": "माझी तिकिटे",
+    "Telugu": "నా టికెట్లు",
+    "Kannada": "ನನ್ನ ಟಿಕೆಟ್‌ಗಳು"
+  },
+  {
+    "Key": "help.myCardDesc",
+    "English": "Already submitted a ticket? Access your ticket history and continue the conversation with our team.",
+    "Hindi": "पहले से टिकट बनाया है? अपना टिकट इतिहास देखें और हमारी टीम से बात करते रहें।",
+    "Marathi": "आधीच तिकीट सबमिट केले आहे? तुमचा तिकीट इतिहास पाहा व संभाषण सुरू ठेवा.",
+    "Telugu": "ఇప్పటికే టికెట్ సమర్పించారా? మీ టికెట్ చరిత్రను చూసి, బృందంతో సంభాషణ కొనసాగించండి.",
+    "Kannada": "ಈಗಾಗಲೇ ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿದ್ದೀರಾ? ನಿಮ್ಮ ಟಿಕೆಟ್ ಇತಿಹಾಸವನ್ನು ಪ್ರವೇಶಿಸಿ ಮತ್ತು ನಮ್ಮ ತಂಡದೊಂದಿಗೆ ಸಂಭಾಷಣೆ ಮುಂದುವರಿಸಿ."
+  },
+  {
+    "Key": "help.myCardItem1",
+    "English": "View all your tickets",
+    "Hindi": "सभी टिकट देखें",
+    "Marathi": "तुमची सर्व तिकिटे पाहा",
+    "Telugu": "మీ టికెట్లన్నీ చూడండి",
+    "Kannada": "ನಿಮ್ಮ ಎಲ್ಲಾ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ"
+  },
+  {
+    "Key": "help.myCardItem2",
+    "English": "Full conversation history",
+    "Hindi": "पूरी बातचीत का इतिहास",
+    "Marathi": "संपूर्ण संभाषण इतिहास",
+    "Telugu": "పూర్తి సంభాషణ చరిత్ర",
+    "Kannada": "ಪೂರ್ಣ ಸಂಭಾಷಣೆ ಇತಿಹಾಸ"
+  },
+  {
+    "Key": "help.myCardItem3",
+    "English": "Reply and add attachments",
+    "Hindi": "जवाब दें और तस्वीरें जोड़ें",
+    "Marathi": "उत्तर द्या व फाईल जोडा",
+    "Telugu": "జవాబు ఇవ్వండి & ఫైల్‌లు జోడించండి",
+    "Kannada": "ಪ್ರತ್ಯುತ್ತರಿಸಿ ಮತ್ತು ಲಗತ್ತುಗಳನ್ನು ಸೇರಿಸಿ"
+  },
+  {
+    "Key": "help.myCardItem4",
+    "English": "Track ticket status live",
+    "Hindi": "टिकट की स्थिति देखें",
+    "Marathi": "तिकिटाची स्थिती लाईव्ह पाहा",
+    "Telugu": "టికెట్ స్థితిని లైవ్‌గా ట్రాక్ చేయండి",
+    "Kannada": "ಟಿಕೆಟ್ ಸ್ಥಿತಿಯನ್ನು ಲೈವ್ ಆಗಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ"
+  },
+  {
+    "Key": "help.myTicketBtn",
+    "English": "View My Tickets →",
+    "Hindi": "मेरे टिकट देखें →",
+    "Marathi": "माझी तिकिटे पाहा →",
+    "Telugu": "నా టికెట్లు చూడండి →",
+    "Kannada": "ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ →"
+  },
+  {
+    "Key": "help.defaultFaqTitle",
+    "English": "Frequently Asked Questions",
+    "Hindi": "अक्सर पूछे जाने वाले प्रश्न",
+    "Marathi": "नेहमी विचारले जाणारे प्रश्न",
+    "Telugu": "తరచుగా అడిగే ప్రశ్నలు",
+    "Kannada": "ಪದೇ ಪದೇ ಕೇಳುವ ಪ್ರಶ್ನೆಗಳು"
+  },
+  {
+    "Key": "help.otpTitle",
+    "English": "Verify Your Email",
+    "Hindi": "ईमेल सत्यापित करें",
+    "Marathi": "तुमचा ईमेल पडताळा",
+    "Telugu": "మీ ఇమెయిల్‌ను నిర్ధారించండి",
+    "Kannada": "ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ"
+  },
+  {
+    "Key": "help.otpSubPrefix",
+    "English": "We'll send a one-time code to confirm your email before you can",
+    "Hindi": "आगे बढ़ने से पहले हम आपके ईमेल पर एक कोड भेजेंगे —",
+    "Marathi": "पुढे जाण्यापूर्वी आम्ही तुमचा ईमेल पडताळण्यासाठी एक-वेळचा कोड पाठवू",
+    "Telugu": "మీరు కొనసాగే ముందు మీ ఇమెయిల్‌ను నిర్ధారించడానికి మేము ఒక-సారి కోడ్‌ను పంపుతాం",
+    "Kannada": "ಮುಂದುವರಿಯುವ ಮೊದಲು ನಿಮ್ಮ ಇಮೇಲ್ ಖಚಿತಪಡಿಸಲು ನಾವು ಒಂದು-ಬಾರಿ ಕೋಡ್ ಕಳುಹಿಸುತ್ತೇವೆ"
+  },
+  {
+    "Key": "help.otpPurposeCreate",
+    "English": "Create New Ticket",
+    "Hindi": "नया टिकट बनाएं",
+    "Marathi": "नवीन तिकीट तयार करा",
+    "Telugu": "కొత్త టికెట్ సృష్టించండి",
+    "Kannada": "ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ"
+  },
+  {
+    "Key": "help.otpPurposeView",
+    "English": "Access My Tickets",
+    "Hindi": "मेरे टिकट देखें",
+    "Marathi": "माझी तिकिटे पाहा",
+    "Telugu": "నా టికెట్లు చూడండి",
+    "Kannada": "ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ"
+  },
+  {
+    "Key": "help.otpEmailLabel",
+    "English": "Email Address",
+    "Hindi": "ईमेल पता",
+    "Marathi": "ईमेल पत्ता",
+    "Telugu": "ఇమెయిల్ చిరునామా",
+    "Kannada": "ಇಮೇಲ್ ವಿಳಾಸ"
+  },
+  {
+    "Key": "help.otpEmailPlaceholder",
+    "English": "you@example.com",
+    "Hindi": "आपका@ईमेल.com",
+    "Marathi": "you@example.com",
+    "Telugu": "you@example.com",
+    "Kannada": "you@example.com"
+  },
+  {
+    "Key": "help.otpSendBtn",
+    "English": "Send Verification Code",
+    "Hindi": "वेरिफिकेशन कोड भेजें",
+    "Marathi": "पडताळणी कोड पाठवा",
+    "Telugu": "నిర్ధారణ కోడ్ పంపండి",
+    "Kannada": "ಪರಿಶೀಲನಾ ಕೋಡ್ ಕಳುಹಿಸಿ"
+  },
+  {
+    "Key": "help.otpSending",
+    "English": "Sending…",
+    "Hindi": "भेज रहे हैं…",
+    "Marathi": "पाठवत आहे…",
+    "Telugu": "పంపుతోంది…",
+    "Kannada": "ಕಳುಹಿಸುತ್ತಿದೆ…"
+  },
+  {
+    "Key": "help.otpSentTo",
+    "English": "Code sent to",
+    "Hindi": "कोड भेजा गया",
+    "Marathi": "कोड पाठवला",
+    "Telugu": "కోడ్ పంపబడింది",
+    "Kannada": "ಕೋಡ್ ಕಳುಹಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.otpDevMode",
+    "English": "⚠️ Dev Mode — SMTP not configured",
+    "Hindi": "⚠️ डेव मोड — SMTP कॉन्फ़िगर नहीं",
+    "Marathi": "⚠️ डेव्ह मोड — SMTP सेट केलेले नाही",
+    "Telugu": "⚠️ డెవ్ మోడ్ — SMTP సెట్ చేయలేదు",
+    "Kannada": "⚠️ ಡೆವ್ ಮೋಡ್ — SMTP ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
+  },
+  {
+    "Key": "help.otpAutoFill",
+    "English": "Auto-fill",
+    "Hindi": "ऑटो-भरें",
+    "Marathi": "स्वयं-भरा",
+    "Telugu": "ఆటో-ఫిల్",
+    "Kannada": "ಸ್ವಯಂ-ಭರ್ತಿ"
+  },
+  {
+    "Key": "help.otpCodeLabel",
+    "English": "6-Digit Code",
+    "Hindi": "6-अंकीय कोड",
+    "Marathi": "6-अंकी कोड",
+    "Telugu": "6-అంకెల కోడ్",
+    "Kannada": "6-ಅಂಕಿಯ ಕೋಡ್"
+  },
+  {
+    "Key": "help.otpCodePlaceholder",
+    "English": "• • • • • •",
+    "Hindi": "• • • • • •",
+    "Marathi": "• • • • • •",
+    "Telugu": "• • • • • •",
+    "Kannada": "• • • • • •"
+  },
+  {
+    "Key": "help.otpVerifyBtn",
+    "English": "Verify & Continue",
+    "Hindi": "सत्यापित करें और जारी रखें",
+    "Marathi": "पडताळा व पुढे जा",
+    "Telugu": "నిర్ధారించి కొనసాగండి",
+    "Kannada": "ಪರಿಶೀಲಿಸಿ & ಮುಂದುವರಿಸಿ"
+  },
+  {
+    "Key": "help.otpVerifying",
+    "English": "Verifying…",
+    "Hindi": "जाँच हो रही है…",
+    "Marathi": "पडताळत आहे…",
+    "Telugu": "నిర్ధారిస్తోంది…",
+    "Kannada": "ಪರಿಶೀಲಿಸುತ್ತಿದೆ…"
+  },
+  {
+    "Key": "help.otpResendIn",
+    "English": "Resend OTP in {n}s",
+    "Hindi": "{n} सेकंड में दोबारा भेजें",
+    "Marathi": "{n}सेकंदांत OTP पुन्हा पाठवा",
+    "Telugu": "{n} సెకన్లలో OTP తిరిగి పంపండి",
+    "Kannada": "{n} ಸೆಕೆಂಡುಗಳಲ್ಲಿ OTP ಮತ್ತೆ ಕಳುಹಿಸಿ"
+  },
+  {
+    "Key": "help.otpResend",
+    "English": "Resend OTP",
+    "Hindi": "OTP दोबारा भेजें",
+    "Marathi": "OTP पुन्हा पाठवा",
+    "Telugu": "OTP తిరిగి పంపండి",
+    "Kannada": "OTP ಮತ್ತೆ ಕಳುಹಿಸಿ"
+  },
+  {
+    "Key": "help.otpErrEmail",
+    "English": "Please enter a valid email address.",
+    "Hindi": "कृपया सही ईमेल पता डालें।",
+    "Marathi": "कृपया वैध ईमेल पत्ता टाका.",
+    "Telugu": "దయచేసి చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామా నమోదు చేయండి.",
+    "Kannada": "ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಇಮೇಲ್ ವಿಳಾಸ ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "help.otpErrEnter",
+    "English": "Please enter the OTP.",
+    "Hindi": "कृपया OTP डालें।",
+    "Marathi": "कृपया OTP टाका.",
+    "Telugu": "దయచేసి OTP నమోదు చేయండి.",
+    "Kannada": "ದಯವಿಟ್ಟು OTP ನಮೂದಿಸಿ."
+  },
+  {
+    "Key": "help.otpErrSend",
+    "English": "Failed to send OTP. Please try again.",
+    "Hindi": "OTP भेजने में दिक्कत हुई। फिर कोशिश करें।",
+    "Marathi": "OTP पाठवता आला नाही. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "OTP పంపలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "OTP ಕಳುಹಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "help.otpErrVerify",
+    "English": "Invalid OTP. Please try again.",
+    "Hindi": "गलत OTP। फिर कोशिश करें।",
+    "Marathi": "अवैध OTP. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "చెల్లని OTP. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ಅಮಾನ್ಯ OTP. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "help.createTitle",
+    "English": "Create New Ticket",
+    "Hindi": "नया टिकट बनाएं",
+    "Marathi": "नवीन तिकीट तयार करा",
+    "Telugu": "కొత్త టికెట్ సృష్టించండి",
+    "Kannada": "ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ"
+  },
+  {
+    "Key": "help.verifiedAs",
+    "English": "Verified as",
+    "Hindi": "सत्यापित ईमेल",
+    "Marathi": "असे पडताळले",
+    "Telugu": "ఇలా నిర్ధారించబడింది",
+    "Kannada": "ಹೀಗೆ ಪರಿಶೀಲಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.fieldSubject",
+    "English": "Subject / Title",
+    "Hindi": "विषय / शीर्षक",
+    "Marathi": "विषय / शीर्षक",
+    "Telugu": "విషయం / శీర్షిక",
+    "Kannada": "ವಿಷಯ / ಶೀರ್ಷಿಕೆ"
+  },
+  {
+    "Key": "help.fieldSubjectPlaceholder",
+    "English": "Brief description of your issue…",
+    "Hindi": "अपनी समस्या का संक्षिप्त विवरण…",
+    "Marathi": "तुमच्या समस्येचे थोडक्यात वर्णन…",
+    "Telugu": "మీ సమస్య యొక్క సంక్షిప్త వివరణ…",
+    "Kannada": "ನಿಮ್ಮ ಸಮಸ್ಯೆಯ ಸಂಕ್ಷಿಪ್ತ ವಿವರಣೆ…"
+  },
+  {
+    "Key": "help.fieldDesc",
+    "English": "Description",
+    "Hindi": "विवरण",
+    "Marathi": "वर्णन",
+    "Telugu": "వివరణ",
+    "Kannada": "ವಿವರಣೆ"
+  },
+  {
+    "Key": "help.fieldDescPlaceholder",
+    "English": "Describe your issue in detail — what happened, what you expected, and any steps to reproduce…",
+    "Hindi": "अपनी समस्या का पूरा विवरण लिखें — क्या हुआ, क्या होना चाहिए था, और समस्या दोबारा कैसे आती है…",
+    "Marathi": "तुमची समस्या तपशीलवार सांगा — काय झाले, तुम्हाला काय अपेक्षित होते आणि पुन्हा घडवण्याचे टप्पे…",
+    "Telugu": "మీ సమస్యను వివరంగా చెప్పండి — ఏం జరిగింది, మీరు ఏమి ఆశించారు, మరియు తిరిగి జరగడానికి దశలు…",
+    "Kannada": "ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ವಿವರವಾಗಿ ವಿವರಿಸಿ — ಏನಾಯಿತು, ನೀವು ಏನು ಬಯಸಿದ್ದೀರಿ, ಮತ್ತು ಪುನರಾವರ್ತಿಸಲು ಹಂತಗಳು…"
+  },
+  {
+    "Key": "help.fieldAttachments",
+    "English": "Attachments",
+    "Hindi": "संलग्नक",
+    "Marathi": "जोडलेल्या फाईल्स",
+    "Telugu": "జోడింపులు",
+    "Kannada": "ಲಗತ್ತುಗಳು"
+  },
+  {
+    "Key": "help.optional",
+    "English": "(optional)",
+    "Hindi": "(वैकल्पिक)",
+    "Marathi": "(पर्यायी)",
+    "Telugu": "(ఐచ్ఛికం)",
+    "Kannada": "(ಐಚ್ಛಿಕ)"
+  },
+  {
+    "Key": "help.addImage",
+    "English": "📎 Add Image",
+    "Hindi": "📎 तस्वीर जोड़ें",
+    "Marathi": "📎 चित्र जोडा",
+    "Telugu": "📎 చిత్రం జోడించండి",
+    "Kannada": "📎 ಚಿತ್ರ ಸೇರಿಸಿ"
+  },
+  {
+    "Key": "help.fileHint",
+    "English": "{cur}/{max} · JPG, PNG, WEBP · max 5 MB each",
+    "Hindi": "{cur}/{max} · JPG, PNG, WEBP · अधिकतम 5 MB",
+    "Marathi": "{cur}/{max} · JPG, PNG, WEBP · कमाल 5 MB प्रत्येक",
+    "Telugu": "{cur}/{max} · JPG, PNG, WEBP · ఒక్కొక్కటి గరిష్టంగా 5 MB",
+    "Kannada": "{cur}/{max} · JPG, PNG, WEBP · ಪ್ರತಿಯೊಂದಕ್ಕೂ ಗರಿಷ್ಠ 5 MB"
+  },
+  {
+    "Key": "help.submitBtn",
+    "English": "🎫 Submit Ticket",
+    "Hindi": "🎫 टिकट जमा करें",
+    "Marathi": "🎫 तिकीट सबमिट करा",
+    "Telugu": "🎫 టికెట్ సమర్పించండి",
+    "Kannada": "🎫 ಟಿಕೆಟ್ ಸಲ್ಲಿಸಿ"
+  },
+  {
+    "Key": "help.submitting",
+    "English": "Submitting…",
+    "Hindi": "जमा हो रहा है…",
+    "Marathi": "सबमिट होत आहे…",
+    "Telugu": "సమర్పిస్తోంది…",
+    "Kannada": "ಸಲ್ಲಿಸುತ್ತಿದೆ…"
+  },
+  {
+    "Key": "help.back",
+    "English": "← Back",
+    "Hindi": "← वापस",
+    "Marathi": "← मागे",
+    "Telugu": "← వెనుకకు",
+    "Kannada": "← ಹಿಂದೆ"
+  },
+  {
+    "Key": "help.errTitle",
+    "English": "Ticket title is required.",
+    "Hindi": "टिकट का शीर्षक ज़रूरी है।",
+    "Marathi": "तिकिटाचे शीर्षक आवश्यक आहे.",
+    "Telugu": "టికెట్ శీర్షిక అవసరం.",
+    "Kannada": "ಟಿಕೆಟ್ ಶೀರ್ಷಿಕೆ ಅಗತ್ಯವಿದೆ."
+  },
+  {
+    "Key": "help.errDesc",
+    "English": "Description is required.",
+    "Hindi": "विवरण ज़रूरी है।",
+    "Marathi": "वर्णन आवश्यक आहे.",
+    "Telugu": "వివరణ అవసరం.",
+    "Kannada": "ವಿವರಣೆ ಅಗತ್ಯವಿದೆ."
+  },
+  {
+    "Key": "help.errCreate",
+    "English": "Failed to create ticket. Please try again.",
+    "Hindi": "टिकट नहीं बन सका। फिर कोशिश करें।",
+    "Marathi": "तिकीट तयार करता आले नाही. कृपया पुन्हा प्रयत्न करा.",
+    "Telugu": "టికెట్ సృష్టించలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.",
+    "Kannada": "ಟಿಕೆಟ್ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  },
+  {
+    "Key": "help.successTitle",
+    "English": "Ticket Submitted!",
+    "Hindi": "टिकट जमा हो गया!",
+    "Marathi": "तिकीट सबमिट झाले!",
+    "Telugu": "టికెట్ సమర్పించబడింది!",
+    "Kannada": "ಟಿಕೆಟ್ ಸಲ್ಲಿಸಲಾಗಿದೆ!"
+  },
+  {
+    "Key": "help.successSub",
+    "English": "Your support ticket has been created. We'll get back to you within 1–2 business days.",
+    "Hindi": "आपका सपोर्ट टिकट बन गया है। हम 1–2 कार्य दिवसों में वापस आएंगे।",
+    "Marathi": "तुमचे सहाय्य तिकीट तयार झाले आहे. आम्ही 1–2 कामकाजाच्या दिवसांत उत्तर देऊ.",
+    "Telugu": "మీ సహాయ టికెట్ సృష్టించబడింది. మేము 1–2 పని దినాలలో జవాబు ఇస్తాం.",
+    "Kannada": "ನಿಮ್ಮ ಬೆಂಬಲ ಟಿಕೆಟ್ ರಚಿಸಲಾಗಿದೆ. ನಾವು 1–2 ಕೆಲಸದ ದಿನಗಳಲ್ಲಿ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತೇವೆ."
+  },
+  {
+    "Key": "help.successIdLabel",
+    "English": "Your Ticket ID",
+    "Hindi": "आपका टिकट ID",
+    "Marathi": "तुमचा तिकीट आयडी",
+    "Telugu": "మీ టికెట్ ఐడీ",
+    "Kannada": "ನಿಮ್ಮ ಟಿಕೆಟ್ ಐಡಿ"
+  },
+  {
+    "Key": "help.successNote",
+    "English": "Keep this ID handy — you'll need it to track your ticket.",
+    "Hindi": "यह ID संभाल कर रखें — टिकट ट्रैक करने के लिए इसकी ज़रूरत होगी।",
+    "Marathi": "हा आयडी जपून ठेवा — तिकीट ट्रॅक करण्यासाठी तो लागेल.",
+    "Telugu": "ఈ ఐడీని భద్రంగా ఉంచండి — టికెట్‌ను ట్రాక్ చేయడానికి అది అవసరం.",
+    "Kannada": "ಈ ಐಡಿಯನ್ನು ಜಾಗ್ರತೆಯಾಗಿ ಇಡಿ — ಟಿಕೆಟ್ ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಇದು ಬೇಕಾಗುತ್ತದೆ."
+  },
+  {
+    "Key": "help.viewMyTickets",
+    "English": "View My Tickets",
+    "Hindi": "मेरे टिकट देखें",
+    "Marathi": "माझी तिकिटे पाहा",
+    "Telugu": "నా టికెట్లు చూడండి",
+    "Kannada": "ನನ್ನ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡಿ"
+  },
+  {
+    "Key": "help.createAnother",
+    "English": "Create Another Ticket",
+    "Hindi": "एक और टिकट बनाएं",
+    "Marathi": "आणखी एक तिकीट तयार करा",
+    "Telugu": "మరో టికెట్ సృష్టించండి",
+    "Kannada": "ಇನ್ನೊಂದು ಟಿಕೆಟ್ ರಚಿಸಿ"
+  },
+  {
+    "Key": "help.myTicketsTitle",
+    "English": "My Tickets",
+    "Hindi": "मेरे टिकट",
+    "Marathi": "माझी तिकिटे",
+    "Telugu": "నా టికెట్లు",
+    "Kannada": "ನನ್ನ ಟಿಕೆಟ್‌ಗಳು"
+  },
+  {
+    "Key": "help.viewingFor",
+    "English": "Viewing tickets for",
+    "Hindi": "ईमेल के लिए टिकट",
+    "Marathi": "यासाठी तिकिटे पाहत आहात",
+    "Telugu": "దీని కోసం టికెట్లు చూస్తున్నారు",
+    "Kannada": "ಇದಕ್ಕಾಗಿ ಟಿಕೆಟ್‌ಗಳನ್ನು ನೋಡುತ್ತಿದ್ದೀರಿ"
+  },
+  {
+    "Key": "help.noTickets",
+    "English": "No tickets found for this email address.",
+    "Hindi": "इस ईमेल के लिए कोई टिकट नहीं मिला।",
+    "Marathi": "या ईमेल पत्त्यासाठी कोणतीही तिकिटे सापडली नाहीत.",
+    "Telugu": "ఈ ఇమెయిల్ చిరునామా కోసం టికెట్లు కనుగొనబడలేదు.",
+    "Kannada": "ಈ ಇಮೇಲ್ ವಿಳಾಸಕ್ಕೆ ಯಾವುದೇ ಟಿಕೆಟ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ."
+  },
+  {
+    "Key": "help.createdOn",
+    "English": "Created",
+    "Hindi": "बनाया",
+    "Marathi": "तयार केले",
+    "Telugu": "సృష్టించబడింది",
+    "Kannada": "ರಚಿಸಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.unreadNew",
+    "English": "new",
+    "Hindi": "नया",
+    "Marathi": "नवीन",
+    "Telugu": "కొత్తది",
+    "Kannada": "ಹೊಸದು"
+  },
+  {
+    "Key": "help.errLoad",
+    "English": "Failed to load tickets.",
+    "Hindi": "टिकट लोड नहीं हो सके।",
+    "Marathi": "तिकिटे लोड करता आली नाहीत.",
+    "Telugu": "టికెట్లు లోడ్ చేయలేకపోయాం.",
+    "Kannada": "ಟಿಕೆಟ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  },
+  {
+    "Key": "help.backToTickets",
+    "English": "← My Tickets",
+    "Hindi": "← मेरे टिकट",
+    "Marathi": "← माझी तिकिटे",
+    "Telugu": "← నా టికెట్లు",
+    "Kannada": "← ನನ್ನ ಟಿಕೆಟ್‌ಗಳು"
+  },
+  {
+    "Key": "help.openedOn",
+    "English": "Opened",
+    "Hindi": "खोला गया",
+    "Marathi": "उघडले",
+    "Telugu": "తెరవబడింది",
+    "Kannada": "ತೆರೆಯಲಾಗಿದೆ"
+  },
+  {
+    "Key": "help.you",
+    "English": "👤 You",
+    "Hindi": "👤 आप",
+    "Marathi": "👤 तुम्ही",
+    "Telugu": "👤 మీరు",
+    "Kannada": "👤 ನೀವು"
+  },
+  {
+    "Key": "help.supportTeam",
+    "English": "🛡️ Support Team",
+    "Hindi": "🛡️ सपोर्ट टीम",
+    "Marathi": "🛡️ सहाय्य गट",
+    "Telugu": "🛡️ మద్దతు బృందం",
+    "Kannada": "🛡️ ಬೆಂಬಲ ತಂಡ"
+  },
+  {
+    "Key": "help.closedNote",
+    "English": "This ticket is closed. Please create a new ticket if you need further assistance.",
+    "Hindi": "यह टिकट बंद हो गया है। आगे मदद के लिए नया टिकट बनाएं।",
+    "Marathi": "हे तिकीट बंद आहे. अधिक मदतीसाठी कृपया नवीन तिकीट तयार करा.",
+    "Telugu": "ఈ టికెట్ మూసివేయబడింది. మరింత సహాయం కోసం దయచేసి కొత్త టికెట్ సృష్టించండి.",
+    "Kannada": "ಈ ಟಿಕೆಟ್ ಮುಚ್ಚಲಾಗಿದೆ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ ದಯವಿಟ್ಟು ಹೊಸ ಟಿಕೆಟ್ ರಚಿಸಿ."
+  },
+  {
+    "Key": "help.replyPlaceholder",
+    "English": "Write your reply…",
+    "Hindi": "अपना जवाब लिखें…",
+    "Marathi": "तुमचे उत्तर लिहा…",
+    "Telugu": "మీ జవాబు రాయండి…",
+    "Kannada": "ನಿಮ್ಮ ಪ್ರತ್ಯುತ್ತರ ಬರೆಯಿರಿ…"
+  },
+  {
+    "Key": "help.sendReply",
+    "English": "📤 Send Reply",
+    "Hindi": "📤 जवाब भेजें",
+    "Marathi": "📤 उत्तर पाठवा",
+    "Telugu": "📤 జవాబు పంపండి",
+    "Kannada": "📤 ಪ್ರತ್ಯುತ್ತರ ಕಳುಹಿಸಿ"
+  },
+  {
+    "Key": "help.sending",
+    "English": "Sending…",
+    "Hindi": "भेज रहे हैं…",
+    "Marathi": "पाठवत आहे…",
+    "Telugu": "పంపుతోంది…",
+    "Kannada": "ಕಳುಹಿಸುತ್ತಿದೆ…"
+  },
+  {
+    "Key": "help.errReply",
+    "English": "Please type a message before sending.",
+    "Hindi": "भेजने से पहले संदेश लिखें।",
+    "Marathi": "पाठवण्यापूर्वी कृपया संदेश टाइप करा.",
+    "Telugu": "పంపే ముందు దయచేసి సందేశం టైప్ చేయండి.",
+    "Kannada": "ಕಳುಹಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ."
+  },
+  {
+    "Key": "help.errSendReply",
+    "English": "Failed to send reply.",
+    "Hindi": "जवाब नहीं भेजा जा सका।",
+    "Marathi": "उत्तर पाठवता आले नाही.",
+    "Telugu": "జవాబు పంపలేకపోయాం.",
+    "Kannada": "ಪ್ರತ್ಯುತ್ತರ ಕಳುಹಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  },
+  {
+    "Key": "help.errLoadTicket",
+    "English": "Failed to load ticket.",
+    "Hindi": "टिकट लोड नहीं हो सका।",
+    "Marathi": "तिकीट लोड करता आले नाही.",
+    "Telugu": "టికెట్ లోడ్ చేయలేకపోయాం.",
+    "Kannada": "ಟಿಕೆಟ್ ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  }
+]

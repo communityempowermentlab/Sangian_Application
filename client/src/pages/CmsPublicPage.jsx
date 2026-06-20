@@ -7,7 +7,7 @@ import { useSEO } from '../seo/useSEO';
 import { SITE_URL } from '../seo/seoConfig';
 import './CmsPage.css';
 
-// Pages that have Hindi variants stored as `${pageKey}_hi`
+// Pages that have per-language variants stored as `${pageKey}_${langCode}`
 const BILINGUAL_PAGES = ['terms', 'privacy'];
 
 const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
@@ -19,7 +19,7 @@ const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(false);
 
-    const fetchKey = isBilingual && language === 'hi' ? `${pageKey}_hi` : pageKey;
+    const fetchKey = isBilingual && language !== 'en' ? `${pageKey}_${language}` : pageKey;
 
     useEffect(() => {
         let cancelled = false;

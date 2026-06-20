@@ -1,0 +1,236 @@
+import React, { useState, useEffect } from 'react';
+import axiosAdmin from '../services/axiosAdmin';
+
+const CATEGORY_COLORS = {
+    'Memory Test':     { bg: '#eef2ff', text: '#4338ca' },
+    'Cognitive Test':  { bg: '#ecfdf5', text: '#047857' },
+    'Attention Test':  { bg: '#fef3c7', text: '#92400e' },
+    'Academic Test':   { bg: '#fae8ff', text: '#a21caf' },
+};
+
+const ToggleSwitch = ({ checked, onClick, disabled }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        role="switch"
+        aria-checked={checked}
+        style={{
+            width: '40px', height: '22px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+            background: checked ? '#4f46e5' : '#d1d5db', position: 'relative', transition: 'background 0.15s',
+            opacity: disabled ? 0.6 : 1,
+        }}
+    >
+        <span style={{
+            position: 'absolute', top: '2px', left: checked ? '20px' : '2px',
+            width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+            transition: 'left 0.15s', boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+        }} />
+    </button>
+);
+
+// ── Sub-section: Test Visibility (enable/disable individual games) ──────────────
+const TestVisibilityPanel = () => {
+    const [tests, setTests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [savingKey, setSavingKey] = useState(null);
+    const [savedKey, setSavedKey] = useState(null);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get('/admin/test-config');
+            setTests(res.data.tests);
+        } catch (error) {
+            console.error('Failed to load test configuration:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const toggle = async (key, currentEnabled) => {
+        setSavingKey(key);
+        const next = !currentEnabled;
+        try {
+            await axiosAdmin.put(`/admin/test-config/${key}`, { enabled: next });
+            setTests((prev) => prev.map((t) => (t.key === key ? { ...t, enabled: next } : t)));
+            setSavedKey(key);
+            setTimeout(() => setSavedKey(null), 1800);
+        } catch (error) {
+            console.error('Failed to update test configuration:', error);
+        } finally {
+            setSavingKey(null);
+        }
+    };
+
+    if (loading) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
+    }
+
+    return (
+        <div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                Enable or disable any test/game on the front-end without a deployment. Disabled tests are hidden
+                from the dashboard and game list, and direct links to them redirect users back to the home page.
+                Newly added games appear here automatically, enabled by default.
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                    <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Test Name</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Category</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Status</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Enable / Disable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tests.map((test) => {
+                        const cat = CATEGORY_COLORS[test.category] || { bg: '#f1f5f9', text: '#475569' };
+                        return (
+                            <tr key={test.key} style={{ borderTop: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>{test.title}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                    <span style={{ background: cat.bg, color: cat.text, padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                        {test.category}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                    <span style={{
+                                        padding: '3px 12px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700,
+                                        background: test.enabled ? '#f0fdf4' : '#fef2f2',
+                                        color: test.enabled ? '#16a34a' : '#dc2626',
+                                    }}>
+                                        {test.enabled ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                        <ToggleSwitch checked={test.enabled} disabled={savingKey === test.key} onClick={() => toggle(test.key, test.enabled)} />
+                                        {savedKey === test.key && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</span>}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// ── Sub-section: Global Header Configuration (Child ID / Timer / Score) ─────────
+const HEADER_FIELDS = [
+    { key: 'showChildId', label: 'Display Child ID', example: 'Child ID: CH-1025' },
+    { key: 'showTimer',   label: 'Display Timer',    example: 'Time: 02:35' },
+    { key: 'showScore',   label: 'Display Score',    example: 'Score: 15' },
+];
+
+const GlobalHeaderConfigPanel = () => {
+    const [config, setConfig] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [savingKey, setSavingKey] = useState(null);
+    const [savedKey, setSavedKey] = useState(null);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get('/admin/header-config');
+            setConfig(res.data);
+        } catch (error) {
+            console.error('Failed to load header configuration:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const toggle = async (key) => {
+        const next = !config[key];
+        setSavingKey(key);
+        try {
+            const res = await axiosAdmin.put('/admin/header-config', { [key]: next });
+            setConfig(res.data.config);
+            setSavedKey(key);
+            setTimeout(() => setSavedKey(null), 1800);
+        } catch (error) {
+            console.error('Failed to update header configuration:', error);
+        } finally {
+            setSavingKey(null);
+        }
+    };
+
+    if (loading || !config) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
+    }
+
+    return (
+        <div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                These settings are applied automatically to the header of every test — current and future — instead
+                of configuring each one individually.
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', maxWidth: '560px' }}>
+                <thead>
+                    <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Configuration</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Example</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {HEADER_FIELDS.map((field) => (
+                        <tr key={field.key} style={{ borderTop: '1px solid #f3f4f6' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>{field.label}</td>
+                            <td style={{ padding: '10px 12px', color: '#6b7280', fontFamily: 'monospace', fontSize: '0.8rem' }}>{field.example}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                    <ToggleSwitch checked={config[field.key]} disabled={savingKey === field.key} onClick={() => toggle(field.key)} />
+                                    {savedKey === field.key && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</span>}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// ── Main: Test Configuration (Test Visibility + Global Header Configuration) ────
+const TEST_CONFIG_SUBSECTIONS = [
+    { key: 'visibility', label: 'Test Visibility',             icon: '🎮' },
+    { key: 'header',     label: 'Global Header Configuration', icon: '🧾' },
+];
+
+const AdminTestConfigTab = () => {
+    const [active, setActive] = useState('visibility');
+
+    return (
+        <div style={{ padding: '24px 28px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb' }}>
+                {TEST_CONFIG_SUBSECTIONS.map((s) => (
+                    <button
+                        key={s.key}
+                        onClick={() => setActive(s.key)}
+                        style={{
+                            padding: '10px 16px', border: 'none', background: 'transparent', cursor: 'pointer',
+                            fontSize: '0.85rem', fontWeight: 700,
+                            color: active === s.key ? '#4f46e5' : '#6b7280',
+                            borderBottom: active === s.key ? '2px solid #4f46e5' : '2px solid transparent',
+                        }}
+                    >
+                        {s.icon} {s.label}
+                    </button>
+                ))}
+            </div>
+
+            {active === 'visibility' ? <TestVisibilityPanel /> : <GlobalHeaderConfigPanel />}
+        </div>
+    );
+};
+
+export default AdminTestConfigTab;

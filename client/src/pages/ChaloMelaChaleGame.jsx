@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -307,6 +308,7 @@ const SB_PATH2_SEQ = ["R4C1","R3C1","R2C2","R2C3","R2C4"];
 
 const ChaloMelaChaleGame = () => {
   const { t }    = useLanguage();
+  const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const [childData, setChildData] = useState(null);
@@ -1753,11 +1755,13 @@ const ChaloMelaChaleGame = () => {
             )}
           </div>
           <div className="stats">
+            {showChildId && (
             <div className="stat-pill">
               <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>👤</span>
               <span className="stat-value">{childData?.child_id || '—'}</span>
             </div>
-            {(screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && (
+            )}
+            {showTimer && (screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && (
               <div className="stat-pill">
                 <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>⏱</span>
                 <span className="stat-value" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>
@@ -1773,10 +1777,12 @@ const ChaloMelaChaleGame = () => {
                 <span className="stat-value">{collectedCoins}</span>
               </div>
             )}
+            {showScore && (
             <div className="stat-pill">
               <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>🏆</span>
               <span className="stat-value">{totalScore}</span>
             </div>
+            )}
             {screen !== 'splash' && screen !== 'results' && (
               <button className="btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 
