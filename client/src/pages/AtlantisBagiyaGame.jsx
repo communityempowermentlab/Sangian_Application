@@ -321,9 +321,19 @@ const fmtDuration = (sec) => {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 };
 
+// Splash/header art is localized per selected language.
+const BAGIYA_IMAGE_BY_LANG = {
+  en: `${IMG}/bagiya_english.png`,
+  hi: `${IMG}/bagiya_hindi.jpg`,
+  mr: `${IMG}/bagiya_marathi.png`,
+  te: `${IMG}/bagiya_telugu.png`,
+  kn: `${IMG}/bagiya_kannada.png`,
+};
+
 // ─── Main Component ───────────────────────────────────────
 const AtlantisBagiyaGame = () => {
-  const { t }    = useLanguage();
+  const { t, language } = useLanguage();
+  const bagiyaImage = BAGIYA_IMAGE_BY_LANG[language] || `${IMG}/bagiya.jpg`;
   const { showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -347,6 +357,9 @@ const AtlantisBagiyaGame = () => {
   const [responseSets, setResponseSets] = useState({});
   const [displayResponseItems, setDisplayResponseItems] = useState([]); // responseSets[mainScreenNum], reshuffled per sub-question for display only
   const [gridFeedback, setGridFeedback] = useState({});  // {itemId: 'correct'|'wrong'}
+  const [isRetrying, setIsRetrying] = useState(false);    // Q1 retry sequence in progress (locks grid)
+  const isRetryingRef = useRef(false);
+  const firstAttemptDoneRef = useRef({});                 // {subQIndex: true} once first attempt has been scored
   const [subQAudioDone, setSubQAudioDone] = useState(false);
   const [questionAudioDone, setQuestionAudioDone] = useState(false);
   const [feedbackAudioPlaying, setFeedbackAudioPlaying] = useState(false);
@@ -388,6 +401,7 @@ const AtlantisBagiyaGame = () => {
   const qTimerRef = useRef(0);
   const subQAnsweredRef = useRef({});
   const replayCountsRef = useRef({});   // subQIndex → replay count for current screen
+  const q1ExposureReplaysRef = useRef(0);
 
   const timerRef = useRef(null);
   const splashAudioRef = useRef(null);
@@ -528,8 +542,7 @@ const AtlantisBagiyaGame = () => {
     resetInternalState();
     const sets = generateAllResponseSets();
     setResponseSets(sets);
-    pickPracticeItem();
-    setScreen('practice_q');
+    setScreen('game');
   };
 
   const resumeGame = () => {
@@ -560,11 +573,12 @@ const AtlantisBagiyaGame = () => {
     setMainScreenNum(1); mainScreenNumRef.current = 1;
     setMainPhase('question');
     setSubQIndex(0); subQIndexRef.current = 0;
-    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
+    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {}; firstAttemptDoneRef.current = {};
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
     setFeedbackAudioPlaying(false);
+    q1ExposureReplaysRef.current = 0;
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setQuitReason('');
     setAssessmentSubmitted(false);
@@ -591,19 +605,20 @@ const AtlantisBagiyaGame = () => {
           qTimer: qTimerRef.current,
           pauses: updatedPauses,
           mainScreenNum: mainScreenNumRef.current,
+          q1ExposureReplays: q1ExposureReplaysRef.current,
         },
       });
     } catch (e) { console.error('Save error', e); }
   }, []);
 
-  const completeGame = useCallback(() => {
+  const completeGame = useCallback((status = 'completed') => {
     const scores = allScoresRef.current;
     const sessId = gameSessionIdRef.current;
     if (sessId) {
       axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
         score: scores.reduce((s, a) => s + a.score, 0),
         progress_level: TOTAL_MAX_SUB_QUESTIONS,
-        status: 'completed',
+        status,
         saved_state: { allScores: scores, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, mainScreenNum: 13 },
       }).catch(e => console.error(e));
     }
@@ -721,45 +736,120 @@ const AtlantisBagiyaGame = () => {
     audio.addEventListener('error', () => setFeedbackAudioPlaying(false));
   };
 
+  // Promise-based audio playback, used to sequence the Q1 retry feedback.
+  const playAudioAsync = (src) => new Promise((resolve) => {
+    if (!src) { resolve(); return; }
+    if (activeAudioRef.current) {
+      try { activeAudioRef.current.pause(); } catch (_) {}
+    }
+    setFeedbackAudioPlaying(true);
+    const audio = new Audio(src);
+    activeAudioRef.current = audio;
+    const done = () => { setFeedbackAudioPlaying(false); resolve(); };
+    audio.play().catch(done);
+    audio.addEventListener('ended', done);
+    audio.addEventListener('error', done);
+  });
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Per-screen, per-sub-question incorrect-answer retry sequences, keyed as
+  // `${mainScreenNum}_${subQIndex}`. Each entry returns its ordered steps for
+  // the given target item. Sub-questions with no entry keep the legacy
+  // single-attempt lock (no retry).
+  const RETRY_FLOWS = {
+    '1_0': (target) => [
+      { audio: target.audio },
+      { delay: 2000 },
+      { audio: `${AUD}/Dubara koshish karte hai.wav` },
+      { delay: 2000 },
+      { unhighlight: true },
+      { audio: target.khaHai },
+    ],
+    '2_0': (target) => [
+      { audio: target.audio },
+      { delay: 2000 },
+      { unhighlight: true },
+      { audio: target.khaHai },
+    ],
+    '2_1': (target) => [
+      { audio: target.audio },
+      { delay: 2000 },
+      { unhighlight: true },
+      { audio: target.khaHai },
+    ],
+  };
+
   // ─── Main game answer handler ─────────────────────────────
   const handleMainAnswer = useCallback((chosenItem) => {
     const cfg = SCREEN_CONFIGS.find(c => c.num === mainScreenNumRef.current);
     if (!cfg) return;
     const sqIdx = subQIndexRef.current;
     if (subQAnsweredRef.current[sqIdx]) return;
+    if (isRetryingRef.current) return;
 
     const targetStem = cfg.subQStems[sqIdx];
     const target = itemByStem[targetStem];
     if (!target) return;
 
-    const pts = scoreAnswer(chosenItem, target);
+    const retryFlow = RETRY_FLOWS[`${mainScreenNumRef.current}_${sqIdx}`];
+    const isCorrect = chosenItem.id === target.id;
 
-    if (pts === 2) {
-      if (!(mainScreenNumRef.current === 13 && sqIdx === 5)) {
-        playAudio(`${AUD}/bilkul_sahi.wav`);
-      }
+    // Score only the very first attempt at this sub-question.
+    if (!firstAttemptDoneRef.current[sqIdx]) {
+      firstAttemptDoneRef.current[sqIdx] = true;
+      const pts = scoreAnswer(chosenItem, target);
+      const newEntry = {
+        qId: `r${mainScreenNumRef.current}_q${sqIdx + 1}`,
+        screen: mainScreenNumRef.current,
+        subQ: sqIdx + 1,
+        targetStem,
+        targetName: target.name,
+        chosenStem: chosenItem.stem,
+        chosenName: chosenItem.name,
+        score: pts,
+        timeTaken: qTimerRef.current,
+        replayCount: replayCountsRef.current[sqIdx] ?? 0,
+      };
+      const updScores = [...allScoresRef.current];
+      updScores.push(newEntry);
+      allScoresRef.current = updScores;
+      setAllScores(updScores);
     }
 
-    // Record score
-    const newEntry = {
-      qId: `r${mainScreenNumRef.current}_q${sqIdx + 1}`,
-      screen: mainScreenNumRef.current,
-      subQ: sqIdx + 1,
-      targetStem,
-      targetName: target.name,
-      chosenStem: chosenItem.stem,
-      chosenName: chosenItem.name,
-      score: pts,
-      timeTaken: qTimerRef.current,
-      replayCount: replayCountsRef.current[sqIdx] ?? 0,
-    };
-    
-    const updScores = [...allScoresRef.current];
-    updScores.push(newEntry);
-    allScoresRef.current = updScores;
-    setAllScores(updScores);
+    if (isCorrect) {
+      if (mainScreenNumRef.current === 13 && sqIdx === 5) {
+        playAudio(`${AUD}/bilkul_sahi_2.wav`);
+      } else {
+        playAudio(`${AUD}/bilkul_sahi.wav`);
+      }
+      setGridFeedback({});
+      const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
+      subQAnsweredRef.current = updAnswered;
+      setSubQAnswered(updAnswered);
+      return;
+    }
 
-    // Mark sub-question answered
+    if (retryFlow) {
+      // Retry loop: highlight the correct item, walk through its feedback
+      // sequence, and let the child try again. Score has already been
+      // locked in above.
+      isRetryingRef.current = true;
+      setIsRetrying(true);
+      setGridFeedback({ [target.id]: 'correct' });
+      (async () => {
+        for (const step of retryFlow(target)) {
+          if (step.audio) await playAudioAsync(step.audio);
+          else if (step.delay) await delay(step.delay);
+          else if (step.unhighlight) setGridFeedback({});
+        }
+        isRetryingRef.current = false;
+        setIsRetrying(false);
+      })();
+      return;
+    }
+
+    // All other screens keep the existing single-attempt lock behavior.
     const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
     subQAnsweredRef.current = updAnswered;
     setSubQAnswered(updAnswered);
@@ -773,7 +863,7 @@ const AtlantisBagiyaGame = () => {
     if (cfg?.checkpoint) {
       const pts = allScoresRef.current.reduce((s, a) => s + a.score, 0);
       if (pts <= cfg.checkpoint.threshold) {
-        completeGame();
+        completeGame('dropped');
         return;
       }
     }
@@ -792,7 +882,7 @@ const AtlantisBagiyaGame = () => {
       setMainPhase('question');
     }
     setSubQIndex(0); subQIndexRef.current = 0;
-    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
+    setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {}; firstAttemptDoneRef.current = {};
     setGridFeedback({});
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
@@ -948,7 +1038,7 @@ const AtlantisBagiyaGame = () => {
         <div className="ab-brand">
           <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
           <div className="ab-divider"></div>
-          <img src="/assets/images/bagiya/bagiya.jpg" alt="Bagiya" className="ab-test-logo" />
+          <img src={bagiyaImage} alt="Bagiya" className="ab-test-logo" />
           <span className="ab-test-title">{t('home.games.bagiya.title')}</span>
         </div>
 
@@ -1011,7 +1101,7 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen ab-screen-splash">
             <div className="ab-splash-cover">
               <img
-                src={`${IMG}/bagiya.jpg`}
+                src={bagiyaImage}
                 alt="Bagiya"
                 className="ab-splash-img-full"
                 onError={e => { e.target.style.display = 'none'; }}
@@ -1127,7 +1217,7 @@ const AtlantisBagiyaGame = () => {
                       setMainScreenNum(1); mainScreenNumRef.current = 1;
                       setMainPhase('question');
                       setSubQIndex(0); subQIndexRef.current = 0;
-                      setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
+                      setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {}; firstAttemptDoneRef.current = {};
                       setGridFeedback({});
                       setScreen('game');
                     }}>
@@ -1154,6 +1244,9 @@ const AtlantisBagiyaGame = () => {
                       <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
                         <button className="ab-btn ab-btn-secondary"
                           onClick={() => {
+                            if (mainScreenNum === 1) {
+                              q1ExposureReplaysRef.current += 1;
+                            }
                             if (qi?.audio) {
                               setQuestionAudioDone(false);
                               const audio = new Audio(qi.audio);
@@ -1172,12 +1265,12 @@ const AtlantisBagiyaGame = () => {
                           onClick={() => {
                             setMainPhase('response');
                             setSubQIndex(0); subQIndexRef.current = 0;
-                            setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {};
+                            setSubQAnswered({}); subQAnsweredRef.current = {}; replayCountsRef.current = {}; firstAttemptDoneRef.current = {};
                             setGridFeedback({});
                             setSubQAudioDone(false);
                             setQTimer(0); qTimerRef.current = 0;
                           }}>
-                          {t('game.nextQuestion')}
+                          {`${t('game.responseLabel')} ${mainScreenNum === 13 ? '12.B' : mainScreenNum}`}
                         </button>
                       </div>
                     </div>
@@ -1206,10 +1299,10 @@ const AtlantisBagiyaGame = () => {
                         return (
                           <div
                             key={item.id}
-                            className={`ab-grid-item${(subQAnswered[subQIndex] || !subQAudioDone) ? ' locked' : ''}`}
+                            className={`ab-grid-item${(subQAnswered[subQIndex] || !subQAudioDone || isRetrying) && gridFeedback[item.id] !== 'correct' ? ' locked' : ''}${gridFeedback[item.id] === 'correct' ? ' correct' : ''}`}
                             style={pos ? { left: pos.left, top: pos.top, width: pos.size, height: pos.size } : { visibility: 'hidden' }}
                             onClick={() => {
-                              if (subQAudioDone) handleMainAnswer(item);
+                              if (subQAudioDone && !isRetrying) handleMainAnswer(item);
                             }}
                           >
                             <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
@@ -1221,8 +1314,8 @@ const AtlantisBagiyaGame = () => {
                     {/* Bottom row: Replay Audio left, Next right */}
                     <div className="ab-btn-row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
                       <button
-                        className={`ab-btn ab-btn-secondary${subQAnswered[subQIndex] ? ' ab-btn-disabled' : ''}`}
-                        disabled={!!subQAnswered[subQIndex]}
+                        className={`ab-btn ab-btn-secondary${(subQAnswered[subQIndex] || isRetrying) ? ' ab-btn-disabled' : ''}`}
+                        disabled={!!subQAnswered[subQIndex] || isRetrying}
                         onClick={() => {
                           replayCountsRef.current[subQIndex] = (replayCountsRef.current[subQIndex] || 0) + 1;
                           setSubQAudioDone(false);
@@ -1251,7 +1344,11 @@ const AtlantisBagiyaGame = () => {
                             advanceToNextScreen();
                           }
                         }}>
-                        {subQIndex < currentConfig.subQStems.length - 1 ? t('game.nextQuestion') : (mainScreenNum < 13 ? t('game.nextScreen') : t('game.finishGame'))}
+                        {subQIndex < currentConfig.subQStems.length - 1
+                          ? t('game.nextQuestion')
+                          : (mainScreenNum < 13
+                              ? (mainScreenNum === 12 ? `${t('game.question')} 12.B` : `${t('game.question')} ${mainScreenNum + 1}`)
+                              : t('game.finishGame'))}
                       </button>
                     </div>
                   </div>
@@ -1266,14 +1363,14 @@ const AtlantisBagiyaGame = () => {
           <div className="ab-screen" id="dashboard-capture-area">
             <div className="ab-screen-header">
               <div>
-                <div className="ab-screen-title">Assessment Report</div>
+                <div className="ab-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
                 {quitReason && (
                   <div className="ab-screen-subtitle">{t('game.reasonLabel')} {quitReason}</div>
                 )}
               </div>
               <div className="ab-chips">
                 <span className="ab-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="ab-chip">Screentime: {formatTime(timerSeconds)}</span>
+                <span className="ab-chip">{t('game.timeChip')} {formatTime(timerSeconds)}</span>
               </div>
             </div>
 
@@ -1290,7 +1387,7 @@ const AtlantisBagiyaGame = () => {
                     { label: t('game.partialLabel'),  val: partialCount, cls: '' },
                     { label: t('game.wrongLabel'),    val: wrongCount, cls: 'red' },
                     { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, sub: `${totalPts} / ${maxPts}`, cls: '', info: true },
-                    { label: 'Duration',              val: formatTime(totalTimeSec), cls: '' },
+                    { label: t('game.totalTimeMetric'), val: formatTime(totalTimeSec), cls: '' },
                     { label: t('game.screensLabel'),  val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="ab-metric-box">
@@ -1314,14 +1411,14 @@ const AtlantisBagiyaGame = () => {
                     <tr>
                       <th>{t('game.sNo')}</th>
                       <th>{t('game.screenHeader')}</th>
-                      <th>Exposure Item</th>
-                      <th>{t('game.subQHeader')}</th>
+                      <th>{t('game.question')}</th>
+                      <th>{t('game.responseLabel')}</th>
                       <th>{t('game.targetHeader')}</th>
                       <th>{t('game.childChoseHeader')}</th>
                       <th>{t('game.statusHeader')}</th>
                       <th>{t('game.scoreTable.score')}</th>
-                      <th>Duration</th>
-                      <th>Replay</th>
+                      <th>{t('game.totalTimeMetric')}</th>
+                      <th>{t('game.replaysHeader')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1337,7 +1434,7 @@ const AtlantisBagiyaGame = () => {
                           {isFirstOfScreen && exposureItem ? (
                             <div className="ab-exposure-cell">
                               <img src={exposureItem.img} alt={exposureItem.name} className="ab-q-img" />
-                              <span className="ab-exposure-label">This is {exposureItem.name}</span>
+                              <span className="ab-exposure-label">{t('game.exposureLabel')} {exposureItem.name}</span>
                             </div>
                           ) : ''}
                         </td>

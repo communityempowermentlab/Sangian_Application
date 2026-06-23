@@ -1,5 +1,5 @@
 {
-  "showChildId": false,
-  "showTimer": false,
-  "showScore": false
+  "showChildId": true,
+  "showTimer": true,
+  "showScore": true
 }

@@ -419,7 +419,12 @@
       "neededHelp": "क्या बच्चे को पढ़ने में मदद चाहिए थी?"
     },
     "reply": "जवाब दें",
-    "nextScreen": "अगली स्क्रीन"
+    "nextScreen": "अगली स्क्रीन",
+    "exposureLabel": "यह है",
+    "practiceQuestionLabel": "अभ्यास सवाल",
+    "submitResponse": "जमा करें",
+    "notQuiteRight": "❌ सही नहीं।",
+    "lotteryAccuracyTooltip": "सही उत्तर ÷ कुल प्रश्न (20) × 100"
   },
   "modal": {
     "disclaimer": "यह जानकारी केवल सामान्य समझ के लिए है। परीक्षण करते समय अपने आधिकारिक KABC मैनुअल और संस्थागत नियमों का पालन करें।",

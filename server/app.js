@@ -18,6 +18,7 @@ const { adminRouter: cmsAdminRoutes, publicRouter: cmsPublicRoutes } = require('
 const { adminRouter: translationsAdminRoutes, publicRouter: translationsPublicRoutes } = require('./src/routes/translationsRoutes');
 const { adminRouter: testConfigAdminRoutes, publicRouter: testConfigPublicRoutes } = require('./src/routes/testConfigRoutes');
 const { adminRouter: headerConfigAdminRoutes, publicRouter: headerConfigPublicRoutes } = require('./src/routes/headerConfigRoutes');
+const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatchingPublicRoutes } = require('./src/routes/responseMatchingRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const ticketRoutes      = require('./src/routes/ticketRoutes');
 const helpContentRoutes = require('./src/routes/helpContentRoutes');
@@ -115,6 +116,8 @@ app.use('/api/admin/test-config', testConfigAdminRoutes);
 app.use('/api/public/test-config', testConfigPublicRoutes);
 app.use('/api/admin/header-config', headerConfigAdminRoutes);
 app.use('/api/public/header-config', headerConfigPublicRoutes);
+app.use('/api/admin/response-matching-config', responseMatchingAdminRoutes);
+app.use('/api/public/response-matching-config', responseMatchingPublicRoutes);
 app.use('/api/contact',         contactRoutes);
 app.use('/api/tickets',         ticketRoutes);
 app.use('/api/help-content',    helpContentRoutes);

@@ -17,6 +17,25 @@ const SessionAssessmentForm = ({
   const [validationErrors, setValidationErrors] = useState({});
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Canonical English values are what's stored in the DB; `str` is the
+  // language-aware label shown to the user (both while answering and in the
+  // read-only submitted view below).
+  const ANSWER_OPTIONS = [
+    { val: 'Yes, a lot', str: t('game.optYes') },
+    { val: 'A little', str: t('game.optLittle') },
+    { val: 'Not much', str: t('game.optNotMuch') }
+  ];
+  const BEHAVIOR_OPTIONS = [
+    { val: 'Difficulty sustaining attention', str: t('game.b1') },
+    { val: 'Impulsive or random responding', str: t('game.b2') },
+    { val: 'Negative reaction to correction', str: t('game.b3') },
+    { val: 'Hesitation in responding', str: t('game.b4') },
+    { val: 'High focus or persistence', str: t('game.b5') },
+    { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
+    { val: 'Needed frequent reassurance', str: t('game.b7') },
+    { val: 'Calm and engaged throughout', str: t('game.b8') }
+  ];
+
   const handleValidationAndSubmit = () => {
     const errors = {};
     if (!assessment.q1) errors.q1 = true;
@@ -50,91 +69,107 @@ const SessionAssessmentForm = ({
       ].map((q) => (
         <div key={q.key} className={`shared-form-group ${validationErrors[q.key] ? 'error' : ''}`}>
           <label className="shared-form-label">
-            {q.label} <span className="required-star">*</span>
+            {q.label} {!assessmentSubmitted && <span className="required-star">*</span>}
           </label>
-          <div className="shared-radio-group">
-            {[
-              { val: 'Yes, a lot', str: t('game.optYes') },
-              { val: 'A little', str: t('game.optLittle') },
-              { val: 'Not much', str: t('game.optNotMuch') }
-            ].map(opt => (
-              <label key={opt.val} className="shared-radio-item">
-                <input 
-                  type="radio" 
-                  name={`${formUid}_${q.key}`}
-                  disabled={assessmentSubmitted} 
-                  checked={assessment[q.key] === opt.val} 
-                  onChange={() => {
-                    setAssessment({...assessment, [q.key]: opt.val});
-                    if (validationErrors[q.key]) {
-                      setValidationErrors({...validationErrors, [q.key]: false});
-                    }
-                  }} 
-                />
-                {opt.str}
-              </label>
-            ))}
-          </div>
-          {validationErrors[q.key] && (
-            <div className="shared-error-text">{t('game.validationRequired')}</div>
+          {assessmentSubmitted ? (
+            <div style={{ marginTop: 8, fontWeight: 500, color: '#334155' }}>
+              {ANSWER_OPTIONS.find(o => o.val === assessment[q.key])?.str || assessment[q.key]}
+            </div>
+          ) : (
+            <>
+              <div className="shared-radio-group">
+                {ANSWER_OPTIONS.map(opt => (
+                  <label key={opt.val} className="shared-radio-item">
+                    <input 
+                      type="radio" 
+                      name={`${formUid}_${q.key}`}
+                      checked={assessment[q.key] === opt.val} 
+                      onChange={() => {
+                        setAssessment({...assessment, [q.key]: opt.val});
+                        if (validationErrors[q.key]) {
+                          setValidationErrors({...validationErrors, [q.key]: false});
+                        }
+                      }} 
+                    />
+                    {opt.str}
+                  </label>
+                ))}
+              </div>
+              {validationErrors[q.key] && (
+                <div className="shared-error-text">{t('game.validationRequired')}</div>
+              )}
+            </>
           )}
         </div>
       ))}
 
       <div className={`shared-form-group ${validationErrors.q5 ? 'error' : ''}`}>
         <label className="shared-form-label">
-          {t('game.q5Label')} <span className="required-star">*</span>
+          {t('game.q5Label')} {!assessmentSubmitted && <span className="required-star">*</span>}
         </label>
-        <div className="shared-checkbox-grid">
-          {[
-            { val: 'Difficulty sustaining attention', str: t('game.b1') },
-            { val: 'Impulsive or random responding', str: t('game.b2') },
-            { val: 'Negative reaction to correction', str: t('game.b3') },
-            { val: 'Hesitation in responding', str: t('game.b4') },
-            { val: 'High focus or persistence', str: t('game.b5') },
-            { val: 'Verbalisation of a memory strategy', str: t('game.b6') },
-            { val: 'Needed frequent reassurance', str: t('game.b7') },
-            { val: 'Calm and engaged throughout', str: t('game.b8') }
-          ].map(bhv => (
-             <label key={bhv.val} className="shared-checkbox-item">
-               <input
-                 type="checkbox"
-                 disabled={assessmentSubmitted}
-                 checked={assessment.behaviors.includes(bhv.val)}
-                 onChange={(e) => {
-                  const updated = e.target.checked
-                    ? [...assessment.behaviors, bhv.val]
-                    : assessment.behaviors.filter(b => b !== bhv.val);
-                  setAssessment({...assessment, behaviors: updated});
-                  if (validationErrors.q5) setValidationErrors({...validationErrors, q5: false});
-               }} />
-               {bhv.str}
-             </label>
-          ))}
-        </div>
-        {validationErrors.q5 && (
-          <div className="shared-error-text">{t('game.validationQ5')}</div>
+        {assessmentSubmitted ? (
+          <div style={{ marginTop: 8, fontWeight: 500, color: '#334155' }}>
+            {assessment.behaviors.length > 0
+              ? (
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {assessment.behaviors.map(b => (
+                    <li key={b}>{BEHAVIOR_OPTIONS.find(o => o.val === b)?.str || b}</li>
+                  ))}
+                </ul>
+              )
+              : 'None'}
+          </div>
+        ) : (
+          <>
+            <div className="shared-checkbox-grid">
+              {BEHAVIOR_OPTIONS.map(bhv => (
+                 <label key={bhv.val} className="shared-checkbox-item">
+                   <input
+                     type="checkbox"
+                     checked={assessment.behaviors.includes(bhv.val)}
+                     onChange={(e) => {
+                      const updated = e.target.checked
+                        ? [...assessment.behaviors, bhv.val]
+                        : assessment.behaviors.filter(b => b !== bhv.val);
+                      setAssessment({...assessment, behaviors: updated});
+                      if (validationErrors.q5) setValidationErrors({...validationErrors, q5: false});
+                   }} />
+                   {bhv.str}
+                 </label>
+              ))}
+            </div>
+            {validationErrors.q5 && (
+              <div className="shared-error-text">{t('game.validationQ5')}</div>
+            )}
+          </>
         )}
       </div>
       
       <div className="shared-form-group">
          <label className="shared-form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
            <span>{t('game.extraNotes')}</span>
-           <button 
-             type="button"
-             className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
-             onClick={() => toggleRecording('assessmentNotes')} 
-           >
-             🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
-           </button>
+           {!assessmentSubmitted && (
+             <button 
+               type="button"
+               className={`shared-mic-btn ${isRecording && recordingTarget === 'assessmentNotes' ? 'recording' : ''}`}
+               onClick={() => toggleRecording('assessmentNotes')} 
+             >
+               🎙 {isRecording && recordingTarget === 'assessmentNotes' ? t('game.recordingStop') : t('game.useMic')}
+             </button>
+           )}
          </label>
-         <textarea 
-           className="shared-textarea" 
-           disabled={assessmentSubmitted} 
-           placeholder={t('game.dictatePlaceholder')} 
-           value={assessment.notes} 
-           onChange={(e) => setAssessment({...assessment, notes: e.target.value})}
-         ></textarea>
+         {assessmentSubmitted ? (
+           <div style={{ marginTop: 8, fontWeight: 500, color: '#334155', whiteSpace: 'pre-wrap' }}>
+             {assessment.notes || 'None'}
+           </div>
+         ) : (
+           <textarea 
+             className="shared-textarea" 
+             placeholder={t('game.dictatePlaceholder')} 
+             value={assessment.notes} 
+             onChange={(e) => setAssessment({...assessment, notes: e.target.value})}
+           ></textarea>
+         )}
       </div>
 
       {Object.keys(validationErrors).some(k => validationErrors[k]) && (

@@ -44,6 +44,7 @@ import RequireGameEnabled from './guards/RequireGameEnabled';
 
 import { LanguageProvider } from './contexts/LanguageContext';
 import { HeaderConfigProvider } from './contexts/HeaderConfigContext';
+import { ResponseMatchingProvider } from './contexts/ResponseMatchingContext';
 import { GoogleAnalyticsProvider } from './contexts/GoogleAnalyticsContext';
 import { CrashAnalyticsProvider }  from './contexts/CrashAnalyticsContext';
 import './index.css';
@@ -149,6 +150,7 @@ function App() {
         <CrashAnalyticsProvider>
         <LanguageProvider>
         <HeaderConfigProvider>
+        <ResponseMatchingProvider>
             <Router>
                 <SEOManager />
                 <div className="App">
@@ -211,6 +213,7 @@ function App() {
                     </Routes>
                 </div>
             </Router>
+        </ResponseMatchingProvider>
         </HeaderConfigProvider>
         </LanguageProvider>
         </CrashAnalyticsProvider>

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useResponseMatching } from '../contexts/ResponseMatchingContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -51,6 +52,10 @@ const NUMPAD_KEYS = [
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────
+// Correctness is always a strict exact match — same length, same values, same
+// order. The "Response Matching Mode" admin setting controls only when the
+// user is allowed to *proceed* (see isResponseReady below); it never changes
+// what counts as a correct answer.
 const exactMatch = (selected, correct) => {
   if (selected.length !== correct.length) return false;
   return selected.every((v, i) => v === correct[i]);
@@ -60,6 +65,13 @@ const formatTime = (sec) => {
   const m = Math.floor(sec / 60).toString().padStart(2, '0');
   const s = (sec % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+};
+
+// Matches the "Xm SSs" format used by the Admin Reports screentime column,
+// so the score screen's chip always reads identically to the report.
+const fmtScreentime = (sec) => {
+  const s = Math.round(Number(sec) || 0);
+  return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
 };
 
 const formatDurationMs = (ms) => {
@@ -88,12 +100,12 @@ const NumpadPanel = ({
   title, chipLabel, audioSrc, qTimerDisplay,
   correct, maxSelect,
   onCorrect, onWrong, onAdvance,
-  isScored = false, autoPlay = false, isLastQuestion = false,
+  isScored = false, autoPlay = false, isLastQuestion = false, nextQuestionLabel,
 }) => {
   const { t } = useLanguage();
+  const { responseMatchingMode } = useResponseMatching();
+  const isPartialMatch = responseMatchingMode === 'partial';
   const [selected, setSelected] = useState([]);
-  const [answered, setAnswered] = useState(false);
-  const [wasCorrect, setWasCorrect] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayCount, setReplayCount] = useState(0);
 
@@ -128,58 +140,37 @@ const NumpadPanel = ({
     };
   }, []);
 
-  const formatDisplay = (arr) => arr.length === 0 ? '—' : arr.join(' – ');
-
-  // Numpad and Clear are locked while audio plays OR after an answer
-  const isInputDisabled = isPlaying || answered;
+  // Numpad and Clear are locked while audio plays
+  const isInputDisabled = isPlaying;
 
   const handleKey = (k) => {
     if (isInputDisabled) return;
     if (k.action === 'clear') { setSelected([]); return; }
     if (k.val != null) {
       if (selected.length >= maxSelect) return;
-      const next = [...selected, k.val];
-      setSelected(next);
-      if (next.length === maxSelect) evaluate(next);
+      setSelected([...selected, k.val]);
     }
   };
 
-  const evaluate = (sel) => {
-    setAnswered(true);
-    const isCorrect = exactMatch(sel, correct);
-    setWasCorrect(isCorrect);
+  // The question button itself is the only progression control: it lights up once
+  // the response meets the configured matching mode, and submitting + advancing
+  // happen together in a single click.
+  const isResponseReady = isPartialMatch ? selected.length > 0 : selected.length === maxSelect;
+
+  const handleSubmitAndAdvance = () => {
+    if (isPlaying || !isResponseReady) return;
+    const isCorrect = exactMatch(selected, correct);
     if (isCorrect) {
-      onCorrect && onCorrect(sel, replayCount);
-      // For scored questions: user clicks Next; for unscored: immediate feedback only
+      onCorrect && onCorrect(selected, replayCount);
     } else {
-      onWrong && onWrong(sel, replayCount);
-      // No auto-advance on wrong answer anymore; user will click manual "Next Question" button
+      onWrong && onWrong(selected, replayCount);
     }
+    onAdvance && onAdvance();
   };
-
-  const hintText = isPlaying
-    ? t('game.listeningLabel')
-    : selected.length < maxSelect
-      ? t('game.selectNumbers').replace('{n}', maxSelect)
-      : t('game.selectionComplete');
-
-  const showNextButton = !isPlaying && answered && isScored;
 
   return (
     <div className="nr-panel-wrap">
       <div className="nr-numpad-wrap">
-        <div className="nr-numpad-top">
-          <div className="nr-numpad-title">{t('game.listenRemember')}</div>
-          <button className="nr-replay-btn" onClick={() => playAudio(true)} disabled={isPlaying || showNextButton}>
-            {t('game.replayBtn')}
-          </button>
-        </div>
-
-        <div className="nr-numpad-display">
-          <div className="nr-numpad-entered">{formatDisplay(selected)}</div>
-          <div className="nr-numpad-hint">{hintText}</div>
-        </div>
-
         <div className="nr-numpad" style={{ pointerEvents: isInputDisabled ? 'none' : 'auto', opacity: isInputDisabled ? 0.45 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (
             <button key={i} className={`nr-key ${k.cls || ''}`} onClick={() => handleKey(k)}>
@@ -190,23 +181,16 @@ const NumpadPanel = ({
 
         <div className="nr-numpad-actions">
           <div className="nr-action-feedback">
-            {isPlaying && <div className="nr-action-msg" style={{ color: '#64748b' }}>🔊</div>}
-            {!isPlaying && answered && wasCorrect && !isScored && (
-              <div className="nr-action-msg" style={{ color: '#16a34a' }}>{t('game.correctFeedback')}</div>
-            )}
-            {!isPlaying && answered && !wasCorrect && !isScored && (
-              <>
-                <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right. Try again.</div>
-                <button className="nr-replay-btn" onClick={() => { setSelected([]); setAnswered(false); setWasCorrect(null); }}>↩ Retry</button>
-              </>
-            )}
+            <button className="nr-replay-btn" onClick={() => playAudio(true)} disabled={isPlaying}>
+              {t('game.reply')}
+            </button>
           </div>
           <button
             className="nr-btn-next"
-            disabled={!showNextButton}
-            onClick={() => onAdvance && onAdvance(selected, wasCorrect, replayCount)}
+            disabled={!isResponseReady}
+            onClick={handleSubmitAndAdvance}
           >
-            {isLastQuestion ? t('game.finishGame') : t('game.nextQuestionArrow')}
+            {isLastQuestion ? t('game.finishGame') : nextQuestionLabel}
           </button>
         </div>
       </div>
@@ -307,27 +291,10 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   };
 
   const showNextButton = firstAttemptDone && (isCorrect || teachingAudioPlayed || !teachingAudioSrc);
-  const formatDisplay = (arr) => arr.length === 0 ? '—' : arr.join(' – ');
-  const hintText = selected.length < maxSelect ? t('game.selectNumbers').replace('{n}', maxSelect) : t('game.selectionComplete');
 
   return (
     <div className="nr-panel-wrap">
       <div className="nr-numpad-wrap">
-        <div className="nr-numpad-top">
-          <div>
-            <div className="nr-numpad-title">{t('game.listenRemember')}</div>
-            <div className="nr-numpad-sub">{t('game.audioAutoPlay')}</div>
-          </div>
-          <button className="nr-replay-btn" onClick={() => playMainAudio(true)} disabled={isPlaying || showNextButton}>
-            {t('game.replayBtn')}
-          </button>
-        </div>
-
-        <div className="nr-numpad-display">
-          <div className="nr-numpad-entered">{formatDisplay(selected)}</div>
-          <div className="nr-numpad-hint">{hintText}</div>
-        </div>
-
         <div className="nr-numpad" style={{ pointerEvents: isWaiting ? 'none' : 'auto', opacity: isWaiting ? 0.5 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (
             <button key={i} className={`nr-key ${k.cls || ''}`} onClick={() => handleKey(k)}>
@@ -338,14 +305,14 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
         <div className="nr-numpad-actions">
           <div className="nr-action-feedback">
-            {isWaiting && (
-              <div className="nr-action-msg" style={{ color: '#d97706' }}>{t('game.pleaseWaitAudio')}</div>
-            )}
+            <button className="nr-replay-btn" onClick={() => playMainAudio(true)} disabled={isPlaying || showNextButton}>
+              {t('game.reply')}
+            </button>
             {!isWaiting && firstAttemptDone && !isCorrect && !teachingAudioPlayed && teachingAudioSrc && (
-              <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite. Listen to the correction…</div>
+              <div className="nr-action-msg" style={{ color: '#f87171' }}>{t('game.incorrectFeedback')}</div>
             )}
             {!isWaiting && firstAttemptDone && !showNextButton && !isCorrect && !teachingAudioSrc && (
-              <div className="nr-action-msg" style={{ color: '#f87171' }}>❌ Not quite right.</div>
+              <div className="nr-action-msg" style={{ color: '#f87171' }}>{t('game.notQuiteRight')}</div>
             )}
           </div>
           <button
@@ -355,7 +322,6 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
           >
             <span>{nextIcon}</span>
             <span>{nextLabel}</span>
-            <span style={{ fontSize: '0.85rem' }}>→</span>
           </button>
         </div>
       </div>
@@ -469,6 +435,10 @@ const NumberRecallGame = () => {
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Session timer ──────────────────────────────────────────
+  // Keeps running on the score screen until the assessor submits the Session
+  // Assessment Details form — screentime is meant to include that time. The
+  // saved DB value is refreshed at submission time (see submitAssessmentForm)
+  // so the report matches what's shown here, instead of an earlier snapshot.
   useEffect(() => {
     if ((screen !== 'splash' && screen !== 'score' && !showQuitModal) || (screen === 'score' && !assessmentSubmitted)) {
       timerRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000);
@@ -627,7 +597,8 @@ const NumberRecallGame = () => {
     const scores = allScoresRef.current;
     const sessId = gameSessionIdRef.current;
 
-    const isGameOver = consec >= MAX_CONSECUTIVE_WRONG || idx + 1 >= TOTAL_SCORED_QUESTIONS;
+    const isDroppedOut = consec >= MAX_CONSECUTIVE_WRONG;
+    const isGameOver = isDroppedOut || idx + 1 >= TOTAL_SCORED_QUESTIONS;
 
     if (isGameOver) {
       setScreen('score');
@@ -635,7 +606,7 @@ const NumberRecallGame = () => {
         axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
           score: scores.filter(s => s.score === 1).length,
           progress_level: scores.length,
-          status: 'completed',
+          status: isDroppedOut ? 'dropped' : 'completed',
           saved_state: { questionIndex: scores.length, allScores: scores, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, consecutiveWrong: consec },
         }).catch(e => console.error(e));
       }
@@ -664,7 +635,7 @@ const NumberRecallGame = () => {
 
   const toggleRecording = (target) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech Recognition not supported. Please type manually.'); return; }
+    if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
       if (window.activeRecognition) window.activeRecognition.stop();
       setIsRecording(false); setRecordingTarget(null); return;
@@ -705,7 +676,22 @@ const NumberRecallGame = () => {
         additional_notes: assessment.notes,
       });
       setAssessmentSubmitted(true);
-      
+
+      // The session timer keeps running while this form is being filled out,
+      // so refresh the saved screentime now that it's stopped — otherwise
+      // the Admin Reports value stays frozen at the earlier game-end snapshot.
+      if (gameSessionIdRef.current) {
+        axios.put(`${API_URL}/games/sessions/update/${gameSessionIdRef.current}`, {
+          saved_state: {
+            questionIndex: allScoresRef.current.length,
+            allScores: allScoresRef.current,
+            timerSeconds: timerSecondsRef.current,
+            pauses: pausesRef.current,
+            consecutiveWrong: consecutiveWrongRef.current,
+          },
+        }).catch(e => console.error('Screentime refresh error', e));
+      }
+
       // Wait for DOM to render then capture
       setTimeout(() => {
         generateAndUploadPDF();
@@ -787,29 +773,28 @@ const NumberRecallGame = () => {
         <div className="nr-topbar-center">
           {screen === 'practice' && (
             <div className="nr-topbar-screen-title">
-              {`${t('game.practiceLabel')} · ${t('game.sampleLabel')}`}
-              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+              {t('game.practiceQuestionLabel')}
             </div>
           )}
           {screen === 'teaching1' && (
             <div className="nr-topbar-screen-title">
-              {`${t('game.teachingLabel')} · Teaching 1`}
-              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+              {t('game.teachingQ1Label')}
             </div>
           )}
           {screen === 'teaching2' && (
             <div className="nr-topbar-screen-title">
-              {`${t('game.teachingLabel')} · Teaching 2`}
-              <span className="nr-chip" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{t('game.notScored')}</span>
+              {t('game.teachingQ2Label')}
             </div>
           )}
           {screen === 'game' && (
             <div className="nr-topbar-screen-title">
-              {t('game.question')} {questionIndex + 1} {t('game.of')} {TOTAL_SCORED_QUESTIONS}
+              {t('game.question')} {questionIndex + 1}
             </div>
           )}
           {screen === 'score' && (
-            <div className="nr-topbar-screen-title">Assessment Report</div>
+            <div className="nr-topbar-screen-title">
+              {quitReason ? t('game.assessmentTerminated') : (isStopped ? t('game.sessionDropped') : t('game.assessmentComplete'))}
+            </div>
           )}
         </div>
 
@@ -890,7 +875,7 @@ const NumberRecallGame = () => {
               maxSelect={2}
               teachingAudioSrc="4_6_teaching_audio.m4a"
               nextLabel={t('game.teachingQ1Label')}
-              nextIcon="📝"
+              nextIcon=""
               onNext={() => setScreen('teaching1')}
             />
           </div>
@@ -907,7 +892,7 @@ const NumberRecallGame = () => {
               maxSelect={2}
               teachingAudioSrc="9_4_teaching_audio.m4a"
               nextLabel={t('game.teachingQ2Label')}
-              nextIcon="📝"
+              nextIcon=""
               onNext={() => setScreen('teaching2')}
             />
           </div>
@@ -923,8 +908,8 @@ const NumberRecallGame = () => {
               correct={[2, 8]}
               maxSelect={2}
               teachingAudioSrc={null}
-              nextLabel={t('game.startMainQuestions')}
-              nextIcon="🎯"
+              nextLabel={t('modal.startGame')}
+              nextIcon=""
               onNext={() => setScreen('game')}
             />
           </div>
@@ -944,6 +929,7 @@ const NumberRecallGame = () => {
               isScored={true}
               autoPlay={true}
               isLastQuestion={questionIndex === TOTAL_SCORED_QUESTIONS - 1}
+              nextQuestionLabel={`${t('game.question')} ${questionIndex + 2}`}
               onCorrect={handleCorrect}
               onWrong={handleWrong}
               onAdvance={handleAdvance}
@@ -956,14 +942,14 @@ const NumberRecallGame = () => {
           <div className="nr-screen" id="dashboard-capture-area">
             <div className="nr-screen-header">
               <div>
-                <div className="nr-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>
+                <div className="nr-screen-title">{quitReason ? t('game.assessmentTerminated') : (isStopped ? t('game.sessionDropped') : t('game.assessmentComplete'))}</div>
                 <div className="nr-screen-subtitle">
                   {quitReason ? `${t('game.reasonLabel')} ${quitReason}` : (isStopped ? t('game.stoppedMsg') : t('game.testCompleted'))}
                 </div>
               </div>
               <div className="nr-chips">
                 <span className="nr-chip" style={{ background: '#4f46e5', color: '#fff' }}>{t('game.attemptLabel')}{attemptNo}</span>
-                <span className="nr-chip">{t('game.timeChip')} {formatTime(timerSeconds)}</span>
+                <span className="nr-chip">{t('game.timeChip')} {fmtScreentime(timerSeconds)}</span>
               </div>
             </div>
 
@@ -988,7 +974,7 @@ const NumberRecallGame = () => {
                     <div key={i} className="nr-metric-box">
                       <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         {m.label}
-                        {m.info && <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Questions (20) × 100">ⓘ</span>}
+                        {m.info && <span className="kpi-formula-icon" data-tooltip={t('game.lotteryAccuracyTooltip')}>ⓘ</span>}
                       </label>
                       <div className={`nr-metric-val ${m.cls}`}>{m.val}</div>
                       {m.sub && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{m.sub}</div>}
@@ -1004,8 +990,8 @@ const NumberRecallGame = () => {
                     <tr>
                       <th>{t('game.sNo')}</th>
                       <th>{t('game.qNumHeader')}</th>
-                      <th>{t('game.scoreTable.correctAnswer')}</th>
-                      <th>{t('game.yourResponse')}</th>
+                      <th>{t('game.question')}</th>
+                      <th>{t('game.responseLabel')}</th>
                       <th>{t('game.statusHeader')}</th>
                       <th>{t('game.scoreTable.score')}</th>
                       <th>{t('game.scoreTable.duration')}</th>

@@ -418,8 +418,13 @@
       "pronunciation": "Did the child make pronunciation errors?",
       "neededHelp": "Did the child need help reading?"
     },
-    "reply": "Reply",
-    "nextScreen": "Next Screen"
+    "reply": "Replay",
+    "nextScreen": "Next Screen",
+    "exposureLabel": "This is",
+    "practiceQuestionLabel": "Practice Question",
+    "submitResponse": "Submit",
+    "notQuiteRight": "❌ Not quite right.",
+    "lotteryAccuracyTooltip": "Correct Answers ÷ Total Questions (20) × 100"
   },
   "modal": {
     "disclaimer": "This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.",

@@ -200,10 +200,108 @@ const GlobalHeaderConfigPanel = () => {
     );
 };
 
+// ── Sub-section: Response Completion Requirement (navigation-only — never affects scoring) ──
+const RESPONSE_MATCHING_OPTIONS = [
+    {
+        value: 'exact',
+        label: 'Complete Response Required (Default)',
+        desc: 'The question button only becomes active once the response length matches the question length. Current behaviour.',
+    },
+    {
+        value: 'partial',
+        label: 'Partial Response Allowed',
+        desc: 'The question button becomes active as soon as at least one response item is entered, so the user can move on without completing every item. This only controls when the user may proceed — correctness is always judged by a full exact match, regardless of this setting.',
+    },
+];
+
+const ResponseMatchingPanel = () => {
+    const [config, setConfig] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get('/admin/response-matching-config');
+            setConfig(res.data);
+        } catch (error) {
+            console.error('Failed to load response matching configuration:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const selectMode = async (mode) => {
+        if (config?.responseMatchingMode === mode) return;
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/response-matching-config', { responseMatchingMode: mode });
+            setConfig(res.data.config);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+            console.error('Failed to update response matching configuration:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading || !config) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
+    }
+
+    return (
+        <div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                Controls only when the question button becomes active to proceed, across memory-based tests
+                (e.g. Lottery Ka Ticket). It never changes how a response is scored — correctness always
+                requires a full exact match (same items, same order, same count). This is a global,
+                framework-level setting — any current or future game built against it follows the same rule
+                without code changes.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '640px' }}>
+                {RESPONSE_MATCHING_OPTIONS.map((opt) => {
+                    const active = config.responseMatchingMode === opt.value;
+                    return (
+                        <label
+                            key={opt.value}
+                            style={{
+                                display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '14px 16px',
+                                border: `1.5px solid ${active ? '#4f46e5' : '#e5e7eb'}`,
+                                background: active ? '#eef2ff' : '#fff',
+                                borderRadius: '10px', cursor: saving ? 'not-allowed' : 'pointer',
+                            }}
+                        >
+                            <input
+                                type="radio"
+                                name="responseMatchingMode"
+                                checked={active}
+                                disabled={saving}
+                                onChange={() => selectMode(opt.value)}
+                                style={{ marginTop: '3px' }}
+                            />
+                            <div>
+                                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem' }}>{opt.label}</div>
+                                <div style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '2px' }}>{opt.desc}</div>
+                            </div>
+                        </label>
+                    );
+                })}
+            </div>
+            {saved && <div style={{ marginTop: '12px', fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</div>}
+        </div>
+    );
+};
+
 // ── Main: Test Configuration (Test Visibility + Global Header Configuration) ────
 const TEST_CONFIG_SUBSECTIONS = [
     { key: 'visibility', label: 'Test Visibility',             icon: '🎮' },
     { key: 'header',     label: 'Global Header Configuration', icon: '🧾' },
+    { key: 'matching',   label: 'Response Completion Requirement', icon: '🎯' },
 ];
 
 const AdminTestConfigTab = () => {
@@ -228,7 +326,7 @@ const AdminTestConfigTab = () => {
                 ))}
             </div>
 
-            {active === 'visibility' ? <TestVisibilityPanel /> : <GlobalHeaderConfigPanel />}
+            {active === 'visibility' ? <TestVisibilityPanel /> : active === 'header' ? <GlobalHeaderConfigPanel /> : <ResponseMatchingPanel />}
         </div>
     );
 };

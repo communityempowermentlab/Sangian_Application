@@ -209,6 +209,13 @@ const AdminReports = () => {
                 qHeaders.push(`${colLabel} Moves`);
                 qHeaders.push(`${colLabel} Time(s)`);
             });
+        } else if (activeGame?.key === 'atlantis_bagiya') {
+            detail.columns.forEach((c) => {
+                const colLabel = c.toUpperCase();
+                qHeaders.push(colLabel);
+                qHeaders.push(`${colLabel} Time(s)`);
+                qHeaders.push(`${colLabel} Replays`);
+            });
         } else {
             const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
             if (isRover) {
@@ -217,23 +224,32 @@ const AdminReports = () => {
                     'Coins Budget (Session)', 'Coins Collected (Session)', 'Coin Efficiency (%)',
                     'Coins Earned (Actual)', 'Retake Count', 'Refresh Count',
                 );
-            }
-            detail.columns.filter(c => !/^tq\d+_t[12]$/.test(c)).forEach((c) => {
-                const colLabel = c.toUpperCase();
-                qHeaders.push(`${colLabel} Score`);
-                qHeaders.push(`${colLabel} Moves`);
-                qHeaders.push(`${colLabel} Time(s)`);
-                qHeaders.push(`${colLabel} Retake`);
-                qHeaders.push(`${colLabel} 🪙 Kept`);
-                if (isRover) {
+                detail.columns.filter(c => !/^tq\d+_t[12]$/.test(c)).forEach((c) => {
+                    const colLabel = c.toUpperCase();
+                    qHeaders.push(`${colLabel} Score`);
+                    qHeaders.push(`${colLabel} Moves`);
+                    qHeaders.push(`${colLabel} Time(s)`);
+                    qHeaders.push(`${colLabel} Retake`);
+                    qHeaders.push(`${colLabel} 🪙 Kept`);
                     qHeaders.push(`${colLabel} Replays`);
-                }
-            });
+                });
+            } else {
+                // Simple Score / Time(s) / Replays pattern — matches the datatable's fallback columns exactly.
+                detail.columns.forEach((c) => {
+                    const colLabel = c.toUpperCase();
+                    qHeaders.push(colLabel);
+                    qHeaders.push(`${colLabel} Time(s)`);
+                    if (activeGame?.key !== 'numeracy_number_skill') {
+                        qHeaders.push(`${colLabel} Replays`);
+                    }
+                });
+            }
         }
 
         const headers = [
-            'Session ID', 'Child ID', 'Child Name', 'Start Date', 'Start Time', 'End Date', 'End Time',
-            'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Moves', 'Total Time(s)',
+            'Session ID', 'Child ID', 'Child Name', 'Att. #', 'Start Date', 'Start Time', 'End Date', 'End Time',
+            'Duration', 'Screentime',
+            'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Time(s)',
             ...qHeaders,
             'Attempted Questions', 'Actual Game Time(s)', 'Total Session Time(s)', 'Paused Questions', 'Pause Reasons',
             ...assessmentLabels
@@ -241,14 +257,15 @@ const AdminReports = () => {
             
         const rows = sortedRows.map(r => {
             const rowArr = [
-                r.session_id, r.child_id, r.child_name,
+                r.session_id, r.child_id, r.child_name, `#${r.child_attempt_no || '1'}`,
                 fmtOnlyDate(r.start_time), fmtOnlyTime(r.start_time),
                 fmtOnlyDate(r.end_time), fmtOnlyTime(r.end_time),
+                r.actual_game_time != null ? fmtSecs(r.actual_game_time) : '—',
+                r.screentime != null ? fmtSecs(r.screentime) : '—',
                 r.status,
                 r.correct_count ?? 0,
                 r.total_questions ?? 0,
                 `${r.correct_count ?? 0} / ${r.total_questions ?? 0}`,
-                r.total_moves ?? '—',
                 r.actual_game_time ? Math.round(r.actual_game_time) : '—'
             ];
             
@@ -304,6 +321,12 @@ const AdminReports = () => {
                     rowArr.push(r.question_scores?.[`${c}_moves`] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
                 });
+            } else if (activeGame?.key === 'atlantis_bagiya') {
+                detail?.columns?.forEach(c => {
+                    rowArr.push(r.question_scores?.[c] ?? '');
+                    rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
+                    rowArr.push(r.question_scores?.[`${c}_replays`] ?? '');
+                });
             } else {
                 const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                 if (isRoverCSV) {
@@ -318,21 +341,28 @@ const AdminReports = () => {
                         totalBudget, totalCollected, `${efficiency}%`,
                         r.coins_collected ?? '', r.retake_count ?? '', r.refresh_count ?? '',
                     );
+                    cols.forEach(c => {
+                        const qs    = r.question_scores || {};
+                        const sc    = qs[c] ?? '';
+                        const moves = qs[`${c}_moves`] ?? '';
+                        const time  = qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '';
+                        const retake = qs[`${c}_retakes`] ?? '';
+                        const mv   = typeof moves === 'number' ? moves : (parseInt(moves) || 0);
+                        const scNum = typeof sc === 'number' ? sc : (parseInt(sc) || 0);
+                        const kept = scNum > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0;
+                        rowArr.push(sc, moves, time, retake, kept, qs[`${c}_replays`] ?? '');
+                    });
+                } else {
+                    // Simple Score / Time(s) / Replays pattern — matches the datatable's fallback columns exactly.
+                    (detail?.columns || []).forEach(c => {
+                        const qs = r.question_scores || {};
+                        rowArr.push(qs[c] ?? '');
+                        rowArr.push(qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');
+                        if (activeGame?.key !== 'numeracy_number_skill') {
+                            rowArr.push(qs[`${c}_replays`] ?? '');
+                        }
+                    });
                 }
-                (detail?.columns || []).filter(c => !/^tq\d+_t[12]$/.test(c)).forEach(c => {
-                    const qs    = r.question_scores || {};
-                    const sc    = qs[c] ?? '';
-                    const moves = qs[`${c}_moves`] ?? '';
-                    const time  = qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '';
-                    const retake = qs[`${c}_retakes`] ?? '';
-                    const mv   = typeof moves === 'number' ? moves : (parseInt(moves) || 0);
-                    const scNum = typeof sc === 'number' ? sc : (parseInt(sc) || 0);
-                    const kept = scNum > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0;
-                    rowArr.push(sc, moves, time, retake, kept);
-                    if (isRoverCSV) {
-                        rowArr.push(qs[`${c}_replays`] ?? '');
-                    }
-                });
             }
             
             rowArr.push(
@@ -468,8 +498,8 @@ const AdminReports = () => {
                         <table style={S.table}>
                             <thead>
                                 <tr>
-                                    <th style={S.th}>#</th>
-                                    <th style={S.th} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
+                                    <th style={{ ...S.th, position: 'sticky', left: 0, zIndex: 2, background: '#f1f5f9', minWidth: 40, width: 40, maxWidth: 40, borderRight: '1px solid #cbd5e1' }}>#</th>
+                                    <th style={{ ...S.th, position: 'sticky', left: 40, zIndex: 2, background: '#f1f5f9', minWidth: 100, borderRight: '1px solid #cbd5e1' }} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
                                     <th style={{ ...S.th, textAlign: 'center' }}>Att. #</th>
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Date <SortIcon field="start_time"/></th>
@@ -563,12 +593,13 @@ const AdminReports = () => {
                                         detail.columns.map((c, idx) => {
                                             const isAtlantis = activeGame?.key === 'atlantis_bagiya';
                                             const colLabel = c.toUpperCase();
+                                            const bg = idx % 2 === 0 ? '#e0f2fe' : '#f0fdf4';
                                             return (
                                                 <React.Fragment key={c}>
-                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>{colLabel}</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>TIME(S)</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>{colLabel}</th>
+                                                    <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>TIME(S)</th>
                                                     {activeGame?.key !== 'numeracy_number_skill' && (
-                                                        <th style={{ ...S.th, textAlign: 'center', minWidth: 52 }}>REPLAYS</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>REPLAYS</th>
                                                     )}
                                                 </React.Fragment>
                                             );
@@ -601,8 +632,8 @@ const AdminReports = () => {
                                     return (
                                         <React.Fragment key={row.session_id}>
                                             <tr style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                                            <td style={S.td}>{i + 1}</td>
-                                            <td style={{ ...S.td, fontWeight: 600 }}>{row.child_id}</td>
+                                            <td style={{ ...S.td, position: 'sticky', left: 0, zIndex: 1, background: i % 2 === 0 ? '#fff' : '#f8fafc', minWidth: 40, width: 40, maxWidth: 40, borderRight: '1px solid #e2e8f0' }}>{i + 1}</td>
+                                            <td style={{ ...S.td, fontWeight: 600, position: 'sticky', left: 40, zIndex: 1, background: i % 2 === 0 ? '#fff' : '#f8fafc', minWidth: 100, borderRight: '1px solid #e2e8f0' }}>{row.child_id}</td>
                                             <td style={S.td}>{row.child_name}</td>
                                             <td style={{ ...S.td, textAlign: 'center' }}>
                                                 <span style={{ 

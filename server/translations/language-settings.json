@@ -17,19 +17,19 @@
       "code": "marathi",
       "shortCode": "mr",
       "label": "Marathi",
-      "enabled": false
+      "enabled": true
     },
     {
       "code": "telugu",
       "shortCode": "te",
       "label": "Telugu",
-      "enabled": false
+      "enabled": true
     },
     {
       "code": "kannada",
       "shortCode": "kn",
       "label": "Kannada",
-      "enabled": false
+      "enabled": true
     }
   ]
 }

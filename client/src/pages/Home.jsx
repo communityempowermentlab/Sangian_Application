@@ -6,8 +6,18 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 import '../pages/ReadingSkillGame.css'; // Re-use modal styles
 
+// Bagiya splash/icon art is localized per selected language.
+const BAGIYA_IMAGE_BY_LANG = {
+    en: '/assets/images/bagiya/bagiya_english.png',
+    hi: '/assets/images/bagiya/bagiya_hindi.jpg',
+    mr: '/assets/images/bagiya/bagiya_marathi.png',
+    te: '/assets/images/bagiya/bagiya_telugu.png',
+    kn: '/assets/images/bagiya/bagiya_kannada.png',
+};
+
 const Home = () => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const bagiyaImage = BAGIYA_IMAGE_BY_LANG[language] || '/assets/images/bagiya/bagiya.jpg';
 
     const testModules = [
         {
@@ -17,7 +27,7 @@ const Home = () => {
             subtitle: t('home.games.bagiya.sub'),
             desc: t('home.games.bagiya.desc'),
             startUrl: "/games/bagiya",
-            image: "/assets/images/bagiya/bagiya.jpg",
+            image: bagiyaImage,
             shortTitle: t('home.games.bagiya.title'),
             local: t('home.games.bagiya.local'),
             tag: t('home.games.bagiya.tag'),

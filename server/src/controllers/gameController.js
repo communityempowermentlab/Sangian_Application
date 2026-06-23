@@ -396,7 +396,6 @@ exports.getReportDetail = async (req, res) => {
                 allUniqueKeys.add(key);
             });
 
-
             // Global Metrics Calculation
             const allItems = (chorItems.length > 0) ? chorItems : scores;
             // For rover_mela/chalo_mela_chale: exclude TQ entries so Duration reflects only actual test question times
@@ -450,7 +449,7 @@ exports.getReportDetail = async (req, res) => {
                 retake_count:    parsedState?.retakeCount    ?? null,
                 refresh_count:   parsedState?.refreshCount   ?? null,
                 screentime:      parsedState?.screentime     ?? parsedState?.timerSeconds ?? null,
-                question_scores: questionScores,
+                question_scores: { ...questionScores, q1ExposureReplays: parsedState?.q1ExposureReplays ?? null },
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
                     q2_feeling:     row.q2_feeling      || null,
