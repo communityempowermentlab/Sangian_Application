@@ -1026,12 +1026,12 @@ const HerPherGame = () => {
 
               {/* Sample controls */}
               {qData.isSample && (
-                <div className="hp-game-controls" style={{ marginTop: 'auto' }}>
+                <div style={{ marginTop: 'auto', display: 'flex', width: '100%', position: 'relative', height: '60px' }}>
                   <button 
                     className="hp-btn hp-btn-secondary" 
                     onClick={handleSampleRetake}
                     disabled={!showControls}
-                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed' }}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', left: 0, bottom: 0 }}
                   >
                     Retake Sample
                   </button>
@@ -1039,7 +1039,7 @@ const HerPherGame = () => {
                     className={`hp-btn hp-btn-primary ${showControls ? 'hp-btn-highlight' : ''}`} 
                     onClick={handleSampleNext}
                     disabled={!showControls}
-                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed' }}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', right: 0, bottom: 0 }}
                   >
                     Start Game
                   </button>
