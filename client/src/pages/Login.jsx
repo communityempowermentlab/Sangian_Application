@@ -35,7 +35,8 @@ const Login = () => {
                 setErrorMsg(t('login.errNotFound'));
                 axios.post(API_URL + '/sessions/fail', { attemptedChildId: childId.trim() }).catch(() => {});
             } else {
-                setErrorMsg(t('login.errServer'));
+                const diag = `[${err.code || 'NO_CODE'}] ${err.message || 'unknown'} URL=${API_URL}`;
+                setErrorMsg(`${t('login.errServer')} - ${diag}`);
             }
         } finally {
             setIsSearching(false);

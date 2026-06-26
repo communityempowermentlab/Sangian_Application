@@ -4,6 +4,9 @@ const config: CapacitorConfig = {
   appId: 'org.celworld.sangian',
   appName: 'Sangian',
   webDir: 'build',
+  server: {
+    iosScheme: 'https',
+  },
   ios: {
     scrollEnabled: true,
   },
@@ -11,7 +14,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: true,
-      backgroundColor: "#ffffffff",
+      backgroundColor: "#a8dcf3",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: true,
