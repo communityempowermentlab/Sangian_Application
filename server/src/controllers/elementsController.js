@@ -29,7 +29,16 @@ const getElements = async (req, res) => {
 
 const getAllElementsPublic = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM test_elements WHERE is_active = 1');
+        const { test_id } = req.query;
+        let query = 'SELECT * FROM test_elements WHERE is_active = 1';
+        let params = [];
+        
+        if (test_id) {
+            query += ' AND test_id = ?';
+            params.push(test_id);
+        }
+        
+        const [rows] = await pool.query(query, params);
         res.json({ success: true, elements: rows });
     } catch (error) {
         console.error('getAllElementsPublic error:', error);
