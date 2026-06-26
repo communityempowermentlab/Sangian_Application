@@ -120,22 +120,31 @@ function getPositionsForCount(count) {
   return positions;
 }
 
-// ─── Game Data ──────────────────────────────────────────────────────────────────
-// Built once at module load so image selections are fixed per page load.
-// Question numbering: 1=Sample, 2–9=Scored Questions 1–8
-function buildGameData() {
+// Game Data is now built dynamically from API elements
+function buildGameDataFromElements(elements) {
   const r = (pool, n) => randomPick(pool, n);
-  const range = (n) => Array.from({ length: n }, (_, i) => i + 1);
+  
+  // Group available images by category (item0 to item8)
+  const categoryImages = {};
+  for (let i = 0; i <= 8; i++) {
+    categoryImages[`item${i}`] = elements
+        .filter(el => el.asset_type === `item${i}`)
+        .map(el => el.id.toString()); // We use element.id to reference them instead of range(14)
+  }
+
+  // Fallback to empty array if no images exist
+  const getPool = (cat) => categoryImages[cat] && categoryImages[cat].length > 0 ? categoryImages[cat] : [];
+
   return {
-    1: { questionOrder: 1, isSample: true,  imageCount: 6,  category: 'tools',     imageIds: r(range(14), 6)  },
-    2: { questionOrder: 2, isSample: false, imageCount: 7,  category: 'birds',     imageIds: r(range(10), 7)  },
-    3: { questionOrder: 3, isSample: false, imageCount: 8,  category: 'vegetables',imageIds: r(range(10), 8)  },
-    4: { questionOrder: 4, isSample: false, imageCount: 9,  category: 'sports',    imageIds: r(range(14), 9)  },
-    5: { questionOrder: 5, isSample: false, imageCount: 10, category: 'flowers',   imageIds: range(10)        },
-    6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'insects',   imageIds: range(11)        },
-    7: { questionOrder: 7, isSample: false, imageCount: 12, category: 'household', imageIds: r(range(14), 12) },
-    8: { questionOrder: 8, isSample: false, imageCount: 13, category: 'animals',   imageIds: r(range(14), 13) },
-    9: { questionOrder: 9, isSample: false, imageCount: 13, category: 'transport', imageIds: r(range(14), 13) },
+    1: { questionOrder: 1, isSample: true,  imageCount: 6,  category: 'item0', imageIds: r(getPool('item0'), 6) },
+    2: { questionOrder: 2, isSample: false, imageCount: 7,  category: 'item1', imageIds: r(getPool('item1'), 7) },
+    3: { questionOrder: 3, isSample: false, imageCount: 8,  category: 'item2', imageIds: r(getPool('item2'), 8) },
+    4: { questionOrder: 4, isSample: false, imageCount: 9,  category: 'item3', imageIds: r(getPool('item3'), 9) },
+    5: { questionOrder: 5, isSample: false, imageCount: 10, category: 'item4', imageIds: r(getPool('item4'), 10) },
+    6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'item5', imageIds: r(getPool('item5'), 11) },
+    7: { questionOrder: 7, isSample: false, imageCount: 12, category: 'item6', imageIds: r(getPool('item6'), 12) },
+    8: { questionOrder: 8, isSample: false, imageCount: 13, category: 'item7', imageIds: r(getPool('item7'), 13) },
+    9: { questionOrder: 9, isSample: false, imageCount: 13, category: 'item8', imageIds: r(getPool('item8'), 13) },
   };
 }
 
@@ -171,7 +180,9 @@ const HerPherGame = () => {
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
-  const [GAME_DATA, setGAME_DATA] = useState(() => buildGameData()); // stable per session
+  const [GAME_DATA, setGAME_DATA] = useState(null);
+  const [allElements, setAllElements] = useState([]);
+  const [elementsLoading, setElementsLoading] = useState(true);
 
   // Child data
   const [childData, setChildData]         = useState(null);
@@ -256,7 +267,23 @@ const HerPherGame = () => {
     setChildData(child);
     checkResume(child.child_id);
     fetchActivity(child.child_id);
+    fetchElements();
   }, [navigate]); // eslint-disable-line
+
+  const fetchElements = async () => {
+    try {
+      setElementsLoading(true);
+      const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher`);
+      if (res.data.success) {
+        setAllElements(res.data.elements);
+        setGAME_DATA(buildGameDataFromElements(res.data.elements));
+      }
+    } catch (e) {
+      console.error('Elements fetch error', e);
+    } finally {
+      setElementsLoading(false);
+    }
+  };
 
   const fetchActivity = async (cid) => {
     try {
@@ -322,7 +349,7 @@ const HerPherGame = () => {
 
   // ──── Build image layout when question/attempt changes ───────────────────────
   useEffect(() => {
-    if (screen !== 'game') return;
+    if (screen !== 'game' || !GAME_DATA) return;
     
     // Prevent reset if we are resuming an exact paused state
     if (isResumingRef.current) {
@@ -334,6 +361,7 @@ const HerPherGame = () => {
     }
 
     const qData = GAME_DATA[currentQuestion];
+    if (!qData || !qData.imageCount) return;
     const positions = shuffle(getPositionsForCount(qData.imageCount));
     const layout = qData.imageIds.map((imageId, i) => ({
       imageId,
@@ -507,7 +535,8 @@ const HerPherGame = () => {
     new Audio(`${AUDIO_PATH}/touch.wav`).play().catch(() => {});
 
     // Update layout class for clicked button — done via state
-    const qData = GAME_DATA[currentQuestion];
+    const qData = GAME_DATA ? GAME_DATA[currentQuestion] : null;
+    if (!qData) return;
 
     if (newSelected.length >= qData.imageCount) {
       // All clicked — complete question
@@ -628,6 +657,7 @@ const HerPherGame = () => {
     setQuestionTime(0);
     setShowControls(false);
     setButtonsDisabled(false);
+    if (!GAME_DATA) return;
     const qData = GAME_DATA[1];
     const positions = shuffle(getPositionsForCount(qData.imageCount));
     setImageLayout(qData.imageIds.map((imageId, i) => ({
@@ -856,12 +886,12 @@ const HerPherGame = () => {
           </div>
 
           <div className="hp-topbar-center">
-            {screen === 'game' && qData && (
+            {screen === 'game' && GAME_DATA && GAME_DATA[currentQuestion] && (
               <>
                 <div className="hp-topbar-screen-title">
                   {questionLabel}
                   <div className="hp-chips" style={{ marginTop: 0 }}>
-                    {currentAttempt === 1 && !qData.isSample && (
+                    {currentAttempt === 1 && !GAME_DATA[currentQuestion].isSample && (
                       <span className="hp-chip" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
                         Practice
                       </span>
@@ -885,9 +915,9 @@ const HerPherGame = () => {
             </div>
             )}
 
-            {screen === 'game' && qData && (
+            {screen === 'game' && GAME_DATA && GAME_DATA[currentQuestion] && (
               <div className="hp-stat-pill">
-                <span className="hp-stat-value">{clickedCount}/{qData.imageCount}</span>
+                <span className="hp-stat-value">{clickedCount}/{GAME_DATA[currentQuestion].imageCount}</span>
               </div>
             )}
 
@@ -948,7 +978,9 @@ const HerPherGame = () => {
           )}
 
           {/* ══════════════ GAME ══════════════ */}
-          {screen === 'game' && qData && (
+          {screen === 'game' && GAME_DATA && GAME_DATA[currentQuestion] && (() => {
+            const qData = GAME_DATA[currentQuestion];
+            return (
             <div className="hp-screen">
 
               {/* Image Grid */}
@@ -971,7 +1003,17 @@ const HerPherGame = () => {
                       onClick={() => handleImageClick(imageId)}
                     >
                       <img
-                        src={`${IMAGE_PATH}/${qData.category}/${imageId}.png`}
+                        src={
+                          (() => {
+                            const element = allElements.find(el => el.id.toString() === imageId.toString());
+                            if (element) {
+                                const SERVER_BASE = API_URL.replace(/\/api$/, '');
+                                if (element.file_path.startsWith('/assets')) return element.file_path;
+                                return `${SERVER_BASE}${element.file_path}`;
+                            }
+                            return '';
+                          })()
+                        }
                         alt={`${qData.category} ${imageId}`}
                         onError={(e) => {
                           e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e5e7eb' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%236b7280' font-size='24'%3E${imageId}%3C/text%3E%3C/svg%3E`;
@@ -1004,7 +1046,8 @@ const HerPherGame = () => {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ══════════════ SCORE (End of Game) ══════════════ */}
           {screen === 'score' && (

@@ -53,14 +53,22 @@ const uploadElement = async (req, res) => {
 
         const file_name = req.file.originalname;
         const file_path = `/uploads/elements/${req.file.filename}`;
+        
+        const { replace_id } = req.body;
 
-        // Insert or Update logic:
-        // We will check if it already exists to overwrite or we can rely on UNIQUE KEY if we use INSERT ... ON DUPLICATE KEY UPDATE
+        // If it is a splash screen (test_id !== 'working_memory_herpher'), we act as if it replaces everything for that language
+        if (test_id !== 'working_memory_herpher') {
+            await pool.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
+        } else if (replace_id) {
+            // For Her Pher, if we are specifically replacing one image
+            await pool.query('DELETE FROM test_elements WHERE id = ?', [replace_id]);
+        }
+
+        // Insert logic
         const insertQuery = `
             INSERT INTO test_elements (test_id, asset_type, language, file_name, file_path)
             VALUES (?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
-                file_name = VALUES(file_name),
                 file_path = VALUES(file_path),
                 updated_at = CURRENT_TIMESTAMP
         `;

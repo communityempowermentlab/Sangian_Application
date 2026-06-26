@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import './AdminElements.css';
+import HerPherElements from '../components/HerPherElements';
 
 const LANGUAGES = [
     { code: 'en', name: 'English' },
@@ -128,14 +129,22 @@ export default function AdminElements() {
 
             <div className="elements-content">
                 <h2>Elements for {tests.find(t => t.key === activeTest)?.title || activeTest}</h2>
-                <div className="elements-section">
-                    <h3>Splash Screen Images</h3>
-                    <p className="elements-desc">Upload a splash screen image for each language. These will be displayed on the home cards.</p>
+                
+                {activeTest === 'working_memory_herpher' ? (
+                    <HerPherElements 
+                        elements={elements} 
+                        loadElements={loadElements} 
+                        showToast={showToast} 
+                    />
+                ) : (
+                    <div className="elements-section">
+                        <h3>Splash Screen Images</h3>
+                        <p className="elements-desc">Upload a splash screen image for each language. These will be displayed on the home cards.</p>
 
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        <div className="elements-grid">
+                        {loading ? (
+                            <p>Loading...</p>
+                        ) : (
+                            <div className="elements-grid">
                             {LANGUAGES.map(lang => {
                                 const element = getElementForLang(lang.code);
                                 return (
@@ -176,7 +185,8 @@ export default function AdminElements() {
                             })}
                         </div>
                     )}
-                </div>
+                    </div>
+                )}
             </div>
 
             {toast && (

@@ -800,9 +800,17 @@ const initDb = async () => {
         file_path   VARCHAR(500) NOT NULL,
         created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
         updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_test_asset_lang (test_id, asset_type, language)
+        UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)
       )
     `);
+
+    // Ensure we run the migration for existing tables safely
+    try {
+      await connection.query('ALTER TABLE test_elements DROP INDEX uq_test_asset_lang');
+      await connection.query('ALTER TABLE test_elements ADD UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)');
+    } catch (e) {
+      // Ignore if index doesn't exist or already updated
+    }
 
     // Seed existing splash screens for all games to preserve backward compatibility
     const allSeeds = [
