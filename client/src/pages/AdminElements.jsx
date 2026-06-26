@@ -94,19 +94,7 @@ export default function AdminElements() {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this splash screen?')) return;
-        try {
-            const res = await axiosAdmin.delete(`/admin/elements/${id}`);
-            if (res.data.success) {
-                showToast('Image deleted successfully');
-                loadElements(activeTest);
-            }
-        } catch (error) {
-            console.error('Delete failed:', error);
-            showToast('Failed to delete image', 'error');
-        }
-    };
+
 
     const getElementForLang = (langCode) => {
         return elements.find(el => el.language === langCode);
@@ -177,14 +165,6 @@ export default function AdminElements() {
                                             >
                                                 {uploading === lang.code ? 'Uploading...' : (element ? 'Replace' : 'Upload')}
                                             </button>
-                                            {element && (
-                                                <button 
-                                                    className="admin-btn admin-btn-danger" 
-                                                    onClick={() => handleDelete(element.id)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
                                         </div>
                                         {element && (
                                             <div className="element-meta">
