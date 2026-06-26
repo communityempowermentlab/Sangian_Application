@@ -67,7 +67,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
             const resizedFile = await resizeImage(file, 300, 300);
 
             const formData = new FormData();
-            formData.append('element', resizedFile);
+            formData.append('file', resizedFile);
             formData.append('test_id', 'working_memory_herpher');
             formData.append('asset_type', category);
             formData.append('language', 'all'); // Her Pher images are language independent
@@ -94,17 +94,16 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this image?')) return;
+    const handleToggleStatus = async (id) => {
         try {
-            const res = await axiosAdmin.delete(`/admin/elements/${id}`);
+            const res = await axiosAdmin.put(`/admin/elements/${id}/status`);
             if (res.data.success) {
-                showToast('Image deleted successfully');
+                showToast('Status updated successfully');
                 loadElements('working_memory_herpher');
             }
         } catch (error) {
-            console.error('Delete failed:', error);
-            showToast('Failed to delete image', 'error');
+            console.error('Toggle failed:', error);
+            showToast('Failed to update status', 'error');
         }
     };
 
@@ -146,7 +145,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
 
                         <div className="elements-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
                             {categoryElements.map(el => (
-                                <div key={el.id} className="element-card" style={{ padding: '0.5rem' }}>
+                                <div key={el.id} className="element-card" style={{ padding: '0.5rem', opacity: el.is_active ? 1 : 0.5 }}>
                                     <div className="element-preview" style={{ height: '120px', marginBottom: '0.5rem' }}>
                                         <img 
                                             src={getImageUrl(el)} 
@@ -154,8 +153,11 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                         />
                                     </div>
-                                    <div className="element-meta" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', wordBreak: 'break-all' }}>
-                                        {el.file_name}
+                                    <div className="element-meta" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', wordBreak: 'break-all', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{el.file_name}</span>
+                                        <span style={{ color: el.is_active ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
+                                            {el.is_active ? 'Active' : 'Inactive'}
+                                        </span>
                                     </div>
                                     <div className="element-actions" style={{ flexDirection: 'column', gap: '0.5rem' }}>
                                         <input 
@@ -174,11 +176,11 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                             Replace
                                         </button>
                                         <button 
-                                            className="admin-btn admin-btn-danger" 
+                                            className={`admin-btn ${el.is_active ? 'admin-btn-danger' : 'admin-btn-primary'}`} 
                                             style={{ width: '100%', padding: '0.25rem' }}
-                                            onClick={() => handleDelete(el.id)}
+                                            onClick={() => handleToggleStatus(el.id)}
                                         >
-                                            Delete
+                                            {el.is_active ? 'Deactivate' : 'Activate'}
                                         </button>
                                     </div>
                                 </div>

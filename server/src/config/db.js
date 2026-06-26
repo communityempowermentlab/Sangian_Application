@@ -798,6 +798,7 @@ const initDb = async () => {
         language    VARCHAR(10)  NOT NULL,
         file_name   VARCHAR(255) NOT NULL,
         file_path   VARCHAR(500) NOT NULL,
+        is_active   TINYINT(1)   DEFAULT 1,
         created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
         updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)
@@ -808,9 +809,11 @@ const initDb = async () => {
     try {
       await connection.query('ALTER TABLE test_elements DROP INDEX uq_test_asset_lang');
       await connection.query('ALTER TABLE test_elements ADD UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)');
-    } catch (e) {
-      // Ignore if index doesn't exist or already updated
-    }
+    } catch (e) {}
+    
+    try {
+      await connection.query('ALTER TABLE test_elements ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER file_path');
+    } catch (e) {}
 
     // Seed existing splash screens for all games to preserve backward compatibility
     const allSeeds = [

@@ -29,7 +29,7 @@ const getElements = async (req, res) => {
 
 const getAllElementsPublic = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM test_elements');
+        const [rows] = await pool.query('SELECT * FROM test_elements WHERE is_active = 1');
         res.json({ success: true, elements: rows });
     } catch (error) {
         console.error('getAllElementsPublic error:', error);
@@ -111,9 +111,28 @@ const deleteElement = async (req, res) => {
     }
 };
 
+const toggleElementStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await pool.query('SELECT is_active FROM test_elements WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Element not found' });
+        }
+        
+        const newStatus = rows[0].is_active === 1 ? 0 : 1;
+        await pool.query('UPDATE test_elements SET is_active = ? WHERE id = ?', [newStatus, id]);
+        
+        res.json({ success: true, message: 'Status updated successfully', is_active: newStatus });
+    } catch (error) {
+        console.error('toggleElementStatus error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update element status' });
+    }
+};
+
 module.exports = {
     getElements,
     getAllElementsPublic,
     uploadElement,
-    deleteElement
+    deleteElement,
+    toggleElementStatus
 };
