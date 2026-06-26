@@ -112,7 +112,7 @@ export default function AdminElements() {
 
 
     const getElementForLang = (langCode) => {
-        return elements.find(el => el.language === langCode && el.asset_type === 'splash_screen');
+        return elements.find(el => el.language === langCode);
     };
 
     const SERVER_BASE = API_URL.replace(/\/api$/, '');

@@ -1031,7 +1031,7 @@ const HerPherGame = () => {
                     className="hp-btn hp-btn-secondary" 
                     onClick={handleSampleRetake}
                     disabled={!showControls}
-                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', left: -40, bottom: -40 }}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', left: -40, bottom: 0 }}
                   >
                     Retake Sample
                   </button>
@@ -1039,7 +1039,7 @@ const HerPherGame = () => {
                     className={`hp-btn hp-btn-primary ${showControls ? 'hp-btn-highlight' : ''}`} 
                     onClick={handleSampleNext}
                     disabled={!showControls}
-                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', right: -40, bottom: -40 }}
+                    style={{ opacity: showControls ? 1 : 0.5, cursor: showControls ? 'pointer' : 'not-allowed', position: 'absolute', right: -40, bottom: 0 }}
                   >
                     Start Game
                   </button>
