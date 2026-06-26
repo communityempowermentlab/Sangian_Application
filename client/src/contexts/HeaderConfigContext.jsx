@@ -4,7 +4,7 @@ import { API_URL } from '../services/api';
 
 // Defaults shown until the fetch resolves — game headers should never appear empty
 // just because the config request is still in flight.
-const DEFAULTS = { showChildId: true, showTimer: true, showScore: true };
+const DEFAULTS = { showLogo: true, showGameIcon: true, showGameName: true, showChildId: true, showTimer: true, showScore: true };
 
 const HeaderConfigContext = createContext(DEFAULTS);
 

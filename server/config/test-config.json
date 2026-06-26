@@ -1,11 +1,38 @@
 {
-  "atlantis_bagiya": true,
-  "number_recall_lottery": true,
-  "rover_mela": true,
-  "auditory_dhyan": true,
-  "working_memory_herpher": true,
-  "numeracy_number_skill": true,
-  "literacy_reading_skill": true,
-  "cognitive_flex_chor": true,
-  "triangle_rachna": true
+  "atlantis_bagiya": {
+    "enabled": true,
+    "display_order": 2
+  },
+  "number_recall_lottery": {
+    "enabled": true,
+    "display_order": 1
+  },
+  "rover_mela": {
+    "enabled": true,
+    "display_order": 4
+  },
+  "auditory_dhyan": {
+    "enabled": true,
+    "display_order": 7
+  },
+  "working_memory_herpher": {
+    "enabled": true,
+    "display_order": 3
+  },
+  "numeracy_number_skill": {
+    "enabled": true,
+    "display_order": 8
+  },
+  "literacy_reading_skill": {
+    "enabled": true,
+    "display_order": 9
+  },
+  "cognitive_flex_chor": {
+    "enabled": true,
+    "display_order": 6
+  },
+  "triangle_rachna": {
+    "enabled": true,
+    "display_order": 5
+  }
 }

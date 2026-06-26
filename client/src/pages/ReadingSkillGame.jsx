@@ -68,7 +68,7 @@ const QUESTIONS = [
 
 const ReadingSkillGame = () => {
   const { t } = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -576,10 +576,10 @@ const ReadingSkillGame = () => {
     <div className="rs-app">
       <header className="rs-topbar">
         <div className="rs-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />
-          <div className="rs-divider"></div>
-          <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-test-logo" />
-          <span className="rs-test-title">{t('home.games.literacy.title')}</span>
+          {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />}
+          {showLogo && (showGameIcon || showGameName) && <div className="rs-divider"></div>}
+          {showGameIcon && <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-test-logo" />}
+          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}</span>}
         </div>
         <div className="rs-topbar-center">
           {screen === 'game' && currentQuestion && (

@@ -789,6 +789,66 @@ const initDb = async () => {
       [process.env.ADMIN_EMAIL || null]
     );
 
+    // Create test_elements table for managing static assets (splash screens, etc.)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS test_elements (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        test_id     VARCHAR(100) NOT NULL,
+        asset_type  VARCHAR(50)  NOT NULL,
+        language    VARCHAR(10)  NOT NULL,
+        file_name   VARCHAR(255) NOT NULL,
+        file_path   VARCHAR(500) NOT NULL,
+        created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_test_asset_lang (test_id, asset_type, language)
+      )
+    `);
+
+    // Seed existing splash screens for all games to preserve backward compatibility
+    const allSeeds = [
+      {
+        test_id: 'atlantis_bagiya',
+        seeds: [
+          { lang: 'en', path: '/assets/images/bagiya/bagiya_english.png', name: 'bagiya_english.png' },
+          { lang: 'hi', path: '/assets/images/bagiya/bagiya_hindi.jpg', name: 'bagiya_hindi.jpg' },
+          { lang: 'mr', path: '/assets/images/bagiya/bagiya_marathi.png', name: 'bagiya_marathi.png' },
+          { lang: 'te', path: '/assets/images/bagiya/bagiya_telugu.png', name: 'bagiya_telugu.png' },
+          { lang: 'kn', path: '/assets/images/bagiya/bagiya_kannada.png', name: 'bagiya_kannada.png' },
+        ]
+      }
+    ];
+
+    const genericDefaults = {
+      'number_recall_lottery': { path: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
+      'rover_mela': { path: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg', name: 'chalo_mela_chale.jpg' },
+      'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
+      'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },
+      'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
+      'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
+      'cognitive_flex_chor': { path: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg', name: 'chor_machaye_shor.jpg' },
+      'triangle_rachna': { path: '/assets/images/rachna/rachna.jpg', name: 'rachna.jpg' }
+    };
+
+    const languages = ['en', 'hi', 'mr', 'te', 'kn'];
+
+    for (const [test_id, asset] of Object.entries(genericDefaults)) {
+      const testSeeds = languages.map(lang => ({
+        lang,
+        path: asset.path,
+        name: asset.name
+      }));
+      allSeeds.push({ test_id, seeds: testSeeds });
+    }
+
+    for (const test of allSeeds) {
+      for (const seed of test.seeds) {
+        await connection.query(
+          'INSERT IGNORE INTO test_elements (test_id, asset_type, language, file_name, file_path) VALUES (?, ?, ?, ?, ?)',
+          [test.test_id, 'splash_screen', seed.lang, seed.name, seed.path]
+        );
+      }
+    }
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {

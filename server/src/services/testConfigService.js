@@ -27,21 +27,56 @@ const writeConfig = (config) => {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n');
 };
 
-// Games not yet present in the config file default to enabled (true) — this is what
-// makes newly-added games show up automatically without an admin having to opt them in.
 const getList = () => {
     const stored = readConfig();
-    return GAMES_REGISTRY.map((game) => ({
-        ...game,
-        enabled: stored[game.key] !== undefined ? Boolean(stored[game.key]) : true,
-    }));
+    const list = GAMES_REGISTRY.map((game) => {
+        let enabled = true;
+        let display_order = 999;
+        const val = stored[game.key];
+        
+        if (val !== undefined) {
+            if (typeof val === 'boolean') {
+                enabled = val;
+            } else if (typeof val === 'object') {
+                enabled = val.enabled !== undefined ? val.enabled : true;
+                display_order = val.display_order !== undefined ? val.display_order : 999;
+            }
+        }
+        
+        return {
+            ...game,
+            enabled,
+            display_order
+        };
+    });
+
+    list.sort((a, b) => {
+        if (a.display_order !== b.display_order) return a.display_order - b.display_order;
+        const aIndex = GAMES_REGISTRY.findIndex(g => g.key === a.key);
+        const bIndex = GAMES_REGISTRY.findIndex(g => g.key === b.key);
+        return aIndex - bIndex;
+    });
+
+    return list;
 };
 
 const getEnabledMap = () => {
     const stored = readConfig();
     const map = {};
     for (const game of GAMES_REGISTRY) {
-        map[game.key] = stored[game.key] !== undefined ? Boolean(stored[game.key]) : true;
+        let enabled = true;
+        let display_order = 999;
+        const val = stored[game.key];
+        
+        if (val !== undefined) {
+            if (typeof val === 'boolean') {
+                enabled = val;
+            } else if (typeof val === 'object') {
+                enabled = val.enabled !== undefined ? val.enabled : true;
+                display_order = val.display_order !== undefined ? val.display_order : 999;
+            }
+        }
+        map[game.key] = { enabled, display_order };
     }
     return map;
 };
@@ -51,8 +86,33 @@ const setEnabled = (key, enabled) => {
         throw new Error(`Unknown game key: ${key}`);
     }
     const stored = readConfig();
-    stored[key] = Boolean(enabled);
+    const val = stored[key];
+    let display_order = 999;
+    
+    if (val !== undefined) {
+        if (typeof val === 'object' && val.display_order !== undefined) {
+            display_order = val.display_order;
+        }
+    }
+    
+    stored[key] = { enabled: Boolean(enabled), display_order };
     writeConfig(stored);
 };
 
-module.exports = { GAMES_REGISTRY, getList, getEnabledMap, setEnabled };
+const setOrder = (orderedKeys) => {
+    const stored = readConfig();
+    orderedKeys.forEach((key, index) => {
+        let enabled = true;
+        if (stored[key] !== undefined) {
+            if (typeof stored[key] === 'boolean') {
+                enabled = stored[key];
+            } else if (typeof stored[key] === 'object') {
+                enabled = stored[key].enabled !== undefined ? stored[key].enabled : true;
+            }
+        }
+        stored[key] = { enabled, display_order: index + 1 };
+    });
+    writeConfig(stored);
+};
+
+module.exports = { GAMES_REGISTRY, getList, getEnabledMap, setEnabled, setOrder };

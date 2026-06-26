@@ -256,11 +256,11 @@ const getQuestionCounter = (key) => {
 };
 
 const getQuestionTitle = (key) => {
-  if (!QUESTIONS[key]) return '';
-  const type = QUESTIONS[key].type;
+  if (!key || !QUESTIONS[key]) return '';
+  const { type, isSample } = QUESTIONS[key];
   if (type === 'sample') return `Sample ${String.fromCharCode(65 + SAMPLE_QS.indexOf(key))}`;
-  if (type === 'teaching') return `Teaching Question ${TEACHING_QS.indexOf(key) + 1}`;
-  return `Question ${ORIGINAL_QS.indexOf(key) + 1}`;
+  if (type === 'teaching') return `Teaching Item ${TEACHING_QS.indexOf(key) + 1}`;
+  return `Item ${ORIGINAL_QS.indexOf(key) + 1}`;
 };
 
 const SHAPE_SIZE_PX = { large: 200, small: 99 };
@@ -347,7 +347,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
   const { t, language } = useLanguage();
-  const { showChildId, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showScore } = useHeaderConfig();
   const navigate = useNavigate();
 
   const [childData, setChildData]           = useState(null);
@@ -1492,14 +1492,14 @@ const TriangleRachnaGame = () => {
         {/* Topbar */}
         <header className="rg-topbar" style={{ position: 'relative' }}>
           <div className="rg-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />
-            <div className="rg-divider"></div>
-            <img src="/assets/images/rachna/rachna.jpg" alt="Rachna" className="rg-test-logo" />
-            <span className="rg-test-title">{t('home.games.rachna.title')}</span>
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rg-brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="rg-divider"></div>}
+            {showGameIcon && <img src="/assets/images/rachna/rachna.jpg" alt="Rachna" className="rg-test-logo" />}
+            {showGameName && <span className="rg-test-title">{t('home.games.rachna.title')}</span>}
           </div>
 
           {screen === 'game' && currentKey && (
-            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontWeight: '800', fontSize: '1.25rem', color: '#1e293b' }}>
+            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontWeight: '800', fontSize: '1.5rem', color: '#1e293b' }}>
               {getQuestionTitle(currentKey)}
             </div>
           )}

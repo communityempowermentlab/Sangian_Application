@@ -24,6 +24,7 @@ import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import AdminSettings from './pages/AdminSettings';
+import AdminElements from './pages/AdminElements';
 import AdminMultilingual from './pages/AdminMultilingual';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
@@ -203,6 +204,7 @@ function App() {
                                 <Route path="meta"                   element={<AdminMeta />} />
                                 <Route path="help-support"           element={<AdminHelpSupport />} />
                                 <Route path="settings"               element={<AdminSettings />} />
+                                <Route path="elements"               element={<AdminElements />} />
                                 <Route path="multilingual"           element={<AdminMultilingual />} />
                             </Route>
                         </Route>

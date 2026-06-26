@@ -6,6 +6,7 @@ const adminAuth = require('../middleware/adminAuth');
 
 // Admin routes (JWT required)
 adminRouter.get('/', adminAuth, testConfigController.getList);
+adminRouter.put('/order', adminAuth, testConfigController.updateOrder);
 adminRouter.put('/:key', adminAuth, testConfigController.updateStatus);
 
 // Public routes (no auth) — consumed by the front-end to filter visible games

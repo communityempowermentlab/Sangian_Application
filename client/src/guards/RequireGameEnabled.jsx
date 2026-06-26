@@ -29,7 +29,7 @@ const RequireGameEnabled = () => {
     useEffect(() => {
         if (!gameKey) { setStatus('allowed'); return; }
         axios.get(`${API_URL}/public/test-config`)
-            .then(({ data }) => setStatus(data[gameKey] === false ? 'blocked' : 'allowed'))
+            .then(({ data }) => setStatus(data[gameKey]?.enabled === false ? 'blocked' : 'allowed'))
             .catch(() => setStatus('allowed')); // fail open rather than locking everyone out on a network blip
     }, [gameKey]);
 

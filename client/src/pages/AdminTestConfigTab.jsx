@@ -34,6 +34,10 @@ const TestVisibilityPanel = () => {
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState(null);
     const [savedKey, setSavedKey] = useState(null);
+    const [orderSaved, setOrderSaved] = useState(false);
+
+    const dragItem = React.useRef(null);
+    const dragOverItem = React.useRef(null);
 
     const load = async () => {
         setLoading(true);
@@ -64,21 +68,52 @@ const TestVisibilityPanel = () => {
         }
     };
 
+    const handleSort = async () => {
+        const _tests = [...tests];
+        const draggedItemContent = _tests.splice(dragItem.current, 1)[0];
+        _tests.splice(dragOverItem.current, 0, draggedItemContent);
+        
+        dragItem.current = null;
+        dragOverItem.current = null;
+        
+        setTests(_tests);
+        
+        try {
+            const orderedKeys = _tests.map(t => t.key);
+            await axiosAdmin.put('/admin/test-config/order', { orderedKeys });
+            setOrderSaved(true);
+            setTimeout(() => setOrderSaved(false), 2000);
+        } catch (error) {
+            console.error('Failed to update order:', error);
+        }
+    };
+
     if (loading) {
         return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
     }
 
     return (
         <div>
-            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '10px', maxWidth: '640px' }}>
                 Enable or disable any test/game on the front-end without a deployment. Disabled tests are hidden
                 from the dashboard and game list, and direct links to them redirect users back to the home page.
                 Newly added games appear here automatically, enabled by default.
             </div>
+            
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                <strong>Tip:</strong> You can drag and drop the rows to reorder how tests are displayed on the front-end.
+            </div>
+            
+            {orderSaved && (
+                <div style={{ marginBottom: '15px', color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>
+                    ✓ Test display sequence updated successfully.
+                </div>
+            )}
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                     <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 12px', width: '40px' }}></th>
                         <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Test Name</th>
                         <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Category</th>
                         <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Status</th>
@@ -86,10 +121,26 @@ const TestVisibilityPanel = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {tests.map((test) => {
+                    {tests.map((test, index) => {
                         const cat = CATEGORY_COLORS[test.category] || { bg: '#f1f5f9', text: '#475569' };
                         return (
-                            <tr key={test.key} style={{ borderTop: '1px solid #f3f4f6' }}>
+                            <tr 
+                                key={test.key} 
+                                style={{ borderTop: '1px solid #f3f4f6', cursor: 'grab', background: '#fff' }}
+                                draggable
+                                onDragStart={(e) => {
+                                    dragItem.current = index;
+                                    e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragEnter={(e) => {
+                                    dragOverItem.current = index;
+                                }}
+                                onDragEnd={handleSort}
+                                onDragOver={(e) => e.preventDefault()}
+                            >
+                                <td style={{ padding: '10px 12px', color: '#9ca3af', cursor: 'grab', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>≡</span>
+                                </td>
                                 <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>{test.title}</td>
                                 <td style={{ padding: '10px 12px' }}>
                                     <span style={{ background: cat.bg, color: cat.text, padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700 }}>
@@ -108,7 +159,7 @@ const TestVisibilityPanel = () => {
                                 <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                         <ToggleSwitch checked={test.enabled} disabled={savingKey === test.key} onClick={() => toggle(test.key, test.enabled)} />
-                                        {savedKey === test.key && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</span>}
+                                        {savedKey === test.key && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
                                     </div>
                                 </td>
                             </tr>
@@ -122,9 +173,12 @@ const TestVisibilityPanel = () => {
 
 // ── Sub-section: Global Header Configuration (Child ID / Timer / Score) ─────────
 const HEADER_FIELDS = [
-    { key: 'showChildId', label: 'Display Child ID', example: 'Child ID: CH-1025' },
-    { key: 'showTimer',   label: 'Display Timer',    example: 'Time: 02:35' },
-    { key: 'showScore',   label: 'Display Score',    example: 'Score: 15' },
+    { key: 'showLogo',     label: 'Logo',             example: 'CEL, ICMR logos' },
+    { key: 'showGameIcon', label: 'Game Icon',        example: 'Game icon (e.g. Bagiya icon)' },
+    { key: 'showGameName', label: 'Game Name',        example: 'Bagiya' },
+    { key: 'showChildId',  label: 'Display Child ID', example: 'Child ID: CH-1025' },
+    { key: 'showTimer',    label: 'Display Timer',    example: 'Time: 02:35' },
+    { key: 'showScore',    label: 'Display Score',    example: 'Score: 15' },
 ];
 
 const GlobalHeaderConfigPanel = () => {

@@ -22,6 +22,7 @@ const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatching
 const contactRoutes = require('./src/routes/contactRoutes');
 const ticketRoutes      = require('./src/routes/ticketRoutes');
 const helpContentRoutes = require('./src/routes/helpContentRoutes');
+const { adminRouter: elementsAdminRoutes, publicRouter: elementsPublicRoutes } = require('./src/routes/elementsRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -121,6 +122,8 @@ app.use('/api/public/response-matching-config', responseMatchingPublicRoutes);
 app.use('/api/contact',         contactRoutes);
 app.use('/api/tickets',         ticketRoutes);
 app.use('/api/help-content',    helpContentRoutes);
+app.use('/api/admin/elements',  elementsAdminRoutes);
+app.use('/api/public/elements', elementsPublicRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

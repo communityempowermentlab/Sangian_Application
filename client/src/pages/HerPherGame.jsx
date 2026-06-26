@@ -168,7 +168,7 @@ function calcScore(questionNum, correctCount) {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const HerPherGame = () => {
   const { t }       = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [GAME_DATA, setGAME_DATA] = useState(() => buildGameData()); // stable per session
@@ -831,7 +831,7 @@ const HerPherGame = () => {
 
   const questionLabel = qData?.isSample
     ? t('game.sampleQuestionLabel')
-    : `Question ${currentQuestion - 1}`;
+    : `Item ${currentQuestion - 1}`;
   const attemptLabel  = `Attempt ${currentAttempt}/2`;
 
   // Score screen data
@@ -849,10 +849,10 @@ const HerPherGame = () => {
         {/* ── Top Bar ── */}
         <header className="hp-topbar">
           <div className="hp-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />
-            <div className="hp-divider"></div>
-            <img src="/assets/images/her_pher/her_pher.jpg" alt="Her Pher" className="hp-test-logo" />
-            <span className="hp-test-title">{t('home.games.herpher.title')}</span>
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="hp-divider"></div>}
+            {showGameIcon && <img src="/assets/images/her_pher/her_pher.jpg" alt="Her Pher" className="hp-test-logo" />}
+            {showGameName && <span className="hp-test-title">{t('home.games.herpher.title')}</span>}
           </div>
 
           <div className="hp-topbar-center">
@@ -1081,7 +1081,7 @@ const HerPherGame = () => {
                       <div className="hp-q-card-detailed" key={`${h.question}-${h.attempt}-${i}`}>
                         <div className="hp-q-detailed-header">
                           <div className="hp-q-detailed-title">
-                            <span className="hp-q-num">{isPractice ? 'Sample Round' : `Question ${h.question - 1}`}</span>
+                            <span className="hp-q-num">{isPractice ? 'Sample Round' : `Item ${h.question - 1}`}</span>
                             <span className="hp-q-cat" style={{ textTransform: 'capitalize' }}>{cat}</span>
                             {isPractice && <span className="hp-practice-badge">{t('game.practiceLabel')}</span>}
                           </div>

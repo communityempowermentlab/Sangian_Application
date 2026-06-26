@@ -96,7 +96,7 @@ const fmtDuration = (sec) => {
 
 const AuditoryAttentionGame = () => {
   const { t }    = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
 
@@ -846,17 +846,17 @@ const AuditoryAttentionGame = () => {
       <div className="aa-app">
         <header className="aa-topbar">
           <div className="aa-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />
-            <div className="aa-divider"></div>
-            <img src="/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg" alt="Dhyan Kahan Hai" className="aa-test-logo" />
-            <span className="aa-test-title">{t('home.games.dhyan.title')}</span>
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="aa-brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="aa-divider"></div>}
+            {showGameIcon && <img src="/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg" alt="Dhyan Kahan Hai" className="aa-test-logo" />}
+            {showGameName && <span className="aa-test-title">{t('home.games.dhyan.title')}</span>}
           </div>
           <div className="aa-topbar-center">
             {screen === 'sampleA' && (
               <div className="aa-topbar-screen-title">{t('game.sampleQuestionA')}</div>
             )}
             {screen && (screen.endsWith('-landing') || screen.endsWith('-game') || screen.endsWith('-q')) && (
-              <div className="aa-topbar-screen-title">Question {currentQIndex}</div>
+              <div className="aa-topbar-screen-title">Item {currentQIndex}</div>
             )}
           </div>
           <div className="aa-stats">

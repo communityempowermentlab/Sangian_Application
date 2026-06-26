@@ -43,4 +43,22 @@ const getPublicEnabledMap = (req, res) => {
     }
 };
 
-module.exports = { getList, updateStatus, getPublicEnabledMap };
+// @desc    Update the display order of tests
+// @route   PUT /api/admin/test-config/order
+// @body    { orderedKeys: [string] }
+// @access  Private (admin)
+const updateOrder = (req, res) => {
+    try {
+        const { orderedKeys } = req.body;
+        if (!Array.isArray(orderedKeys)) {
+            return res.status(400).json({ message: 'orderedKeys array is required.' });
+        }
+        testConfigService.setOrder(orderedKeys);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('updateOrder error:', error);
+        res.status(400).json({ message: error.message || 'Failed to update test order.' });
+    }
+};
+
+module.exports = { getList, updateStatus, getPublicEnabledMap, updateOrder };

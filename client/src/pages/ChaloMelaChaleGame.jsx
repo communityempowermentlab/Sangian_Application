@@ -308,7 +308,7 @@ const SB_PATH2_SEQ = ["R4C1","R3C1","R2C2","R2C3","R2C4"];
 
 const ChaloMelaChaleGame = () => {
   const { t }    = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const [childData, setChildData] = useState(null);
@@ -1727,10 +1727,10 @@ const ChaloMelaChaleGame = () => {
       <div className="app">
         <header className="topbar">
           <div className="brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />
-            <div className="divider"></div>
-            <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="mela-test-logo" />
-            <span className="test-title">{t('home.games.mela.title')}</span>
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="divider"></div>}
+            {showGameIcon && <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="mela-test-logo" />}
+            {showGameName && <span className="test-title">{t('home.games.mela.title')}</span>}
           </div>
           <div className="topbar-center" style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {screen === 'sampleA' && (

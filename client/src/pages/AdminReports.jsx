@@ -214,7 +214,8 @@ const AdminReports = () => {
                 const colLabel = c.toUpperCase();
                 qHeaders.push(colLabel);
                 qHeaders.push(`${colLabel} Time(s)`);
-                qHeaders.push(`${colLabel} Replays`);
+                qHeaders.push(`${colLabel} Item Replays`);
+                qHeaders.push(`${colLabel} Resp Replays`);
             });
         } else {
             const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
@@ -325,6 +326,7 @@ const AdminReports = () => {
                 detail?.columns?.forEach(c => {
                     rowArr.push(r.question_scores?.[c] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_time`] ? Math.round(r.question_scores[`${c}_time`]) : '');
+                    rowArr.push(r.question_scores?.[`${c}_item_replays`] ?? '');
                     rowArr.push(r.question_scores?.[`${c}_replays`] ?? '');
                 });
             } else {
@@ -598,9 +600,14 @@ const AdminReports = () => {
                                                 <React.Fragment key={c}>
                                                     <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>{colLabel}</th>
                                                     <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>TIME(S)</th>
-                                                    {activeGame?.key !== 'numeracy_number_skill' && (
+                                                    {isAtlantis ? (
+                                                        <>
+                                                            <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>ITEM REPLAYS</th>
+                                                            <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>RESP REPLAYS</th>
+                                                        </>
+                                                    ) : activeGame?.key !== 'numeracy_number_skill' ? (
                                                         <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>REPLAYS</th>
-                                                    )}
+                                                    ) : null}
                                                 </React.Fragment>
                                             );
                                         })
@@ -789,9 +796,14 @@ const AdminReports = () => {
                                                                 {v != null ? v : '—'}
                                                             </td>
                                                             <td style={S.tdCenter}>{fmtSecs(row.question_scores[`${c}_time`])}</td>
-                                                            {activeGame?.key !== 'numeracy_number_skill' && (
+                                                            {isAtlantis ? (
+                                                                <>
+                                                                    <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_item_replays`] ?? '—'}</td>
+                                                                    <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
+                                                                </>
+                                                            ) : activeGame?.key !== 'numeracy_number_skill' ? (
                                                                 <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
-                                                            )}
+                                                            ) : null}
                                                         </React.Fragment>
                                                     );
                                                 })

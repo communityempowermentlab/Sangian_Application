@@ -334,7 +334,7 @@ const BAGIYA_IMAGE_BY_LANG = {
 const AtlantisBagiyaGame = () => {
   const { t, language } = useLanguage();
   const bagiyaImage = BAGIYA_IMAGE_BY_LANG[language] || `${IMG}/bagiya.jpg`;
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -401,7 +401,7 @@ const AtlantisBagiyaGame = () => {
   const qTimerRef = useRef(0);
   const subQAnsweredRef = useRef({});
   const replayCountsRef = useRef({});   // subQIndex → replay count for current screen
-  const q1ExposureReplaysRef = useRef(0);
+  const itemExposureReplaysRef = useRef({});
 
   const timerRef = useRef(null);
   const splashAudioRef = useRef(null);
@@ -578,7 +578,7 @@ const AtlantisBagiyaGame = () => {
     setSubQAudioDone(false);
     setQuestionAudioDone(false);
     setFeedbackAudioPlaying(false);
-    q1ExposureReplaysRef.current = 0;
+    itemExposureReplaysRef.current = {};
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
     setQuitReason('');
     setAssessmentSubmitted(false);
@@ -605,7 +605,7 @@ const AtlantisBagiyaGame = () => {
           qTimer: qTimerRef.current,
           pauses: updatedPauses,
           mainScreenNum: mainScreenNumRef.current,
-          q1ExposureReplays: q1ExposureReplaysRef.current,
+          itemExposureReplays: itemExposureReplaysRef.current,
         },
       });
     } catch (e) { console.error('Save error', e); }
@@ -761,21 +761,38 @@ const AtlantisBagiyaGame = () => {
     '1_0': (target) => [
       { audio: target.audio },
       { delay: 2000 },
-      { audio: `${AUD}/Dubara koshish karte hai.wav` },
-      { delay: 2000 },
       { unhighlight: true },
+      { audio: `${AUD}/Dubara koshish karte hai.wav` },
+      { shuffle: true },
+      { delay: 2000 },
       { audio: target.khaHai },
     ],
     '2_0': (target) => [
       { audio: target.audio },
       { delay: 2000 },
       { unhighlight: true },
+      { shuffle: true },
       { audio: target.khaHai },
     ],
     '2_1': (target) => [
       { audio: target.audio },
       { delay: 2000 },
       { unhighlight: true },
+      { shuffle: true },
+      { audio: target.khaHai },
+    ],
+    '3_0': (target) => [
+      { audio: target.audio },
+      { delay: 2000 },
+      { unhighlight: true },
+      { shuffle: true },
+      { audio: target.khaHai },
+    ],
+    '3_1': (target) => [
+      { audio: target.audio },
+      { delay: 2000 },
+      { unhighlight: true },
+      { shuffle: true },
       { audio: target.khaHai },
     ],
   };
@@ -842,6 +859,9 @@ const AtlantisBagiyaGame = () => {
           if (step.audio) await playAudioAsync(step.audio);
           else if (step.delay) await delay(step.delay);
           else if (step.unhighlight) setGridFeedback({});
+          else if (step.shuffle) {
+            setDisplayResponseItems(prev => shuffle([...prev]));
+          }
         }
         isRetryingRef.current = false;
         setIsRetrying(false);
@@ -850,6 +870,23 @@ const AtlantisBagiyaGame = () => {
     }
 
     // All other screens keep the existing single-attempt lock behavior.
+    if (!isCorrect && mainScreenNumRef.current >= 4 && mainScreenNumRef.current <= 12) {
+      setGridFeedback({ [target.id]: 'correct' });
+      isRetryingRef.current = true;
+      setIsRetrying(true);
+      (async () => {
+        const pAudio = target.audio ? playAudioAsync(target.audio) : Promise.resolve();
+        const pDelay = delay(3000);
+        await Promise.all([pAudio, pDelay]);
+        setGridFeedback({});
+        isRetryingRef.current = false;
+        setIsRetrying(false);
+        const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
+        subQAnsweredRef.current = updAnswered;
+        setSubQAnswered(updAnswered);
+      })();
+      return;
+    }
     const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
     subQAnsweredRef.current = updAnswered;
     setSubQAnswered(updAnswered);
@@ -1036,10 +1073,10 @@ const AtlantisBagiyaGame = () => {
       {/* ── Topbar ── */}
       <header className="ab-topbar">
         <div className="ab-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />
-          <div className="ab-divider"></div>
-          <img src={bagiyaImage} alt="Bagiya" className="ab-test-logo" />
-          <span className="ab-test-title">{t('home.games.bagiya.title')}</span>
+          {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="ab-brand-img" />}
+          {showLogo && (showGameIcon || showGameName) && <div className="ab-divider"></div>}
+          {showGameIcon && <img src={bagiyaImage} alt="Bagiya" className="ab-test-logo" />}
+          {showGameName && <span className="ab-test-title">{t('home.games.bagiya.title')}</span>}
         </div>
 
         {/* ── Centre: screen label ── */}
@@ -1244,11 +1281,9 @@ const AtlantisBagiyaGame = () => {
                       <div className="ab-btn-row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
                         <button className="ab-btn ab-btn-secondary"
                           onClick={() => {
-                            if (mainScreenNum === 1) {
-                              q1ExposureReplaysRef.current += 1;
-                            }
+                            itemExposureReplaysRef.current[mainScreenNumRef.current] = (itemExposureReplaysRef.current[mainScreenNumRef.current] || 0) + 1;
+                            setQuestionAudioDone(false);
                             if (qi?.audio) {
-                              setQuestionAudioDone(false);
                               const audio = new Audio(qi.audio);
                               activeAudioRef.current = audio;
                               audio.play().catch(() => setQuestionAudioDone(true));
@@ -1320,12 +1355,19 @@ const AtlantisBagiyaGame = () => {
                           replayCountsRef.current[subQIndex] = (replayCountsRef.current[subQIndex] || 0) + 1;
                           setSubQAudioDone(false);
                           const item = itemByStem[currentConfig.subQStems[subQIndex]];
+                          const handleDone = () => {
+                            setDisplayResponseItems(prev => shuffle([...prev]));
+                            setSubQAudioDone(true);
+                          };
+                          
                           if (item?.khaHai) {
                             const audio = new Audio(item.khaHai);
                             activeAudioRef.current = audio;
-                            audio.play().catch(() => setSubQAudioDone(true));
-                            audio.addEventListener('ended', () => setSubQAudioDone(true));
-                            audio.addEventListener('error', () => setSubQAudioDone(true));
+                            audio.play().catch(handleDone);
+                            audio.addEventListener('ended', handleDone);
+                            audio.addEventListener('error', handleDone);
+                          } else {
+                            handleDone();
                           }
                         }}>
                         {t('game.reply')}
@@ -1412,6 +1454,7 @@ const AtlantisBagiyaGame = () => {
                       <th>{t('game.sNo')}</th>
                       <th>{t('game.screenHeader')}</th>
                       <th>{t('game.question')}</th>
+                      <th>Item Replays</th>
                       <th>{t('game.responseLabel')}</th>
                       <th>{t('game.targetHeader')}</th>
                       <th>{t('game.childChoseHeader')}</th>
@@ -1437,6 +1480,9 @@ const AtlantisBagiyaGame = () => {
                               <span className="ab-exposure-label">{t('game.exposureLabel')} {exposureItem.name}</span>
                             </div>
                           ) : ''}
+                        </td>
+                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                          {isFirstOfScreen ? (itemExposureReplaysRef.current[s.screen] || 0) : ''}
                         </td>
                         <td>Q{s.subQ}</td>
                         <td>

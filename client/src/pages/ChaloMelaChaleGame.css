@@ -32,7 +32,7 @@
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow-soft);
-  border-radius: 28px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -181,7 +181,7 @@
   flex-wrap: wrap;
 }
 
-.screen-title { font-size: 1.1rem; font-weight: 800; color: var(--text); white-space: nowrap; }
+.screen-title { font-size: 1.5rem; font-weight: 800; color: var(--text); white-space: nowrap; }
 .screen-subtitle { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -3,7 +3,7 @@ const path = require('path');
 
 const CONFIG_FILE = path.join(__dirname, '..', '..', 'config', 'header-config.json');
 
-const DEFAULTS = { showChildId: true, showTimer: true, showScore: true };
+const DEFAULTS = { showLogo: true, showGameIcon: true, showGameName: true, showChildId: true, showTimer: true, showScore: true };
 
 const getConfig = () => {
     if (!fs.existsSync(CONFIG_FILE)) return { ...DEFAULTS };

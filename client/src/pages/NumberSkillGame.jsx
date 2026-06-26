@@ -53,7 +53,7 @@ const QUESTIONS = [
 
 const NumberSkillGame = () => {
   const { t } = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -514,10 +514,10 @@ const NumberSkillGame = () => {
     <div className="ns-app">
       <header className="ns-topbar">
         <div className="ns-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />
-          <div className="ns-divider"></div>
-          <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />
-          <span className="ns-test-title">{t('home.games.numeracy.title')}</span>
+          {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />}
+          {showLogo && (showGameIcon || showGameName) && <div className="ns-divider"></div>}
+          {showGameIcon && <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />}
+          {showGameName && <span className="ns-test-title">{t('home.games.numeracy.title')}</span>}
         </div>
         <div className="ns-topbar-center">
           {screen === 'game' && currentQuestion && (

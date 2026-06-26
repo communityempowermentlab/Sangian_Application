@@ -1,0 +1,209 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axiosAdmin from '../services/axiosAdmin';
+import { API_URL } from '../services/api';
+import './AdminElements.css';
+
+const LANGUAGES = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'mr', name: 'Marathi' },
+    { code: 'te', name: 'Telugu' },
+    { code: 'kn', name: 'Kannada' }
+];
+
+export default function AdminElements() {
+    const [tests, setTests] = useState([]);
+    const [activeTest, setActiveTest] = useState(null);
+    const [elements, setElements] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(null);
+    const [toast, setToast] = useState(null);
+
+    const fileRefs = useRef({});
+
+    useEffect(() => {
+        loadTests();
+    }, []);
+
+    useEffect(() => {
+        if (activeTest) {
+            loadElements(activeTest);
+        }
+    }, [activeTest]);
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const loadTests = async () => {
+        try {
+            const res = await axiosAdmin.get('/admin/test-config');
+            const testArray = res.data.tests || [];
+            setTests(testArray);
+            if (testArray.length > 0) {
+                setActiveTest(testArray[0].key);
+            }
+        } catch (error) {
+            console.error('Failed to load tests:', error);
+            showToast('Failed to load tests', 'error');
+        }
+    };
+
+    const loadElements = async (testId) => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get(`/admin/elements?test_id=${testId}&asset_type=splash_screen`);
+            if (res.data.success) {
+                setElements(res.data.elements || []);
+            }
+        } catch (error) {
+            console.error('Failed to load elements:', error);
+            showToast('Failed to load elements', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFileSelect = async (langCode, file) => {
+        if (!file) return;
+
+        setUploading(langCode);
+        const formData = new FormData();
+        formData.append('test_id', activeTest);
+        formData.append('asset_type', 'splash_screen');
+        formData.append('language', langCode);
+        formData.append('file', file);
+
+        try {
+            const res = await axiosAdmin.post('/admin/elements/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success) {
+                showToast('Image uploaded successfully');
+                loadElements(activeTest);
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            showToast('Failed to upload image', 'error');
+        } finally {
+            setUploading(null);
+            if (fileRefs.current[langCode]) {
+                fileRefs.current[langCode].value = ''; // Reset input
+            }
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this splash screen?')) return;
+        try {
+            const res = await axiosAdmin.delete(`/admin/elements/${id}`);
+            if (res.data.success) {
+                showToast('Image deleted successfully');
+                loadElements(activeTest);
+            }
+        } catch (error) {
+            console.error('Delete failed:', error);
+            showToast('Failed to delete image', 'error');
+        }
+    };
+
+    const getElementForLang = (langCode) => {
+        return elements.find(el => el.language === langCode);
+    };
+
+    const SERVER_BASE = API_URL.replace(/\/api$/, '');
+
+    const getImageUrl = (element) => {
+        if (element.file_path.startsWith('/assets')) {
+            return element.file_path; // static asset served by frontend
+        }
+        return `${SERVER_BASE}${element.file_path}`; // uploaded asset served by backend
+    };
+
+    return (
+        <div className="elements-container">
+            <div className="elements-sidebar">
+                <h3>Tests</h3>
+                <ul className="elements-test-list">
+                    {tests.map(test => (
+                        <li 
+                            key={test.key} 
+                            className={`elements-test-item ${activeTest === test.key ? 'active' : ''}`}
+                            onClick={() => setActiveTest(test.key)}
+                        >
+                            {test.title}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            <div className="elements-content">
+                <h2>Elements for {tests.find(t => t.key === activeTest)?.title || activeTest}</h2>
+                <div className="elements-section">
+                    <h3>Splash Screen Images</h3>
+                    <p className="elements-desc">Upload a splash screen image for each language. These will be displayed on the home cards.</p>
+
+                    {loading ? (
+                        <p>Loading...</p>
+                    ) : (
+                        <div className="elements-grid">
+                            {LANGUAGES.map(lang => {
+                                const element = getElementForLang(lang.code);
+                                return (
+                                    <div key={lang.code} className="element-card">
+                                        <div className="element-card-header">
+                                            <strong>{lang.name}</strong> ({lang.code})
+                                        </div>
+                                        <div className="element-preview">
+                                            {element ? (
+                                                <img src={getImageUrl(element)} alt={`${activeTest} ${lang.name}`} />
+                                            ) : (
+                                                <div className="element-preview-empty">No Image</div>
+                                            )}
+                                        </div>
+                                        <div className="element-actions">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                style={{ display: 'none' }}
+                                                ref={el => fileRefs.current[lang.code] = el}
+                                                onChange={(e) => handleFileSelect(lang.code, e.target.files[0])}
+                                            />
+                                            <button 
+                                                className="admin-btn admin-btn-primary" 
+                                                onClick={() => fileRefs.current[lang.code]?.click()}
+                                                disabled={uploading === lang.code}
+                                            >
+                                                {uploading === lang.code ? 'Uploading...' : (element ? 'Replace' : 'Upload')}
+                                            </button>
+                                            {element && (
+                                                <button 
+                                                    className="admin-btn admin-btn-danger" 
+                                                    onClick={() => handleDelete(element.id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                        {element && (
+                                            <div className="element-meta">
+                                                Last updated: {new Date(element.updated_at).toLocaleDateString()}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {toast && (
+                <div className={`admin-toast ${toast.type}`}>
+                    {toast.msg}
+                </div>
+            )}
+        </div>
+    );
+}

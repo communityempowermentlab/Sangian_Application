@@ -307,6 +307,9 @@ exports.getReportDetail = async (req, res) => {
                     questionScores[`${key}_time`] = s.timeTaken ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
                     questionScores[`${key}_replays`] = s.replayCount ?? 0;
+                    if (gameName === 'atlantis_bagiya') {
+                        questionScores[`${key}_item_replays`] = parsedState?.itemExposureReplays?.[s.screen] ?? 0;
+                    }
 
                     if (gameName === 'working_memory_herpher') {
                         questionScores[`${key}_correct`] = s.correctCount ?? null;
@@ -449,7 +452,7 @@ exports.getReportDetail = async (req, res) => {
                 retake_count:    parsedState?.retakeCount    ?? null,
                 refresh_count:   parsedState?.refreshCount   ?? null,
                 screentime:      parsedState?.screentime     ?? parsedState?.timerSeconds ?? null,
-                question_scores: { ...questionScores, q1ExposureReplays: parsedState?.q1ExposureReplays ?? null },
+                question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,
                     q2_feeling:     row.q2_feeling      || null,

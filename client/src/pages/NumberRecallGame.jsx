@@ -332,7 +332,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 // ─── Main Component ─────────────────────────────────────────────
 const NumberRecallGame = () => {
   const { t }    = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -764,10 +764,10 @@ const NumberRecallGame = () => {
       {/* ─── Topbar ─── */}
       <header className="nr-topbar">
         <div className="nr-brand">
-          <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />
-          <div className="nr-divider"></div>
-          <img src="/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />
-          <span className="nr-test-title">{t('home.games.lottery.title')}</span>
+          {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />}
+          {showLogo && (showGameIcon || showGameName) && <div className="nr-divider"></div>}
+          {showGameIcon && <img src="/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />}
+          {showGameName && <span className="nr-test-title">{t('home.games.lottery.title')}</span>}
         </div>
 
         <div className="nr-topbar-center">

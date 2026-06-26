@@ -327,7 +327,7 @@ const House = ({ house, onClick, interactionLocked }) => {
 
 const ChorMachayeShorGame = () => {
   const { t } = useLanguage();
-  const { showChildId, showTimer, showScore } = useHeaderConfig();
+  const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -1316,10 +1316,10 @@ const ChorMachayeShorGame = () => {
         <div className="chor-app">
           <header className="chor-topbar">
             <div className="chor-brand">
-              <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
-              <div className="chor-divider"></div>
-              <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
-              <span className="chor-test-title">{t('home.games.chor.title')}</span>
+              {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />}
+              {showLogo && (showGameIcon || showGameName) && <div className="chor-divider"></div>}
+              {showGameIcon && <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />}
+              {showGameName && <span className="chor-test-title">{t('home.games.chor.title')}</span>}
             </div>
             <div className="chor-stats">
               {showChildId && <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>}
@@ -1389,10 +1389,10 @@ const ChorMachayeShorGame = () => {
         <div className="chor-app" id="dashboard-container">
           <header className="chor-topbar">
             <div className="chor-brand">
-              <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
-              <div className="chor-divider"></div>
-              <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
-              <span className="chor-test-title">{t('home.games.chor.title')}</span>
+              {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />}
+              {showLogo && (showGameIcon || showGameName) && <div className="chor-divider"></div>}
+              {showGameIcon && <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />}
+              {showGameName && <span className="chor-test-title">{t('home.games.chor.title')}</span>}
             </div>
             <div className="chor-stats">
               {showChildId && <div className="chor-stat-pill"><span className="chor-stat-icon">👤</span><span className="chor-stat-value">{childData?.child_id || '—'}</span></div>}
@@ -1520,10 +1520,10 @@ const ChorMachayeShorGame = () => {
       <div className="chor-app">
         <header className="chor-topbar">
           <div className="chor-brand">
-            <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />
-            <div className="chor-divider"></div>
-            <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />
-            <span className="chor-test-title">{t('home.games.chor.title')}</span>
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="chor-divider"></div>}
+            {showGameIcon && <img src="/assets/images/chor_machaye_shor/chor_machaye_shor.jpg" alt="Chor Machaye Shor" className="chor-test-logo" />}
+            {showGameName && <span className="chor-test-title">{t('home.games.chor.title')}</span>}
           </div>
           
           <div className="chor-topbar-center">

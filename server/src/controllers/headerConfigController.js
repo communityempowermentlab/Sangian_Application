@@ -14,16 +14,19 @@ const getConfig = (req, res) => {
 
 // @desc    Update the global test header configuration (partial updates allowed)
 // @route   PUT /api/admin/header-config
-// @body    { showChildId?, showTimer?, showScore? }
+// @body    { showLogo?, showGameIcon?, showGameName?, showChildId?, showTimer?, showScore? }
 // @access  Private (admin)
 const updateConfig = (req, res) => {
     try {
-        const { showChildId, showTimer, showScore } = req.body;
+        const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = req.body;
         const current = headerConfigService.getConfig();
         const next = {
-            showChildId: showChildId !== undefined ? Boolean(showChildId) : current.showChildId,
-            showTimer:   showTimer   !== undefined ? Boolean(showTimer)   : current.showTimer,
-            showScore:   showScore   !== undefined ? Boolean(showScore)   : current.showScore,
+            showLogo:     showLogo     !== undefined ? Boolean(showLogo)     : current.showLogo,
+            showGameIcon: showGameIcon !== undefined ? Boolean(showGameIcon) : current.showGameIcon,
+            showGameName: showGameName !== undefined ? Boolean(showGameName) : current.showGameName,
+            showChildId:  showChildId  !== undefined ? Boolean(showChildId)  : current.showChildId,
+            showTimer:    showTimer    !== undefined ? Boolean(showTimer)    : current.showTimer,
+            showScore:    showScore    !== undefined ? Boolean(showScore)    : current.showScore,
         };
         const saved = headerConfigService.saveConfig(next);
         res.json({ success: true, config: saved });
