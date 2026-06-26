@@ -144,62 +144,62 @@ export default function AdminElements() {
             <div className="elements-content">
                 <h2>Elements for {tests.find(t => t.key === activeTest)?.title || activeTest}</h2>
                 
-                {activeTest === 'working_memory_herpher' ? (
+                <div className="elements-section">
+                    <h3>Splash Screen Images</h3>
+                    <p className="elements-desc">Upload a splash screen image for each language. These will be displayed on the home cards.</p>
+
+                    {loading ? (
+                        <p>Loading...</p>
+                    ) : (
+                        <div className="elements-grid">
+                        {LANGUAGES.map(lang => {
+                            const element = getElementForLang(lang.code);
+                            return (
+                                <div key={lang.code} className="element-card">
+                                    <div className="element-card-header">
+                                        <strong>{lang.name}</strong> ({lang.code})
+                                    </div>
+                                    <div className="element-preview">
+                                        {element ? (
+                                            <img src={getImageUrl(element)} alt={`${activeTest} ${lang.name}`} />
+                                        ) : (
+                                            <div className="element-preview-empty">No Image</div>
+                                        )}
+                                    </div>
+                                    <div className="element-actions">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            style={{ display: 'none' }}
+                                            ref={el => fileRefs.current[lang.code] = el}
+                                            onChange={(e) => handleFileSelect(lang.code, e.target.files[0])}
+                                        />
+                                        <button 
+                                            className="admin-btn admin-btn-primary" 
+                                            onClick={() => fileRefs.current[lang.code]?.click()}
+                                            disabled={uploading === lang.code}
+                                        >
+                                            {uploading === lang.code ? 'Uploading...' : (element ? 'Replace' : 'Upload')}
+                                        </button>
+                                    </div>
+                                    {element && (
+                                        <div className="element-meta">
+                                            Last updated: {new Date(element.updated_at).toLocaleDateString()}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+                </div>
+
+                {activeTest === 'working_memory_herpher' && (
                     <HerPherElements 
                         elements={elements} 
                         loadElements={loadElements} 
                         showToast={showToast} 
                     />
-                ) : (
-                    <div className="elements-section">
-                        <h3>Splash Screen Images</h3>
-                        <p className="elements-desc">Upload a splash screen image for each language. These will be displayed on the home cards.</p>
-
-                        {loading ? (
-                            <p>Loading...</p>
-                        ) : (
-                            <div className="elements-grid">
-                            {LANGUAGES.map(lang => {
-                                const element = getElementForLang(lang.code);
-                                return (
-                                    <div key={lang.code} className="element-card">
-                                        <div className="element-card-header">
-                                            <strong>{lang.name}</strong> ({lang.code})
-                                        </div>
-                                        <div className="element-preview">
-                                            {element ? (
-                                                <img src={getImageUrl(element)} alt={`${activeTest} ${lang.name}`} />
-                                            ) : (
-                                                <div className="element-preview-empty">No Image</div>
-                                            )}
-                                        </div>
-                                        <div className="element-actions">
-                                            <input 
-                                                type="file" 
-                                                accept="image/*" 
-                                                style={{ display: 'none' }}
-                                                ref={el => fileRefs.current[lang.code] = el}
-                                                onChange={(e) => handleFileSelect(lang.code, e.target.files[0])}
-                                            />
-                                            <button 
-                                                className="admin-btn admin-btn-primary" 
-                                                onClick={() => fileRefs.current[lang.code]?.click()}
-                                                disabled={uploading === lang.code}
-                                            >
-                                                {uploading === lang.code ? 'Uploading...' : (element ? 'Replace' : 'Upload')}
-                                            </button>
-                                        </div>
-                                        {element && (
-                                            <div className="element-meta">
-                                                Last updated: {new Date(element.updated_at).toLocaleDateString()}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                    </div>
                 )}
             </div>
 
