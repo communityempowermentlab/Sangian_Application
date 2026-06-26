@@ -159,7 +159,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                             {el.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
-                                    <div className="element-actions" style={{ flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div className="element-actions" style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem' }}>
                                         <input 
                                             type="file" 
                                             accept="image/*" 
@@ -169,7 +169,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                         />
                                         <button 
                                             className="admin-btn admin-btn-secondary" 
-                                            style={{ width: '100%', padding: '0.25rem' }}
+                                            style={{ flex: 1, padding: '0.25rem', fontSize: '0.75rem' }}
                                             onClick={() => fileRefs.current[`replace_${el.id}`]?.click()}
                                             disabled={uploading === `replace_${el.id}`}
                                         >
@@ -177,7 +177,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                         </button>
                                         <button 
                                             className={`admin-btn ${el.is_active ? 'admin-btn-danger' : 'admin-btn-primary'}`} 
-                                            style={{ width: '100%', padding: '0.25rem' }}
+                                            style={{ flex: 1, padding: '0.25rem', fontSize: '0.75rem' }}
                                             onClick={() => handleToggleStatus(el.id)}
                                         >
                                             {el.is_active ? 'Deactivate' : 'Activate'}
