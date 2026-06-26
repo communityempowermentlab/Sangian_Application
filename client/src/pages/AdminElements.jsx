@@ -54,7 +54,10 @@ export default function AdminElements() {
     const loadElements = async (testId) => {
         setLoading(true);
         try {
-            const res = await axiosAdmin.get(`/admin/elements?test_id=${testId}&asset_type=splash_screen`);
+            const url = testId === 'working_memory_herpher' 
+                ? `/admin/elements?test_id=${testId}` 
+                : `/admin/elements?test_id=${testId}&asset_type=splash_screen`;
+            const res = await axiosAdmin.get(url);
             if (res.data.success) {
                 setElements(res.data.elements || []);
             }
