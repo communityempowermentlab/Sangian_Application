@@ -853,6 +853,16 @@ const HerPherGame = () => {
     setIsRecording(true);
     setRecordingTarget(target);
   };
+  // Helper to dynamically get image URLs
+  const getImageUrlForId = useCallback((imageId) => {
+    const element = allElements.find(el => el.id.toString() === imageId.toString());
+    if (element) {
+        const SERVER_BASE = API_URL.replace(/\/api$/, '');
+        if (element.file_path.startsWith('/assets')) return element.file_path;
+        return `${SERVER_BASE}${element.file_path}`;
+    }
+    return '';
+  }, [allElements]);
 
   // ──── Derived values ─────────────────────────────────────────────────────────
   const qData     = GAME_DATA ? GAME_DATA[currentQuestion] : null;
@@ -1003,17 +1013,7 @@ const HerPherGame = () => {
                       onClick={() => handleImageClick(imageId)}
                     >
                       <img
-                        src={
-                          (() => {
-                            const element = allElements.find(el => el.id.toString() === imageId.toString());
-                            if (element) {
-                                const SERVER_BASE = API_URL.replace(/\/api$/, '');
-                                if (element.file_path.startsWith('/assets')) return element.file_path;
-                                return `${SERVER_BASE}${element.file_path}`;
-                            }
-                            return '';
-                          })()
-                        }
+                        src={getImageUrlForId(imageId)}
                         alt={`${qData.category} ${imageId}`}
                         onError={(e) => {
                           e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23e5e7eb' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%236b7280' font-size='24'%3E${imageId}%3C/text%3E%3C/svg%3E`;
@@ -1150,7 +1150,7 @@ const HerPherGame = () => {
                             <div className="hp-img-row">
                               {expected.map((imgId, idx) => (
                                 <div key={`exp-${imgId}-${idx}`} className="hp-img-thumb-wrap expected">
-                                  <img src={`${IMAGE_PATH}/${cat}/${imgId}.png`} alt={`Expected ${imgId}`} className="hp-img-thumb" />
+                                  <img src={getImageUrlForId(imgId)} alt={`Expected ${imgId}`} className="hp-img-thumb" />
                                 </div>
                               ))}
                             </div>
@@ -1164,7 +1164,7 @@ const HerPherGame = () => {
                                 const isCorrectClick = h.responses[idx] === 1;
                                 return (
                                   <div key={`sel-${imgId}-${idx}`} className={`hp-img-thumb-wrap ${isCorrectClick ? 'correct' : 'incorrect'}`}>
-                                    <img src={`${IMAGE_PATH}/${cat}/${imgId}.png`} alt={`Selected ${imgId}`} className="hp-img-thumb" />
+                                    <img src={getImageUrlForId(imgId)} alt={`Selected ${imgId}`} className="hp-img-thumb" />
                                     {isCorrectClick ? (
                                       <span className="hp-icon-badge correct-badge">✓</span>
                                     ) : (
