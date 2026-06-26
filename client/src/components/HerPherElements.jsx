@@ -3,15 +3,15 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 
 const CATEGORIES = [
-    { id: 'item0', label: 'Item 0 (Tools)', min: 6 },
-    { id: 'item1', label: 'Item 1 (Birds)', min: 7 },
-    { id: 'item2', label: 'Item 2 (Vegetables)', min: 8 },
-    { id: 'item3', label: 'Item 3 (Sports)', min: 9 },
-    { id: 'item4', label: 'Item 4 (Flowers)', min: 10 },
-    { id: 'item5', label: 'Item 5 (Insects)', min: 11 },
-    { id: 'item6', label: 'Item 6 (Household)', min: 12 },
-    { id: 'item7', label: 'Item 7 (Animals)', min: 13 },
-    { id: 'item8', label: 'Item 8 (Transport)', min: 14 }
+    { id: 'item0', label: 'Item 0', min: 6 },
+    { id: 'item1', label: 'Item 1', min: 7 },
+    { id: 'item2', label: 'Item 2', min: 8 },
+    { id: 'item3', label: 'Item 3', min: 9 },
+    { id: 'item4', label: 'Item 4', min: 10 },
+    { id: 'item5', label: 'Item 5', min: 11 },
+    { id: 'item6', label: 'Item 6', min: 12 },
+    { id: 'item7', label: 'Item 7', min: 13 },
+    { id: 'item8', label: 'Item 8', min: 14 }
 ];
 
 export default function HerPherElements({ elements, loadElements, showToast }) {
