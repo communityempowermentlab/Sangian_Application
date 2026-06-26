@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import './AdminElements.css';
@@ -13,8 +14,16 @@ const LANGUAGES = [
 ];
 
 export default function AdminElements() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [tests, setTests] = useState([]);
-    const [activeTest, setActiveTest] = useState(null);
+    
+    // Compute activeTest directly from URL or fallback
+    const activeTest = searchParams.get('test') || (tests.length > 0 ? tests[0].key : null);
+    
+    const setActiveTest = (key) => {
+        setSearchParams({ test: key });
+    };
+
     const [elements, setElements] = useState([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(null);
@@ -42,8 +51,10 @@ export default function AdminElements() {
             const res = await axiosAdmin.get('/admin/test-config');
             const testArray = res.data.tests || [];
             setTests(testArray);
-            if (testArray.length > 0) {
-                setActiveTest(testArray[0].key);
+            
+            // If no test is in URL and we have tests, default to first one
+            if (testArray.length > 0 && !searchParams.get('test')) {
+                setSearchParams({ test: testArray[0].key }, { replace: true });
             }
         } catch (error) {
             console.error('Failed to load tests:', error);
