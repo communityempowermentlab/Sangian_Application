@@ -855,7 +855,7 @@ const HerPherGame = () => {
   };
 
   // ──── Derived values ─────────────────────────────────────────────────────────
-  const qData     = GAME_DATA[currentQuestion];
+  const qData     = GAME_DATA ? GAME_DATA[currentQuestion] : null;
   const sp        = childData?.age ? getSP(childData.age) : '—';
   const clickedCount = clickedImages.size;
 
