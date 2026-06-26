@@ -41,6 +41,12 @@ const shuffle = (arr) => {
 
 const randomPick = (pool, count) => shuffle(pool).slice(0, count);
 
+// Virtual canvas height (in GRID_WIDTH units) matching the real rendered
+// container's aspect ratio, so positions/sizes map back to it distortion-free.
+const virtualHeightFor = (canvasSize) => (
+  canvasSize.width > 0 ? (GRID_WIDTH * canvasSize.height) / canvasSize.width : GRID_HEIGHT_3
+);
+
 const formatTime = (s) => {
   const m = Math.floor(s / 60).toString().padStart(2, '0');
   const sec = (s % 60).toString().padStart(2, '0');
@@ -53,27 +59,33 @@ const getSP = (age) => {
   return '—';
 };
 
-function getPositionsForCount(count) {
-  let cols, rows, size;
-  
-  // Use slightly looser grids so staggering has room
+function getPositionsForCount(count, virtualHeight = GRID_HEIGHT_3) {
+  let cols, rows;
+
+  // Use slightly looser grids so staggering has room. Always keep at least 3
+  // rows so the middle row of the grid (and thus the vertical center of the
+  // screen) is a real candidate position, not just the top/bottom halves.
   if (count <= 6) {
-    cols = 3; rows = 2; size = 220;
+    cols = 3; rows = 3;
   } else if (count <= 8) {
-    cols = 4; rows = 2; size = 210;
+    cols = 4; rows = 3;
   } else if (count <= 10) {
-    cols = 4; rows = 3; size = 180;
+    cols = 4; rows = 3;
   } else if (count <= 12) {
-    cols = 5; rows = 3; size = 170;
+    cols = 5; rows = 3;
   } else {
-    cols = 6; rows = 3; size = 150;
+    cols = 6; rows = 3;
   }
 
-  const currentHeight = GRID_HEIGHT_3; // 620
-  
+  const currentHeight = virtualHeight;
+
   const cellWidth = GRID_WIDTH / cols;
   const cellHeight = currentHeight / rows;
-  
+
+  // Size images relative to the actual cell footprint so they fill whatever
+  // space is available, rather than a fixed px value tuned for one canvas size.
+  const size = Math.min(300, Math.max(140, Math.min(cellWidth, cellHeight) * 0.94));
+
   const allCells = [];
   for (let i = 0; i < cols * rows; i++) {
     allCells.push(i);
@@ -108,9 +120,14 @@ function getPositionsForCount(count) {
     const shiftX = (Math.random() * 2 - 1) * maxShiftX;
     const shiftY = (Math.random() * 2 - 1) * maxShiftY;
     
+    // Clamp final position so the image always stays fully inside the canvas —
+    // cell-center clamping above doesn't account for jitter pushing it back out.
+    const x = Math.min(Math.max(cellCenterX + shiftX - size / 2, 0), GRID_WIDTH - size);
+    const y = Math.min(Math.max(cellCenterY + shiftY - size / 2, 0), currentHeight - size);
+
     positions.push({
-      x: cellCenterX + shiftX - size / 2,
-      y: cellCenterY + shiftY - size / 2,
+      x,
+      y,
       size: size,
       gridHeight: currentHeight,
       index: i + 1
@@ -242,6 +259,11 @@ const HerPherGame = () => {
   const audioSplashRef    = useRef(null);
   const isResumingRef     = useRef(false);
 
+  // Game canvas — measured so the layout fills all available screen space
+  const gameContainerRef  = useRef(null);
+  const [canvasSize, setCanvasSize] = useState({ width: GRID_WIDTH, height: GRID_HEIGHT_3 });
+  const canvasSizeRef     = useRef(canvasSize);
+
   // Stable refs for use inside callbacks (avoids stale closure issues)
   const scoreHistoryRef   = useRef([]);
   const totalScoreRef     = useRef(0);
@@ -346,6 +368,27 @@ const HerPherGame = () => {
   useEffect(() => { pausesRef.current = pauses; }, [pauses]);
   useEffect(() => { scoreHistoryRef.current = scoreHistory; }, [scoreHistory]);
   useEffect(() => { totalScoreRef.current = totalScore; }, [totalScore]);
+  useEffect(() => { canvasSizeRef.current = canvasSize; }, [canvasSize]);
+
+  // ──── Measure the game canvas so the layout fills all available space ───────
+  useEffect(() => {
+    if (screen !== 'game' || !gameContainerRef.current) return;
+    const el = gameContainerRef.current;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setCanvasSize(prev => (
+            Math.abs(prev.width - width) > 1 || Math.abs(prev.height - height) > 1
+              ? { width, height }
+              : prev
+          ));
+        }
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [screen]);
 
   // ──── Build image layout when question/attempt changes ───────────────────────
   useEffect(() => {
@@ -362,7 +405,7 @@ const HerPherGame = () => {
 
     const qData = GAME_DATA[currentQuestion];
     if (!qData || !qData.imageCount) return;
-    const positions = shuffle(getPositionsForCount(qData.imageCount));
+    const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
     const layout = qData.imageIds.map((imageId, i) => ({
       imageId,
       x: positions[i].x,
@@ -378,6 +421,22 @@ const HerPherGame = () => {
     setShowControls(false);
     setButtonsDisabled(false);
   }, [screen, currentQuestion, currentAttempt]); // eslint-disable-line
+
+  // ──── Re-flow the current layout once the canvas is measured (or resized) ───
+  // The first render computes positions against a default 1024x620 canvas
+  // before the container has been measured — once ResizeObserver reports the
+  // real size (or the window is resized), reposition in place without
+  // resetting progress.
+  useEffect(() => {
+    if (screen !== 'game' || !GAME_DATA) return;
+    const qData = GAME_DATA[currentQuestion];
+    if (!qData || !qData.imageCount) return;
+    setImageLayout(prev => {
+      if (prev.length !== qData.imageCount) return prev;
+      const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSize)));
+      return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y, size: positions[i].size, gridHeight: positions[i].gridHeight }));
+    });
+  }, [canvasSize]); // eslint-disable-line
 
   // ──── API: Check Resume ──────────────────────────────────────────────────────
   const checkResume = async (childId) => {
@@ -550,7 +609,7 @@ const HerPherGame = () => {
         // 2. Wait for scale-down animation to near completion before shuffling
         setTimeout(() => {
           setImageLayout(prev => {
-            const positions = shuffle(getPositionsForCount(qData.imageCount));
+            const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
             return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y, size: positions[i].size, gridHeight: positions[i].gridHeight }));
           });
           
@@ -659,7 +718,7 @@ const HerPherGame = () => {
     setButtonsDisabled(false);
     if (!GAME_DATA) return;
     const qData = GAME_DATA[1];
-    const positions = shuffle(getPositionsForCount(qData.imageCount));
+    const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
     setImageLayout(qData.imageIds.map((imageId, i) => ({
       imageId,
       x: positions[i].x,
@@ -994,9 +1053,9 @@ const HerPherGame = () => {
             <div className="hp-screen">
 
               {/* Image Grid */}
-              <div 
-                className="hp-game-container" 
-                style={{ aspectRatio: `${GRID_WIDTH} / ${imageLayout[0]?.gridHeight || 620}` }}
+              <div
+                ref={gameContainerRef}
+                className="hp-game-container"
               >
                 {imageLayout.map(({ imageId, x, y, size, gridHeight }) => {
                   return (

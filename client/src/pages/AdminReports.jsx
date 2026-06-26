@@ -474,9 +474,15 @@ const AdminReports = () => {
                                     <div style={{ fontSize: '0.65rem', color: '#ef4444', fontWeight: 700, textTransform: 'uppercase' }}>Quit</div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
                                 </div>
-                                <div style={S.kpi(filterStatus === 'dropped')} onClick={() => setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}>
-                                    <div style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
+                                <div
+                                    style={{ ...S.kpi(filterStatus === 'dropped'), ...(activeGame.key === 'working_memory_herpher' ? { cursor: 'not-allowed', opacity: 0.5 } : {}) }}
+                                    onClick={() => activeGame.key !== 'working_memory_herpher' && setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}
+                                    title={activeGame.key === 'working_memory_herpher' ? 'No dropout rule for Her Pher' : undefined}
+                                >
+                                    <div style={{ fontSize: '0.65rem', color: activeGame.key === 'working_memory_herpher' ? '#94a3b8' : '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: activeGame.key === 'working_memory_herpher' ? '#94a3b8' : '#dc2626' }}>
+                                        {activeGame.key === 'working_memory_herpher' ? '—' : (s.dropped_count ?? 0)}
+                                    </div>
                                 </div>
                                 <div style={S.kpi(filterStatus === 'paused')} onClick={() => setFilterStatus(filterStatus === 'paused' ? null : 'paused')}>
                                     <div style={{ fontSize: '0.65rem', color: '#854d0e', fontWeight: 700, textTransform: 'uppercase' }}>Paused</div>
@@ -1052,9 +1058,14 @@ const AdminReports = () => {
                                         <div style={{ ...S.kpiVal, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
                                         <div style={S.kpiLbl}>Quit</div>
                                     </div>
-                                    <div style={S.kpi(false)}>
-                                        <div style={{ ...S.kpiVal, color: '#dc2626' }}>{s.dropped_count ?? 0}</div>
-                                        <div style={S.kpiLbl}>Dropped</div>
+                                    <div
+                                        style={S.kpi(false)}
+                                        title={game.key === 'working_memory_herpher' ? 'No dropout rule for Her Pher' : undefined}
+                                    >
+                                        <div style={{ ...S.kpiVal, color: game.key === 'working_memory_herpher' ? '#cbd5e1' : '#dc2626' }}>
+                                            {game.key === 'working_memory_herpher' ? '—' : (s.dropped_count ?? 0)}
+                                        </div>
+                                        <div style={{ ...S.kpiLbl, color: game.key === 'working_memory_herpher' ? '#cbd5e1' : undefined }}>Dropped</div>
                                     </div>
                                     <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#854d0e' }}>{s.paused ?? 0}</div>
