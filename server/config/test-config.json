@@ -1,11 +1,11 @@
 {
   "atlantis_bagiya": {
     "enabled": true,
-    "display_order": 2
+    "display_order": 1
   },
   "number_recall_lottery": {
     "enabled": true,
-    "display_order": 1
+    "display_order": 2
   },
   "rover_mela": {
     "enabled": true,
