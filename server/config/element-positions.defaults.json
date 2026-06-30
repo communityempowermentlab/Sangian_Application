@@ -1,0 +1,655 @@
+{
+  "atlantis_bagiya": {
+    "1": [
+      {
+        "leftPct": 3.85,
+        "topPct": 1.93,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 61.78,
+        "topPct": 1.61,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 79.95,
+        "topPct": 3.27,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 81.67,
+        "topPct": 35.67,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 19.26,
+        "topPct": 35.36,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 7.7,
+        "topPct": 70.41,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 71.2,
+        "topPct": 68.33,
+        "sizePct": 15.79
+      }
+    ],
+    "2": [
+      {
+        "leftPct": 1.32,
+        "topPct": 1.53,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 69.81,
+        "topPct": 1.94,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 34.5,
+        "topPct": 35.13,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 79.71,
+        "topPct": 37.01,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.71,
+        "topPct": 35.4,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 72.75,
+        "topPct": 69.68,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 7.26,
+        "topPct": 70.73,
+        "sizePct": 15.79
+      }
+    ],
+    "3": [
+      {
+        "leftPct": 45.94,
+        "topPct": 3.42,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 74.9,
+        "topPct": 2.11,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 73.17,
+        "topPct": 33.88,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 1.41,
+        "topPct": 36.76,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 34.19,
+        "topPct": 35.1,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 78.97,
+        "topPct": 70.99,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 35.45,
+        "topPct": 69.15,
+        "sizePct": 15.79
+      }
+    ],
+    "4": [
+      {
+        "leftPct": 66.87,
+        "topPct": 3.08,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 35.6,
+        "topPct": 1.38,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 68.74,
+        "topPct": 34.13,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 6.63,
+        "topPct": 34.78,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 46.36,
+        "topPct": 35.3,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 81.07,
+        "topPct": 68.76,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.68,
+        "topPct": 70.7,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 46.73,
+        "topPct": 70.31,
+        "sizePct": 15.79
+      }
+    ],
+    "5": [
+      {
+        "leftPct": 9.42,
+        "topPct": 0.66,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 71.99,
+        "topPct": 1.05,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 43.62,
+        "topPct": 4.01,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 8.83,
+        "topPct": 36.92,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 68.04,
+        "topPct": 35.11,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 46.85,
+        "topPct": 36.74,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 81.28,
+        "topPct": 71.14,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 6.5,
+        "topPct": 67.88,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 39,
+        "topPct": 68.27,
+        "sizePct": 15.79
+      }
+    ],
+    "6": [
+      {
+        "leftPct": 45.81,
+        "topPct": 0.14,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 11.76,
+        "topPct": 3.41,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 67.99,
+        "topPct": 0.37,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 83.52,
+        "topPct": 33.37,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 3.74,
+        "topPct": 35.93,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 39.77,
+        "topPct": 36.9,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 45.8,
+        "topPct": 68.82,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 15,
+        "topPct": 68.81,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 67.5,
+        "topPct": 69.48,
+        "sizePct": 15.79
+      }
+    ],
+    "7": [
+      {
+        "leftPct": 9.2,
+        "topPct": 0.55,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 78.32,
+        "topPct": 1.23,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 28.75,
+        "topPct": 1.58,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 54.22,
+        "topPct": 1.75,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 2.32,
+        "topPct": 34.92,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 76.48,
+        "topPct": 36.41,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 25.36,
+        "topPct": 36.24,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 58,
+        "topPct": 69.04,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 27.83,
+        "topPct": 68.99,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 6.15,
+        "topPct": 69.56,
+        "sizePct": 15.79
+      }
+    ],
+    "8": [
+      {
+        "leftPct": 33.69,
+        "topPct": 3.78,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 15.9,
+        "topPct": 3.26,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 78,
+        "topPct": 0.98,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 68.47,
+        "topPct": 37.77,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 16.05,
+        "topPct": 36.43,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 38.64,
+        "topPct": 36.42,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 68.92,
+        "topPct": 68.74,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 47.65,
+        "topPct": 68.37,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 4.78,
+        "topPct": 70.03,
+        "sizePct": 15.79
+      }
+    ],
+    "9": [
+      {
+        "leftPct": 30.64,
+        "topPct": 1.52,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 50.31,
+        "topPct": 2.88,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 3.58,
+        "topPct": 1.99,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 83.88,
+        "topPct": 2.95,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 33.33,
+        "topPct": 33.41,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.79,
+        "topPct": 35.48,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 54.46,
+        "topPct": 33.47,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 81.86,
+        "topPct": 35.1,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 53.54,
+        "topPct": 69.47,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 30.15,
+        "topPct": 70.3,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 79.42,
+        "topPct": 70.6,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.61,
+        "topPct": 69.32,
+        "sizePct": 15.79
+      }
+    ],
+    "10": [
+      {
+        "leftPct": 52.81,
+        "topPct": 1.07,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 6.01,
+        "topPct": 2.77,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 80.15,
+        "topPct": 0.48,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 32.81,
+        "topPct": 0.11,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 53.24,
+        "topPct": 37.24,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 77.64,
+        "topPct": 34.17,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 29.36,
+        "topPct": 35.79,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 26.54,
+        "topPct": 67.8,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.25,
+        "topPct": 68.72,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 58.17,
+        "topPct": 67.13,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 83.14,
+        "topPct": 69.24,
+        "sizePct": 15.79
+      }
+    ],
+    "11": [
+      {
+        "leftPct": 52.81,
+        "topPct": 1.42,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 5.96,
+        "topPct": 2.64,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 78.24,
+        "topPct": 2.18,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 84.01,
+        "topPct": 36.84,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 28.73,
+        "topPct": 36.85,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 57.72,
+        "topPct": 37.56,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 4.01,
+        "topPct": 34.56,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 7.15,
+        "topPct": 66.86,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 26.97,
+        "topPct": 67.98,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 77.66,
+        "topPct": 67.29,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 55.72,
+        "topPct": 66.95,
+        "sizePct": 15.79
+      }
+    ],
+    "12": [
+      {
+        "leftPct": 7.2,
+        "topPct": 1.38,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 55.97,
+        "topPct": 2.07,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 28.2,
+        "topPct": 1.77,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 80.2,
+        "topPct": 3.03,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 4.43,
+        "topPct": 34.05,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 29.47,
+        "topPct": 34.26,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 75.97,
+        "topPct": 37.75,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 51.22,
+        "topPct": 34.95,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 8.34,
+        "topPct": 70.63,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 52.51,
+        "topPct": 69.68,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 25.05,
+        "topPct": 70.23,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 78.41,
+        "topPct": 68.48,
+        "sizePct": 15.79
+      }
+    ],
+    "13": [
+      {
+        "leftPct": 40.76,
+        "topPct": 0.47,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 0.11,
+        "topPct": 0.96,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 82.4,
+        "topPct": 0.44,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 20.61,
+        "topPct": 0.7,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 81.06,
+        "topPct": 36.68,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 60.08,
+        "topPct": 37.03,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 2.92,
+        "topPct": 37.74,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 23.34,
+        "topPct": 37.41,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 2.6,
+        "topPct": 67.26,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 62.1,
+        "topPct": 71.15,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 82.4,
+        "topPct": 68.04,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 23.57,
+        "topPct": 67.57,
+        "sizePct": 15.79
+      },
+      {
+        "leftPct": 42.37,
+        "topPct": 71.27,
+        "sizePct": 15.79
+      }
+    ]
+  }
+}

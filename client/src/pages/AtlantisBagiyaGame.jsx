@@ -162,9 +162,12 @@ function shuffle(arr) {
 }
 
 // ─── Scatter layout (no rows/columns, no overlap, any item count) ─────────────
-// Deterministic seeded PRNG (mulberry32) — same seed always produces the same
-// layout, so a given sub-question's positions never shift on re-render, but a
-// different seed (new sub-question) produces a fresh arrangement.
+// Always (at most) 3 rows. Deterministic seeded PRNG (mulberry32) — same seed
+// always produces the same layout, so a given sub-question's positions never
+// shift on re-render, but a different seed (new sub-question) produces a
+// fresh arrangement.
+const SCATTER_ROWS = 3;
+
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -175,59 +178,263 @@ function mulberry32(seed) {
   };
 }
 
-// Slices the container into a cols x rows cell grid sized to fit `count` items,
-// then places each item at its cell centre plus a bounded random jitter — so
-// items can never overlap (jitter never exceeds half the leftover cell margin)
-// or fall outside the container (every cell is fully inside it).
+// Balance `count` items across 3 rows first (every row gets its fair share,
+// so the scatter spans the full height). Columns use ONE global count, sized
+// to the busiest row (not a column count sized for the densest screen in the
+// game, and not each row's own count either) — every row shares the exact
+// same column pitch, which is what keeps the gap between elements equal
+// everywhere. A row with fewer items than that column count picks a RANDOM
+// subset of those columns (instead of always splitting its own width into
+// just `need` fixed halves/thirds) — that's the difference between a sparse
+// row always leaving the same dead zone (e.g. 2 items in a row of 3 columns
+// always landing in columns 0 and 2, permanently skipping the middle) and
+// one that sometimes uses the middle column, which is what actually reads as
+// scattered rather than two clusters with a gap between them.
 function computeScatterPositions(count, containerWidth, containerHeight, seed) {
   if (!count || containerWidth <= 0 || containerHeight <= 0) return [];
   const rng = mulberry32(seed);
 
-  // Build a virtual grid with noticeably MORE cells than items (oversample),
-  // then randomly choose which cells are actually used. Because only some
-  // cells of this finer grid end up occupied, the occupied ones don't line up
-  // into full, even rows/columns the way a tightly-packed grid would — some
-  // rows have gaps, some have fewer items than others — so it reads as a
-  // natural scatter. Every cell (used or not) is still non-overlapping with
-  // its neighbours by construction, and jitter stays bounded inside whichever
-  // cell an item lands in, so no two chosen items can ever collide.
-  const oversample = 1.5;
-  const aspect = containerWidth / containerHeight;
-  const cols = Math.max(1, Math.round(Math.sqrt(count * oversample * aspect)));
-  const rows = Math.max(1, Math.ceil((count * oversample) / cols));
-  const totalCells = cols * rows;
-  const cellW = containerWidth / cols;
-  const cellH = containerHeight / rows;
-  const size = Math.max(80, Math.min(235, Math.min(cellW, cellH) * 0.95));
-  const maxJitterX = Math.max(0, (cellW - size) / 2);
-  const maxJitterY = Math.max(0, (cellH - size) / 2);
-
-  // Shuffle the full list of cell indices with the seeded RNG, then take the
-  // first `count` as the occupied set — deterministic per seed (stable within
-  // a sub-question), different whenever the seed (sub-question) changes.
-  const cellIndices = Array.from({ length: totalCells }, (_, i) => i);
-  for (let i = cellIndices.length - 1; i > 0; i--) {
+  const itemsPerRow = Array(SCATTER_ROWS).fill(Math.floor(count / SCATTER_ROWS));
+  const remainder = count - itemsPerRow.reduce((a, b) => a + b, 0);
+  const rowOrder = Array.from({ length: SCATTER_ROWS }, (_, i) => i);
+  for (let i = rowOrder.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
-    [cellIndices[i], cellIndices[j]] = [cellIndices[j], cellIndices[i]];
+    [rowOrder[i], rowOrder[j]] = [rowOrder[j], rowOrder[i]];
   }
-  const chosenCells = cellIndices.slice(0, count);
+  for (let k = 0; k < remainder; k++) itemsPerRow[rowOrder[k]]++;
 
-  return chosenCells.map((cellIndex) => {
-    const col = cellIndex % cols;
-    const row = Math.floor(cellIndex / cols);
-    const jitterX = (rng() * 2 - 1) * maxJitterX;
-    const jitterY = (rng() * 2 - 1) * maxJitterY;
-    return {
-      left: col * cellW + (cellW - size) / 2 + jitterX,
-      top: row * cellH + (cellH - size) / 2 + jitterY,
-      size,
-    };
-  });
+  const colCount = Math.max(...itemsPerRow);
+  const rowPitch = containerHeight / SCATTER_ROWS;
+  const colPitch = containerWidth / colCount;
+  // Sized smaller than the pitch on purpose — the leftover margin is what the
+  // jitter below uses to nudge items off their row/column centre (including
+  // toward the boundary with the next row), which is what makes some items
+  // land visibly between rows instead of snapped to 3 rigid lines.
+  const itemSize = Math.max(70, Math.min(320, Math.min(rowPitch, colPitch) * 0.86));
+  const maxJitterX = Math.max(0, (colPitch - itemSize) / 2);
+  const maxJitterY = Math.max(0, (rowPitch - itemSize) / 2);
+
+  const positions = [];
+  for (let r = 0; r < SCATTER_ROWS; r++) {
+    const need = itemsPerRow[r];
+    if (!need) continue;
+    const top = r * rowPitch + (rowPitch - itemSize) / 2;
+    const colIndices = Array.from({ length: colCount }, (_, c) => c);
+    for (let i = colIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [colIndices[i], colIndices[j]] = [colIndices[j], colIndices[i]];
+    }
+    for (let k = 0; k < need; k++) {
+      const col = colIndices[k];
+      const jitterX = (rng() * 2 - 1) * maxJitterX;
+      const jitterY = (rng() * 2 - 1) * maxJitterY;
+      const left = col * colPitch + (colPitch - itemSize) / 2 + jitterX;
+      positions.push({ left, top: top + jitterY, size: itemSize });
+    }
+  }
+  return positions;
+}
+
+// ─── Fixed response layouts ────────────────────────────────────────────────
+// Per request: each main-game response screen (1-13) now uses a FIXED set of
+// item positions instead of the randomised scatter above — the same slots,
+// in the same place, every time. Each entry is one verified-good arrangement
+// (no overlap, full edge-to-edge coverage, equal spacing) frozen from
+// computeScatterPositions, expressed as % of the container's width/height
+// (not raw px) so it stays correct if the actual device's response-grid area
+// differs slightly from the 1180x650 (11" iPad landscape) reference used to
+// generate these. `sizePct` is a % of the container WIDTH (items are square).
+const FIXED_RESPONSE_LAYOUTS = {
+  1: [
+    { leftPct: 3.85, topPct: 1.93, sizePct: 15.79 },
+    { leftPct: 61.78, topPct: 1.61, sizePct: 15.79 },
+    { leftPct: 79.95, topPct: 3.27, sizePct: 15.79 },
+    { leftPct: 81.67, topPct: 35.67, sizePct: 15.79 },
+    { leftPct: 19.26, topPct: 35.36, sizePct: 15.79 },
+    { leftPct: 7.70, topPct: 70.41, sizePct: 15.79 },
+    { leftPct: 71.20, topPct: 68.33, sizePct: 15.79 },
+  ],
+  2: [
+    { leftPct: 1.32, topPct: 1.53, sizePct: 15.79 },
+    { leftPct: 69.81, topPct: 1.94, sizePct: 15.79 },
+    { leftPct: 34.50, topPct: 35.13, sizePct: 15.79 },
+    { leftPct: 79.71, topPct: 37.01, sizePct: 15.79 },
+    { leftPct: 5.71, topPct: 35.40, sizePct: 15.79 },
+    { leftPct: 72.75, topPct: 69.68, sizePct: 15.79 },
+    { leftPct: 7.26, topPct: 70.73, sizePct: 15.79 },
+  ],
+  3: [
+    { leftPct: 45.94, topPct: 3.42, sizePct: 15.79 },
+    { leftPct: 74.90, topPct: 2.11, sizePct: 15.79 },
+    { leftPct: 73.17, topPct: 33.88, sizePct: 15.79 },
+    { leftPct: 1.41, topPct: 36.76, sizePct: 15.79 },
+    { leftPct: 34.19, topPct: 35.10, sizePct: 15.79 },
+    { leftPct: 78.97, topPct: 70.99, sizePct: 15.79 },
+    { leftPct: 35.45, topPct: 69.15, sizePct: 15.79 },
+  ],
+  4: [
+    { leftPct: 66.87, topPct: 3.08, sizePct: 15.79 },
+    { leftPct: 35.60, topPct: 1.38, sizePct: 15.79 },
+    { leftPct: 68.74, topPct: 34.13, sizePct: 15.79 },
+    { leftPct: 6.63, topPct: 34.78, sizePct: 15.79 },
+    { leftPct: 46.36, topPct: 35.30, sizePct: 15.79 },
+    { leftPct: 81.07, topPct: 68.76, sizePct: 15.79 },
+    { leftPct: 5.68, topPct: 70.70, sizePct: 15.79 },
+    { leftPct: 46.73, topPct: 70.31, sizePct: 15.79 },
+  ],
+  5: [
+    { leftPct: 9.42, topPct: 0.66, sizePct: 15.79 },
+    { leftPct: 71.99, topPct: 1.05, sizePct: 15.79 },
+    { leftPct: 43.62, topPct: 4.01, sizePct: 15.79 },
+    { leftPct: 8.83, topPct: 36.92, sizePct: 15.79 },
+    { leftPct: 68.04, topPct: 35.11, sizePct: 15.79 },
+    { leftPct: 46.85, topPct: 36.74, sizePct: 15.79 },
+    { leftPct: 81.28, topPct: 71.14, sizePct: 15.79 },
+    { leftPct: 6.50, topPct: 67.88, sizePct: 15.79 },
+    { leftPct: 39.00, topPct: 68.27, sizePct: 15.79 },
+  ],
+  6: [
+    { leftPct: 45.81, topPct: 0.14, sizePct: 15.79 },
+    { leftPct: 11.76, topPct: 3.41, sizePct: 15.79 },
+    { leftPct: 67.99, topPct: 0.37, sizePct: 15.79 },
+    { leftPct: 83.52, topPct: 33.37, sizePct: 15.79 },
+    { leftPct: 3.74, topPct: 35.93, sizePct: 15.79 },
+    { leftPct: 39.77, topPct: 36.90, sizePct: 15.79 },
+    { leftPct: 45.80, topPct: 68.82, sizePct: 15.79 },
+    { leftPct: 15.00, topPct: 68.81, sizePct: 15.79 },
+    { leftPct: 67.50, topPct: 69.48, sizePct: 15.79 },
+  ],
+  7: [
+    { leftPct: 9.20, topPct: 0.55, sizePct: 15.79 },
+    { leftPct: 78.32, topPct: 1.23, sizePct: 15.79 },
+    { leftPct: 28.75, topPct: 1.58, sizePct: 15.79 },
+    { leftPct: 54.22, topPct: 1.75, sizePct: 15.79 },
+    { leftPct: 2.32, topPct: 34.92, sizePct: 15.79 },
+    { leftPct: 76.48, topPct: 36.41, sizePct: 15.79 },
+    { leftPct: 25.36, topPct: 36.24, sizePct: 15.79 },
+    { leftPct: 58.00, topPct: 69.04, sizePct: 15.79 },
+    { leftPct: 27.83, topPct: 68.99, sizePct: 15.79 },
+    { leftPct: 6.15, topPct: 69.56, sizePct: 15.79 },
+  ],
+  8: [
+    { leftPct: 33.69, topPct: 3.78, sizePct: 15.79 },
+    { leftPct: 15.90, topPct: 3.26, sizePct: 15.79 },
+    { leftPct: 78.00, topPct: 0.98, sizePct: 15.79 },
+    { leftPct: 68.47, topPct: 37.77, sizePct: 15.79 },
+    { leftPct: 16.05, topPct: 36.43, sizePct: 15.79 },
+    { leftPct: 38.64, topPct: 36.42, sizePct: 15.79 },
+    { leftPct: 68.92, topPct: 68.74, sizePct: 15.79 },
+    { leftPct: 47.65, topPct: 68.37, sizePct: 15.79 },
+    { leftPct: 4.78, topPct: 70.03, sizePct: 15.79 },
+  ],
+  9: [
+    { leftPct: 30.64, topPct: 1.52, sizePct: 15.79 },
+    { leftPct: 50.31, topPct: 2.88, sizePct: 15.79 },
+    { leftPct: 3.58, topPct: 1.99, sizePct: 15.79 },
+    { leftPct: 83.88, topPct: 2.95, sizePct: 15.79 },
+    { leftPct: 33.33, topPct: 33.41, sizePct: 15.79 },
+    { leftPct: 5.79, topPct: 35.48, sizePct: 15.79 },
+    { leftPct: 54.46, topPct: 33.47, sizePct: 15.79 },
+    { leftPct: 81.86, topPct: 35.10, sizePct: 15.79 },
+    { leftPct: 53.54, topPct: 69.47, sizePct: 15.79 },
+    { leftPct: 30.15, topPct: 70.30, sizePct: 15.79 },
+    { leftPct: 79.42, topPct: 70.60, sizePct: 15.79 },
+    { leftPct: 5.61, topPct: 69.32, sizePct: 15.79 },
+  ],
+  10: [
+    { leftPct: 52.81, topPct: 1.07, sizePct: 15.79 },
+    { leftPct: 6.01, topPct: 2.77, sizePct: 15.79 },
+    { leftPct: 80.15, topPct: 0.48, sizePct: 15.79 },
+    { leftPct: 32.81, topPct: 0.11, sizePct: 15.79 },
+    { leftPct: 53.24, topPct: 37.24, sizePct: 15.79 },
+    { leftPct: 77.64, topPct: 34.17, sizePct: 15.79 },
+    { leftPct: 29.36, topPct: 35.79, sizePct: 15.79 },
+    { leftPct: 26.54, topPct: 67.80, sizePct: 15.79 },
+    { leftPct: 5.25, topPct: 68.72, sizePct: 15.79 },
+    { leftPct: 58.17, topPct: 67.13, sizePct: 15.79 },
+    { leftPct: 83.14, topPct: 69.24, sizePct: 15.79 },
+  ],
+  11: [
+    { leftPct: 52.81, topPct: 1.42, sizePct: 15.79 },
+    { leftPct: 5.96, topPct: 2.64, sizePct: 15.79 },
+    { leftPct: 78.24, topPct: 2.18, sizePct: 15.79 },
+    { leftPct: 84.01, topPct: 36.84, sizePct: 15.79 },
+    { leftPct: 28.73, topPct: 36.85, sizePct: 15.79 },
+    { leftPct: 57.72, topPct: 37.56, sizePct: 15.79 },
+    { leftPct: 4.01, topPct: 34.56, sizePct: 15.79 },
+    { leftPct: 7.15, topPct: 66.86, sizePct: 15.79 },
+    { leftPct: 26.97, topPct: 67.98, sizePct: 15.79 },
+    { leftPct: 77.66, topPct: 67.29, sizePct: 15.79 },
+    { leftPct: 55.72, topPct: 66.95, sizePct: 15.79 },
+  ],
+  12: [
+    { leftPct: 7.20, topPct: 1.38, sizePct: 15.79 },
+    { leftPct: 55.97, topPct: 2.07, sizePct: 15.79 },
+    { leftPct: 28.20, topPct: 1.77, sizePct: 15.79 },
+    { leftPct: 80.20, topPct: 3.03, sizePct: 15.79 },
+    { leftPct: 4.43, topPct: 34.05, sizePct: 15.79 },
+    { leftPct: 29.47, topPct: 34.26, sizePct: 15.79 },
+    { leftPct: 75.97, topPct: 37.75, sizePct: 15.79 },
+    { leftPct: 51.22, topPct: 34.95, sizePct: 15.79 },
+    { leftPct: 8.34, topPct: 70.63, sizePct: 15.79 },
+    { leftPct: 52.51, topPct: 69.68, sizePct: 15.79 },
+    { leftPct: 25.05, topPct: 70.23, sizePct: 15.79 },
+    { leftPct: 78.41, topPct: 68.48, sizePct: 15.79 },
+  ],
+  13: [
+    { leftPct: 40.76, topPct: 0.47, sizePct: 15.79 },
+    { leftPct: 0.11, topPct: 0.96, sizePct: 15.79 },
+    { leftPct: 82.40, topPct: 0.44, sizePct: 15.79 },
+    { leftPct: 20.61, topPct: 0.70, sizePct: 15.79 },
+    { leftPct: 81.06, topPct: 36.68, sizePct: 15.79 },
+    { leftPct: 60.08, topPct: 37.03, sizePct: 15.79 },
+    { leftPct: 2.92, topPct: 37.74, sizePct: 15.79 },
+    { leftPct: 23.34, topPct: 37.41, sizePct: 15.79 },
+    { leftPct: 2.60, topPct: 67.26, sizePct: 15.79 },
+    { leftPct: 62.10, topPct: 71.15, sizePct: 15.79 },
+    { leftPct: 82.40, topPct: 68.04, sizePct: 15.79 },
+    { leftPct: 23.57, topPct: 67.57, sizePct: 15.79 },
+    { leftPct: 42.37, topPct: 71.27, sizePct: 15.79 },
+  ],
+};
+
+function getFixedPositions(layoutsSource, screenNum, containerWidth, containerHeight) {
+  const layout = layoutsSource[screenNum] || layoutsSource[String(screenNum)];
+  if (!layout || containerWidth <= 0 || containerHeight <= 0) return [];
+  return layout.map(({ leftPct, topPct, sizePct }) => ({
+    left: (leftPct / 100) * containerWidth,
+    top: (topPct / 100) * containerHeight,
+    size: (sizePct / 100) * containerWidth,
+  }));
+}
+
+// Same measurement plumbing as useScatterLayout below, but looks up a fixed
+// per-screen layout instead of computing a random one. `layoutsSource`
+// defaults to the bundled FIXED_RESPONSE_LAYOUTS but the caller passes the
+// admin-editable, server-fetched layouts when available — see the
+// `elementPositionLayouts` fetch in the main component, which falls back to
+// this same constant if the request fails.
+function useFixedScatterLayout(screenNum, layoutsSource = FIXED_RESPONSE_LAYOUTS) {
+  const [node, setNode] = useState(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!node) return;
+    const update = () => setSize({ width: node.offsetWidth, height: node.offsetHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node]);
+
+  const positions = getFixedPositions(layoutsSource, screenNum, size.width, size.height);
+  return { containerRef: setNode, positions };
 }
 
 // Measures a container element and returns deterministic, non-overlapping
 // (left, top, size) positions for `count` items — recomputed only when the
-// container resizes or `seed` changes (e.g. a new sub-question).
+// container resizes or `seed` changes (e.g. a new sub-question). Still used
+// for the practice screen, which isn't part of the fixed-layout request.
 function useScatterLayout(count, seed) {
   // A plain useRef's .current changing (e.g. when this screen mounts after the
   // user navigates to it) does NOT re-run effects, so a `useRef` here would only
@@ -338,6 +545,19 @@ const AtlantisBagiyaGame = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ── Admin-editable element positions (Admin Panel > Element Positions) ──
+  // Falls back to the bundled FIXED_RESPONSE_LAYOUTS on any fetch error or
+  // while the request is in flight, so the game never breaks if the server
+  // config is briefly unavailable — same defensive pattern as HeaderConfigContext.
+  const [elementPositionLayouts, setElementPositionLayouts] = useState(FIXED_RESPONSE_LAYOUTS);
+  useEffect(() => {
+    axios.get(`${API_URL}/public/element-positions/atlantis_bagiya`)
+      .then(({ data }) => {
+        if (data && Object.keys(data).length) setElementPositionLayouts(data);
+      })
+      .catch(() => {}); // keep the bundled defaults on error
+  }, []);
+
   // ── Core session state ──────────────────────────────────
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -435,7 +655,7 @@ const AtlantisBagiyaGame = () => {
   // the top level per React's rules of hooks, even though each is only rendered
   // on one specific screen.
   const practiceScatter = useScatterLayout(practiceResponseSet.length, 1);
-  const mainScatter = useScatterLayout((responseSets[mainScreenNum] || []).length, mainScreenNum * 1000 + subQIndex);
+  const mainScatter = useFixedScatterLayout(mainScreenNum, elementPositionLayouts);
 
   // ── Hide iOS status bar for immersive game experience ───
   useEffect(() => {
@@ -1341,6 +1561,31 @@ const AtlantisBagiyaGame = () => {
                             }}
                           >
                             <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
+                            {/* TEMP DEBUG OVERLAY — remove once fixed positions (FIXED_RESPONSE_LAYOUTS) are finalized */}
+                            {pos && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: -2,
+                                  left: 2,
+                                  right: 2,
+                                  fontSize: 10,
+                                  lineHeight: 1.2,
+                                  fontFamily: 'monospace',
+                                  color: '#fff',
+                                  background: 'rgba(0,0,0,0.65)',
+                                  padding: '1px 3px',
+                                  borderRadius: 4,
+                                  pointerEvents: 'none',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  zIndex: 5,
+                                }}
+                              >
+                                {item.name} ({Math.round(pos.left)}, {Math.round(pos.top)})
+                              </div>
+                            )}
                           </div>
                         );
                       })}

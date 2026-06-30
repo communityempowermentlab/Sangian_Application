@@ -4,6 +4,7 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import './AdminElements.css';
 import HerPherElements from '../components/HerPherElements';
+import AdminElementPositionManager from './AdminElementPositionManager';
 
 const LANGUAGES = [
     { code: 'en', name: 'English' },
@@ -195,11 +196,22 @@ export default function AdminElements() {
                 </div>
 
                 {activeTest === 'working_memory_herpher' && (
-                    <HerPherElements 
-                        elements={elements} 
-                        loadElements={loadElements} 
-                        showToast={showToast} 
+                    <HerPherElements
+                        elements={elements}
+                        loadElements={loadElements}
+                        showToast={showToast}
                     />
+                )}
+
+                {activeTest === 'atlantis_bagiya' && (
+                    <div className="elements-section">
+                        <h3>Element Position Manager</h3>
+                        <p className="elements-desc">
+                            Drag and drop to fine-tune where elements appear on each response screen,
+                            without a code deployment.
+                        </p>
+                        <AdminElementPositionManager />
+                    </div>
                 )}
             </div>
 

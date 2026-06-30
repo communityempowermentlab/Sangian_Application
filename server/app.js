@@ -23,6 +23,7 @@ const contactRoutes = require('./src/routes/contactRoutes');
 const ticketRoutes      = require('./src/routes/ticketRoutes');
 const helpContentRoutes = require('./src/routes/helpContentRoutes');
 const { adminRouter: elementsAdminRoutes, publicRouter: elementsPublicRoutes } = require('./src/routes/elementsRoutes');
+const { adminRouter: elementPositionAdminRoutes, publicRouter: elementPositionPublicRoutes } = require('./src/routes/elementPositionRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -124,6 +125,8 @@ app.use('/api/tickets',         ticketRoutes);
 app.use('/api/help-content',    helpContentRoutes);
 app.use('/api/admin/elements',  elementsAdminRoutes);
 app.use('/api/public/elements', elementsPublicRoutes);
+app.use('/api/admin/element-positions',  elementPositionAdminRoutes);
+app.use('/api/public/element-positions', elementPositionPublicRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
