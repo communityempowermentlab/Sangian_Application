@@ -1560,7 +1560,12 @@ const AtlantisBagiyaGame = () => {
                               if (subQAudioDone && !isRetrying) handleMainAnswer(item);
                             }}
                           >
-                            <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
+                            <img 
+                              src={item.img} 
+                              alt={item.name} 
+                              className="ab-grid-item-img-large" 
+                              style={mainScreenNum >= 9 && mainScreenNum <= 13 ? { transform: 'scale(0.8)' } : {}}
+                            />
                           </div>
                         );
                       })}
