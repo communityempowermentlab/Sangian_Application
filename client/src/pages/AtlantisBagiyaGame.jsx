@@ -1561,31 +1561,6 @@ const AtlantisBagiyaGame = () => {
                             }}
                           >
                             <img src={item.img} alt={item.name} className="ab-grid-item-img-large" />
-                            {/* TEMP DEBUG OVERLAY — remove once fixed positions (FIXED_RESPONSE_LAYOUTS) are finalized */}
-                            {pos && (
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  top: -2,
-                                  left: 2,
-                                  right: 2,
-                                  fontSize: 10,
-                                  lineHeight: 1.2,
-                                  fontFamily: 'monospace',
-                                  color: '#fff',
-                                  background: 'rgba(0,0,0,0.65)',
-                                  padding: '1px 3px',
-                                  borderRadius: 4,
-                                  pointerEvents: 'none',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  zIndex: 5,
-                                }}
-                              >
-                                {item.name} ({Math.round(pos.left)}, {Math.round(pos.top)})
-                              </div>
-                            )}
                           </div>
                         );
                       })}
