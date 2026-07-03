@@ -785,70 +785,6 @@ const ChaloMelaChaleGame = () => {
   }, [stopAll, startTrial, safeSetTimeout]);
 
   // --- DEMO LOGIC ---
-  const runPathSequence = useCallback(async (seq, pathKey, nextPathKey = null) => {
-    setActivePath(pathKey); 
-    setPathProgress(-1);
-    setIsAnimating(true);
-    
-    let elapsed1 = 0;
-    while(elapsed1 < 500) {
-      await new Promise(r => setTimeout(r, 50));
-      if (isStoppedRef.current) return;
-      if (!isPausedRef.current) elapsed1 += 50;
-    }
-
-    let audioFile = '';
-    if (pathKey.startsWith('sb')) {
-      audioFile = pathKey === 'sbP1' ? 'SB_path1.wav' : 'SB_path2.wav';
-    } else {
-      audioFile = pathKey === 'p1' ? 'path1.wav' : pathKey === 'p2' ? 'path2.wav' : 'path3.wav';
-    }
-
-    playAudio(audioFile);
-    const totalMs = pathKey.startsWith('sb') ? 9000 : (pathKey === 'p1' ? 11000 : 8000);
-    const stepDelay = Math.round(totalMs / seq.length);
-    for (let i = 0; i < seq.length; i++) {
-      while(isPausedRef.current) await new Promise(r => setTimeout(r, 100));
-      if (isStoppedRef.current) return;
-      setPathProgress(i);
-
-      let elapsed2 = 0;
-      while(elapsed2 < stepDelay) {
-        await new Promise(r => setTimeout(r, 50));
-        if (isStoppedRef.current) return;
-        if (!isPausedRef.current) elapsed2 += 50;
-      }
-    }
-
-    if (isStoppedRef.current) return;
-    let resultFile = '';
-    if (pathKey.startsWith('sb')) {
-      resultFile = pathKey === 'sbP1' ? 'SB_path1_result.wav' : 'SB_path2_result.wav';
-    } else {
-      resultFile = pathKey === 'p1' ? 'path1_result.wav' : pathKey === 'p2' ? 'path2_result.wav' : 'path3_result.wav';
-    }
-
-    playAudio(resultFile, () => {
-      setIsAnimating(false);
-      setCompletedPaths(prev => ({ ...prev, [pathKey]: true })); 
-      
-      if (nextPathKey) {
-        setUnlockedPaths(prev => ({ ...prev, [nextPathKey]: true }));
-        
-        // If the next step is a question, clear the active path highlight
-        if (nextPathKey.startsWith('tq')) {
-          setActivePath(null);
-        }
-
-        safeSetTimeout(() => {
-          if (nextPathKey === 'p2') runPathSequence(PATH2_SEQ, 'p2', 'p3');
-          else if (nextPathKey === 'p3') runPathSequence(PATH3_SEQ, 'p3', 'tq1');
-          else if (nextPathKey === 'sbP2') runPathSequence(SB_PATH2_SEQ, 'sbP2', 'tq3');
-        }, 1000);
-      }
-    });
-  }, [playAudio, safeSetTimeout]);
-
   const animatePathA = useCallback(async (seq, pathKey, audioFile, durationMs, waitForAudio = true, delayBeforeMoveMs = 0, customStepDelays = {}) => {
     setActivePath(pathKey);
     setPathProgress(-1);
@@ -1232,7 +1168,8 @@ const ChaloMelaChaleGame = () => {
       setTimeout(() => generateAndUploadPDF(), 1000);
     } catch (e) {
       console.error(e);
-      setAssessmentSaveMsg('❌ Failed to save assessment. Please try again.');
+      const serverMsg = e.response?.data?.message;
+      setAssessmentSaveMsg(`❌ Failed to save assessment. ${serverMsg ? serverMsg : 'Please try again.'}`);
     } finally {
       setIsAssessmentSubmitting(false);
     }
