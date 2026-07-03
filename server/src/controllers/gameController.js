@@ -220,7 +220,9 @@ exports.getReportOverview = async (req, res) => {
                 SUM(status = 'in_progress')                     AS in_progress,
                 SUM(status = 'dropped')                         AS dropped_count,
                 SUM(status = 'quit')                            AS quit_count,
-                ROUND(AVG(CASE WHEN status='completed' THEN score END), 1) AS avg_score
+                ROUND(AVG(CASE WHEN status='completed' THEN score END), 1) AS avg_score,
+                ROUND(AVG(CASE WHEN status='completed' THEN JSON_EXTRACT(saved_state, '$.timerSeconds') END), 0) AS avg_game_time,
+                ROUND(AVG(CASE WHEN status='completed' THEN COALESCE(JSON_EXTRACT(saved_state, '$.screentime'), JSON_EXTRACT(saved_state, '$.timerSeconds')) END), 0) AS avg_screen_time
             FROM game_sessions
             GROUP BY 1
         `);

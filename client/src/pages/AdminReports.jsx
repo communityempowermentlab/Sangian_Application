@@ -1106,6 +1106,14 @@ const AdminReports = () => {
                                         <div style={S.kpiVal}>{s.avg_score ?? '—'}</div>
                                         <div style={S.kpiLbl}>Avg Score</div>
                                     </div>
+                                    <div style={S.kpi(false)}>
+                                        <div style={{ ...S.kpiVal, color: '#065f46' }}>{s.avg_game_time != null ? fmtSecs(s.avg_game_time) : '—'}</div>
+                                        <div style={S.kpiLbl}>Avg Game Time</div>
+                                    </div>
+                                    <div style={S.kpi(false)}>
+                                        <div style={{ ...S.kpiVal, color: '#1e40af' }}>{s.avg_screen_time != null ? fmtSecs(s.avg_screen_time) : '—'}</div>
+                                        <div style={S.kpiLbl}>Avg Screen Time</div>
+                                    </div>
                                 </div>
                             </div>
                         );
