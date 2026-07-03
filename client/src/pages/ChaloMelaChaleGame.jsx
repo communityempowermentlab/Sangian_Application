@@ -10,7 +10,7 @@ import { StatusBar } from '@capacitor/status-bar';
 import './ChaloMelaChaleGame.css';
 const GAME_NAME = 'rover_mela';
 const TOTAL_QUESTIONS = 18;
-const MAX_SCORE = 36;
+const MAX_SCORE = 44;
 
 const AUDIO_DIR = '/assets/audios/chalo_mela_chale';
 const IMG_DIR = '/assets/images/chalo_mela_chale';
