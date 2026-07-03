@@ -5,28 +5,20 @@ import axiosAdmin from '../services/axiosAdmin';
 // render when the real item set is randomised (screens 4-13); for the fixed
 // screens (1-3) we also know the exact names, shown instead of "Item N" so
 // the preview reads closer to the real game.
-const GAME_KEY = 'atlantis_bagiya';
-const SCREEN_NUMS = Array.from({ length: 13 }, (_, i) => i + 1);
-const SCREEN_COUNTS = { 1: 7, 2: 7, 3: 7, 4: 8, 5: 9, 6: 9, 7: 10, 8: 9, 9: 12, 10: 11, 11: 11, 12: 12, 13: 13 };
-const FIXED_SCREEN_NAMES = {
-    1: ['BA', 'Bird 2', 'DEEM', 'Bird 4', 'Bird 5', 'THOOLI', 'PEGETO'],
-    2: ['BA', 'Bird 2', 'Bird 4', 'Bird 5', 'JUL', 'BAIGUL', 'SHIBAGU'],
-    3: ['BA', 'Bird 2', 'DEEM', 'Bird 4', 'JUL', 'BAIGUL', 'MULPAKI'],
-};
-
-// Reference aspect ratio established while hand-tuning these layouts this
-// session — an 11" iPad landscape response-grid area (full width, header and
-// bottom button row already subtracted).
-const ASPECT_W = 1180;
-const ASPECT_H = 650;
-
 const SNAP_STEP = 2; // % — used only when "Snap to grid" is on
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
-const placeholderLabel = (screenNum, index) => FIXED_SCREEN_NAMES[screenNum]?.[index] ?? `Item ${index + 1}`;
+const placeholderLabel = (fixedScreenNames, screenNum, index) => fixedScreenNames[screenNum]?.[index] ?? `Item ${index + 1}`;
 
-const AdminElementPositionManager = () => {
+const AdminElementPositionManager = ({
+    gameKey,
+    screenNums,
+    screenCounts,
+    fixedScreenNames = {},
+    aspectW = 1180,
+    aspectH = 650,
+}) => {
     const [selectedScreen, setSelectedScreen] = useState(1);
     const [positions, setPositions] = useState([]); // current editable layout for selectedScreen
     const [loading, setLoading] = useState(true);
@@ -63,7 +55,7 @@ const AdminElementPositionManager = () => {
     const loadScreen = useCallback(async (screenNum) => {
         setLoading(true);
         try {
-            const res = await axiosAdmin.get(`/admin/element-positions/${GAME_KEY}`);
+            const res = await axiosAdmin.get(`/admin/element-positions/${gameKey}`);
             const layout = res.data[String(screenNum)] || [];
             setPositions(layout);
             historyRef.current = [layout];
@@ -149,7 +141,7 @@ const AdminElementPositionManager = () => {
     const save = async () => {
         setSaving(true);
         try {
-            await axiosAdmin.put(`/admin/element-positions/${GAME_KEY}/${selectedScreen}`, { positions });
+            await axiosAdmin.put(`/admin/element-positions/${gameKey}/${selectedScreen}`, { positions });
             setSaved(true);
             setTimeout(() => setSaved(false), 1800);
         } catch (error) {
@@ -162,7 +154,7 @@ const AdminElementPositionManager = () => {
     const resetToDefault = async () => {
         setSaving(true);
         try {
-            const res = await axiosAdmin.post(`/admin/element-positions/${GAME_KEY}/${selectedScreen}/reset`);
+            const res = await axiosAdmin.post(`/admin/element-positions/${gameKey}/${selectedScreen}/reset`);
             setPositions(res.data.positions);
             pushHistory(res.data.positions);
         } catch (error) {
@@ -180,7 +172,7 @@ const AdminElementPositionManager = () => {
                     Response Screens
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {SCREEN_NUMS.map((num) => (
+                    {screenNums.map((num) => (
                         <button
                             key={num}
                             onClick={() => setSelectedScreen(num)}
@@ -192,7 +184,7 @@ const AdminElementPositionManager = () => {
                             }}
                         >
                             Response {num}
-                            <span style={{ marginLeft: '6px', color: '#9ca3af', fontWeight: 500 }}>({SCREEN_COUNTS[num]})</span>
+                            <span style={{ marginLeft: '6px', color: '#9ca3af', fontWeight: 500 }}>({screenCounts[num]})</span>
                         </button>
                     ))}
                 </div>
@@ -240,7 +232,7 @@ const AdminElementPositionManager = () => {
                             position: 'relative',
                             width: '100%',
                             maxWidth: '900px',
-                            aspectRatio: `${ASPECT_W} / ${ASPECT_H}`,
+                            aspectRatio: `${aspectW} / ${aspectH}`,
                             background: '#fff',
                             border: '1.5px solid #e5e7eb',
                             borderRadius: '12px',
@@ -266,7 +258,7 @@ const AdminElementPositionManager = () => {
                                     left: `${p.leftPct}%`,
                                     top: `${p.topPct}%`,
                                     width: `${p.sizePct}%`,
-                                    height: `${p.sizePct * (ASPECT_W / ASPECT_H)}%`,
+                                    height: `${p.sizePct * (aspectW / aspectH)}%`,
                                     background: previewMode ? '#eef2ff' : '#e0e7ff',
                                     border: previewMode ? '1px solid #c7d2fe' : '1.5px dashed #6366f1',
                                     borderRadius: '10px',
@@ -281,7 +273,7 @@ const AdminElementPositionManager = () => {
                                     touchAction: 'none',
                                 }}
                             >
-                                {placeholderLabel(selectedScreen, i)}
+                                {placeholderLabel(fixedScreenNames, selectedScreen, i)}
                             </div>
                         ))}
                     </div>

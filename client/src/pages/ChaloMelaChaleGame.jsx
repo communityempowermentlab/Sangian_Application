@@ -260,6 +260,13 @@ const getTargetMoves = (id) => {
 };
 
 const kAdditionalCoinValue = 4;
+const SAMPLE_A_COINS_TOTAL = 7;
+// Fixed 9-coin bar shared by both SB paths (same fixed-total design as Sample A's 7).
+// Ticket Ghar is the "7-T3" cell — the *second* cell in each path (index 1), not the "7-SP" start cell (index 0).
+// Reaching it counts as 2 coins; every cell after that counts as 1 each. Path 1 crosses 6 of 9; Path 2 crosses 5 of 9 — each path resets independently.
+const SAMPLE_B_COINS_TOTAL = 9;
+// Local coin count within a single SB path, given its own pathProgress (-1/0 = not yet reached Ticket Ghar).
+const sbLocalCoinCross = (progress) => (progress <= 0 ? 0 : progress + 1);
 
 const fmtSecs = (v) => {
   if (v == null) return '—';
@@ -677,7 +684,7 @@ const ChaloMelaChaleGame = () => {
     audio.onended = safeOnEnded;
     
     // Absolute safety timeout if audio is longer than expected but never ends
-    safeSetTimeout(safeOnEnded, 20000); 
+    safeSetTimeout(safeOnEnded, 60000); 
 
     return audio;
   }, [stopAudio, safeSetTimeout]);
@@ -842,19 +849,184 @@ const ChaloMelaChaleGame = () => {
     });
   }, [playAudio, safeSetTimeout]);
 
-  const startAutoDemoA = useCallback(() => {
+  const animatePathA = useCallback(async (seq, pathKey, audioFile, durationMs, waitForAudio = true, delayBeforeMoveMs = 0, customStepDelays = {}) => {
+    setActivePath(pathKey);
+    setPathProgress(-1);
+    setIsAnimating(true);
+    
+    let audioFinished = false;
+    playAudio(audioFile, () => { audioFinished = true; });
+
+    if (delayBeforeMoveMs > 0) {
+      let elapsedDelay = 0;
+      while(elapsedDelay < delayBeforeMoveMs) {
+        await new Promise(r => setTimeout(r, 50));
+        if (isStoppedRef.current) return;
+        if (!isPausedRef.current) elapsedDelay += 50;
+      }
+    }
+
+    const stepDelay = Math.round(durationMs / seq.length);
+    for (let i = 0; i < seq.length; i++) {
+      while(isPausedRef.current) await new Promise(r => setTimeout(r, 100));
+      if (isStoppedRef.current) return;
+      setPathProgress(i);
+
+      let currentStepDelay = stepDelay;
+      if (customStepDelays[i]) {
+        currentStepDelay += customStepDelays[i];
+      }
+      if (currentStepDelay < 0) currentStepDelay = 0;
+
+      let elapsed = 0;
+      while(elapsed < currentStepDelay) {
+        await new Promise(r => setTimeout(r, 50));
+        if (isStoppedRef.current) return;
+        if (!isPausedRef.current) elapsed += 50;
+      }
+    }
+
+    if (waitForAudio) {
+      while(!audioFinished) {
+        await new Promise(r => setTimeout(r, 50));
+        if (isStoppedRef.current) return;
+      }
+    }
+
+    setCompletedPaths(prev => ({ ...prev, [pathKey]: true }));
+    setIsAnimating(false);
+  }, [playAudio]);
+
+  const startAutoDemoA = useCallback(async () => {
+    isStoppedRef.current = false;
     setUnlockedPaths(prev => ({ ...prev, p2: false, p3: false, tq1: false }));
     setCompletedPaths(prev => ({ ...prev, p1: false, p2: false, p3: false }));
-    runPathSequence(PATH1_SEQ, 'p1', 'p2');
-  }, [runPathSequence]);
 
-  const startAutoDemoSB = useCallback(() => {
+    // Step 1: Wait 1 second
+    let elapsed = 0;
+    while(elapsed < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Play samplea.wav
+    let audioFinished = false;
+    playAudio('samplea.wav', () => { audioFinished = true; });
+    while(!audioFinished) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+    }
+
+    // Wait 1 second (reduced from 2000ms)
+    elapsed = 0;
+    while(elapsed < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Step 3: sa_path1.wav, duration 12.75s (movement 2s faster)
+    setUnlockedPaths(prev => ({ ...prev, p1: true }));
+    // Base stepDelay for p1 is 10750 / 7 = 1536ms
+    await animatePathA(PATH1_SEQ, 'p1', 'sa_path1.wav', 10750, true, 1000, { 3: 1500 - 1536, 4: 500 - 1536 });
+    if (isStoppedRef.current) return;
+    
+    // Step 4: sa_path2.wav, duration 17.34s (movement 2s faster)
+    setUnlockedPaths(prev => ({ ...prev, p2: true }));
+    // Base stepDelay is 15340 / 5 = 3068ms. We offset to hit exact target times.
+    await animatePathA(PATH2_SEQ, 'p2', 'sa_path2.wav', 15340, false, 1000, { 1: 1000 - 3068, 2: 1000 - 3068, 3: 1000 - 3068, 4: -500 }); // Don't wait for audio to finish so Path 3 starts 3s earlier
+    if (isStoppedRef.current) return;
+
+    // Wait 0 seconds before path 3
+    elapsed = 0;
+    while(elapsed < 0) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Step 5: sa_path3.wav, duration 33.38s (movement reduced by 4s -> 24380)
+    setUnlockedPaths(prev => ({ ...prev, p3: true }));
+    // Base stepDelay for p3 is 24380 / 4 = 6095ms. Offsetting indices 0,1,2 to 1000ms.
+    await animatePathA(PATH3_SEQ, 'p3', 'sa_path3.wav', 24380, true, 3000, { 0: 1200 - 6095, 1: 1200 - 6095, 2: 1200 - 6095 });
+    if (isStoppedRef.current) return;
+
+    // Completion
+    setActivePath(null);
+    setUnlockedPaths(prev => ({ ...prev, tq1: true }));
+
+  }, [playAudio, animatePathA]);
+
+  const startAutoDemoSB = useCallback(async () => {
+    isStoppedRef.current = false;
     setUnlockedPaths(prev => ({ ...prev, sbP2: false, tq3: false }));
     setCompletedPaths(prev => ({ ...prev, sbP1: false, sbP2: false }));
-    playAudio('SB_splash2.wav', () => {
-      safeSetTimeout(() => runPathSequence(SB_PATH1_SEQ, 'sbP1', 'sbP2'), 500);
-    });
-  }, [playAudio, runPathSequence, safeSetTimeout]);
+
+    // Step 1: Wait 1 second
+    let elapsed = 0;
+    while(elapsed < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Play sampleb.wav
+    let audioFinished = false;
+    playAudio('sampleb.wav', () => { audioFinished = true; });
+    while(!audioFinished) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+    }
+
+    // Wait 2 seconds
+    elapsed = 0;
+    while(elapsed < 2000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Step 3: sb_path1.wav, duration 12.735s
+    // Base stepDelay for sbP1 is 12735 / 6 = 2123ms; cells 2-3, 3-4, 4-5, 5-6 tightened to ~1s
+    setUnlockedPaths(prev => ({ ...prev, sbP1: true }));
+    await animatePathA(SB_PATH1_SEQ, 'sbP1', 'sb_path1.wav', 12735, true, 0, { 1: 1000 - 2123, 2: 1000 - 2123, 3: 1000 - 2123, 4: 1000 - 2123 });
+    if (isStoppedRef.current) return;
+    
+    // Wait 2 seconds
+    elapsed = 0;
+    while(elapsed < 2000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    // Step 4: sb_path2.wav, duration 14.015s
+    // Base stepDelay for sbP2 is 14015 / 5 = 2803ms; cells 2-3, 3-4, 4-5 tightened to ~1.5s
+    setUnlockedPaths(prev => ({ ...prev, sbP2: true }));
+    await animatePathA(SB_PATH2_SEQ, 'sbP2', 'sb_path2.wav', 14015, true, 0, { 1: 1500 - 2803, 2: 1500 - 2803, 3: 1500 - 2803 });
+    if (isStoppedRef.current) return;
+
+    // Step 5: Wait 2 seconds, then play last_instruction.wav
+    elapsed = 0;
+    while(elapsed < 2000) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+      if (!isPausedRef.current) elapsed += 50;
+    }
+
+    audioFinished = false;
+    playAudio('last_instruction.wav', () => { audioFinished = true; });
+    while(!audioFinished) {
+      await new Promise(r => setTimeout(r, 50));
+      if (isStoppedRef.current) return;
+    }
+
+    // Completion
+    setActivePath(null);
+    setUnlockedPaths(prev => ({ ...prev, tq3: true }));
+
+  }, [playAudio, animatePathA]);
 
   // ── Layout effect: runs synchronously BEFORE browser paint ──────────────────
   // This guarantees the button is visually disabled before the user ever sees
@@ -967,8 +1139,7 @@ const ChaloMelaChaleGame = () => {
 
     const coinsTotal = getCoinsTotal(s.id);
     const coinsRemaining = coinsTotal > 0 ? Math.max(0, coinsTotal - moveCount) : 0;
-    // TQ coins display for teaching but don't count toward the final total.
-    if (coinsRemaining > 0 && reason !== 'Hit Weed' && !isTQ) {
+    if (coinsRemaining > 0 && reason !== 'Hit Weed') {
       setCollectedCoins(prev => prev + coinsRemaining);
     }
 
@@ -1277,8 +1448,16 @@ const ChaloMelaChaleGame = () => {
     const totalTimeSeconds = nonTQScores.reduce((acc, s) => acc + parseFloat(s.timeTaken), 0);
     const totalTimeMin = Math.floor(totalTimeSeconds / 60);
     const totalTimeSec = Math.floor(totalTimeSeconds % 60);
-    const FIXED_COIN_BUDGET = 169;
-    const coinEfficiency = Math.round((collectedCoins / FIXED_COIN_BUDGET) * 100);
+    // Recompute from the recorded per-item data (same formula each result card shows) rather than
+    // trusting the incrementally-accumulated collectedCoins state, so already-saved sessions self-correct.
+    const teachingCoinItems = ['tq1', 'tq2', 'tq3', 'tq4'].flatMap(qId => {
+      const t1 = tqTrialsRef.current[`${qId}_t1`];
+      const t2 = tqTrialsRef.current[`${qId}_t2`];
+      return [t1, t2].filter(Boolean).map(t => ({ qId, moves: t.moves }));
+    });
+    const totalCollectedCoins =
+      nonTQScores.reduce((sum, s) => sum + (s.failReason === 'Hit Weed' ? 0 : Math.max(0, getCoinsTotal(s.id) - (s.moves || 0))), 0)
+      + teachingCoinItems.reduce((sum, item) => sum + Math.max(0, getCoinsTotal(item.qId) - (item.moves || 0)), 0);
 
     return (
       <div className="results-screen" id="dashboard-capture-area" style={{ backgroundColor: '#fff', padding: '20px' }}>
@@ -1347,8 +1526,7 @@ const ChaloMelaChaleGame = () => {
                   <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" style={{ width: 24, height: 24 }} alt="" />
                   Collected / Budget
                 </div>
-                <div className="kpi-val kpi-gold">{collectedCoins} / {FIXED_COIN_BUDGET}</div>
-                <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginTop: 1 }}>{coinEfficiency}%</div>
+                <div className="kpi-val kpi-gold">{totalCollectedCoins}</div>
               </div>
             </div>
           </div>
@@ -1504,7 +1682,30 @@ const ChaloMelaChaleGame = () => {
 
               // Render all cards in QUESTION_SEQUENCE order
               return QUESTION_SEQUENCE.flatMap(qId => {
-                if (qId.startsWith('tq')) return [];
+                if (qId.startsWith('tq')) {
+                  const teachingNum = qId.replace('tq', '');
+                  const t1 = tqTrialsRef.current[`${qId}_t1`];
+                  const t2 = tqTrialsRef.current[`${qId}_t2`];
+                  const cards = [];
+                  if (t1) {
+                    cards.push(renderCard(
+                      `${qId}_t1`, `${t('game.teachingLabel')} ${teachingNum} (${t('game.trialLabel')} 1)`,
+                      t1.score, 2, t1.moves, t1.timeTaken, null, t1.path, qId
+                    ));
+                  }
+                  if (t2) {
+                    cards.push(renderCard(
+                      `${qId}_t2`, `${t('game.teachingLabel')} ${teachingNum} (${t('game.trialLabel')} 2)`,
+                      t2.score, 1, t2.moves, t2.timeTaken, null, t2.path, qId
+                    ));
+                  } else if (t1 && t1.score === 2) {
+                    cards.push(renderCard(
+                      `${qId}_t2`, `${t('game.teachingLabel')} ${teachingNum} (${t('game.trialLabel')} 2)`,
+                      null, 1, null, null, null, null, qId, true
+                    ));
+                  }
+                  return cards;
+                }
                 const n = qId.replace(/^q/, '');
                 const s = allScores.find(e => e.id === qId);
                 if (!s) return [];
@@ -1577,10 +1778,10 @@ const ChaloMelaChaleGame = () => {
         >
           <>
             <button
-                className="btn btn-primary"
+                className="cm-btn cm-btn-primary"
                 onClick={handleRetest}
               >{t('game.retest')}</button>
-            <button className="btn btn-secondary" onClick={() => { stopAll(); navigate('/'); }}>{t('game.home')}</button>
+            <button className="cm-btn cm-btn-secondary" onClick={() => { stopAll(); navigate('/'); }}>{t('game.home')}</button>
           </>
         </SessionAssessmentForm>
       </div>
@@ -1594,7 +1795,7 @@ const ChaloMelaChaleGame = () => {
     const TOTAL_Q  = QUESTION_SEQUENCE.filter(id => !id.startsWith('tq')).length;
 
     return (
-      <div className="screen">
+      <div className="cm-screen">
         <div className="screen-header">
           <div>
             <div className="screen-subtitle">
@@ -1645,21 +1846,19 @@ const ChaloMelaChaleGame = () => {
             />
           )}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, gap: 8, padding: '0 10px' }}>
+        <div className="cm-btn-row" style={{ marginTop: 'auto', padding: '0 10px' }}>
           <div>
             {isTQ ? (
               <button
-                className={`pattern-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-highlight'}`}
-                style={{ background: retakeCount >= 2 || questionState.nextUnlocked ? '#e2e8f0' : '#f59e0b', color: retakeCount >= 2 || questionState.nextUnlocked ? '#94a3b8' : '#fff', border: 'none' }}
+                className={`cm-btn ${retakeCount >= 2 || questionState.nextUnlocked ? 'cm-btn-disabled' : 'cm-btn-secondary'}`}
                 disabled={retakeCount >= 2 || questionState.nextUnlocked}
                 onClick={handleRetake}
               >
-                ↺ {t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)
+                {t('game.retakeBtn')} ({Math.max(0, 2 - retakeCount)}/2)
               </button>
             ) : (
               <button
-                className={`pattern-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'pattern-btn-disabled' : 'pattern-btn-highlight'}`}
-                style={{ background: refreshCount >= 1 || questionState.nextUnlocked ? '#e2e8f0' : '#3b82f6', color: refreshCount >= 1 || questionState.nextUnlocked ? '#94a3b8' : '#fff', border: 'none' }}
+                className={`cm-btn ${refreshCount >= 1 || questionState.nextUnlocked ? 'cm-btn-disabled' : 'cm-btn-secondary'}`}
                 disabled={refreshCount >= 1 || questionState.nextUnlocked}
                 onClick={() => handleRefresh(questionState.currentTrial)}
               >
@@ -1668,7 +1867,7 @@ const ChaloMelaChaleGame = () => {
             )}
           </div>
           <button
-            className={`pattern-btn ${questionState.nextUnlocked ? 'pattern-btn-highlight' : 'pattern-btn-disabled'}`}
+            className={`cm-btn ${questionState.nextUnlocked ? 'cm-btn-primary' : 'cm-btn-disabled'}`}
             disabled={!questionState.nextUnlocked}
             onClick={async () => {
               if (questionState.id === 'tq1') initQuestion('tq2', MATRIX_TQ2);
@@ -1723,16 +1922,15 @@ const ChaloMelaChaleGame = () => {
   };
 
   return (
-    <div className="rover-body-shell">
-      <div className="app">
-        <header className="topbar">
-          <div className="brand">
-            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="brand-img" />}
-            {showLogo && (showGameIcon || showGameName) && <div className="divider"></div>}
-            {showGameIcon && <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="mela-test-logo" />}
-            {showGameName && <span className="test-title">{t('home.games.mela.title')}</span>}
+    <div className="cm-app">
+        <header className="cm-topbar">
+          <div className="cm-brand">
+            {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="cm-brand-img" />}
+            {showLogo && (showGameIcon || showGameName) && <div className="cm-divider"></div>}
+            {showGameIcon && <img src="/assets/images/chalo_mela_chale/chalo_mela_chale.jpg" alt="Chalo Mela Chale" className="cm-mela-test-logo" />}
+            {showGameName && <span className="cm-test-title">{t('home.games.mela.title')}</span>}
           </div>
-          <div className="topbar-center" style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="cm-topbar-center">
             {screen === 'sampleA' && (
               <div className="screen-title" style={{ margin: 0 }}>{t('game.sampleALabel')}</div>
             )}
@@ -1741,7 +1939,7 @@ const ChaloMelaChaleGame = () => {
             )}
             {screen.startsWith('tq') && (
               <div className="screen-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-                {`${t('game.teachingLabel')} ${t('game.question')} ${screen.substring(2)} ${t('game.of')} 4`}
+                {`${t('game.teachingLabel')} ${screen.substring(2)}`}
                 <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#1d4ed8', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', border: '1.5px solid #93c5fd', borderRadius: 20, padding: '3px 14px', letterSpacing: '0.04em', boxShadow: '0 1px 4px rgba(59,91,219,0.10)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3b82f6', display: 'inline-block', boxShadow: '0 0 0 2px #bfdbfe' }} />
                   {t('game.trialLabel')} {questionState.currentTrial}
@@ -1750,41 +1948,41 @@ const ChaloMelaChaleGame = () => {
             )}
             {screen.startsWith('q') && !screen.startsWith('tq') && (
               <div className="screen-title" style={{ margin: 0 }}>
-                {t('game.question')} {parseInt(screen.replace('q', ''), 10) || 0} {t('game.of')} 18
+                {t('game.question')} {parseInt(screen.replace('q', ''), 10) || 0}
               </div>
             )}
           </div>
-          <div className="stats">
+          <div className="cm-stats">
             {showChildId && (
-            <div className="stat-pill">
-              <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>👤</span>
-              <span className="stat-value">{childData?.child_id || '—'}</span>
+            <div className="cm-stat-pill">
+              <span className="cm-stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>👤</span>
+              <span className="cm-stat-value">{childData?.child_id || '—'}</span>
             </div>
             )}
             {showTimer && (screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && (
-              <div className="stat-pill">
-                <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>⏱</span>
-                <span className="stat-value" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>
+              <div className="cm-stat-pill">
+                <span className="cm-stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>⏱</span>
+                <span className="cm-stat-value" style={{color: questionState.timeRemaining <= 5 ? '#ef4444' : undefined}}>
                   {fmtMmSs(questionState.timeRemaining)}
                 </span>
               </div>
             )}
             {(screen.startsWith('q') || screen.startsWith('tq')) && questionState?.id && getCoinsTotal(questionState.id) > 0 && (
-              <div className="stat-pill">
-                <span className="stat-icon" style={{marginRight: '6px', display: 'flex', alignItems: 'center'}}>
+              <div className="cm-stat-pill">
+                <span className="cm-stat-icon" style={{marginRight: '6px', display: 'flex', alignItems: 'center'}}>
                   <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" style={{ width: 22, height: 22 }} alt="coin" />
                 </span>
-                <span className="stat-value">{collectedCoins}</span>
+                <span className="cm-stat-value">{collectedCoins}</span>
               </div>
             )}
             {showScore && (
-            <div className="stat-pill">
-              <span className="stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>🏆</span>
-              <span className="stat-value">{totalScore}</span>
+            <div className="cm-stat-pill">
+              <span className="cm-stat-icon" style={{marginRight: '6px', fontSize: '1.2rem'}}>🏆</span>
+              <span className="cm-stat-value">{totalScore}</span>
             </div>
             )}
             {screen !== 'splash' && screen !== 'results' && (
-              <button className="btn-pause-quit" onClick={() => { 
+              <button className="cm-btn-pause-quit" onClick={() => { 
                 setQuitReason(''); 
                 setShowPauseModal(true); 
                 setIsPaused(true);
@@ -1797,53 +1995,74 @@ const ChaloMelaChaleGame = () => {
             )}
           </div>
         </header>
-        <main className={`main${screen === 'splash' ? ' main-splash' : ''}`}>
+        <main className={`cm-main${screen === 'splash' ? ' cm-main-splash' : ''}${screen === 'results' ? ' cm-main-results' : ''}`}>
           {screen === 'splash' && (
-            <div className="screen screen-splash">
-              <div className="splash-cover">
-                <img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
-                <div className="splash-btn-overlay">
-                  <button style={{ padding: '16px 48px', fontSize: '1.4rem' }} className={`btn btn-primary ${!audioFinished ? 'btn-disabled' : 'btn-highlight'}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }}>{t('game.startNow')}</button>
-                  <button style={{ padding: '16px 48px', fontSize: '1.4rem' }} className="btn btn-secondary" onClick={() => { setAudioFinished(false); playAudio('SB_splash.wav', () => setAudioFinished(true)); }}>{t('game.replayAudio')}</button>
+            <div className="cm-screen cm-screen-splash">
+              <div className="cm-splash-cover">
+                <img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="cm-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+                <div className="cm-splash-btn-overlay">
+                  <button style={{ padding: '14px 40px', fontSize: '1.2rem' }} className={`cm-btn cm-btn-primary ${!audioFinished ? 'cm-btn-disabled' : ''}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }}>{t('game.startNow')}</button>
+                  <button style={{ padding: '14px 40px', fontSize: '1.2rem' }} className="cm-btn cm-btn-secondary" onClick={() => { setAudioFinished(false); playAudio('splash.wav', () => setAudioFinished(true)); }}>{t('game.replayAudio')}</button>
                 </div>
               </div>
             </div>
           )}
           {screen === 'sampleA' && (
-            <div className="screen">
+            <div className="cm-screen">
               <div className="screen-header">
                 <div>
                 </div>
               </div>
-              <div className="matrix-wrap">
-                <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_P1[0].length}, 1fr)` }}>
-                  {MATRIX_P1.flat().map((type, idx) => {
-                    const row = Math.floor(idx / 4) + 1, col = (idx % 4) + 1, rc = `R${row}C${col}`;
-                    let highClass = "";
-                    let isCurrent = false;
-                    if (activePath) {
-                      const seq = activePath === 'p1' ? PATH1_SEQ : activePath === 'p2' ? PATH2_SEQ : PATH3_SEQ;
-                      const sIdx = seq.indexOf(rc);
-                      if (sIdx !== -1 && sIdx <= pathProgress) {
-                        if (sIdx === 0) highClass = "cell-start";
-                        else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
-                        else highClass = "cell-path";
-                      }
-                      if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+              <div className="matrix-with-coins">
+                <div className="matrix-wrap">
+                  <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_P1[0].length}, 1fr)` }}>
+                    {MATRIX_P1.flat().map((type, idx) => {
+                      const row = Math.floor(idx / 4) + 1, col = (idx % 4) + 1, rc = `R${row}C${col}`;
+                      let highClass = "";
+                      let isCurrent = false;
+                      if (activePath) {
+                        const seq = activePath === 'p1' ? PATH1_SEQ : activePath === 'p2' ? PATH2_SEQ : PATH3_SEQ;
+                        const sIdx = seq.indexOf(rc);
+                        if (sIdx !== -1 && sIdx <= pathProgress) {
+                          if (sIdx === 0) highClass = "cell-start";
+                          else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
+                          else highClass = "cell-path";
+                        }
+                        if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+                          isCurrent = true;
+                        }
+                      } else if (!completedPaths.p1 && type === '7-SP') {
+                        isCurrent = true;
+                      } else if (completedPaths.p3 && type === '7-EP') {
                         isCurrent = true;
                       }
-                    }
-                    return (
-                      <div key={idx} className={`matrix-cell ${highClass}`}>
-                        <img src={IMG_MAPPING[type]} alt={type}/>
-                        {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div key={idx} className={`matrix-cell ${highClass}`}>
+                          <img src={IMG_MAPPING[type]} alt={type}/>
+                          {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+                <CoinBar
+                  coinsTotal={SAMPLE_A_COINS_TOTAL}
+                  moveCount={['p1', 'p2', 'p3'].includes(activePath) ? Math.max(0, pathProgress) : (completedPaths.p3 ? PATH3_SEQ.length - 1 : 0)}
+                  allCoinsDrained={false}
+                />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, padding: '0 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', padding: '0 10px' }}>
                 <button
+                  className="pattern-btn pattern-btn-secondary"
+                  style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto', background: '#e5edff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}
+                  onClick={() => {
+                    stopAll();
+                    setTimeout(startAutoDemoA, 100);
+                  }}
+                  disabled={!unlockedPaths.tq1 || isAnimating}
+                >{t('game.replayAudio')}</button>
+                <button
+                  style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto' }}
                   className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
                   onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
                 >{t('game.teachingQ1Label')}</button>
@@ -1851,46 +2070,75 @@ const ChaloMelaChaleGame = () => {
             </div>
           )}
           {['tq1', 'tq2', 'q1', 'tq3', 'tq4', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18'].includes(screen) && renderQuestionShell(
-            screen.startsWith('tq') ? `${t('game.teachingLabel')} ${t('game.question')} ${screen.substring(2)}` : `${t('game.question')} ${screen.substring(1)}`
+            screen.startsWith('tq') ? `${t('game.teachingLabel')} ${screen.substring(2)}` : `${t('game.question')} ${screen.substring(1)}`
           )}
           {screen === 'results' && renderResultsScreen()}
           
           {screen === 'sampleB' && (
-            <div className="screen">
+            <div className="cm-screen">
               <div className="screen-header">
                 <div>
                 </div>
               </div>
-              <div className="matrix-wrap">
-                <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_SB[0].length}, 1fr)` }}>
-                  {MATRIX_SB.flat().map((type, idx) => {
-                    const cols = MATRIX_SB[0].length;
-                    const row = Math.floor(idx / cols) + 1, col = (idx % cols) + 1, rc = `R${row}C${col}`;
-                    let highClass = "";
-                    let isCurrent = false;
-                    if (activePath) {
-                      const seq = activePath === 'sbP1' ? SB_PATH1_SEQ : SB_PATH2_SEQ;
-                      const sIdx = seq.indexOf(rc);
-                      if (sIdx !== -1 && sIdx <= pathProgress) {
-                        if (sIdx === 0) highClass = "cell-start";
-                        else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
-                        else highClass = "cell-path";
-                      }
-                      if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+              <div className="matrix-with-coins">
+                <div className="matrix-wrap">
+                  <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${MATRIX_SB[0].length}, 1fr)` }}>
+                    {MATRIX_SB.flat().map((type, idx) => {
+                      const cols = MATRIX_SB[0].length;
+                      const row = Math.floor(idx / cols) + 1, col = (idx % cols) + 1, rc = `R${row}C${col}`;
+                      let highClass = "";
+                      let isCurrent = false;
+                      if (activePath) {
+                        const seq = activePath === 'sbP1' ? SB_PATH1_SEQ : SB_PATH2_SEQ;
+                        const sIdx = seq.indexOf(rc);
+                        if (sIdx !== -1 && sIdx <= pathProgress) {
+                          if (sIdx === 0) highClass = "cell-start";
+                          else if (sIdx === seq.length-1 && pathProgress === seq.length-1) highClass = "cell-end";
+                          else highClass = "cell-path";
+                        }
+                        if (sIdx !== -1 && ((pathProgress === -1 && sIdx === 0) || sIdx === pathProgress)) {
+                          isCurrent = true;
+                        }
+                      } else if (!completedPaths.sbP1 && type === '7-SP') {
+                        isCurrent = true;
+                      } else if (completedPaths.sbP2 && type === '7-EP') {
                         isCurrent = true;
                       }
-                    }
-                    return (
-                      <div key={idx} className={`matrix-cell ${highClass}`}>
-                        <img src={IMG_MAPPING[type]} alt={type}/>
-                        {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div key={idx} className={`matrix-cell ${highClass}`}>
+                          <img src={IMG_MAPPING[type]} alt={type}/>
+                          {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+                <CoinBar
+                  coinsTotal={SAMPLE_B_COINS_TOTAL}
+                  moveCount={
+                    activePath === 'sbP1' || activePath === 'sbP2' ? sbLocalCoinCross(pathProgress)
+                    : completedPaths.sbP2 ? sbLocalCoinCross(SB_PATH2_SEQ.length - 1)
+                    : completedPaths.sbP1 ? sbLocalCoinCross(SB_PATH1_SEQ.length - 1)
+                    : 0
+                  }
+                  allCoinsDrained={false}
+                />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, padding: '0 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', padding: '0 10px' }}>
                 <button
+                  className="pattern-btn pattern-btn-secondary"
+                  style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto', background: '#e5edff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}
+                  onClick={() => {
+                    stopAll();
+                    setActivePath(null);
+                    setPathProgress(-1);
+                    setCompletedPaths(prev => ({ ...prev, sbP1: false, sbP2: false }));
+                    setTimeout(startAutoDemoSB, 100);
+                  }}
+                  disabled={!unlockedPaths.tq3 || isAnimating}
+                >{t('game.replayAudio')}</button>
+                <button
+                  style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto' }}
                   className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
                   onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}
                 >{t('game.teachingQ3Label')}</button>
@@ -1898,8 +2146,6 @@ const ChaloMelaChaleGame = () => {
             </div>
           )}
         </main>
-      </div>
-
       {showPauseModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -1973,7 +2219,7 @@ const ChaloMelaChaleGame = () => {
       {isPaused && <div style={{ position: 'fixed', inset: 0, zIndex: 999, cursor: 'not-allowed' }} />}
       <audio 
         ref={audioRef} 
-        src={screen === 'splash' ? `${AUDIO_DIR}/SB_splash.wav` : undefined}
+        src={screen === 'splash' ? `${AUDIO_DIR}/splash.wav` : undefined}
         onEnded={() => setAudioFinished(true)}
       />
     </div>

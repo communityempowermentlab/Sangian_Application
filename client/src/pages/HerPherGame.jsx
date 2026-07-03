@@ -200,6 +200,7 @@ const HerPherGame = () => {
   const [GAME_DATA, setGAME_DATA] = useState(null);
   const [allElements, setAllElements] = useState([]);
   const [elementsLoading, setElementsLoading] = useState(true);
+  const [elementPositionLayouts, setElementPositionLayouts] = useState({});
 
   // Child data
   const [childData, setChildData]         = useState(null);
@@ -289,23 +290,25 @@ const HerPherGame = () => {
     setChildData(child);
     checkResume(child.child_id);
     fetchActivity(child.child_id);
-    fetchElements();
-  }, [navigate]); // eslint-disable-line
-
-  const fetchElements = async () => {
-    try {
-      setElementsLoading(true);
-      const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher`);
-      if (res.data.success) {
+    const loadElements = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher`);
         setAllElements(res.data.elements);
         setGAME_DATA(buildGameDataFromElements(res.data.elements));
+      } catch (err) {
+        console.error('Failed to load elements', err);
+      } finally {
+        setElementsLoading(false);
       }
-    } catch (e) {
-      console.error('Elements fetch error', e);
-    } finally {
-      setElementsLoading(false);
-    }
-  };
+    };
+    loadElements();
+    
+    axios.get(`${API_URL}/public/element-positions/working_memory_herpher`)
+      .then(({ data }) => {
+        if (data && Object.keys(data).length) setElementPositionLayouts(data);
+      })
+      .catch(() => {});
+  }, [navigate]); // eslint-disable-line
 
   const fetchActivity = async (cid) => {
     try {
@@ -390,6 +393,24 @@ const HerPherGame = () => {
     return () => ro.disconnect();
   }, [screen]);
 
+  // ──── Helper: Generate shuffled positions matching admin layout ──────────────
+  const generateShuffledPositions = useCallback((qData, qIdx, canvasDimensions) => {
+    let positions;
+    const customLayout = elementPositionLayouts[qIdx];
+    if (customLayout && customLayout.length === qData.imageCount) {
+      positions = customLayout.map((p, i) => ({
+        x: (p.leftPct / 100) * GRID_WIDTH,
+        y: (p.topPct / 100) * virtualHeightFor(canvasDimensions),
+        size: (p.sizePct / 100) * GRID_WIDTH,
+        gridHeight: virtualHeightFor(canvasDimensions),
+        index: i + 1
+      }));
+    } else {
+      positions = getPositionsForCount(qData.imageCount, virtualHeightFor(canvasDimensions));
+    }
+    return shuffle(positions);
+  }, [elementPositionLayouts]);
+
   // ──── Build image layout when question/attempt changes ───────────────────────
   useEffect(() => {
     if (screen !== 'game' || !GAME_DATA) return;
@@ -405,7 +426,9 @@ const HerPherGame = () => {
 
     const qData = GAME_DATA[currentQuestion];
     if (!qData || !qData.imageCount) return;
-    const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
+
+    const positions = generateShuffledPositions(qData, currentQuestion, canvasSizeRef.current);
+
     const layout = qData.imageIds.map((imageId, i) => ({
       imageId,
       x: positions[i].x,
@@ -433,7 +456,9 @@ const HerPherGame = () => {
     if (!qData || !qData.imageCount) return;
     setImageLayout(prev => {
       if (prev.length !== qData.imageCount) return prev;
-      const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSize)));
+      
+      const positions = generateShuffledPositions(qData, currentQuestion, canvasSize);
+      
       return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y, size: positions[i].size, gridHeight: positions[i].gridHeight }));
     });
   }, [canvasSize]); // eslint-disable-line
@@ -609,7 +634,7 @@ const HerPherGame = () => {
         // 2. Wait for scale-down animation to near completion before shuffling
         setTimeout(() => {
           setImageLayout(prev => {
-            const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
+            const positions = generateShuffledPositions(qData, currentQuestion, canvasSizeRef.current);
             return prev.map((item, i) => ({ ...item, x: positions[i].x, y: positions[i].y, size: positions[i].size, gridHeight: positions[i].gridHeight }));
           });
           
@@ -718,7 +743,7 @@ const HerPherGame = () => {
     setButtonsDisabled(false);
     if (!GAME_DATA) return;
     const qData = GAME_DATA[1];
-    const positions = shuffle(getPositionsForCount(qData.imageCount, virtualHeightFor(canvasSizeRef.current)));
+    const positions = generateShuffledPositions(qData, 1, canvasSizeRef.current);
     setImageLayout(qData.imageIds.map((imageId, i) => ({
       imageId,
       x: positions[i].x,

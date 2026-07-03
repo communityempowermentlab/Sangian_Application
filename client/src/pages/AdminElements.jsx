@@ -196,11 +196,27 @@ export default function AdminElements() {
                 </div>
 
                 {activeTest === 'working_memory_herpher' && (
-                    <HerPherElements
-                        elements={elements}
-                        loadElements={loadElements}
-                        showToast={showToast}
-                    />
+                    <>
+                        <HerPherElements
+                            elements={elements}
+                            loadElements={loadElements}
+                            showToast={showToast}
+                        />
+                        <div className="elements-section">
+                            <h3>Screen-wise Element Positioning</h3>
+                            <p className="elements-desc">
+                                Drag and drop to fine-tune where elements appear on each response screen,
+                                without a code deployment.
+                            </p>
+                            <AdminElementPositionManager 
+                                gameKey="working_memory_herpher"
+                                screenNums={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                                screenCounts={{ 1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 6: 11, 7: 12, 8: 13, 9: 13 }}
+                                aspectW={1024}
+                                aspectH={620}
+                            />
+                        </div>
+                    </>
                 )}
 
                 {activeTest === 'atlantis_bagiya' && (
@@ -210,7 +226,18 @@ export default function AdminElements() {
                             Drag and drop to fine-tune where elements appear on each response screen,
                             without a code deployment.
                         </p>
-                        <AdminElementPositionManager />
+                        <AdminElementPositionManager 
+                            gameKey="atlantis_bagiya"
+                            screenNums={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]}
+                            screenCounts={{ 1: 7, 2: 7, 3: 7, 4: 8, 5: 9, 6: 9, 7: 10, 8: 9, 9: 12, 10: 11, 11: 11, 12: 12, 13: 13 }}
+                            fixedScreenNames={{
+                                1: ['BA', 'Bird 2', 'DEEM', 'Bird 4', 'Bird 5', 'THOOLI', 'PEGETO'],
+                                2: ['BA', 'Bird 2', 'Bird 4', 'Bird 5', 'JUL', 'BAIGUL', 'SHIBAGU'],
+                                3: ['BA', 'Bird 2', 'DEEM', 'Bird 4', 'JUL', 'BAIGUL', 'MULPAKI'],
+                            }}
+                            aspectW={1180}
+                            aspectH={650}
+                        />
                     </div>
                 )}
             </div>

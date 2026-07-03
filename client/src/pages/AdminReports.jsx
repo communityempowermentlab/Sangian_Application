@@ -53,6 +53,13 @@ const ROVER_Q_BUDGET = {
 };
 const getRoverBudget = (id) => ROVER_Q_BUDGET[id] || 0;
 
+// ─── Teaching (TQ) score helper ────────────────────────────────────────────────
+// Per Teaching item, the awarded score is whichever trial succeeded: Trial 1 = 2pts, Trial 2 = 1pt, else 0.
+const getTeachingTotal = (qs) => [1, 2, 3, 4].reduce(
+    (sum, n) => sum + Math.max(qs?.[`tq${n}_t1`] ?? 0, qs?.[`tq${n}_t2`] ?? 0),
+    0
+);
+
 // ─── ChorMachayeShor column label helper ──────────────────────────────────────
 const chorColLabel = (c) => {
     if (c === 'q1t1') return 'Item 1 (T1)';
@@ -225,15 +232,19 @@ const AdminReports = () => {
                     'Coins Budget (Session)', 'Coins Collected (Session)', 'Coin Efficiency (%)',
                     'Coins Earned (Actual)', 'Retake Count', 'Refresh Count',
                 );
-                detail.columns.filter(c => !/^tq\d+_t[12]$/.test(c)).forEach((c) => {
-                    const colLabel = c.toUpperCase();
+                detail.columns.forEach((c) => {
+                    const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                    const colLabel = isTQTrial
+                        ? c.replace(/^(tq\d+)_t([12])$/, (_, q, t) => `${q.toUpperCase()} Trial ${t}`)
+                        : c.toUpperCase();
                     qHeaders.push(`${colLabel} Score`);
                     qHeaders.push(`${colLabel} Moves`);
                     qHeaders.push(`${colLabel} Time(s)`);
                     qHeaders.push(`${colLabel} Retake`);
                     qHeaders.push(`${colLabel} 🪙 Kept`);
-                    qHeaders.push(`${colLabel} Replays`);
+                    if (!isTQTrial) qHeaders.push(`${colLabel} Replays`);
                 });
+                qHeaders.push('Total Teaching Score');
             } else {
                 // Simple Score / Time(s) / Replays pattern — matches the datatable's fallback columns exactly.
                 detail.columns.forEach((c) => {
@@ -332,9 +343,10 @@ const AdminReports = () => {
             } else {
                 const isRoverCSV = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                 if (isRoverCSV) {
-                    const cols = (detail?.columns || []).filter(c => !/^tq\d+_t[12]$/.test(c));
-                    const totalBudget = cols.reduce((s, c) => s + getRoverBudget(c), 0);
-                    const totalCollected = cols.reduce((s, c) => {
+                    const budgetCols = (detail?.columns || []).filter(c => !/^tq\d+_t[12]$/.test(c));
+                    const allCols = detail?.columns || [];
+                    const totalBudget = budgetCols.reduce((s, c) => s + getRoverBudget(c), 0);
+                    const totalCollected = budgetCols.reduce((s, c) => {
                         const sc = r.question_scores?.[c]; const mv = r.question_scores?.[`${c}_moves`] ?? 0;
                         return s + (sc > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
                     }, 0);
@@ -343,7 +355,8 @@ const AdminReports = () => {
                         totalBudget, totalCollected, `${efficiency}%`,
                         r.coins_collected ?? '', r.retake_count ?? '', r.refresh_count ?? '',
                     );
-                    cols.forEach(c => {
+                    allCols.forEach(c => {
+                        const isTQTrial = /^tq\d+_t[12]$/.test(c);
                         const qs    = r.question_scores || {};
                         const sc    = qs[c] ?? '';
                         const moves = qs[`${c}_moves`] ?? '';
@@ -351,9 +364,13 @@ const AdminReports = () => {
                         const retake = qs[`${c}_retakes`] ?? '';
                         const mv   = typeof moves === 'number' ? moves : (parseInt(moves) || 0);
                         const scNum = typeof sc === 'number' ? sc : (parseInt(sc) || 0);
-                        const kept = scNum > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0;
-                        rowArr.push(sc, moves, time, retake, kept, qs[`${c}_replays`] ?? '');
+                        const kept = isTQTrial
+                            ? (qs[`${c}_coins_kept`] ?? 0)
+                            : (scNum > 0 ? Math.max(0, getRoverBudget(c) - mv) : 0);
+                        rowArr.push(sc, moves, time, retake, kept);
+                        if (!isTQTrial) rowArr.push(qs[`${c}_replays`] ?? '');
                     });
+                    rowArr.push(getTeachingTotal(r.question_scores));
                 } else {
                     // Simple Score / Time(s) / Replays pattern — matches the datatable's fallback columns exactly.
                     (detail?.columns || []).forEach(c => {
@@ -554,15 +571,23 @@ const AdminReports = () => {
                                     ) : (activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela')) ? (
                                         <>
                                             <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>Coins</th>
-                                            {detail?.columns?.filter(c => !/^tq\d+_t[12]$/.test(c)).map(c => (
-                                                <React.Fragment key={c}>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#d1fae5', minWidth: 70 }}>{c.toUpperCase()} Score</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7', minWidth: 60 }}>Coins</th>
-                                                    <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>
-                                                </React.Fragment>
-                                            ))}
+                                            {detail?.columns?.map(c => {
+                                                const isTQTrial = /^tq\d+_t[12]$/.test(c);
+                                                const tqLabel = isTQTrial
+                                                    ? c.replace(/^(tq\d+)_t([12])$/, (_, q, t) => `${q.toUpperCase()} Trial ${t}`)
+                                                    : null;
+                                                const scoreBg = isTQTrial ? (c.endsWith('_t1') ? '#dbeafe' : '#e0e7ff') : '#d1fae5';
+                                                return (
+                                                    <React.Fragment key={c}>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: scoreBg, minWidth: 70 }}>{isTQTrial ? tqLabel : `${c.toUpperCase()} Score`}</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#fef9c3', minWidth: 60 }}>Moves</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>Time(s)</th>
+                                                        <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7', minWidth: 60 }}>Coins</th>
+                                                        {!isTQTrial && <th style={{ ...S.th, textAlign: 'center', background: '#ede9fe', minWidth: 60 }}>Replays</th>}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                            <th style={{ ...S.th, textAlign: 'center', background: '#fce7f3', color: '#9d174d', minWidth: 90 }}>Total Teaching Score</th>
                                         </>
                                     ) : activeGame?.key === 'triangle_rachna' ? (
                                         detail.columns.map((c, idx) => {
@@ -719,12 +744,15 @@ const AdminReports = () => {
                                                             </td>
                                                         );
                                                     })()}
-                                                    {(detail?.columns || []).filter(c => !/^tq\d+_t[12]$/.test(c)).map(c => {
+                                                    {(detail?.columns || []).map(c => {
+                                                        const isTQTrial = /^tq\d+_t[12]$/.test(c);
                                                         const qs = row.question_scores || {};
                                                         const score = qs[c];
                                                         const moves = qs[`${c}_moves`] ?? 0;
                                                         const budget = getRoverBudget(c);
-                                                        const kept = score > 0 ? Math.max(0, budget - moves) : 0;
+                                                        const kept = isTQTrial
+                                                            ? (qs[`${c}_coins_kept`] ?? 0)
+                                                            : (score > 0 ? Math.max(0, budget - moves) : 0);
                                                         return (
                                                             <React.Fragment key={`rm-${c}`}>
                                                                 <td style={{ ...S.tdCenter, fontWeight: 700, color: score > 0 ? '#059669' : score === 0 ? '#dc2626' : '#94a3b8' }}>
@@ -735,10 +763,13 @@ const AdminReports = () => {
                                                                 <td style={{ ...S.tdCenter, color: kept > 0 ? '#b45309' : '#94a3b8', fontWeight: kept > 0 ? 700 : 400 }}>
                                                                     {score != null ? kept : 0}
                                                                 </td>
-                                                                <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>
+                                                                {!isTQTrial && <td style={{ ...S.tdCenter, color: '#6d28d9', fontWeight: 600 }}>{qs[`${c}_replays`] ?? '—'}</td>}
                                                             </React.Fragment>
                                                         );
                                                     })}
+                                                    <td style={{ ...S.tdCenter, fontWeight: 700, color: '#9d174d', background: '#fdf2f8' }}>
+                                                        {getTeachingTotal(row.question_scores)}
+                                                    </td>
                                                 </>
                                             ) : isChor ? (
                                                 <>
