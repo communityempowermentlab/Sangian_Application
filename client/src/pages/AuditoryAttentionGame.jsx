@@ -178,7 +178,7 @@ const AuditoryAttentionGame = () => {
   
   const toggleRecording = (target) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech Recognition not supported. Please type manually.'); return; }
+    if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
       if (window.activeRecognition) window.activeRecognition.stop();
       setIsRecording(false); setRecordingTarget(null); return;
@@ -900,7 +900,7 @@ const AuditoryAttentionGame = () => {
           
           {screen === 'checking' && (
             <div className="aa-screen" style={{ backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-               <h2 className="aa-title">Loading...</h2>
+               <h2 className="aa-title">{t('common.loading')}</h2>
             </div>
           )}
 

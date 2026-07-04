@@ -1330,7 +1330,7 @@ const ChaloMelaChaleGame = () => {
 
   const handlePauseAction = async (actionStatus) => {
     if (!quitReason.trim()) {
-      alert('Please provide a reason for pausing or quitting.');
+      alert(t('common.enterReason'));
       return;
     }
     
@@ -1350,7 +1350,7 @@ const ChaloMelaChaleGame = () => {
 
   const toggleRecording = (target) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech Recognition not supported. Please type manually.'); return; }
+    if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
       if (window.activeRecognition) window.activeRecognition.stop();
       setIsRecording(false); setRecordingTarget(null); return;

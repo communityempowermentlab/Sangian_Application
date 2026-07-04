@@ -80,7 +80,7 @@ const GAME_KEY_TO_ID = {
     outstandingMemory: 'lottery',
     // Chalo Mela Chalen (ChaloMelaChaleGame.jsx)
     assessorExit: 'mela', destinationNotAchieved: 'mela', droppedSubtitle: 'mela', extraNotes: 'mela',
-    nextQuestion: 'mela', q1Label: 'mela', q2Label: 'mela', q3Label: 'mela', q4Label: 'mela', q5Label: 'mela',
+    q1Label: 'mela', q2Label: 'mela', q3Label: 'mela', q4Label: 'mela', q5Label: 'mela',
     questionEndedMoves: 'mela', questionsLabel: 'mela', refreshBtn: 'mela', requiredStar: 'mela',
     retakeBtn: 'mela', sampleALabel: 'mela', sampleBLabel: 'mela', sessionDetails: 'mela',
     targetedMoves: 'mela', teachingQ3Label: 'mela', teachingQ4Label: 'mela', timeTakenLabel: 'mela',
@@ -88,7 +88,8 @@ const GAME_KEY_TO_ID = {
     // Rachna (TriangleRachnaGame.jsx)
     finalResults: 'rachna', timer: 'rachna', targetPattern: 'rachna', buildThis: 'rachna',
     workspaceLabel: 'rachna', dropShapes: 'rachna', sourceShapes: 'rachna', dragToWorkspace: 'rachna',
-    welcomeRachna: 'rachna', outstandingRachna: 'rachna',
+    welcomeRachna: 'rachna', outstandingRachna: 'rachna', assessmentTitle: 'rachna',
+    'triangleCriteria.q1': 'rachna', 'triangleCriteria.q2': 'rachna', 'triangleCriteria.q3': 'rachna',
     // Dhyan Kahan Hai (AuditoryAttentionGame.jsx)
     sampleQuestionA: 'dhyan', welcomeDhyan: 'dhyan',
     // Her Pher (HerPherGame.jsx)
@@ -96,6 +97,7 @@ const GAME_KEY_TO_ID = {
     // Chor Machaye Shor (ChorMachayeShorGame.jsx)
     correctFeedbackChor: 'chor', foundPattern: 'chor', incorrectFeedbackChor: 'chor',
     phase1Complete: 'chor', trial2Label: 'chor', welcomeChor: 'chor',
+    restartTrial: 'chor', dictateReason: 'chor',
     // Ankganit / Numeracy (NumberSkillGame.jsx)
     allQuestionsCompleted: 'numeracy', correct: 'numeracy', incorrect: 'numeracy', quotient: 'numeracy',
     remainder: 'numeracy', submitAnswer: 'numeracy', numeracyLabel: 'numeracy', welcome: 'numeracy',

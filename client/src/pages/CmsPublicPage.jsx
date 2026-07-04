@@ -97,7 +97,7 @@ const CmsPublicPage = ({ pageKey, breadcrumbLabel }) => {
         <div className="cms-shell">
             <div className="cms-error">
                 <span>⚠️</span>
-                <p>This page could not be loaded. Please try again later.</p>
+                <p>{t('common.pageLoadError')}</p>
             </div>
         </div>
     );

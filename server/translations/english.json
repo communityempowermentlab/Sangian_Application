@@ -14,7 +14,10 @@
     "speechNotSupported": "Your browser does not support Speech Recognition. Please type manually.",
     "failedToStart": "Failed to start session on server.",
     "failedToSave": "Failed to save assessment. Please try again.",
-    "enterReason": "Please enter a reason before stopping."
+    "enterReason": "Please enter a reason before stopping.",
+    "sessionNotFound": "Session not found. Please refresh and try again.",
+    "loading": "Loading…",
+    "pageLoadError": "This page could not be loaded. Please try again later."
   },
   "navbar": {
     "id": "ID",
@@ -424,7 +427,15 @@
     "practiceQuestionLabel": "Practice Question",
     "submitResponse": "Submit",
     "notQuiteRight": "❌ Not quite right.",
-    "lotteryAccuracyTooltip": "Correct Answers ÷ Total Questions (20) × 100"
+    "lotteryAccuracyTooltip": "Correct Answers ÷ Total Questions (20) × 100",
+    "restartTrial": "Restart Trial {n}?",
+    "dictateReason": "Dictate Reason",
+    "assessmentTitle": "Assessment",
+    "triangleCriteria": {
+      "q1": "The gap between two triangles is more than 2 squares.",
+      "q2": "The alignment between the triangles has a difference of more than 2 squares.",
+      "q3": "The shape created by the child matches the reference figure."
+    }
   },
   "modal": {
     "disclaimer": "This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.",
@@ -516,5 +527,41 @@
     "errReply": "Please type a message before sending.",
     "errSendReply": "Failed to send reply.",
     "errLoadTicket": "Failed to load ticket."
+  },
+  "contact": {
+    "docTitle": "Contact Us | Community Empowerment Lab",
+    "badge": "📬 Get in Touch",
+    "title": "Contact Us",
+    "subtitle": "We're here to help and would love to hear from you. Whether you have a question, feedback, or need support, feel free to reach out through the form below or any of our contact channels.",
+    "infoEmail": "EMAIL",
+    "infoPhone": "PHONE",
+    "formTitle": "Send Us a Message",
+    "formSub": "Fill in the form and we'll get back to you shortly.",
+    "fName": "Full Name",
+    "fNamePH": "Your full name",
+    "fEmail": "Email Address",
+    "fEmailPH": "you@example.com",
+    "fPhone": "Phone Number",
+    "fPhonePH": "+91 00000 00000",
+    "fSubject": "Subject",
+    "fSubjectPH": "How can we help?",
+    "fMessage": "Message",
+    "fMessagePH": "Describe your query or message in detail…",
+    "sendBtn": "🚀 Send Message",
+    "sendingBtn": "⏳ Sending…",
+    "eReqName": "Full name is required.",
+    "eReqEmail": "Email address is required.",
+    "eBadEmail": "Enter a valid email address.",
+    "eReqPhone": "Phone number is required.",
+    "eReqSubject": "Subject is required.",
+    "eReqMessage": "Message is required.",
+    "eMaxMessage": "Message must be under 5000 characters.",
+    "eFailSend": "Failed to send. Please try again.",
+    "successTitle": "Thank You for Reaching Out!",
+    "successBody": "Your message has been successfully submitted to the Community Empowerment Lab team. We typically respond within 1–2 business days via the email address you provided.",
+    "successNote": "In the meantime, feel free to explore our assessment platform or check our",
+    "successLink": "Help & Support",
+    "successNoteEnd": "section for quick answers.",
+    "sendAnother": "Send Another Message"
   }
 }

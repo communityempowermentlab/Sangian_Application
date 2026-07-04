@@ -1167,7 +1167,7 @@ const ChorMachayeShorGame = () => {
 
   const handleRetake = async () => {
     if (interactionLocked || isPaused) return;
-    if (!window.confirm(`Restart Trial ${currentTrial}?`)) return;
+    if (!window.confirm(t('game.restartTrial').replace('{n}', currentTrial))) return;
     itemRetakesRef.current[currentItemIndex] = (itemRetakesRef.current[currentItemIndex] || 0) + 1;
     setInteractionLocked(true);
     setCorrectTouchCount(0);
@@ -1189,7 +1189,7 @@ const ChorMachayeShorGame = () => {
   };
 
   const handlePauseAction = async (actionStatus) => {
-    if (!quitReason.trim()) { alert('Please provide a reason'); return; }
+    if (!quitReason.trim()) { alert(t('common.enterReason')); return; }
     if (actionStatus === 'quit') {
       await saveToServer('quit', null, quitReason);
       setShowPauseModal(false);
@@ -1205,7 +1205,7 @@ const ChorMachayeShorGame = () => {
   const submitAssessment = async () => {
     clearInterval(sessionTimerRef.current);
     if (!gameSessionId) {
-      alert('Session not found. Please refresh and try again.');
+      alert(t('common.sessionNotFound'));
       return;
     }
     setIsAssessmentSubmitting(true);
@@ -1284,7 +1284,7 @@ const ChorMachayeShorGame = () => {
 
   const toggleRecording = (target) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech Recognition not supported in this browser.'); return; }
+    if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
       if (window.activeRecognition) window.activeRecognition.stop();
       setIsRecording(false); setRecordingTarget(null); return;
@@ -1602,7 +1602,7 @@ const ChorMachayeShorGame = () => {
                   onClick={handleNextClick} 
                   disabled={!canNext}
                 >
-                  {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? '🏁 Complete Game' : 'Next Question'}
+                  {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? `🏁 ${t('game.finishGame')}` : t('game.nextQuestion')}
                 </button>
               </div>
             </div>
@@ -1614,13 +1614,13 @@ const ChorMachayeShorGame = () => {
         <div className="chor-modal-overlay">
           <div className="chor-modal-content">
             <h2>{t('game.pauseQuitTitle')}</h2>
-            <p>Session timer is paused. Please provide a reason below.</p>
+            <p>{t('game.pauseDesc')}</p>
             <div className="modal-textarea-wrapper">
-              <textarea className="modal-textarea" placeholder="E.g., Child is crying, washroom break..." value={quitReason} onChange={(e) => setQuitReason(e.target.value)}></textarea>
-              <button className={`modal-mic-btn ${isRecording ? 'recording' : ''}`} onClick={() => toggleRecording('quit')} title="Dictate Reason">🎤</button>
+              <textarea className="modal-textarea" placeholder={t('game.pausePlaceholder')} value={quitReason} onChange={(e) => setQuitReason(e.target.value)}></textarea>
+              <button className={`modal-mic-btn ${isRecording ? 'recording' : ''}`} onClick={() => toggleRecording('quit')} title={t('game.dictateReason')}>🎤</button>
             </div>
             <div className="modal-actions-row">
-              <button className="modal-btn modal-btn-cancel" onClick={() => { setShowPauseModal(false); setIsPaused(false); startTimer(); }}>Cancel</button>
+              <button className="modal-btn modal-btn-cancel" onClick={() => { setShowPauseModal(false); setIsPaused(false); startTimer(); }}>{t('common.cancel')}</button>
               <button className="modal-btn modal-btn-pause" onClick={() => handlePauseAction('paused')}>{t('game.pauseSave')}</button>
               <button className="modal-btn modal-btn-quit" onClick={() => handlePauseAction('quit')}>{t('game.quitEnd')}</button>
             </div>

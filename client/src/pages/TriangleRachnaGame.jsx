@@ -346,7 +346,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showScore } = useHeaderConfig();
   const navigate = useNavigate();
 
@@ -929,7 +929,7 @@ const TriangleRachnaGame = () => {
       }, 1000);
       
       alert(t('game.assessmentSubmitted'));
-    } catch (e) { console.error(e); alert(e?.response?.data?.message || 'Submission failed. Please try again.'); } finally { setAssSub(false); }
+    } catch (e) { console.error(e); alert(e?.response?.data?.message || t('common.failedToSave')); } finally { setAssSub(false); }
   };
 
   const generateAndUploadPDF = async () => {
@@ -1427,7 +1427,7 @@ const TriangleRachnaGame = () => {
           <div className="rg-ad-header">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h2 className="rg-ad-title">Assessment</h2>
+                <h2 className="rg-ad-title">{t('game.assessmentTitle')}</h2>
               </div>
               <button className="rg-ad-close-btn" onClick={() => setShowAssessmentModal(false)}>✕</button>
             </div>
@@ -1436,46 +1436,37 @@ const TriangleRachnaGame = () => {
             {/* Criteria 1 */}
             <div className={`rg-ad-card ${qAnswers.q1 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                {language === 'hi'
-                  ? <div>1. दो त्रिभुज के बीच में 2 खानों से ज़्यादा का अंतर है।</div>
-                  : <div>1. The gap between two triangles is more than 2 squares.</div>
-                }
+                <div>1. {t('game.triangleCriteria.q1')}</div>
               </div>
               <div className="rg-ad-actions">
-                <button className={`rg-ad-btn ${qAnswers.q1==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q1:'yes'}))}>Yes</button>
-                <button className={`rg-ad-btn ${qAnswers.q1==='no'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q1:'no'}))}>No</button>
+                <button className={`rg-ad-btn ${qAnswers.q1==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q1:'yes'}))}>{t('game.yesLabel')}</button>
+                <button className={`rg-ad-btn ${qAnswers.q1==='no'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q1:'no'}))}>{t('game.noLabel')}</button>
               </div>
             </div>
             {/* Criteria 2 */}
             <div className={`rg-ad-card ${qAnswers.q2 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                {language === 'hi'
-                  ? <div>2. त्रिभुजों के बीच का संरेखण (alignment) में 2 खानों से ज़्यादा का अंतर है।</div>
-                  : <div>2. The alignment between the triangles has a difference of more than 2 squares.</div>
-                }
+                <div>2. {t('game.triangleCriteria.q2')}</div>
               </div>
               <div className="rg-ad-actions">
-                <button className={`rg-ad-btn ${qAnswers.q2==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q2:'yes'}))}>Yes</button>
-                <button className={`rg-ad-btn ${qAnswers.q2==='no'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q2:'no'}))}>No</button>
+                <button className={`rg-ad-btn ${qAnswers.q2==='yes'?'selected bad':''}`} onClick={()=>setQAnswers(p=>({...p,q2:'yes'}))}>{t('game.yesLabel')}</button>
+                <button className={`rg-ad-btn ${qAnswers.q2==='no'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q2:'no'}))}>{t('game.noLabel')}</button>
               </div>
             </div>
             {/* Criteria 3 */}
             <div className={`rg-ad-card ${qAnswers.q3 ? 'answered' : ''}`}>
               <div className="rg-ad-question">
-                {language === 'hi'
-                  ? <div>3. बच्चे द्वारा बनाया हुआ आकर प्रेरक रूपरेखा से मेल खाता है।</div>
-                  : <div>3. The shape created by the child matches the reference figure.</div>
-                }
+                <div>3. {t('game.triangleCriteria.q3')}</div>
               </div>
               <div className="rg-ad-actions">
-                <button className={`rg-ad-btn ${qAnswers.q3==='yes'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q3:'yes'}))}>Yes</button>
-                <button className={`rg-ad-btn ${qAnswers.q3==='no'?'selected bad orange':''}`} onClick={()=>setQAnswers(p=>({...p,q3:'no'}))}>No</button>
+                <button className={`rg-ad-btn ${qAnswers.q3==='yes'?'selected good':''}`} onClick={()=>setQAnswers(p=>({...p,q3:'yes'}))}>{t('game.yesLabel')}</button>
+                <button className={`rg-ad-btn ${qAnswers.q3==='no'?'selected bad orange':''}`} onClick={()=>setQAnswers(p=>({...p,q3:'no'}))}>{t('game.noLabel')}</button>
               </div>
             </div>
           </div>
           <div className="rg-ad-footer">
             <button className={`rg-ad-submit-btn ${canSubmit ? 'active' : ''}`} disabled={!canSubmit} onClick={submitQuestionModal}>
-              Finish Assessment
+              {t('game.finishAssessment')}
             </button>
           </div>
         </div>
@@ -1484,7 +1475,7 @@ const TriangleRachnaGame = () => {
   };
 
   // ── Main render ───────────────────────────────────────────────
-  if (screen === 'loading') return <div className="rg-root"><div className="rg-loading">Loading…</div></div>;
+  if (screen === 'loading') return <div className="rg-root"><div className="rg-loading">{t('common.loading')}</div></div>;
 
   return (
     <div className="rg-root">
