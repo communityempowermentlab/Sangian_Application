@@ -285,7 +285,7 @@ const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
   const size  = coinsTotal > 10 ? 54 : coinsTotal > 8 ? 60 : 66;
   const gap   = coinsTotal > 8  ? 3  : 5;
   return (
-    <div className="coin-bar" style={{ gap }}>
+    <div className={`coin-bar${coinsTotal > 8 ? ' coin-bar-multi' : ''}`} style={{ gap }}>
       {Array.from({ length: coinsTotal }, (_, i) => {
         const isSpent = allCoinsDrained || i < moveCount;
         return (

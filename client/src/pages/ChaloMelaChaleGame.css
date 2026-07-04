@@ -1222,6 +1222,13 @@
   margin-right: 8px;
 }
 
+/* More than 8 coins: fill top-down in columns of 8 so the bar never outgrows the board */
+.coin-bar.coin-bar-multi {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(8, auto);
+}
+
 .coin-slot {
   position: relative;
   display: flex;
@@ -1273,7 +1280,9 @@
     flex-direction: column;
     align-items: center;
   }
-  .coin-bar {
+  .coin-bar,
+  .coin-bar.coin-bar-multi {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
