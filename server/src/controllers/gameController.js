@@ -8,6 +8,55 @@ const ROVER_Q_BUDGET = {
     q16: 13, q17: 12, q18: 12,
 };
 
+// Safely parse a session's saved_state JSON, tolerating already-parsed objects and
+// (historically possible) double-encoded strings.
+const parseSavedState = (raw) => {
+    let parsed = raw;
+    try {
+        if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        }
+    } catch (_) { parsed = {}; }
+    return parsed || {};
+};
+
+// Sums each question's tracked play time from a session's saved_state (excluding Teaching
+// questions for rover_mela/chalo_mela_chale), falling back to the continuous timerSeconds
+// counter only when no per-question times were recorded at all. This is the single source
+// of truth for the "Duration" / actual_game_time figure shown in report detail, CSV export,
+// and the dashboard's Average Game Time KPI — keep all three wired through this function so
+// they can't drift apart again.
+const computeActualGameTime = (parsedState, gameName) => {
+    const scores = Array.isArray(parsedState?.allScores) ? parsedState.allScores : [];
+    const chorItems = Array.isArray(parsedState?.itemResults) ? parsedState.itemResults : [];
+    const allItems = chorItems.length > 0 ? chorItems : scores;
+    const scoringItems = ['rover_mela', 'chalo_mela_chale'].includes(gameName)
+        ? allItems.filter(s => { const id = s.id || s.qId || ''; return !String(id).startsWith('tq'); })
+        : allItems;
+    let time = scoringItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
+    if (time === 0 && parsedState?.timerSeconds) time = parsedState.timerSeconds;
+    return time;
+};
+
+// The continuous per-session "Screentime" figure shown in report detail/CSV — falls back to
+// timerSeconds for the handful of games that don't save a dedicated screentime field. Safe to
+// share this fallback with computeActualGameTime() above: that one sums per-question time
+// (usually well below the continuous session timer), so the two rarely coincide in practice.
+const computeScreenTime = (parsedState) => parsedState?.screentime ?? parsedState?.timerSeconds ?? null;
+
+// Maps every historical/alternate spelling of a game_name to its canonical catalog key —
+// mirrors the CASE expression previously duplicated inline in the overview SQL query.
+const normalizeGameName = (name) => {
+    if (['Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game'].includes(name)) return 'rover_mela';
+    if (['chor_machaye_shor', 'cognitive_flex_chor'].includes(name)) return 'cognitive_flex_chor';
+    if (['literacy_reading_skill', 'reading_skill', 'Padh ke batao'].includes(name)) return 'literacy_reading_skill';
+    if (['numeracy_number_skill', 'Ankganit'].includes(name)) return 'numeracy_number_skill';
+    if (['working_memory_herpher', 'Her Pher'].includes(name)) return 'working_memory_herpher';
+    if (['atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game'].includes(name)) return 'atlantis_bagiya';
+    return name;
+};
+
 // Start a new game session
 exports.startGameSession = async (req, res) => {
     try {
@@ -200,33 +249,71 @@ exports.getGameHistory = async (req, res) => {
 };
 
 // ─── REPORT: Overview KPIs for all games ──────────────────────────────────────
+// Average Game Time and Average Screen Time are computed here in JS (rather than a SQL
+// AVG(JSON_EXTRACT(...))) so they use the exact same per-session figures as the "Duration"
+// and "Screentime" columns already shown in the report-detail table / CSV export:
+//   - Game Time   <- computeActualGameTime()  (the "Duration" column: sum of per-question
+//     tracked time, falling back to timerSeconds only when no per-question times exist)
+//   - Screen Time <- computeScreenTime()      (the "Screentime" column: saved_state.screentime,
+//     falling back to timerSeconds for games that don't save a dedicated screentime field)
 exports.getReportOverview = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
-            SELECT
-                CASE
-                    WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game') THEN 'rover_mela'
-                    WHEN game_name IN ('chor_machaye_shor', 'cognitive_flex_chor') THEN 'cognitive_flex_chor'
-                    WHEN game_name IN ('literacy_reading_skill', 'reading_skill', 'Padh ke batao') THEN 'literacy_reading_skill'
-                    WHEN game_name IN ('numeracy_number_skill', 'Ankganit') THEN 'numeracy_number_skill'
-                    WHEN game_name IN ('working_memory_herpher', 'Her Pher') THEN 'working_memory_herpher'
-                    WHEN game_name IN ('atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game') THEN 'atlantis_bagiya'
-                    ELSE game_name
-                END AS game_name,
-                COUNT(DISTINCT child_id)                        AS total_children,
-                COUNT(*)                                        AS total_attempts,
-                SUM(status = 'completed')                       AS completed,
-                SUM(status = 'paused')                          AS paused,
-                SUM(status = 'in_progress')                     AS in_progress,
-                SUM(status = 'dropped')                         AS dropped_count,
-                SUM(status = 'quit')                            AS quit_count,
-                ROUND(AVG(CASE WHEN status='completed' THEN score END), 1) AS avg_score,
-                ROUND(AVG(CASE WHEN status='completed' THEN JSON_EXTRACT(saved_state, '$.timerSeconds') END), 0) AS avg_game_time,
-                ROUND(AVG(CASE WHEN status='completed' THEN COALESCE(JSON_EXTRACT(saved_state, '$.screentime'), JSON_EXTRACT(saved_state, '$.timerSeconds')) END), 0) AS avg_screen_time
+        const [sessions] = await pool.query(`
+            SELECT game_name, child_id, status, score, saved_state
             FROM game_sessions
-            GROUP BY 1
         `);
-        res.status(200).json({ success: true, data: rows });
+
+        const buckets = {};
+        for (const row of sessions) {
+            const gameName = normalizeGameName(row.game_name);
+            if (!buckets[gameName]) {
+                buckets[gameName] = {
+                    game_name: gameName,
+                    children: new Set(),
+                    total_attempts: 0,
+                    completed: 0, paused: 0, in_progress: 0, dropped_count: 0, quit_count: 0,
+                    scoreSum: 0, scoreCount: 0,
+                    gameTimeSum: 0, gameTimeCount: 0,
+                    screenTimeSum: 0, screenTimeCount: 0,
+                };
+            }
+            const b = buckets[gameName];
+            b.children.add(row.child_id);
+            b.total_attempts += 1;
+            if (row.status === 'completed') b.completed += 1;
+            else if (row.status === 'paused') b.paused += 1;
+            else if (row.status === 'in_progress') b.in_progress += 1;
+            else if (row.status === 'dropped') b.dropped_count += 1;
+            else if (row.status === 'quit') b.quit_count += 1;
+
+            if (row.status === 'completed') {
+                if (typeof row.score === 'number') { b.scoreSum += row.score; b.scoreCount += 1; }
+
+                const parsedState = parseSavedState(row.saved_state);
+
+                const gameTime = computeActualGameTime(parsedState, gameName);
+                if (gameTime > 0) { b.gameTimeSum += gameTime; b.gameTimeCount += 1; }
+
+                const screenTime = computeScreenTime(parsedState);
+                if (typeof screenTime === 'number') { b.screenTimeSum += screenTime; b.screenTimeCount += 1; }
+            }
+        }
+
+        const data = Object.values(buckets).map(b => ({
+            game_name: b.game_name,
+            total_children: b.children.size,
+            total_attempts: b.total_attempts,
+            completed: b.completed,
+            paused: b.paused,
+            in_progress: b.in_progress,
+            dropped_count: b.dropped_count,
+            quit_count: b.quit_count,
+            avg_score: b.scoreCount ? Math.round((b.scoreSum / b.scoreCount) * 10) / 10 : null,
+            avg_game_time: b.gameTimeCount ? Math.round(b.gameTimeSum / b.gameTimeCount) : null,
+            avg_screen_time: b.screenTimeCount ? Math.round(b.screenTimeSum / b.screenTimeCount) : null,
+        }));
+
+        res.status(200).json({ success: true, data });
     } catch (error) {
         console.error('Error fetching report overview:', error);
         res.status(500).json({ success: false, message: 'Server error fetching report overview' });
@@ -281,14 +368,7 @@ exports.getReportDetail = async (req, res) => {
             childAttemptCounts[cid] = (childAttemptCounts[cid] || 0) + 1;
             const currentAttempt = childAttemptCounts[cid];
 
-            let parsedState = row.saved_state;
-            try {
-                if (typeof parsedState === 'string') {
-                    parsedState = JSON.parse(parsedState);
-                    // Handle double-encoded JSON if it exists
-                    if (typeof parsedState === 'string') parsedState = JSON.parse(parsedState);
-                }
-            } catch (_) { parsedState = {}; }
+            const parsedState = parseSavedState(row.saved_state);
 
             const scores = Array.isArray(parsedState?.allScores) ? parsedState.allScores : [];
             const chorItems = Array.isArray(parsedState?.itemResults) ? parsedState.itemResults : [];
@@ -408,11 +488,10 @@ exports.getReportDetail = async (req, res) => {
                 ? allItems.filter(s => { const id = s.id || s.qId || ''; return !String(id).startsWith('tq'); })
                 : allItems;
             let totalMoves = scoringItems.reduce((sum, s) => sum + (parseInt(s.moves) || 0), 0);
-            let actualGameTime = scoringItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
 
-            // Fallback for sessions where moves/time might be stored differently
+            // Fallback for sessions where moves might be stored differently
             if (totalMoves === 0 && parsedState?.totalMoves) totalMoves = parsedState.totalMoves;
-            if (actualGameTime === 0 && parsedState?.timerSeconds) actualGameTime = parsedState.timerSeconds;
+            const actualGameTime = computeActualGameTime(parsedState, gameName);
 
             let totalSessionTime = null;
             if (row.start_time && row.end_time) {
@@ -453,7 +532,7 @@ exports.getReportDetail = async (req, res) => {
                         : null),
                 retake_count:    parsedState?.retakeCount    ?? null,
                 refresh_count:   parsedState?.refreshCount   ?? null,
-                screentime:      parsedState?.screentime     ?? parsedState?.timerSeconds ?? null,
+                screentime:      computeScreenTime(parsedState),
                 question_scores: questionScores,
                 assessment: {
                     q1_enjoyment:   row.q1_enjoyment   || null,

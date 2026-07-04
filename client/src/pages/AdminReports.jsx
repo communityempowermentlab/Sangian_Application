@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 // ─── Catalogue of all 9 games ─────────────────────────────────────────────────
@@ -72,6 +72,7 @@ const chorColLabel = (c) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AdminReports = () => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [overview, setOverview]       = useState([]);  // aggregated per game
     const [loadingOv, setLoadingOv]     = useState(true);
 
@@ -96,8 +97,6 @@ const AdminReports = () => {
     // Her Pher Data Modal state
     const [hpDataModal, setHpDataModal] = useState({ show: false, rowData: null });
 
-    const closeDetail = () => { setActiveGame(null); setDetail(null); setFilterStatus(null); setExpandedRows({}); setPqModal({ show: false, pauses: [], childName: '', quitReason: '' }); setHpDataModal({ show: false, rowData: null }); };
-
     // ── Fetch overview on mount ────────────────────────────────────────────────
     const fetchOverview = useCallback(async () => {
         setLoadingOv(true);
@@ -113,11 +112,23 @@ const AdminReports = () => {
 
     useEffect(() => { fetchOverview(); }, [fetchOverview]);
 
-    // ── Fetch detail for a specific game ──────────────────────────────────────
-    const openGame = async (game) => {
+    // ── Apply a game selection (or null) to the local view state ──────────────
+    // This is the ONLY place that writes activeGame/detail, and it's driven purely
+    // by the effect below reacting to the `?game=` URL param — never called
+    // directly from click handlers. That keeps the URL as the single source of
+    // truth and avoids a race between local state and router state landing in
+    // different render ticks.
+    const showGame = useCallback(async (game) => {
         setActiveGame(game);
-        setLoadingDt(true);
         setFilterStatus(null);
+        if (!game) {
+            setDetail(null);
+            setExpandedRows({});
+            setPqModal({ show: false, pauses: [], childName: '', quitReason: '' });
+            setHpDataModal({ show: false, rowData: null });
+            return;
+        }
+        setLoadingDt(true);
         try {
             const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`);
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
@@ -127,7 +138,27 @@ const AdminReports = () => {
         } finally {
             setLoadingDt(false);
         }
-    };
+    }, []);
+
+    // ── User-facing actions: just update the URL; the effect below applies it ──
+    const openGame = useCallback((game) => {
+        setSearchParams({ game: game.key }, { replace: true });
+    }, [setSearchParams]);
+
+    const closeDetail = useCallback(() => {
+        setSearchParams({}, { replace: true });
+    }, [setSearchParams]);
+
+    // ── Single source of truth: apply whatever the `?game=` URL param says ─────
+    // Fires on mount (restoring a refreshed page), when openGame/closeDetail change
+    // the URL, when the user clicks the plain "Reports" nav link (URL changes but
+    // this component doesn't unmount, since it's the same route), and on browser
+    // back/forward.
+    useEffect(() => {
+        const gameKey = searchParams.get('game');
+        const game = gameKey ? GAME_CATALOG.find(g => g.key === gameKey) : null;
+        showGame(game || null);
+    }, [searchParams, showGame]);
 
     // ── Merge overview DB data with catalog ───────────────────────────────────
     const getStats = (key) => overview.find(r => r.game_name === key) || {};
