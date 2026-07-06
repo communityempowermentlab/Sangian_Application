@@ -324,6 +324,7 @@ exports.getReportOverview = async (req, res) => {
 exports.getReportDetail = async (req, res) => {
     try {
         const { gameName } = req.params;
+        const { child_id } = req.query;
 
         let gameFilter = [gameName];
         if (['rover_mela', 'chalo_mela_chale', 'Chalo Mela Chale'].includes(gameName)) {
@@ -333,7 +334,7 @@ exports.getReportDetail = async (req, res) => {
             gameFilter = ['cognitive_flex_chor', 'chor_machaye_shor'];
         }
 
-        const [rows] = await pool.query(`
+        let queryStr = `
             SELECT
                 gs.id               AS session_id,
                 gs.child_id,
@@ -357,8 +358,17 @@ exports.getReportDetail = async (req, res) => {
             LEFT JOIN children c ON gs.child_id = c.child_id
             LEFT JOIN game_assessments ga ON ga.session_id = gs.id
             WHERE gs.game_name IN (?)
-            ORDER BY gs.start_time ASC
-        `, [gameFilter]);
+        `;
+        let queryParams = [gameFilter];
+        
+        if (child_id) {
+            queryStr += ' AND gs.child_id = ?';
+            queryParams.push(child_id);
+        }
+        
+        queryStr += ' ORDER BY gs.start_time ASC';
+
+        const [rows] = await pool.query(queryStr, queryParams);
 
         // Calculate per-child attempt numbers
         const childAttemptCounts = {};

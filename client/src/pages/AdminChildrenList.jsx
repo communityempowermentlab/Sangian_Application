@@ -57,6 +57,7 @@ const AdminChildrenList = () => {
     const [loading, setLoading] = useState(true);
     const [selectedChildForSessions, setSelectedChildForSessions] = useState(null);
     const [selectedChildForHistory, setSelectedChildForHistory] = useState(null);
+    const [generatingReportFor, setGeneratingReportFor] = useState(null);
 
     useEffect(() => {
         fetchChildren();
@@ -122,6 +123,56 @@ const AdminChildrenList = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleGenerateChildReport = async (child) => {
+        setGeneratingReportFor(child.child_id);
+        try {
+            const XLSX = await import('xlsx');
+            const { generateReportData, GAME_CATALOG } = await import('../utils/reportExportUtils');
+            
+            const wb = XLSX.utils.book_new();
+            
+            // Fetch reports for all 9 games concurrently
+            const promises = GAME_CATALOG.map(async (game) => {
+                try {
+                    const res = await axiosAdmin.get(`/games/reports/detail/${game.key}?child_id=${child.child_id}`);
+                    const detail = { columns: res.data.columns || [], data: res.data.data || [] };
+                    
+                    const { headers, rows } = generateReportData(game, detail);
+                    
+                    // Create worksheet
+                    let ws;
+                    if (headers.length > 0 || rows.length > 0) {
+                        const wsData = [headers, ...rows];
+                        ws = XLSX.utils.aoa_to_sheet(wsData);
+                    } else {
+                        ws = XLSX.utils.aoa_to_sheet([['No attempts recorded for this test.']]);
+                    }
+                    
+                    // Add worksheet to workbook
+                    XLSX.utils.book_append_sheet(wb, ws, game.title.substring(0, 31)); // Max sheet name length is 31
+                } catch (error) {
+                    console.error(`Failed to fetch report for ${game.title}`, error);
+                    const ws = XLSX.utils.aoa_to_sheet([['Failed to load data for this test']]);
+                    XLSX.utils.book_append_sheet(wb, ws, game.title.substring(0, 31));
+                }
+            });
+            
+            await Promise.all(promises);
+            
+            // Generate Excel file
+            const childName = child.name ? child.name.replace(/[^a-zA-Z0-9]/g, '_') : 'Child';
+            const fileName = `${childName}_${child.child_id}_Assessment_Report.xlsx`;
+            
+            XLSX.writeFile(wb, fileName);
+            
+        } catch (error) {
+            console.error('Error generating report:', error);
+            alert('Failed to generate report. Please try again.');
+        } finally {
+            setGeneratingReportFor(null);
+        }
     };
 
     return (
@@ -256,6 +307,13 @@ const AdminChildrenList = () => {
                                                             style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
                                                         >
                                                             🏆 Scoreboard
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleGenerateChildReport(child)}
+                                                            disabled={generatingReportFor === child.child_id}
+                                                            style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: generatingReportFor === child.child_id ? 'wait' : 'pointer', padding: 0, opacity: generatingReportFor === child.child_id ? 0.5 : 1 }}
+                                                        >
+                                                            {generatingReportFor === child.child_id ? '⏳ Generating...' : '📊 Report'}
                                                         </button>
                                                     </div>
                                                 </td>
