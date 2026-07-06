@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
-import { generateReportData, GAME_CATALOG } from '../utils/reportExportUtils';
+import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal } from '../utils/reportExportUtils';
 
 const statusBadge = (status) => {
     const map = {
