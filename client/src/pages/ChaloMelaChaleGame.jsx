@@ -1751,6 +1751,7 @@ const ChaloMelaChaleGame = () => {
             <div className="matrix-grid" style={{ gridTemplateColumns: `repeat(${questionState.matrix[0]?.length || 4}, 1fr)` }}>
               {questionState.matrix.flat().map((type, idx) => {
                 const cols = questionState.matrix[0]?.length || 4;
+                const rows = questionState.matrix.length || 4;
                 const r = Math.floor(idx / cols), c = idx % cols;
                 const inPath = questionState.path.some(p => p.row === r && p.col === c);
                 const isStart = questionState.matrix[r][c] === "7-SP";
@@ -1765,8 +1766,14 @@ const ChaloMelaChaleGame = () => {
                 }
                 const isWrongMove = questionState.wrongMovePos && questionState.wrongMovePos.row === r && questionState.wrongMovePos.col === c;
 
+                let style = {};
+                if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
+                if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
+                if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
+                if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
+
                 return (
-                  <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
+                  <div key={idx} className={`matrix-cell ${highClass}`} style={style} onClick={() => handleGridClick(r, c)}>
                     <img src={IMG_MAPPING[type]} alt={type}/>
                     {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                     {isWrongMove && <div className="cross-mark">❌</div>}
@@ -1973,8 +1980,17 @@ const ChaloMelaChaleGame = () => {
                       } else if (completedPaths.p3 && type === '7-EP') {
                         isCurrent = true;
                       }
+                      let style = {};
+                      const cols = MATRIX_P1[0].length;
+                      const rows = MATRIX_P1.length;
+                      const r = row - 1, c = col - 1;
+                      if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
+                      if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
+                      if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
+                      if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
+
                       return (
-                        <div key={idx} className={`matrix-cell ${highClass}`}>
+                        <div key={idx} className={`matrix-cell ${highClass}`} style={style}>
                           <img src={IMG_MAPPING[type]} alt={type}/>
                           {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                         </div>
@@ -2041,8 +2057,16 @@ const ChaloMelaChaleGame = () => {
                       } else if (completedPaths.sbP2 && type === '7-EP') {
                         isCurrent = true;
                       }
+                      let style = {};
+                      const rows = MATRIX_SB.length;
+                      const r = row - 1, c = col - 1;
+                      if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
+                      if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
+                      if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
+                      if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
+
                       return (
-                        <div key={idx} className={`matrix-cell ${highClass}`}>
+                        <div key={idx} className={`matrix-cell ${highClass}`} style={style}>
                           <img src={IMG_MAPPING[type]} alt={type}/>
                           {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                         </div>
