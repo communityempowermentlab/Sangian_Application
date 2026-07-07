@@ -284,24 +284,42 @@ const getCoinsTotal = (id) => {
 const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
   const size  = coinsTotal > 10 ? 54 : coinsTotal > 8 ? 60 : 66;
   const gap   = coinsTotal > 8  ? 3  : 5;
+
+  let row1Count = coinsTotal;
+  let row2Count = 0;
+
+  if (coinsTotal > 7) {
+    row1Count = Math.ceil(coinsTotal / 2);
+    row2Count = Math.floor(coinsTotal / 2);
+  }
+
+  const renderCoin = (index) => {
+    const isSpent = allCoinsDrained || index < moveCount;
+    return (
+      <div key={index} className="coin-slot" style={{ width: size, height: size }}>
+        <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" className="coin-img" alt="" />
+        {isSpent && (
+          <img
+            src="/assets/images/chalo_mela_chale/rover_cross.png"
+            className="coin-cross"
+            alt=""
+            style={{ animationDelay: allCoinsDrained ? `${index * 30}ms` : '0ms' }}
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className={`coin-bar${coinsTotal > 8 ? ' coin-bar-multi' : ''}`} style={{ gap }}>
-      {Array.from({ length: coinsTotal }, (_, i) => {
-        const isSpent = allCoinsDrained || i < moveCount;
-        return (
-          <div key={i} className="coin-slot" style={{ width: size, height: size }}>
-            <img src="/assets/images/chalo_mela_chale/rover_coin_gold.png" className="coin-img" alt="" />
-            {isSpent && (
-              <img
-                src="/assets/images/chalo_mela_chale/rover_cross.png"
-                className="coin-cross"
-                alt=""
-                style={{ animationDelay: allCoinsDrained ? `${i * 30}ms` : '0ms' }}
-              />
-            )}
-          </div>
-        );
-      })}
+    <div className="coin-bar" style={{ gap: '8px' }}>
+      <div className="coin-bar-row" style={{ display: 'flex', gap: `${gap}px`, justifyContent: 'center' }}>
+        {Array.from({ length: row1Count }, (_, i) => renderCoin(i))}
+      </div>
+      {row2Count > 0 && (
+        <div className="coin-bar-row" style={{ display: 'flex', gap: `${gap}px`, justifyContent: 'center' }}>
+          {Array.from({ length: row2Count }, (_, i) => renderCoin(i + row1Count))}
+        </div>
+      )}
     </div>
   );
 };
@@ -1766,14 +1784,8 @@ const ChaloMelaChaleGame = () => {
                 }
                 const isWrongMove = questionState.wrongMovePos && questionState.wrongMovePos.row === r && questionState.wrongMovePos.col === c;
 
-                let style = {};
-                if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
-                if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
-                if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
-                if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
-
                 return (
-                  <div key={idx} className={`matrix-cell ${highClass}`} style={style} onClick={() => handleGridClick(r, c)}>
+                  <div key={idx} className={`matrix-cell ${highClass}`} onClick={() => handleGridClick(r, c)}>
                     <img src={IMG_MAPPING[type]} alt={type}/>
                     {isLast && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                     {isWrongMove && <div className="cross-mark">❌</div>}
@@ -1980,17 +1992,8 @@ const ChaloMelaChaleGame = () => {
                       } else if (completedPaths.p3 && type === '7-EP') {
                         isCurrent = true;
                       }
-                      let style = {};
-                      const cols = MATRIX_P1[0].length;
-                      const rows = MATRIX_P1.length;
-                      const r = row - 1, c = col - 1;
-                      if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
-                      if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
-                      if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
-                      if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
-
                       return (
-                        <div key={idx} className={`matrix-cell ${highClass}`} style={style}>
+                        <div key={idx} className={`matrix-cell ${highClass}`}>
                           <img src={IMG_MAPPING[type]} alt={type}/>
                           {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                         </div>
@@ -2057,16 +2060,8 @@ const ChaloMelaChaleGame = () => {
                       } else if (completedPaths.sbP2 && type === '7-EP') {
                         isCurrent = true;
                       }
-                      let style = {};
-                      const rows = MATRIX_SB.length;
-                      const r = row - 1, c = col - 1;
-                      if (r === 0 && c === 0) style.borderTopLeftRadius = '16px';
-                      if (r === 0 && c === cols - 1) style.borderTopRightRadius = '16px';
-                      if (r === rows - 1 && c === 0) style.borderBottomLeftRadius = '16px';
-                      if (r === rows - 1 && c === cols - 1) style.borderBottomRightRadius = '16px';
-
                       return (
-                        <div key={idx} className={`matrix-cell ${highClass}`} style={style}>
+                        <div key={idx} className={`matrix-cell ${highClass}`}>
                           <img src={IMG_MAPPING[type]} alt={type}/>
                           {isCurrent && <img src="/assets/images/chalo_mela_chale/character.png" alt="character" className="character-token" />}
                         </div>
