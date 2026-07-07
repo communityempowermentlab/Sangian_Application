@@ -449,11 +449,11 @@
 }
 
 .matrix-grid {
-  width: min(900px, 100%, 60vh);
+  width: min(900px, 100%, 68vh);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 3px;                 /* minor space */
-  padding: 3px;             /* same as gap so edges look consistent */
+  gap: 1px;                 /* minor space */
+  padding: 1px;             /* same as gap so edges look consistent */
   background: #e5e7eb;       /* gaps are grey (not white) */
   border-radius: 20px;
   border: 1px solid #e5e7eb;
