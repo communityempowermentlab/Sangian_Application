@@ -206,6 +206,7 @@ const NumpadPanel = ({
 // ─── Teaching Screen Sub-Component ──────────────────────────────
 const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachingAudioSrc, nextLabel, nextIcon, onNext }) => {
   const { t } = useLanguage();
+  const { displayUserInputString } = useResponseMatching();
   const [selected, setSelected] = useState([]);
   const [firstAttemptDone, setFirstAttemptDone] = useState(false);
   const [teachingAudioPlayed, setTeachingAudioPlayed] = useState(false);
@@ -299,6 +300,11 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
   return (
     <div className="nr-panel-wrap">
+      {displayUserInputString && (
+        <div className="nr-input-display" style={{ visibility: selected.length > 0 ? 'visible' : 'hidden' }}>
+          {selected.join(' ')}
+        </div>
+      )}
       <div className="nr-numpad-wrap">
         <div className="nr-numpad" style={{ pointerEvents: isWaiting ? 'none' : 'auto', opacity: isWaiting ? 0.5 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (

@@ -1,3 +1,4 @@
 {
-  "responseMatchingMode": "partial"
+  "responseMatchingMode": "partial",
+  "displayUserInputString": true
 }
