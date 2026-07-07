@@ -4,7 +4,7 @@ import { API_URL } from '../services/api';
 
 // Defaults shown until the fetch resolves — games should never silently switch
 // modes just because the config request is still in flight.
-const DEFAULTS = { responseMatchingMode: 'exact' };
+const DEFAULTS = { responseMatchingMode: 'exact', displayUserInputString: true };
 
 const ResponseMatchingContext = createContext(DEFAULTS);
 

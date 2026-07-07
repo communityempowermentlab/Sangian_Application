@@ -103,7 +103,7 @@ const NumpadPanel = ({
   isScored = false, autoPlay = false, isLastQuestion = false, nextQuestionLabel,
 }) => {
   const { t } = useLanguage();
-  const { responseMatchingMode } = useResponseMatching();
+  const { responseMatchingMode, displayUserInputString } = useResponseMatching();
   const isPartialMatch = responseMatchingMode === 'partial';
   const [selected, setSelected] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -170,6 +170,11 @@ const NumpadPanel = ({
 
   return (
     <div className="nr-panel-wrap">
+      {displayUserInputString && (
+        <div className="nr-input-display" style={{ visibility: selected.length > 0 ? 'visible' : 'hidden' }}>
+          {selected.join(' ')}
+        </div>
+      )}
       <div className="nr-numpad-wrap">
         <div className="nr-numpad" style={{ pointerEvents: isInputDisabled ? 'none' : 'auto', opacity: isInputDisabled ? 0.45 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (

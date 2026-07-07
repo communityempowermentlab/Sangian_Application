@@ -2149,7 +2149,11 @@ const CONTENT_MAP = {
 };
 
 const AdminSettings = () => {
-    const [activeTab, setActiveTab] = useState('google_analytics');
+    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('adminSettingsTab') || 'google_analytics');
+
+    useEffect(() => {
+        localStorage.setItem('adminSettingsTab', activeTab);
+    }, [activeTab]);
     const active = SETTINGS_MENU.find(m => m.key === activeTab);
 
     return (

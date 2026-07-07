@@ -303,6 +303,20 @@ const ResponseMatchingPanel = () => {
         }
     };
 
+    const toggleDisplayUserInputString = async () => {
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/response-matching-config', { displayUserInputString: !config.displayUserInputString });
+            setConfig(res.data.config);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+            console.error('Failed to update display user input string configuration:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading || !config) {
         return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
     }
@@ -346,7 +360,26 @@ const ResponseMatchingPanel = () => {
                     );
                 })}
             </div>
-            {saved && <div style={{ marginTop: '12px', fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</div>}
+            
+            <div style={{ marginTop: '30px', fontSize: '0.85rem', color: '#6b7280', maxWidth: '640px' }}>
+                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem', marginBottom: '8px' }}>
+                    Display User Input String
+                </div>
+                Controls whether the sequence of numbers entered by the user is visibly displayed on the screen during the assessment.
+            </div>
+
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <ToggleSwitch 
+                    checked={!!config.displayUserInputString} 
+                    disabled={saving} 
+                    onClick={toggleDisplayUserInputString} 
+                />
+                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: config.displayUserInputString ? '#111827' : '#6b7280' }}>
+                    {config.displayUserInputString ? 'Yes, display entered numbers' : 'No, hide entered numbers'}
+                </span>
+            </div>
+
+            {saved && <div style={{ marginTop: '16px', fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✓ Configuration Updated</div>}
         </div>
     );
 };
