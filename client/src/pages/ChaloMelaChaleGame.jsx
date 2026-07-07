@@ -312,11 +312,11 @@ const CoinBar = ({ coinsTotal, moveCount, allCoinsDrained }) => {
 
   return (
     <div className="coin-bar" style={{ gap: '8px' }}>
-      <div className="coin-bar-row" style={{ display: 'flex', gap: `${gap}px`, justifyContent: 'center' }}>
+      <div className="coin-bar-col" style={{ display: 'flex', flexDirection: 'column', gap: `${gap}px`, justifyContent: 'center' }}>
         {Array.from({ length: row1Count }, (_, i) => renderCoin(i))}
       </div>
       {row2Count > 0 && (
-        <div className="coin-bar-row" style={{ display: 'flex', gap: `${gap}px`, justifyContent: 'center' }}>
+        <div className="coin-bar-col" style={{ display: 'flex', flexDirection: 'column', gap: `${gap}px`, justifyContent: 'center' }}>
           {Array.from({ length: row2Count }, (_, i) => renderCoin(i + row1Count))}
         </div>
       )}
