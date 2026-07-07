@@ -342,7 +342,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
 // ─── Main Component ─────────────────────────────────────────────
 const NumberRecallGame = () => {
-  const { t }    = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
@@ -654,7 +654,11 @@ const NumberRecallGame = () => {
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    
+    // Map short codes to BCP-47 for speech recognition
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    recognition.lang = langMap[language] || 'en-US';
+    
     recognition.onresult = (event) => {
       let final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -666,7 +670,11 @@ const NumberRecallGame = () => {
       }
     };
     recognition.onend = () => { setIsRecording(false); setRecordingTarget(null); };
-    recognition.onerror = () => { setIsRecording(false); setRecordingTarget(null); };
+    recognition.onerror = (e) => { 
+      setIsRecording(false); 
+      setRecordingTarget(null); 
+      alert(t('game.speechError') + ' / iPad Error: ' + (e.error || 'unknown'));
+    };
     window.activeRecognition = recognition;
     recognition.start();
     setIsRecording(true);

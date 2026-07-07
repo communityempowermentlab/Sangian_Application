@@ -52,7 +52,7 @@ const QUESTIONS = [
 ];
 
 const NumberSkillGame = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const [childData, setChildData] = useState(null);
@@ -279,7 +279,8 @@ const NumberSkillGame = () => {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    recognition.lang = langMap[language] || 'en-US';
 
     recognition.onresult = (event) => {
       let finalTranscript = '';

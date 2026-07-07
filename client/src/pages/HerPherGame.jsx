@@ -193,7 +193,7 @@ function calcScore(questionNum, correctCount) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const HerPherGame = () => {
-  const { t }       = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate    = useNavigate();
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -920,6 +920,8 @@ const HerPherGame = () => {
     }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = 'en-US';
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    rec.lang = langMap[language] || 'en-US';
     rec.onresult = (e) => {
       let final = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -931,7 +933,11 @@ const HerPherGame = () => {
       }
     };
     rec.onend  = () => { setIsRecording(false); setRecordingTarget(null); };
-    rec.onerror = () => { setIsRecording(false); setRecordingTarget(null); };
+    rec.onerror = (e) => { 
+      setIsRecording(false); 
+      setRecordingTarget(null); 
+      alert(t('game.speechError') + ' / iPad Error: ' + (e.error || 'unknown'));
+    };
     window.activeRecognition = rec;
     rec.start();
     setIsRecording(true);

@@ -326,7 +326,7 @@ const House = ({ house, onClick, interactionLocked }) => {
 };
 
 const ChorMachayeShorGame = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1292,7 +1292,8 @@ const ChorMachayeShorGame = () => {
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    recognition.lang = langMap[language] || 'en-US';
     recognition.onresult = (e) => {
       let final = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {

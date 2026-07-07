@@ -346,7 +346,7 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showScore } = useHeaderConfig();
   const navigate = useNavigate();
 
@@ -415,7 +415,8 @@ const TriangleRachnaGame = () => {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    recognition.lang = langMap[language] || 'en-US';
 
     recognition.onresult = (e) => {
       let finalTranscript = '';

@@ -332,7 +332,7 @@ const SB_PATH1_SEQ = ["R4C1","R3C1","R2C1","R2C2","R2C3","R2C4"];
 const SB_PATH2_SEQ = ["R4C1","R3C1","R2C2","R2C3","R2C4"];
 
 const ChaloMelaChaleGame = () => {
-  const { t }    = useLanguage();
+  const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1376,7 +1376,8 @@ const ChaloMelaChaleGame = () => {
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+    recognition.lang = langMap[language] || 'en-US';
     recognition.onresult = (event) => {
       let final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -1388,7 +1389,11 @@ const ChaloMelaChaleGame = () => {
       }
     };
     recognition.onend = () => { setIsRecording(false); setRecordingTarget(null); };
-    recognition.onerror = () => { setIsRecording(false); setRecordingTarget(null); };
+    recognition.onerror = (e) => { 
+      setIsRecording(false); 
+      setRecordingTarget(null); 
+      alert(t('game.speechError') + ' / iPad Error: ' + (e.error || 'unknown'));
+    };
     window.activeRecognition = recognition;
     recognition.start();
     setIsRecording(true);
