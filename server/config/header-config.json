@@ -1,8 +1,8 @@
 {
   "showLogo": true,
-  "showGameIcon": false,
-  "showGameName": false,
-  "showChildId": false,
-  "showTimer": false,
-  "showScore": false
+  "showGameIcon": true,
+  "showGameName": true,
+  "showChildId": true,
+  "showTimer": true,
+  "showScore": true
 }

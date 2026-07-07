@@ -995,6 +995,17 @@ const HerPherGame = () => {
   const totalScoredTime  = scoredHistory.reduce((s, h) => s + (h.time || 0), 0);
 
   // ──── Render ─────────────────────────────────────────────────────────────────
+  const getSplashImage = () => {
+    if (!allElements || allElements.length === 0) return "/assets/images/her_pher/her_pher.jpg";
+    const SERVER_BASE = API_URL.replace(/\/api$/, '');
+    const element = allElements.find(e => e.asset_type === 'splash_screen' && e.language === language);
+    if (element) {
+      if (element.file_path.startsWith('/assets')) return element.file_path;
+      return `${SERVER_BASE}${element.file_path}`;
+    }
+    return "/assets/images/her_pher/her_pher.jpg";
+  };
+
   return (
     <div className="hp-app">
       <div className="hp-container">
@@ -1069,7 +1080,7 @@ const HerPherGame = () => {
             <div className="hp-screen hp-screen-splash">
               <div className="hp-splash-cover">
                 <img
-                  src="/assets/images/her_pher/her_pher.jpg"
+                  src={getSplashImage()}
                   alt="Her Pher"
                   className="hp-splash-img-full"
                   onError={(e) => { e.target.style.display = 'none'; }}
