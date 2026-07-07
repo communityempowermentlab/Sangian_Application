@@ -346,6 +346,18 @@ function ShapeEl({ shape, color, size, orientation, workspace = false, customSiz
 
 // ─── Main Component ───────────────────────────────────────────
 const TriangleRachnaGame = () => {
+  // Global Microphone Cleanup: Ensure hardware lock is released on unmount
+  useEffect(() => {
+    return () => {
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+        window.activeRecognition = null;
+      }
+    };
+  }, []);
+
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showScore } = useHeaderConfig();
   const navigate = useNavigate();

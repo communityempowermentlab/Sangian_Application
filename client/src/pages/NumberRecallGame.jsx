@@ -342,6 +342,18 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
 // ─── Main Component ─────────────────────────────────────────────
 const NumberRecallGame = () => {
+  // Global Microphone Cleanup: Ensure hardware lock is released on unmount
+  useEffect(() => {
+    return () => {
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+        window.activeRecognition = null;
+      }
+    };
+  }, []);
+
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
@@ -648,8 +660,19 @@ const NumberRecallGame = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
-      if (window.activeRecognition) window.activeRecognition.stop();
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+      }
       setIsRecording(false); setRecordingTarget(null); return;
+    }
+
+    // Explicitly kill any zombie hardware lock before creating a new one
+    if (window.activeRecognition) {
+      window.activeRecognition.onend = null;
+      window.activeRecognition.onerror = null;
+      try { window.activeRecognition.stop(); } catch(e) {}
     }
     const recognition = new SR();
     recognition.continuous = true;

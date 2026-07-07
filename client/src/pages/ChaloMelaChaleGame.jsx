@@ -332,6 +332,18 @@ const SB_PATH1_SEQ = ["R4C1","R3C1","R2C1","R2C2","R2C3","R2C4"];
 const SB_PATH2_SEQ = ["R4C1","R3C1","R2C2","R2C3","R2C4"];
 
 const ChaloMelaChaleGame = () => {
+  // Global Microphone Cleanup: Ensure hardware lock is released on unmount
+  useEffect(() => {
+    return () => {
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+        window.activeRecognition = null;
+      }
+    };
+  }, []);
+
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
@@ -1370,8 +1382,19 @@ const ChaloMelaChaleGame = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { alert(t('common.speechNotSupported')); return; }
     if (isRecording && recordingTarget === target) {
-      if (window.activeRecognition) window.activeRecognition.stop();
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+      }
       setIsRecording(false); setRecordingTarget(null); return;
+    }
+
+    // Explicitly kill any zombie hardware lock before creating a new one
+    if (window.activeRecognition) {
+      window.activeRecognition.onend = null;
+      window.activeRecognition.onerror = null;
+      try { window.activeRecognition.stop(); } catch(e) {}
     }
     const recognition = new SR();
     recognition.continuous = true;

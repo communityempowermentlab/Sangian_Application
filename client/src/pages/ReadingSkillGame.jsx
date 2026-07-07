@@ -67,6 +67,18 @@ const QUESTIONS = [
 ];
 
 const ReadingSkillGame = () => {
+  // Global Microphone Cleanup: Ensure hardware lock is released on unmount
+  useEffect(() => {
+    return () => {
+      if (window.activeRecognition) {
+        window.activeRecognition.onend = null;
+        window.activeRecognition.onerror = null;
+        try { window.activeRecognition.stop(); } catch(e) {}
+        window.activeRecognition = null;
+      }
+    };
+  }, []);
+
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
