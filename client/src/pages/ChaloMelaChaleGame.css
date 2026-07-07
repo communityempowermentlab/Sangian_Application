@@ -449,7 +449,7 @@
 }
 
 .matrix-grid {
-  width: min(900px, 100%, 75vh);
+  width: min(900px, 100%, 60vh);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 3px;                 /* minor space */
@@ -620,20 +620,22 @@
 
 /* Highlight states for grid cells */
 .matrix-cell.cell-start {
-  border: 4px solid #007BFF !important;
+  border-color: #007BFF !important;
+  box-shadow: inset 0 0 0 3px #007BFF !important;
   background-color: rgba(0, 123, 255, 0.25) !important;
   z-index: 3;
 }
 
 .matrix-cell.cell-path {
-  border: 4px solid #FF7A00 !important;
+  border-color: #FF7A00 !important;
+  box-shadow: inset 0 0 0 3px #FF7A00, inset 0 0 15px rgba(255, 122, 0, 0.4) !important;
   background-color: rgba(255, 122, 0, 0.25) !important;
-  box-shadow: inset 0 0 15px rgba(255, 122, 0, 0.4) !important;
   z-index: 2;
 }
 
 .matrix-cell.cell-end {
-  border: 4px solid #28A745 !important;
+  border-color: #28A745 !important;
+  box-shadow: inset 0 0 0 3px #28A745 !important;
   background-color: rgba(40, 167, 69, 0.25) !important;
   z-index: 3;
 }
