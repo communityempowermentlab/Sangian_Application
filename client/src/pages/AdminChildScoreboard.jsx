@@ -24,6 +24,8 @@ const AdminChildScoreboard = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [sortConfig, setSortConfig] = useState({ key: 'start_time', direction: 'descending' });
+
     useEffect(() => {
         if (!childId) return;
         const fetchHistory = async () => {
@@ -38,6 +40,58 @@ const AdminChildScoreboard = () => {
         };
         fetchHistory();
     }, [childId]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIndicator = (key) => {
+        if (sortConfig.key === key) {
+            return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
+        }
+        return ' ↕';
+    };
+
+    const sortedHistory = React.useMemo(() => {
+        let sortableItems = [...history];
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                // Handle special cases
+                if (sortConfig.key === 'start_time') {
+                    aValue = new Date(aValue).getTime();
+                    bValue = new Date(bValue).getTime();
+                } else if (sortConfig.key === 'game_name') {
+                    aValue = GAME_LABELS[aValue] || aValue;
+                    bValue = GAME_LABELS[bValue] || bValue;
+                } else if (sortConfig.key === 'score' || sortConfig.key === 'attempt_no') {
+                    aValue = Number(aValue) || 0;
+                    bValue = Number(bValue) || 0;
+                }
+
+                if (aValue === null || aValue === undefined) aValue = '';
+                if (bValue === null || bValue === undefined) bValue = '';
+
+                if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+                if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [history, sortConfig]);
 
     const formatDateTime = (dateString) => {
         if (!dateString) return '-';
@@ -71,21 +125,21 @@ const AdminChildScoreboard = () => {
                     <table className="admin-table" style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
                         <thead style={{ backgroundColor: '#f8fafc' }}>
                             <tr>
-                                <th style={{ textAlign: 'left', padding: '14px' }}>Game Name</th>
-                                <th style={{ textAlign: 'center', padding: '14px' }}>Attempt</th>
-                                <th style={{ textAlign: 'center', padding: '14px' }}>Score</th>
-                                <th style={{ textAlign: 'center', padding: '14px' }}>Status</th>
-                                <th style={{ textAlign: 'left', padding: '14px' }}>Date & Time</th>
+                                <th onClick={() => requestSort('game_name')} style={{ textAlign: 'left', padding: '14px', cursor: 'pointer' }}>Game Name{getSortIndicator('game_name')}</th>
+                                <th onClick={() => requestSort('attempt_no')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Attempt{getSortIndicator('attempt_no')}</th>
+                                <th onClick={() => requestSort('score')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Score{getSortIndicator('score')}</th>
+                                <th onClick={() => requestSort('status')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Status{getSortIndicator('status')}</th>
+                                <th onClick={() => requestSort('start_time')} style={{ textAlign: 'left', padding: '14px', cursor: 'pointer' }}>Date & Time{getSortIndicator('start_time')}</th>
                                 <th style={{ textAlign: 'center', padding: '14px' }}>Final Dashboard</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Loading history...</td></tr>
-                            ) : history.length === 0 ? (
+                            ) : sortedHistory.length === 0 ? (
                                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
                             ) : (
-                                history.map((session) => (
+                                sortedHistory.map((session) => (
                                     <tr key={session.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                                             {GAME_LABELS[session.game_name] || session.game_name}
