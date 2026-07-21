@@ -25,7 +25,7 @@ const Home = () => {
         const staticAssets = {
             'atlantis_bagiya': '/assets/images/bagiya/bagiya.jpg',
             'number_recall_lottery': '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg',
-            'number_recall_lottery_v2': '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg',
+            'number_recall_lottery_v2': '/assets/images/lottery_ka_ticket_V2/lottery_ka_ticket.jpg',
             'rover_mela': '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg',
             'auditory_dhyan': '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg',
             'working_memory_herpher': '/assets/images/her_pher/her_pher.jpg',

@@ -27,7 +27,7 @@ const T = {
 const GAME_CATALOG = [
     { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',             color: '#6366f1', image: '/assets/images/bagiya/bagiya.jpg' },
     { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket',  color: '#f59e0b', image: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
-    { key: 'number_recall_lottery_v2',  icon: '🎟️', title: 'Lottery Ka Ticket - Version 2',  color: '#f59e0b', image: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
+    { key: 'number_recall_lottery_v2',  icon: '🎟️', title: 'Lottery Ka Ticket - Version 2',  color: '#f59e0b', image: '/assets/images/lottery_ka_ticket_V2/lottery_ka_ticket.jpg' },
     { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen',  color: '#10b981', image: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
     { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',    color: '#8b5cf6', image: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
     { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',           color: '#0891b2', image: '/assets/images/her_pher/her_pher.jpg' },
