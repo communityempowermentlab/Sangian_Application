@@ -518,7 +518,7 @@ const NumberSkillGameV2 = () => {
         <div className="ns-brand">
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="ns-divider"></div>}
-          {showGameIcon && <img src="/assets/images/number_skill/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />}
+          {showGameIcon && <img src="/assets/images/number_skill_v2/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />}
           {showGameName && <span className="ns-test-title">{t('home.games.numeracy.title')} - Version 2</span>}
         </div>
         <div className="ns-topbar-center">
@@ -544,7 +544,7 @@ const NumberSkillGameV2 = () => {
         {screen === 'splash' && configLoaded && (
           <div className="ns-screen ns-screen-splash">
             <div className="ns-splash-cover">
-              <img src="/assets/images/number_skill/number_skill.jpg" alt="Ankganit" className="ns-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+              <img src="/assets/images/number_skill_v2/number_skill.jpg" alt="Ankganit" className="ns-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
               <div className="ns-splash-btn-overlay">
                 <button
                   className={`ns-btn ns-btn-primary ${audioFinished ? 'ns-btn-highlight' : ''}`}
@@ -730,7 +730,7 @@ const NumberSkillGameV2 = () => {
       {!isCheckingSession && (
         <audio 
           ref={audioRef} 
-          src="/assets/audios/number_skill/splash.wav"
+          src="/assets/audios/number_skill_v2/splash.wav"
           preload="auto" 
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}

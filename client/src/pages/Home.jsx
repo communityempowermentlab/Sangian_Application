@@ -30,7 +30,7 @@ const Home = () => {
             'auditory_dhyan': '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg',
             'working_memory_herpher': '/assets/images/her_pher/her_pher.jpg',
             'numeracy_number_skill': '/assets/images/number_skill/number_skill.jpg',
-            'numeracy_number_skill_v2': '/assets/images/number_skill/number_skill.jpg',
+            'numeracy_number_skill_v2': '/assets/images/number_skill_v2/number_skill.jpg',
             'literacy_reading_skill': '/assets/images/reading_skill/reading_skill.jpg',
             'cognitive_flex_chor': '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg',
             'triangle_rachna': '/assets/images/rachna/rachna.jpg'
