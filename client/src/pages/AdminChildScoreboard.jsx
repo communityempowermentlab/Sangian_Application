@@ -48,21 +48,26 @@ const AdminChildScoreboard = () => {
     };
 
     return (
-        <main className="admin-main">
-            <header className="admin-header" style={{ marginBottom: '24px' }}>
-                <h1 className="admin-title">🏆 Game Performance Scoreboard</h1>
-                <p className="admin-subtitle">Individual record for Child ID: <strong>{childId}</strong></p>
-                <button 
-                    onClick={() => navigate('/admin/children')} 
-                    className="admin-btn admin-btn-secondary"
-                    style={{ marginTop: '16px' }}
-                >
-                    ← Back to Children List
-                </button>
-            </header>
+        <main className="admin-content" aria-label="Game Performance Scoreboard">
+            <div className="admin-card w12">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>🏆 Game Performance Scoreboard</h3>
+                        <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>Individual record for Child ID: <strong>{childId}</strong></p>
+                    </div>
+                    <div className="admin-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <button 
+                            onClick={() => navigate('/admin/children')} 
+                            style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#ffffff', color: '#374151', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', fontSize: '14px', transition: 'all 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f9fafb'}
+                            onMouseOut={e => e.currentTarget.style.background = '#ffffff'}
+                        >
+                            <span>←</span> Back to Children List
+                        </button>
+                    </div>
+                </div>
 
-            <div className="admin-card" style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', marginTop: '12px' }}>
                     <table className="admin-table" style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
                         <thead style={{ backgroundColor: '#f8fafc' }}>
                             <tr>
