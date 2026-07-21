@@ -57,6 +57,8 @@ const AdminChildrenList = () => {
     const [selectedChildForSessions, setSelectedChildForSessions] = useState(null);
     const [generatingReportFor, setGeneratingReportFor] = useState(null);
 
+    const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
+
     useEffect(() => {
         fetchChildren();
     }, []);
@@ -78,9 +80,60 @@ const AdminChildrenList = () => {
         child.mobile?.includes(searchTerm)
     );
 
-    const totalPages = Math.ceil(filteredChildren.length / pageSize) || 1;
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIndicator = (key) => {
+        if (sortConfig.key === key) {
+            return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
+        }
+        return ' ↕';
+    };
+
+    const sortedChildren = React.useMemo(() => {
+        let sortableItems = [...filteredChildren];
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+                
+                if (sortConfig.key === 'age') {
+                    // Sorting by age implies sorting by Date of Birth in reverse
+                    aValue = a.dob ? new Date(a.dob).getTime() : 0;
+                    bValue = b.dob ? new Date(b.dob).getTime() : 0;
+                    // For age, older is born earlier (smaller timestamp)
+                    // If we want ascending age (youngest to oldest), it means descending timestamp
+                    if (aValue < bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+                    if (aValue > bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+                    return 0;
+                }
+                
+                if (aValue === null || aValue === undefined) aValue = '';
+                if (bValue === null || bValue === undefined) bValue = '';
+                
+                if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+                if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+                
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [filteredChildren, sortConfig]);
+
+    const totalPages = Math.ceil(sortedChildren.length / pageSize) || 1;
     const startIndex = (currentPage - 1) * pageSize;
-    const currentChildren = filteredChildren.slice(startIndex, startIndex + pageSize);
+    const currentChildren = sortedChildren.slice(startIndex, startIndex + pageSize);
 
     const handlePageSelect = (size) => {
         setPageSize(Number(size));
@@ -239,15 +292,15 @@ const AdminChildrenList = () => {
                                     <tr>
                                         <th>#</th>
                                         <th style={{ width: '56px' }}>Photo</th>
-                                        <th>Child Unique ID</th>
-                                        <th>Child Name</th>
-                                        <th>Date of Birth</th>
-                                        <th>Age</th>
-                                        <th>Gender</th>
-                                        <th>Mobile</th>
-                                        <th>Add Date</th>
-                                        <th style={{ textAlign: 'left' }}>Last Login</th>
-                                        <th>Status</th>
+                                        <th onClick={() => requestSort('child_id')} style={{cursor: 'pointer'}}>Child Unique ID{getSortIndicator('child_id')}</th>
+                                        <th onClick={() => requestSort('name')} style={{cursor: 'pointer'}}>Child Name{getSortIndicator('name')}</th>
+                                        <th onClick={() => requestSort('dob')} style={{cursor: 'pointer'}}>Date of Birth{getSortIndicator('dob')}</th>
+                                        <th onClick={() => requestSort('age')} style={{cursor: 'pointer'}}>Age{getSortIndicator('age')}</th>
+                                        <th onClick={() => requestSort('gender')} style={{cursor: 'pointer'}}>Gender{getSortIndicator('gender')}</th>
+                                        <th onClick={() => requestSort('mobile')} style={{cursor: 'pointer'}}>Mobile{getSortIndicator('mobile')}</th>
+                                        <th onClick={() => requestSort('created_at')} style={{cursor: 'pointer'}}>Add Date{getSortIndicator('created_at')}</th>
+                                        <th onClick={() => requestSort('last_login')} style={{ textAlign: 'left', cursor: 'pointer' }}>Last Login{getSortIndicator('last_login')}</th>
+                                        <th onClick={() => requestSort('status')} style={{cursor: 'pointer'}}>Status{getSortIndicator('status')}</th>
                                         <th style={{ minWidth: '180px' }}>Action</th>
                                     </tr>
                                 </thead>
