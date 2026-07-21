@@ -1887,14 +1887,17 @@ const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameCl
                         </button>
 
                         {/* Sub-sections accordion */}
-                        <div style={{
-                            maxHeight: isExpanded ? `${GAME_SECTIONS.length * SEC_H}px` : '0',
-                            overflow: 'hidden',
-                            transition: 'max-height 0.28s ease',
-                            background: 'rgba(248,250,252,0.8)',
-                            borderBottom: isExpanded ? `1px solid ${T.borderSoft}` : 'none',
-                        }}>
-                            {GAME_SECTIONS.map(sec => {
+                        {(() => {
+                            const visibleSections = GAME_SECTIONS.filter(sec => !(game.key === 'number_recall_lottery_v2' && sec.key === 'technical_docs_2013'));
+                            return (
+                                <div style={{
+                                    maxHeight: isExpanded ? `${visibleSections.length * SEC_H}px` : '0',
+                                    overflow: 'hidden',
+                                    transition: 'max-height 0.28s ease',
+                                    background: 'rgba(248,250,252,0.8)',
+                                    borderBottom: isExpanded ? `1px solid ${T.borderSoft}` : 'none',
+                                }}>
+                                    {visibleSections.map(sec => {
                                 const isSel = isActiveGame && selectedSection?.key === sec.key;
                                 return (
                                     <button
@@ -1934,8 +1937,10 @@ const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameCl
                                         )}
                                     </button>
                                 );
-                            })}
-                        </div>
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </div>
                 );
             })}
@@ -2268,7 +2273,7 @@ const GameDashboard = ({ game, onSectionClick }) => {
                     Documentation Sections
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: '12px' }}>
-                    {GAME_SECTIONS.map(sec => {
+                    {GAME_SECTIONS.filter(sec => !(game.key === 'number_recall_lottery_v2' && sec.key === 'technical_docs_2013')).map(sec => {
                         const isHov = hovered === sec.key;
                         return (
                             <button
