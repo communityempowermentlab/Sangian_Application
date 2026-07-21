@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
 import { API_URL } from '../services/api';
 
 // ─── Design tokens (matches AdminDashboard.css) ───────────────────────────────
@@ -4786,22 +4787,30 @@ const IntroductionViewer = ({ game }) => {
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 const AdminDocs = () => {
-    const [expandedGame, setExpandedGame]       = useState(null);
-    const [selectedGame, setSelectedGame]       = useState(null);
-    const [selectedSection, setSelectedSection] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const gameParam = searchParams.get('game');
+    const sectionParam = searchParams.get('section');
 
-    const handleHome = () => { setExpandedGame(null); setSelectedGame(null); setSelectedSection(null); };
+    const selectedGame = gameParam ? GAME_CATALOG.find(g => g.key === gameParam) || null : null;
+    const expandedGame = selectedGame ? selectedGame.key : null;
+    const selectedSection = (selectedGame && sectionParam) 
+        ? GAME_SECTIONS.find(s => s.key === sectionParam) || null 
+        : null;
+
+    const handleHome = () => { 
+        setSearchParams({}); 
+    };
 
     const handleGameClick = (game) => {
         if (expandedGame === game.key && !selectedSection) {
-            setExpandedGame(null); setSelectedGame(null); setSelectedSection(null);
+            setSearchParams({});
         } else {
-            setExpandedGame(game.key); setSelectedGame(game); setSelectedSection(null);
+            setSearchParams({ game: game.key });
         }
     };
 
     const handleSectionClick = (game, section) => {
-        setExpandedGame(game.key); setSelectedGame(game); setSelectedSection(section);
+        setSearchParams({ game: game.key, section: section.key });
     };
 
     return (
@@ -4820,7 +4829,7 @@ const AdminDocs = () => {
                         selectedGame={selectedGame}
                         selectedSection={selectedSection}
                         onHome={handleHome}
-                        onGameSelect={() => setSelectedSection(null)}
+                        onGameSelect={() => setSearchParams({ game: selectedGame.key })}
                     />
                 )}
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
