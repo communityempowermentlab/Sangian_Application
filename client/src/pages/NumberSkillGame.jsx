@@ -521,6 +521,50 @@ const NumberSkillGame = () => {
     }
   };
 
+  const renderMathQuestion = (text) => {
+    let cleanText = text.replace(/Identify number\s*-?\s*/ig, '').trim();
+
+    const isStrictMath = /^\s*\d+\s*[-÷]\s*\d+\s*$/.test(cleanText);
+
+    if (isStrictMath && cleanText.includes('-')) {
+      const parts = cleanText.split('-');
+      if (parts.length === 2) {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '3.5rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
+            <div>{parts[0].trim()}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '4px solid #333', paddingBottom: '4px', minWidth: '100px' }}>
+              <span style={{ marginRight: '15px' }}>-</span>
+              <span>{parts[1].trim()}</span>
+            </div>
+            <div style={{ height: '1.2em', width: '100%', borderBottom: '4px solid #333' }}></div>
+          </div>
+        );
+      }
+    } else if (isStrictMath && cleanText.includes('÷')) {
+      const parts = cleanText.split('÷');
+      if (parts.length === 2) {
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', fontSize: '3.5rem', fontWeight: 800, color: '#333' }}>
+            <div style={{ paddingRight: '8px' }}>{parts[1].trim()}</div>
+            <div style={{ display: 'flex', alignItems: 'stretch' }}>
+              <svg viewBox="0 0 20 100" width="16" height="1.4em" preserveAspectRatio="none">
+                <path d="M 18,2 Q 2,50 18,98" fill="none" stroke="#333" strokeWidth="4" />
+              </svg>
+              <div style={{ borderTop: '4px solid #333', padding: '10px 15px 0', marginTop: '0px' }}>
+                {parts[0].trim()}
+              </div>
+              <svg viewBox="0 0 20 100" width="16" height="1.4em" preserveAspectRatio="none">
+                <path d="M 2,2 Q 18,50 2,98" fill="none" stroke="#333" strokeWidth="4" />
+              </svg>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    return cleanText;
+  };
+
   const currentQuestion = QUESTIONS[questionIndex];
 
   return (
@@ -580,7 +624,9 @@ const NumberSkillGame = () => {
         {screen === 'game' && currentQuestion && QUESTIONS[questionIndex].type === 'manual' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card">
-              <div className="ns-question-content">{QUESTIONS[questionIndex].text}</div>
+              <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
+                {renderMathQuestion(QUESTIONS[questionIndex].text)}
+              </div>
             </div>
             <div className="ns-response-buttons">
               <button className="ns-response-btn ns-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct')}</button>
@@ -592,7 +638,9 @@ const NumberSkillGame = () => {
         {screen === 'game' && currentQuestion && QUESTIONS[questionIndex].type !== 'manual' && (
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card ns-split-question">
-              <div className="ns-question-content">{QUESTIONS[questionIndex].text}</div>
+              <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
+                {renderMathQuestion(QUESTIONS[questionIndex].text)}
+              </div>
             </div>
 
             <div className="ns-auto-inputs ns-split-inputs">
