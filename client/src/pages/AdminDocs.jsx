@@ -4849,6 +4849,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'numeracy_number_skill'  ? NUMERACY_DEFAULT :
                                 selectedGame.key === 'literacy_reading_skill' ? LITERACY_DEFAULT  :
+                                selectedGame.key === 'number_recall_lottery_v2' ? '' :
                                 `# ${selectedGame.title} — Technical Documentation 2013\n\nLegacy documentation for **${selectedGame.title}**.\n\nClick **Edit** to add historical documentation.`
                             }
                         />
