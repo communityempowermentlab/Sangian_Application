@@ -149,19 +149,19 @@
   gap: 12px;
 }
 
-.ns-split-question .ns-question-content { font-size: 6rem; padding: 16px; }
+.ns-split-question .ns-question-content { font-size: 11rem; padding: 16px; }
 
 /* Splash screen — image fills everything, no padding or border */
 .ns-screen-splash {
-  padding: 0;
-  background: none;
-  border-radius: 0;
-  border: none;
+  padding: 0 !important;
+  background: none !important;
+  border-radius: 0 !important;
+  border: none !important;
 }
 
 .ns-main-splash {
-  padding: 0;
-  gap: 0;
+  padding: 0 !important;
+  gap: 0 !important;
 }
 
 /* ─── Splash Full-Cover Layout ─────────────────────────────── */
@@ -242,7 +242,7 @@
 }
 
 .ns-question-content {
-  font-size: 5.5rem;
+  font-size: 24rem;
   font-weight: 800;
   text-align: center;
   width: 100%;
@@ -396,9 +396,8 @@
   .ns-main { padding: 10px 20px 12px; }
   .ns-main-splash { padding: 0; }
   .ns-screen { padding: 16px 24px; }
-  .ns-question-content { font-size: 4.4rem; padding: 20px; }
-  .ns-screen-split { gap: 16px; }
-  .ns-split-question .ns-question-content { font-size: 5.6rem; padding: 12px; }
+  .ns-question-content { font-size: 18rem; padding: 20px; }
+  .ns-split-question .ns-question-content { font-size: 9rem; padding: 12px; }
   .ns-input-group input { font-size: 1.9rem; padding: 12px 14px; width: 140px; }
   .ns-btn-submit { padding: 12px 28px; font-size: 1rem; min-width: 170px; }
   .ns-numpad { gap: 14px; max-width: 360px; }
@@ -422,7 +421,7 @@
   .ns-topbar-screen-title { font-size: 0.95rem; }
   .btn-pause-quit { padding: 0 10px; font-size: 0.78rem; }
   .ns-screen-split { gap: 12px; padding: 0; }
-  .ns-split-question .ns-question-content { font-size: 4.8rem; padding: 10px; }
+  .ns-split-question .ns-question-content { font-size: 7rem; padding: 10px; }
   .ns-numpad { gap: 10px; max-width: 300px; }
   .ns-key { padding: 15px 8px; font-size: 1.8rem; border-radius: 14px; }
   .ns-input-group input { font-size: 1.7rem; padding: 10px 12px; width: 120px; }
@@ -437,7 +436,7 @@
   .ns-score-top { flex-direction: column; align-items: center; }
   .ns-metric-grid { grid-template-columns: repeat(2, 1fr); }
   .ns-screen-split { flex-direction: column; }
-  .ns-split-question .ns-question-content { font-size: 2.8rem; }
+  .ns-split-question .ns-question-content { font-size: 5rem; }
 }
 
 .btn-pause-quit {

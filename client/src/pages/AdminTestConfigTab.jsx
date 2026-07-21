@@ -317,6 +317,20 @@ const ResponseMatchingPanel = () => {
         }
     };
 
+    const toggleHerPherPractice = async () => {
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/response-matching-config', { displayHerPherPractice: !config.displayHerPherPractice });
+            setConfig(res.data.config);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+            console.error('Failed to update Her Pher practice configuration:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading || !config) {
         return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
     }
@@ -374,8 +388,32 @@ const ResponseMatchingPanel = () => {
                     disabled={saving} 
                     onClick={toggleDisplayUserInputString} 
                 />
-                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: config.displayUserInputString ? '#111827' : '#6b7280' }}>
+                <span 
+                    onClick={saving ? undefined : toggleDisplayUserInputString}
+                    style={{ fontSize: '0.88rem', fontWeight: 600, color: config.displayUserInputString ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+                >
                     {config.displayUserInputString ? 'Yes, display entered numbers' : 'No, hide entered numbers'}
+                </span>
+            </div>
+
+            <div style={{ marginTop: '30px', fontSize: '0.85rem', color: '#6b7280', maxWidth: '640px' }}>
+                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem', marginBottom: '8px' }}>
+                    Display Practice Questions
+                </div>
+                Controls whether practice questions are displayed for the Her Pher game before the actual assessment starts.
+            </div>
+
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <ToggleSwitch 
+                    checked={!!config.displayHerPherPractice} 
+                    disabled={saving} 
+                    onClick={toggleHerPherPractice} 
+                />
+                <span 
+                    onClick={saving ? undefined : toggleHerPherPractice}
+                    style={{ fontSize: '0.88rem', fontWeight: 600, color: config.displayHerPherPractice ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+                >
+                    {config.displayHerPherPractice ? 'ON - Practice questions are displayed' : 'OFF - Practice questions are skipped'}
                 </span>
             </div>
 

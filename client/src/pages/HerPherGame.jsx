@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useResponseMatching } from '../contexts/ResponseMatchingContext';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
@@ -207,7 +208,12 @@ const HerPherGame = () => {
 
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
+  const { displayHerPherPractice, refreshConfig } = useResponseMatching();
   const navigate    = useNavigate();
+
+  useEffect(() => {
+    if (refreshConfig) refreshConfig();
+  }, [refreshConfig]);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [GAME_DATA, setGAME_DATA] = useState(null);
   const [allElements, setAllElements] = useState([]);
@@ -737,11 +743,11 @@ const HerPherGame = () => {
         // Game over
         completeGame();
       } else {
-        setCurrentAttempt(1);
         setCurrentQuestion(next);
+        setCurrentAttempt(displayHerPherPractice ? 1 : 2);
       }
     }
-  }, [currentAttempt, currentQuestion]); // eslint-disable-line
+  }, [currentAttempt, currentQuestion, displayHerPherPractice]); // eslint-disable-line
 
   // ──── Sample question controls ───────────────────────────────────────────────
   const handleSampleRetake = () => {
@@ -768,7 +774,7 @@ const HerPherGame = () => {
   const handleSampleNext = () => {
     new Audio(`${AUDIO_PATH}/screen_change.wav`).play().catch(() => {});
     setCurrentQuestion(2);
-    setCurrentAttempt(1);
+    setCurrentAttempt(displayHerPherPractice ? 1 : 2);
   };
 
   // ──── Complete game ──────────────────────────────────────────────────────────

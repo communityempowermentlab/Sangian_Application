@@ -18,7 +18,7 @@ const getConfig = (req, res) => {
 // @access  Private (admin)
 const updateConfig = (req, res) => {
     try {
-        const { responseMatchingMode, displayUserInputString } = req.body;
+        const { responseMatchingMode, displayUserInputString, displayHerPherPractice } = req.body;
         if (responseMatchingMode !== undefined && !responseMatchingService.VALID_MODES.includes(responseMatchingMode)) {
             return res.status(400).json({ message: `responseMatchingMode must be one of: ${responseMatchingService.VALID_MODES.join(', ')}` });
         }
@@ -26,6 +26,7 @@ const updateConfig = (req, res) => {
         const next = {
             responseMatchingMode: responseMatchingMode !== undefined ? responseMatchingMode : current.responseMatchingMode,
             displayUserInputString: displayUserInputString !== undefined ? displayUserInputString : current.displayUserInputString,
+            displayHerPherPractice: displayHerPherPractice !== undefined ? displayHerPherPractice : current.displayHerPherPractice,
         };
         const saved = responseMatchingService.saveConfig(next);
         res.json({ success: true, config: saved });

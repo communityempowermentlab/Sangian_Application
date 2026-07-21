@@ -2,10 +2,12 @@
 export const GAME_CATALOG = [
     { key: 'atlantis_bagiya',           icon: '🧠', title: 'Bagiya',        local: '',           tag: '',                 color: '#6366f1' },
     { key: 'number_recall_lottery',     icon: '🎟️', title: 'Lottery Ka Ticket',        local: '',tag: '',                 color: '#f59e0b' },
+    { key: 'number_recall_lottery_v2',  icon: '🎟️', title: 'Lottery Ka Ticket - Version 2', local: '',tag: '', color: '#f59e0b' },
     { key: 'rover_mela',                icon: '🗺️', title: 'Chalo Mela Chalen',           local: '', tag: '',                 color: '#10b981' },
     { key: 'auditory_dhyan',            icon: '👂', title: 'Dhyan Kahan Hai',   local: '',  tag: '',                 color: '#8b5cf6' },
     { key: 'working_memory_herpher',    icon: '🔄', title: 'Her Pher',       local: '',         tag: '',                 color: '#0891b2' },
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: '',                 color: '#7c3aed' },
+    { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: '',                color: '#dc2626' },
     { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: 'Construction',     color: '#ef4444' },
@@ -132,7 +134,7 @@ export const generateReportData = (activeGame, detail) => {
                 const colLabel = c.toUpperCase();
                 qHeaders.push(colLabel);
                 qHeaders.push(`${colLabel} Time(s)`);
-                if (activeGame?.key !== 'numeracy_number_skill') {
+                if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') {
                     qHeaders.push(`${colLabel} Replays`);
                 }
             });
@@ -259,7 +261,7 @@ export const generateReportData = (activeGame, detail) => {
                     const qs = r.question_scores || {};
                     rowArr.push(qs[c] ?? '');
                     rowArr.push(qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');
-                    if (activeGame?.key !== 'numeracy_number_skill') {
+                    if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') {
                         rowArr.push(qs[`${c}_replays`] ?? '');
                     }
                 });

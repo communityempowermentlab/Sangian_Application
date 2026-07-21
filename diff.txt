@@ -1,0 +1,439 @@
+--- /Users/mohammad/Documents/sangian/client/src/pages/NumberRecallGame.jsx	2026-07-07 13:49:28
++++ /Users/mohammad/Documents/sangian/client/src/pages/NumberRecallGameV2.jsx	2026-07-20 15:33:55
+@@ -8,40 +8,16 @@
+ import SessionAssessmentForm from '../components/SessionAssessmentForm';
+ import { Capacitor } from '@capacitor/core';
+ import { StatusBar } from '@capacitor/status-bar';
+-import './NumberRecallGame.css';
++import './NumberRecallGameV2.css';
+ 
+ // ─── Game Name ─────────────────────────────────────────────────
+-const GAME_NAME = 'number_recall_lottery';
++const GAME_NAME = 'number_recall_lottery_v2';
+ const TOTAL_SCORED_QUESTIONS = 20;
+ const MAX_CONSECUTIVE_WRONG = 3;
+ 
+ // ─── Asset Paths ───────────────────────────────────────────────
+-const AUDIO_PATH = '/assets/audios/lottery_ka_ticket';
+-const IMAGE_PATH = '/assets/images/lottery_ka_ticket';
+-
+-// ─── All 20 scored questions ────────────────────────────────────
+-const QUESTIONS = [
+-  { qid: 1,  correct: [8, 9],                   maxSelect: 2, audio: '8_9.m4a' },
+-  { qid: 2,  correct: [4, 9, 5],                maxSelect: 3, audio: '4_9_5.m4a' },
+-  { qid: 3,  correct: [9, 1, 6],                maxSelect: 3, audio: '9_1_6.m4a' },
+-  { qid: 4,  correct: [10, 5, 3],               maxSelect: 3, audio: '10_5_3.m4a' },
+-  { qid: 5,  correct: [10, 2, 5, 8],            maxSelect: 4, audio: '10_2_5_8.m4a' },
+-  { qid: 6,  correct: [5, 2, 10, 3],            maxSelect: 4, audio: '5_2_10_3.m4a' },
+-  { qid: 7,  correct: [6, 1, 9, 5],             maxSelect: 4, audio: '6_1_9_5.m4a' },
+-  { qid: 8,  correct: [2, 3, 6, 10, 5],         maxSelect: 5, audio: '2_3_6_10_5.m4a' },
+-  { qid: 9,  correct: [1, 4, 6, 9, 2],          maxSelect: 5, audio: '1_4_6_9_2.m4a' },
+-  { qid: 10, correct: [3, 10, 1, 5, 8],         maxSelect: 5, audio: '3_10_1_5_8.m4a' },
+-  { qid: 11, correct: [9, 3, 5, 1, 8, 4],       maxSelect: 6, audio: '9_3_5_1_8_4.m4a' },
+-  { qid: 12, correct: [10, 2, 4, 9, 1, 6],      maxSelect: 6, audio: '10_2_4_9_1_6.m4a' },
+-  { qid: 13, correct: [2, 6, 3, 10, 8, 4],      maxSelect: 6, audio: '2_6_3_10_8_4.m4a' },
+-  { qid: 14, correct: [5, 3, 6, 9, 8, 4, 10],   maxSelect: 7, audio: '5_3_6_9_8_4_10.m4a' },
+-  { qid: 15, correct: [3, 1, 5, 9, 4, 6, 8],    maxSelect: 7, audio: '3_1_5_9_4_6_8.m4a' },
+-  { qid: 16, correct: [1, 10, 2, 6, 8, 5, 3],   maxSelect: 7, audio: '1_10_2_6_8_5_3.m4a' },
+-  { qid: 17, correct: [5, 8, 4, 1, 9, 4, 6, 3], maxSelect: 8, audio: '5_8_4_1_9_4_6_3.m4a' },
+-  { qid: 18, correct: [1, 8, 5, 3, 9, 4, 6, 2, 10], maxSelect: 9, audio: '1_8_5_3_9_4_6_2_10.m4a' },
+-  { qid: 19, correct: [9, 1, 2, 6, 4, 3, 8, 5, 10], maxSelect: 9, audio: '9_1_2_6_4_3_8_5_10.m4a' },
+-  { qid: 20, correct: [10, 5, 1, 9, 8, 2, 4, 6, 3], maxSelect: 9, audio: '10_5_1_9_8_2_4_6_3.m4a' },
+-];
++const AUDIO_PATH = '/assets/audios/lottery_ka_ticket_V2';
++const IMAGE_PATH = '/assets/images/lottery_ka_ticket_V2';
+ 
+ // ─── Numpad key layout ──────────────────────────────────────────
+ const NUMPAD_KEYS = [
+@@ -159,7 +135,7 @@
+ 
+   const handleSubmitAndAdvance = () => {
+     if (isPlaying || !isResponseReady) return;
+-    const isCorrect = exactMatch(selected, correct);
++    const isCorrect = exactMatch(selected, [...correct].reverse());
+     if (isCorrect) {
+       onCorrect && onCorrect(selected, replayCount);
+     } else {
+@@ -281,7 +257,7 @@
+   };
+ 
+   const evaluateAnswer = (sel) => {
+-    const correct_ = exactMatch(sel, correct);
++    const correct_ = exactMatch(sel, [...correct].reverse());
+     setIsCorrect(correct_);
+ 
+     if (!firstAttemptDone) {
+@@ -341,7 +317,7 @@
+ };
+ 
+ // ─── Main Component ─────────────────────────────────────────────
+-const NumberRecallGame = () => {
++const NumberRecallGameV2 = () => {
+   // Global Microphone Cleanup: Ensure hardware lock is released on unmount
+   useEffect(() => {
+     return () => {
+@@ -368,6 +344,13 @@
+   const [gameSessionId, setGameSessionId] = useState(null);
+   const [pauses, setPauses] = useState([]);
+   const [consecutiveWrong, setConsecutiveWrong] = useState(0);
++  
++  // Dynamic Questions State
++  const [questions, setQuestions] = useState([]);
++  const [practiceQ, setPracticeQ] = useState(null);
++  const [teaching1Q, setTeaching1Q] = useState(null);
++  const [teaching2Q, setTeaching2Q] = useState(null);
++  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+ 
+   // Refs for race-condition-safe callbacks
+   const questionIndexRef = useRef(0);
+@@ -437,9 +420,45 @@
+       }
+     } catch (e) {
+       console.error('Activity fetch error', e);
++    }
++  };
++
++  const loadQuestions = async () => {
++    try {
++      const res = await axios.get(`${API_URL}/games/number-recall-v2/questions`);
++      if (res.data.success) {
++        const allQ = res.data.questions;
++        const parseSeq = (seq) => seq.split(',').map(n => parseInt(n.trim(), 10));
++        
++        const mapQ = (q) => ({
++          qid: q.qid,
++          correct: parseSeq(q.correct_sequence),
++          maxSelect: q.max_select,
++          audio: q.audio_file,
++          teachingAudio: q.teaching_audio
++        });
++
++        const gameQs = allQ.filter(q => !q.is_teaching).map(mapQ);
++        const pQ = allQ.find(q => q.qid === 'Practice');
++        const t1Q = allQ.find(q => q.qid === 'Teaching 1');
++        const t2Q = allQ.find(q => q.qid === 'Teaching 2');
++
++        setQuestions(gameQs);
++        if (pQ) setPracticeQ(mapQ(pQ));
++        if (t1Q) setTeaching1Q(mapQ(t1Q));
++        if (t2Q) setTeaching2Q(mapQ(t2Q));
++      }
++    } catch (e) {
++      console.error('Questions fetch error', e);
++    } finally {
++      setIsConfigLoaded(true);
+     }
+   };
+ 
++  useEffect(() => {
++    loadQuestions();
++  }, []);
++
+   const formatDate = (iso) => {
+     if (!iso) return 'Never';
+     const d = new Date(iso);
+@@ -571,17 +590,27 @@
+     } catch (e) { console.error('Save error', e); }
+   };
+ 
++  const saveScoreToDB = async (finalScores, isEnd = false) => {
++    if (!gameSessionIdRef.current) return;
++    try {
++      await axios.put(`${API_URL}/games/sessions/${gameSessionIdRef.current}`, {
++        end_time: isEnd ? new Date().toISOString() : null,
++        duration_seconds: timerSecondsRef.current,
++        score_data: { scores: finalScores, pauses: pausesRef.current, consecutive_wrong_count: consecutiveWrongRef.current }
++      });
++    } catch (err) { console.error('Save score error', err); }
++  };
++
+   // ── Scoring logic — uses refs to avoid stale closures ──────
+   const handleCorrect = useCallback((sel, replays = 0) => {
+-    const idx = questionIndexRef.current;
+-    const q = QUESTIONS[idx];
++    const currentQ = questions[questionIndexRef.current];
+     const newScore = {
+-      qId: q.qid,
+-      questionNumber: idx + 1,
++      question: `Q${currentQ.qid}`,
+       score: 1,
+-      timeTaken: qTimerRef.current,
+-      userResponse: sel || q.correct.slice(),
+-      correctAnswer: q.correct.slice(),
++      attempts: attemptNo,
++      duration_ms: qTimerRef.current,
++      expected_response: currentQ.correct.join(', '),
++      user_response: sel.join(', '),
+       replayCount: replays,
+     };
+     const upScores = [...allScoresRef.current, newScore];
+@@ -589,19 +618,17 @@
+     setAllScores(upScores);
+     consecutiveWrongRef.current = 0;
+     setConsecutiveWrong(0);
+-    // NOTE: advance happens when user clicks the "Next" button via handleAdvance
+-  }, []);
++  }, [questions, attemptNo]);
+ 
+   const handleWrong = useCallback((userResponse, replays = 0) => {
+-    const idx = questionIndexRef.current;
+-    const q = QUESTIONS[idx];
++    const currentQ = questions[questionIndexRef.current];
+     const newScore = {
+-      qId: q.qid,
+-      questionNumber: idx + 1,
++      question: `Q${currentQ.qid}`,
+       score: 0,
+-      timeTaken: qTimerRef.current,
+-      userResponse: userResponse || [],
+-      correctAnswer: q.correct.slice(),
++      attempts: attemptNo,
++      duration_ms: qTimerRef.current,
++      expected_response: currentQ.correct.join(', '),
++      user_response: userResponse.join(', '),
+       replayCount: replays,
+     };
+     const upScores = [...allScoresRef.current, newScore];
+@@ -610,36 +637,26 @@
+     const newConsec = consecutiveWrongRef.current + 1;
+     consecutiveWrongRef.current = newConsec;
+     setConsecutiveWrong(newConsec);
+-    // Advance happens via handleAdvance called by NumpadPanel after 700ms
+-  }, []);
++  }, [questions, attemptNo]);
+ 
+-  // Shared advance: called on correct (button click) OR wrong (auto, 700ms later)
+-  const handleAdvance = useCallback(() => {
+-    const idx = questionIndexRef.current;
+-    const consec = consecutiveWrongRef.current;
+-    const scores = allScoresRef.current;
+-    const sessId = gameSessionIdRef.current;
+-
+-    const isDroppedOut = consec >= MAX_CONSECUTIVE_WRONG;
+-    const isGameOver = isDroppedOut || idx + 1 >= TOTAL_SCORED_QUESTIONS;
++  const endGame = (isDroppedOut) => {
++    setScreen('score');
++    saveScoreToDB(allScoresRef.current, true);
++    if (!isDroppedOut) {
++      setTimeout(() => generateAndUploadPDF(), 1000);
++    }
++  };
+ 
+-    if (isGameOver) {
+-      setScreen('score');
+-      if (sessId) {
+-        axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
+-          score: scores.filter(s => s.score === 1).length,
+-          progress_level: scores.length,
+-          status: isDroppedOut ? 'dropped' : 'completed',
+-          saved_state: { questionIndex: scores.length, allScores: scores, timerSeconds: timerSecondsRef.current, pauses: pausesRef.current, consecutiveWrong: consec },
+-        }).catch(e => console.error(e));
+-      }
++  const handleAdvance = useCallback(() => {
++    if (questionIndexRef.current + 1 >= questions.length || consecutiveWrongRef.current >= MAX_CONSECUTIVE_WRONG) {
++      endGame(consecutiveWrongRef.current >= MAX_CONSECUTIVE_WRONG);
+     } else {
+-      const nextIdx = idx + 1;
+-      questionIndexRef.current = nextIdx;
+-      setQuestionIndex(nextIdx);
+-      setQTimer(0); qTimerRef.current = 0;
++      setQuestionIndex(prev => { questionIndexRef.current = prev + 1; return prev + 1; });
++      setAttemptNo(1);
++      setQTimer(0);
++      qTimerRef.current = 0;
+     }
+-  }, []);
++  }, [questions]);
+ 
+   const handleQuit = async (status) => {
+     if (!quitReason.trim()) { alert(t('common.enterReason')); return; }
+@@ -647,10 +664,7 @@
+     if (status === 'quit') {
+       setShowQuitModal(false);
+       setScreen('score');
+-      // Wait for score screen to render then upload PDF
+-      setTimeout(() => {
+-        generateAndUploadPDF();
+-      }, 1000);
++      setTimeout(() => { generateAndUploadPDF(); }, 1000);
+     } else {
+       navigate('/');
+     }
+@@ -668,7 +682,6 @@
+       setIsRecording(false); setRecordingTarget(null); return;
+     }
+ 
+-    // Explicitly kill any zombie hardware lock before creating a new one
+     if (window.activeRecognition) {
+       window.activeRecognition.onend = null;
+       window.activeRecognition.onerror = null;
+@@ -678,7 +691,6 @@
+     recognition.continuous = true;
+     recognition.interimResults = true;
+     
+-    // Map short codes to BCP-47 for speech recognition
+     const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
+     recognition.lang = langMap[language] || 'en-US';
+     
+@@ -719,9 +731,6 @@
+       });
+       setAssessmentSubmitted(true);
+ 
+-      // The session timer keeps running while this form is being filled out,
+-      // so refresh the saved screentime now that it's stopped — otherwise
+-      // the Admin Reports value stays frozen at the earlier game-end snapshot.
+       if (gameSessionIdRef.current) {
+         axios.put(`${API_URL}/games/sessions/update/${gameSessionIdRef.current}`, {
+           saved_state: {
+@@ -734,7 +743,6 @@
+         }).catch(e => console.error('Screentime refresh error', e));
+       }
+ 
+-      // Wait for DOM to render then capture
+       setTimeout(() => {
+         generateAndUploadPDF();
+       }, 1000);
+@@ -764,10 +772,9 @@
+       });
+       const imgData = canvas.toDataURL('image/jpeg', 0.9);
+       
+-      const pdfWidth = 210; // A4 width in mm
++      const pdfWidth = 210;
+       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+       
+-      // Use dynamic height to prevent cropping long dashboards
+       const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+       
+       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+@@ -788,56 +795,33 @@
+     }
+   };
+ 
+-  // ── Score screen helpers ───────────────────────────────────
+   const attempted = allScores.length;
+   const correct = allScores.filter(s => s.score === 1).length;
+   const wrong = allScores.filter(s => s.score === 0).length;
+-  const skipped = TOTAL_SCORED_QUESTIONS - attempted;
+-  const accuracyPct = ((correct / TOTAL_SCORED_QUESTIONS) * 100).toFixed(1);
++  const accuracyPct = ((correct / questions.length) * 100).toFixed(1);
+   const totalTimeMs = allScores.reduce((acc, s) => acc + (s.timeTaken || 0) * 1000, 0);
+   const avgTimeMs = attempted > 0 ? (totalTimeMs / attempted) : 0;
+-  const isStopped = consecutiveWrong >= MAX_CONSECUTIVE_WRONG && attempted < TOTAL_SCORED_QUESTIONS;
++  
++  if (!childData || isCheckingSession || !isConfigLoaded) return <div className="nr-loading">Loading / Syncing...</div>;
+ 
+-  const currentQ = QUESTIONS[questionIndex];
++  const currentQ = questions[questionIndex];
+ 
+-  // ── Render ────────────────────────────────────────────────
+   return (
+     <div className="nr-app">
+-      {/* ─── Topbar ─── */}
+       <header className="nr-topbar">
+         <div className="nr-brand">
+           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />}
+           {showLogo && (showGameIcon || showGameName) && <div className="nr-divider"></div>}
+-          {showGameIcon && <img src="/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />}
+-          {showGameName && <span className="nr-test-title">{t('home.games.lottery.title')}</span>}
++          {showGameIcon && <img src="/assets/images/lottery_ka_ticket_V2/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />}
++          {showGameName && <span className="nr-test-title">{t('home.games.lottery.title')} - Version 2</span>}
+         </div>
+ 
+         <div className="nr-topbar-center">
+-          {screen === 'practice' && (
+-            <div className="nr-topbar-screen-title">
+-              {t('game.practiceQuestionLabel')}
+-            </div>
+-          )}
+-          {screen === 'teaching1' && (
+-            <div className="nr-topbar-screen-title">
+-              {t('game.teachingQ1Label')}
+-            </div>
+-          )}
+-          {screen === 'teaching2' && (
+-            <div className="nr-topbar-screen-title">
+-              {t('game.teachingQ2Label')}
+-            </div>
+-          )}
+-          {screen === 'game' && (
+-            <div className="nr-topbar-screen-title">
+-              {t('game.question')} {questionIndex + 1}
+-            </div>
+-          )}
+-          {screen === 'score' && (
+-            <div className="nr-topbar-screen-title">
+-              {quitReason ? t('game.assessmentTerminated') : (isStopped ? t('game.sessionDropped') : t('game.assessmentComplete'))}
+-            </div>
+-          )}
++          {screen === 'practice' && <div className="nr-topbar-screen-title">{t('game.practiceQuestionLabel')}</div>}
++          {screen === 'teaching1' && <div className="nr-topbar-screen-title">{t('game.teachingQ1Label')}</div>}
++          {screen === 'teaching2' && <div className="nr-topbar-screen-title">{t('game.teachingQ2Label')}</div>}
++          {screen === 'game' && <div className="nr-topbar-screen-title">{t('game.question')} {questionIndex + 1}</div>}
++          {screen === 'score' && <div className="nr-topbar-screen-title">{quitReason ? t('game.assessmentTerminated') : t('game.assessmentComplete')}</div>}
+         </div>
+ 
+         <div className="nr-stats">
+@@ -854,10 +838,10 @@
+             </div>
+           )}
+           {showScore && (
+-          <div className="nr-stat-pill">
+-            <span className="nr-stat-icon">🏆</span>
+-            <span className="nr-stat-value">{totalScore}</span>
+-          </div>
++            <div className="nr-stat-pill">
++              <span className="nr-stat-icon">🏆</span>
++              <span className="nr-stat-value">{totalScore}</span>
++            </div>
+           )}
+           {screen === 'game' && (
+             <button
+@@ -871,16 +855,10 @@
+       </header>
+ 
+       <main className={`nr-main${screen === 'splash' ? ' nr-main-splash' : ''}`}>
+-        {/* ─────────────── SPLASH ─────────────── */}
+         {screen === 'splash' && (
+           <div className="nr-screen nr-screen-splash">
+             <div className="nr-splash-cover">
+-              <img
+-                src={`${IMAGE_PATH}/lottery_ka_ticket.jpg`}
+-                alt="Lottery Ka Ticket"
+-                className="nr-splash-img-full"
+-                onError={e => { e.target.style.display = 'none'; }}
+-              />
++              <img src={`${IMAGE_PATH}/lottery_ka_ticket.jpg`} alt="Lottery Ka Ticket" className="nr-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+               <div className="nr-splash-btn-overlay">
+                 <button
+                   className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
+@@ -906,16 +884,15 @@
+           </div>
+         )}
+ 
+-        {/* ─────────────── PRACTICE ─────────────── */}
+-        {screen === 'practice' && (
+-          <div className="nr-screen">
+-            <TeachingScreen
+-              title={`${t('game.practiceLabel')} · ${t('game.sampleLabel')}`}
++        {screen === 'practice' && practiceQ && (
++          <div className="nr-teaching-box">
++            <TeachingScreen
++              title={`${t('game.practiceLabel')} · 1`}
+               chipLabel={t('game.practiceLabel')}
+-              audioSrc="4_6.m4a"
+-              correct={[4, 6]}
+-              maxSelect={2}
+-              teachingAudioSrc="4_6_teaching_audio.m4a"
++              audioSrc={practiceQ.audio}
++              correct={practiceQ.correct}
++              maxSelect={practiceQ.maxSelect}
++              teachingAudioSrc={practiceQ.teachingAudio}
+               nextLabel={t('game.teachingQ1Label')}
+               nextIcon=""
+               onNext={() => setScreen('teaching1')}
+@@ -1157,4 +1134,4 @@
+   );
+ };
+ 
+-export default NumberRecallGame;
++export default NumberRecallGameV2;

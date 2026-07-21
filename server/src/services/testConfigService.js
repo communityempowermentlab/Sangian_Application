@@ -9,6 +9,7 @@ const CONFIG_FILE = path.join(__dirname, '..', '..', 'config', 'test-config.json
 const GAMES_REGISTRY = [
     { key: 'atlantis_bagiya',        title: 'Bagiya',            category: 'Memory Test'   },
     { key: 'number_recall_lottery',  title: 'Lottery Ka Ticket', category: 'Memory Test'   },
+    { key: 'number_recall_lottery_v2', title: 'Lottery Ka Ticket - Version 2', category: 'Memory Test'   },
     { key: 'working_memory_herpher', title: 'Her Pher',          category: 'Memory Test'   },
     { key: 'rover_mela',             title: 'Chalo Mela Chalen', category: 'Cognitive Test' },
     { key: 'triangle_rachna',        title: 'Rachna',            category: 'Cognitive Test' },
@@ -16,6 +17,7 @@ const GAMES_REGISTRY = [
     { key: 'auditory_dhyan',         title: 'Dhyan Kahan Hai',   category: 'Attention Test' },
     { key: 'numeracy_number_skill',  title: 'Ankganit',          category: 'Academic Test'  },
     { key: 'literacy_reading_skill', title: 'Padh ke Batao',     category: 'Academic Test'  },
+    { key: 'numeracy_number_skill_v2', title: 'Ankganit - Version 2', category: 'Academic Test' },
 ];
 
 const readConfig = () => {

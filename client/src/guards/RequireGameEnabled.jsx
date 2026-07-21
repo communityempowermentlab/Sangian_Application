@@ -8,6 +8,7 @@ const PATH_TO_GAME_KEY = {
     '/games/number_skill':      'numeracy_number_skill',
     '/games/reading_skill':     'literacy_reading_skill',
     '/games/number_recall':     'number_recall_lottery',
+    '/games/number_recall_v2':  'number_recall_lottery_v2',
     '/games/her_pher':          'working_memory_herpher',
     '/games/dhyan_kahan_hai':   'auditory_dhyan',
     '/games/rachna':            'triangle_rachna',

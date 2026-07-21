@@ -1,4 +1,5 @@
 {
   "responseMatchingMode": "partial",
-  "displayUserInputString": true
+  "displayUserInputString": true,
+  "displayHerPherPractice": false
 }

@@ -8,6 +8,7 @@ const SERVER_BASE = API_URL.replace(/\/api$/, '');
 const GAMES = [
   { key: 'atlantis_bagiya',        name: 'Bagiya',            nameHi: 'बगिया',          emoji: '🌿' },
   { key: 'number_recall_lottery',  name: 'Lottery Ka Ticket', nameHi: 'लॉटरी का टिकट',  emoji: '🎟️' },
+  { key: 'number_recall_lottery_v2', name: 'Lottery Ka Ticket - Version 2', nameHi: 'लॉटरी का टिकट - Version 2', emoji: '🎟️' },
   { key: 'rover_mela',             name: 'Chalo Mela Chalen', nameHi: 'चलो मेला चलें',   emoji: '🎡' },
   { key: 'triangle_rachna',        name: 'Rachna',            nameHi: 'रचना',            emoji: '🔷' },
   { key: 'auditory_dhyan',         name: 'Dhyan Kahan Hai',   nameHi: 'ध्यान कहाँ है',  emoji: '👂' },

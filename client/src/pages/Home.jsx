@@ -25,10 +25,12 @@ const Home = () => {
         const staticAssets = {
             'atlantis_bagiya': '/assets/images/bagiya/bagiya.jpg',
             'number_recall_lottery': '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg',
+            'number_recall_lottery_v2': '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg',
             'rover_mela': '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg',
             'auditory_dhyan': '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg',
             'working_memory_herpher': '/assets/images/her_pher/her_pher.jpg',
             'numeracy_number_skill': '/assets/images/number_skill/number_skill.jpg',
+            'numeracy_number_skill_v2': '/assets/images/number_skill/number_skill.jpg',
             'literacy_reading_skill': '/assets/images/reading_skill/reading_skill.jpg',
             'cognitive_flex_chor': '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg',
             'triangle_rachna': '/assets/images/rachna/rachna.jpg'
@@ -59,6 +61,19 @@ const Home = () => {
             startUrl: "/games/number_recall",
             image: getElementImage('number_recall_lottery'),
             shortTitle: t('home.games.lottery.title'),
+            local: t('home.games.lottery.local'),
+            tag: t('home.games.lottery.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 2.1,
+            gameKey: 'number_recall_lottery_v2',
+            title: 'Lottery Ka Ticket - Version 2',
+            subtitle: t('home.games.lottery.sub'),
+            desc: t('home.games.lottery.desc'),
+            startUrl: "/games/number_recall_v2",
+            image: getElementImage('number_recall_lottery_v2'),
+            shortTitle: 'Lottery Ka Ticket - Version 2',
             local: t('home.games.lottery.local'),
             tag: t('home.games.lottery.tag'),
             tagClass: "test-tag"
@@ -111,6 +126,19 @@ const Home = () => {
             startUrl: "/games/number_skill",
             image: getElementImage('numeracy_number_skill'),
             shortTitle: t('home.games.numeracy.title'),
+            local: t('home.games.numeracy.local'),
+            tag: t('home.games.numeracy.tag'),
+            tagClass: "test-tag test-tag-academic"
+        },
+        {
+            id: 601,
+            gameKey: 'numeracy_number_skill_v2',
+            title: t('home.games.numeracy.title') + " - Version 2",
+            subtitle: t('home.games.numeracy.sub'),
+            desc: t('home.games.numeracy.desc'),
+            startUrl: "/games/number_skill_v2",
+            image: getElementImage('numeracy_number_skill_v2'),
+            shortTitle: t('home.games.numeracy.title') + " - Version 2",
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"

@@ -27,6 +27,7 @@ const T = {
 const GAME_CATALOG = [
     { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',             color: '#6366f1', image: '/assets/images/bagiya/bagiya.jpg' },
     { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket',  color: '#f59e0b', image: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
+    { key: 'number_recall_lottery_v2',  icon: '🎟️', title: 'Lottery Ka Ticket - Version 2',  color: '#f59e0b', image: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
     { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen',  color: '#10b981', image: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
     { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',    color: '#8b5cf6', image: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
     { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',           color: '#0891b2', image: '/assets/images/her_pher/her_pher.jpg' },
@@ -85,6 +86,20 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'यह टेस्ट बच्चे की क्रमबद्ध रूप से सुनी गई जानकारी को समझने और थोड़े समय तक याद रखकर उसी क्रम में दोहराने की क्षमता का आकलन करता है।',
             description: 'इस गतिविधि में बच्चे को ध्यान से संख्याएँ सुनकर उन्हें उसी क्रम में दोहराना होता है। यह बच्चे की सुनने, याद रखने और सही क्रम बनाए रखने की क्षमता को समझने में मदद करता है।',
             guidance:    'ध्यान से संख्याएँ सुनो और फिर उन्हें उसी क्रम में दोहराओ। तैयार हो? चलो शुरू करते हैं!',
+        },
+    },
+    number_recall_lottery_v2: {
+        en: {
+            skill:       'Sequential Processing & Short-term Auditory Memory (Reverse)',
+            objective:   'This test measures sequential processing and short-term memory within the auditory-vocal modality. In this test, the assessor says a series of numbers, and the child repeats them in the reverse sequence.',
+            description: 'Listen carefully and remember the numbers. Then repeat them backwards. This activity checks how well children can hear, remember, and reverse information.',
+            guidance:    'Listen carefully to the numbers. Then repeat them in reverse order. Ready? Let\'s go!',
+        },
+        hi: {
+            skill:       'क्रमबद्ध प्रसंस्करण और अल्पकालिक श्रवण स्मृति (विपरीत क्रम)',
+            objective:   'यह टेस्ट बच्चे की सुनी गई जानकारी को समझने और थोड़े समय तक याद रखकर विपरीत क्रम में दोहराने की क्षमता का आकलन करता है।',
+            description: 'इस गतिविधि में बच्चे को ध्यान से संख्याएँ सुनकर उन्हें उल्टे क्रम में दोहराना होता है। यह बच्चे की सुनने, याद रखने और सही क्रम को उलटने की क्षमता को समझने में मदद करता है।',
+            guidance:    'ध्यान से संख्याएँ सुनो और फिर उन्हें उल्टे क्रम में दोहराओ। तैयार हो? चलो शुरू करते हैं!',
         },
     },
     rover_mela: {
@@ -2501,6 +2516,7 @@ const DocSectionEditor = ({ game, section, docKey, defaultContent }) => {
 const AUDIO_FOLDERS = {
     atlantis_bagiya:        'bagiya',
     number_recall_lottery:  'lottery_ka_ticket',
+    number_recall_lottery_v2:  'lottery_ka_ticket',
     rover_mela:             'chalo_mela_chale',
     auditory_dhyan:         'dhyan_kahan_hai',
     working_memory_herpher: 'her_pher',
@@ -3031,6 +3047,7 @@ const GAME_DISPLAY = {
     numeracy_number_skill:  'Ankganit',
     literacy_reading_skill: 'Padh ke batao',
     number_recall_lottery:  'Lottery Ka Ticket',
+    number_recall_lottery_v2:  'Lottery Ka Ticket - Version 2',
     atlantis_bagiya:        'Bagiya',
     working_memory_herpher: 'Her Pher',
     auditory_dhyan:         'Dhyan Kahan Hai',
@@ -3817,6 +3834,7 @@ const WorkflowDiagramViewer = ({ game, section }) => {
 const GAME_FILE_MAP = {
     atlantis_bagiya:        'AtlantisBagiyaGame.jsx',
     number_recall_lottery:  'NumberRecallGame.jsx',
+    number_recall_lottery_v2:  'NumberRecallGameV2.jsx',
     rover_mela:             'ChaloMelaChaleGame.jsx',
     auditory_dhyan:         'AuditoryAttentionGame.jsx',
     working_memory_herpher: 'HerPherGame.jsx',

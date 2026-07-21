@@ -5,7 +5,7 @@ const CONFIG_FILE = path.join(__dirname, '..', '..', 'config', 'response-matchin
 
 // 'exact'   — response length must equal the question/stimulus length.
 // 'partial' — any non-empty response is accepted; scoring evaluates only the entered items.
-const DEFAULTS = { responseMatchingMode: 'exact', displayUserInputString: true };
+const DEFAULTS = { responseMatchingMode: 'exact', displayUserInputString: true, displayHerPherPractice: true };
 const VALID_MODES = ['exact', 'partial'];
 
 const getConfig = () => {

@@ -15,8 +15,10 @@ import AdminChildrenList from './pages/AdminChildrenList';
 import AdminChildAdd from './pages/AdminChildAdd';
 import AdminChildEdit from './pages/AdminChildEdit';
 import NumberSkillGame from './pages/NumberSkillGame';
+import NumberSkillGameV2 from './pages/NumberSkillGameV2';
 import ReadingSkillGame from './pages/ReadingSkillGame';
 import NumberRecallGame from './pages/NumberRecallGame';
+import NumberRecallGameV2 from './pages/NumberRecallGameV2';
 import HerPherGame from './pages/HerPherGame';
 import AuditoryAttentionGame from './pages/AuditoryAttentionGame';
 import TriangleRachnaGame from './pages/TriangleRachnaGame';
@@ -172,8 +174,10 @@ function App() {
                         <Route element={<RequireChildAuth />}>
                             <Route element={<RequireGameEnabled />}>
                                 <Route path="/games/number_skill"      element={<NumberSkillGame />} />
+                                <Route path="/games/number_skill_v2"   element={<NumberSkillGameV2 />} />
                                 <Route path="/games/reading_skill"     element={<ReadingSkillGame />} />
                                 <Route path="/games/number_recall"     element={<NumberRecallGame />} />
+                                <Route path="/games/number_recall_v2"  element={<NumberRecallGameV2 />} />
                                 <Route path="/games/her_pher"          element={<HerPherGame />} />
                                 <Route path="/games/dhyan_kahan_hai"   element={<AuditoryAttentionGame />} />
                                 <Route path="/games/rachna"            element={<TriangleRachnaGame />} />
@@ -206,6 +210,7 @@ function App() {
                                 <Route path="settings"               element={<AdminSettings />} />
                                 <Route path="elements"               element={<AdminElements />} />
                                 <Route path="multilingual"           element={<AdminMultilingual />} />
+
                             </Route>
                         </Route>
 

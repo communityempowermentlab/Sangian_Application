@@ -7,6 +7,7 @@ import './AdminAnalysis.css';
 const GAME_CATALOG = [
   { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',            tag: '',                 color: '#6366f1' },
   { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket', tag: '',                 color: '#f59e0b' },
+  { key: 'number_recall_lottery_v2', icon: '🎟️', title: 'Lottery Ka Ticket - Version 2', tag: '', color: '#f59e0b' },
   { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen', tag: '',                 color: '#10b981' },
   { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6' },
   { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',          tag: '',                 color: '#0891b2' },
@@ -65,6 +66,16 @@ function formatDuration(secs) {
   if (!secs || secs <= 0) return '—';
   const m = Math.floor(secs / 60), s = secs % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function formatHoursMins(totalMins) {
+  if (!totalMins || totalMins <= 0) return '—';
+  const mins = Math.round(Number(totalMins));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
 }
 
 function buildApiParams(f) {
@@ -222,9 +233,44 @@ function SkeletonCard() {
 
 // ── Overview Panel ────────────────────────────────────────
 
-function OverviewPanel({ data, loading }) {
+function OverviewPanel({ data, loading, filters }) {
   const [sortKey, setSortKey] = React.useState('sessions');
   const [sortDir, setSortDir] = React.useState('desc');
+  const [childSortKey, setChildSortKey] = React.useState('sessions');
+  const [childSortDir, setChildSortDir] = React.useState('desc');
+
+  const [childrenData, setChildrenData] = React.useState([]);
+  const [childrenPage, setChildrenPage] = React.useState(0);
+  const [loadingChildren, setLoadingChildren] = React.useState(false);
+  const [hasMoreChildren, setHasMoreChildren] = React.useState(true);
+
+  React.useEffect(() => {
+    setChildrenPage(0);
+  }, [filters]);
+
+  React.useEffect(() => {
+    if (!filters) return;
+    let isMounted = true;
+    const fetchChildren = async () => {
+      setLoadingChildren(true);
+      try {
+        const { data: resData } = await axiosAdmin.get('/analysis/top-children', {
+          params: { ...filters, limit: 50, offset: childrenPage * 50, sortKey: childSortKey, sortDir: childSortDir }
+        });
+        if (!isMounted) return;
+        const newChildren = resData.topChildren || [];
+        setHasMoreChildren(newChildren.length === 50);
+        if (childrenPage === 0) setChildrenData(newChildren);
+        else setChildrenData(prev => [...prev, ...newChildren]);
+      } catch (err) {
+        console.error('Error fetching children:', err);
+      } finally {
+        if (isMounted) setLoadingChildren(false);
+      }
+    };
+    fetchChildren();
+    return () => { isMounted = false; };
+  }, [filters, childSortKey, childSortDir, childrenPage]);
 
   function handleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -239,7 +285,7 @@ function OverviewPanel({ data, loading }) {
   );
   if (!data) return <div className="ana-empty-state"><div className="ana-empty-icon">📊</div><div>No assessment data available for selected filters.</div></div>;
 
-  const { kpis, byGame = [], dailyTrend = [], statusDist = [], genderDist = [], topChildren = [] } = data;
+  const { kpis, byGame = [], dailyTrend = [], statusDist = [], genderDist = [] } = data;
 
   const statusSegs = statusDist.map(r => ({ label: r.status?.replace('_', ' '), color: STATUS_COLORS[r.status] || '#94a3b8', value: Number(r.count) }));
   const genderSegs = genderDist.map(r => ({ label: GENDER_LABELS[r.gender] || r.gender || 'Unknown', color: GENDER_COLORS[r.gender] || '#94a3b8', value: Number(r.children) }));
@@ -267,6 +313,22 @@ function OverviewPanel({ data, loading }) {
       <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleSort(sortId)}>
         {label}
         <span className="ana-sort-icon">{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+      </th>
+    );
+  }
+
+  function handleChildSort(key) {
+    if (childSortKey === key) setChildSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setChildSortKey(key); setChildSortDir('desc'); }
+    setChildrenPage(0);
+  }
+
+  function SortThChild({ label, sortId }) {
+    const active = childSortKey === sortId;
+    return (
+      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleChildSort(sortId)}>
+        {label}
+        <span className="ana-sort-icon">{active ? (childSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
       </th>
     );
   }
@@ -374,23 +436,57 @@ function OverviewPanel({ data, loading }) {
 
       <Card title="Top Active Children" noPad>
         <div className="ana-table-wrap">
-          <table className="ana-table">
-            <thead><tr><th>#</th><th>Child ID</th><th>Name</th><th>Sessions</th><th>Completed</th><th>Avg Score</th><th>Last Played</th></tr></thead>
+          <table className="ana-table ana-table-bordered">
+            <thead><tr>
+              <th>#</th>
+              <SortThChild label="Child ID" sortId="childId" />
+              <SortThChild label="Name" sortId="name" />
+              <SortThChild label="Completed" sortId="completed" />
+              <SortThChild label="Sessions" sortId="sessions" />
+              <SortThChild label="Bagiya (108)" sortId="bagiya" />
+              <SortThChild label="Lottery Ka Ticket (20)" sortId="lottery" />
+              <SortThChild label="Chalo Mela Chalen (22)" sortId="mela" />
+              <SortThChild label="Dhyan Kahan Hai (33)" sortId="dhyan" />
+              <SortThChild label="Her Pher (25)" sortId="herpher" />
+              <SortThChild label="Ankganit (26)" sortId="ankganit" />
+              <SortThChild label="Padh Ke Batao (22)" sortId="reading" />
+              <SortThChild label="Chor Machaye Shor (87)" sortId="chor" />
+              <SortThChild label="Rachna (48)" sortId="rachna" />
+              <SortThChild label="Total Score" sortId="totalScore" />
+              <SortThChild label="Total Time" sortId="totalTime" />
+              <SortThChild label="Last Played" sortId="lastPlayed" />
+            </tr></thead>
             <tbody>
-              {topChildren.map((c, i) => (
+              {childrenData.map((c, i) => (
                 <tr key={c.child_id}>
                   <td><span className="ana-rank">{i + 1}</span></td>
                   <td><code>{c.child_id}</code></td>
                   <td>{c.name || '—'}</td>
-                  <td>{fmt(c.sessions)}</td>
                   <td>{fmt(c.completed)}</td>
-                  <td>{fmt(c.avgScore, 1)}</td>
+                  <td>{fmt(c.sessions)}</td>
+                  <td>{fmt(c.score_bagiya, 1)}</td>
+                  <td>{fmt(c.score_lottery, 1)}</td>
+                  <td>{fmt(c.score_mela, 1)}</td>
+                  <td>{fmt(c.score_dhyan, 1)}</td>
+                  <td>{fmt(c.score_herpher, 1)}</td>
+                  <td>{fmt(c.score_ankganit, 1)}</td>
+                  <td>{fmt(c.score_reading, 1)}</td>
+                  <td>{fmt(c.score_chor, 1)}</td>
+                  <td>{fmt(c.score_rachna, 1)}</td>
+                  <td>{fmt(c.totalScore)}</td>
+                  <td>{formatHoursMins(c.totalTimeMins)}</td>
                   <td>{formatDate(c.lastPlayed)}</td>
                 </tr>
               ))}
-              {topChildren.length === 0 && <tr><td colSpan="7" className="ana-table-empty">No children data</td></tr>}
+              {childrenData.length === 0 && !loadingChildren && <tr><td colSpan="17" className="ana-table-empty">No children data</td></tr>}
+              {loadingChildren && <tr><td colSpan="17" className="ana-table-empty">Loading...</td></tr>}
             </tbody>
           </table>
+          {hasMoreChildren && !loadingChildren && childrenData.length > 0 && (
+            <div style={{ textAlign: 'center', padding: '15px' }}>
+              <button className="ana-btn" onClick={() => setChildrenPage(p => p + 1)}>Load More</button>
+            </div>
+          )}
         </div>
       </Card>
     </div>
@@ -843,7 +939,7 @@ export default function AdminAnalysis() {
           )}
 
           {activeTab === 'overall'
-            ? <OverviewPanel data={overviewData} loading={loading} />
+            ? <OverviewPanel data={overviewData} loading={loading} filters={filters} />
             : <GamePanel
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
                 data={gameData[activeTab]}

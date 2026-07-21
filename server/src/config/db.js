@@ -203,8 +203,148 @@ const initDb = async () => {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
     }
 
-    // ── Automated Testing ──────────────────────────────────────────────────────
+    // ── Ankganit Version 2 ─────────────────────────────────────────────────────
+    
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ankganit_v2_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        minimum_correct INT DEFAULT 0,
+        evaluation_type ENUM('manual', 'auto_subtraction', 'auto_division') NOT NULL DEFAULT 'manual',
+        display_order INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ankganit_v2_questions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category_id INT NOT NULL,
+        text VARCHAR(255) NOT NULL,
+        title VARCHAR(255),
+        correct_answer INT,
+        remainder INT,
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES ankganit_v2_categories(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Seed Ankganit V2 data if empty
+    const [catRows] = await connection.query('SELECT COUNT(*) as count FROM ankganit_v2_categories');
+    if (catRows[0].count === 0) {
+      // Insert Categories
+      await connection.query(`
+        INSERT INTO ankganit_v2_categories (id, name, minimum_correct, evaluation_type, display_order) VALUES
+        (1, 'Number Recognition (1–9)', 4, 'manual', 1),
+        (2, 'Number Recognition (11–99)', 5, 'manual', 2),
+        (3, 'Two-Digit Subtraction', 4, 'auto_subtraction', 3),
+        (4, 'One-Digit Divisor (Three-Digit Dividend)', 2, 'auto_division', 4)
+      `);
+      
+      // Seed questions based on user's requirements
+      const v2Questions = [
+        // Category 1: 8 questions
+        [1, 'Identify number 3', '3', 3, null, 1],
+        [1, 'Identify number 7', '7', 7, null, 2],
+        [1, 'Identify number 1', '1', 1, null, 3],
+        [1, 'Identify number 4', '4', 4, null, 4],
+        [1, 'Identify number 8', '8', 8, null, 5],
+        [1, 'Identify number 9', '9', 9, null, 6],
+        [1, 'Identify number 5', '5', 5, null, 7],
+        [1, 'Identify number 2', '2', 2, null, 8],
+        
+        // Category 2: 10 questions
+        [2, 'Identify number 65', '65', 65, null, 1],
+        [2, 'Identify number 38', '38', 38, null, 2],
+        [2, 'Identify number 92', '92', 92, null, 3],
+        [2, 'Identify number 23', '23', 23, null, 4],
+        [2, 'Identify number 47', '47', 47, null, 5],
+        [2, 'Identify number 72', '72', 72, null, 6],
+        [2, 'Identify number 56', '56', 56, null, 7],
+        [2, 'Identify number 87', '87', 87, null, 8],
+        [2, 'Identify number 29', '29', 29, null, 9],
+        [2, 'Identify number 11', '11', 11, null, 10],
+
+        // Category 3: 8 questions
+        [3, '51 - 35', '51,35', 16, null, 1],
+        [3, '67 - 48', '67,48', 19, null, 2],
+        [3, '84 - 49', '84,49', 35, null, 3],
+        [3, '73 - 36', '73,36', 37, null, 4],
+        [3, '56 - 37', '56,37', 19, null, 5],
+        [3, '31 - 13', '31,13', 18, null, 6],
+        [3, '45 - 18', '45,18', 27, null, 7],
+        [3, '43 - 24', '43,24', 19, null, 8],
+
+        // Category 4: 4 questions
+        [4, '918 ÷ 7', '918,7', 131, 1, 1],
+        [4, '769 ÷ 6', '769,6', 128, 1, 2],
+        [4, '987 ÷ 8', '987,8', 123, 3, 3],
+        [4, '513 ÷ 4', '513,4', 128, 1, 4]
+      ];
+      
+      await connection.query(
+        'INSERT INTO ankganit_v2_questions (category_id, text, title, correct_answer, remainder, display_order) VALUES ?',
+        [v2Questions]
+      );
+    }
+
+    // ── Automated Testing ──────────────────────────────────────────────────────
+    
+    // ── Number Recall V2 (Lottery Ka Ticket - V2) ──────────────────────────────
+    
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS number_recall_v2_questions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        qid VARCHAR(50) NOT NULL,
+        correct_sequence VARCHAR(255) NOT NULL,
+        max_select INT NOT NULL,
+        audio_file VARCHAR(255),
+        display_order INT DEFAULT 0,
+        is_teaching BOOLEAN DEFAULT FALSE,
+        teaching_audio VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Seed Number Recall V2 data if empty
+    const [nrV2Rows] = await connection.query('SELECT COUNT(*) as count FROM number_recall_v2_questions');
+    if (nrV2Rows[0].count === 0) {
+      const nrV2Data = [
+        ['Practice', '3,6', 2, null, 1, true, null],
+        ['Teaching 1', '2,8', 2, null, 2, true, null],
+        ['Teaching 2', '5,10', 2, null, 3, true, null],
+        ['1', '1,4', 2, null, 4, false, null],
+        ['2', '2,6,8', 3, null, 5, false, null],
+        ['3', '4,10,2', 3, null, 6, false, null],
+        ['4', '8,1,9', 3, null, 7, false, null],
+        ['5', '3,6,9,1', 4, null, 8, false, null],
+        ['6', '8,4,1,6', 4, null, 9, false, null],
+        ['7', '2,10,4,8', 4, null, 10, false, null],
+        ['8', '9,1,4,8,2', 5, null, 11, false, null],
+        ['9', '5,10,3,8,6', 5, null, 12, false, null],
+        ['10', '2,9,4,6,10', 5, null, 13, false, null],
+        ['11', '2,6,10,4,9,5', 6, null, 14, false, null],
+        ['12', '8,3,5,1,10,4', 6, null, 15, false, null],
+        ['13', '9,1,5,8,6,2', 6, null, 16, false, null],
+        ['14', '1,2,10,6,4,9,8', 7, null, 17, false, null],
+        ['15', '10,2,6,4,8,5,9', 7, null, 18, false, null],
+        ['16', '4,9,5,2,10,8,6', 7, null, 19, false, null],
+        ['17', '2,10,6,3,8,1,5,9', 8, null, 20, false, null],
+        ['18', '3,9,2,6,1,10,4,8,5', 9, null, 21, false, null],
+        ['19', '5,2,8,10,3,1,6,9,4', 9, null, 22, false, null],
+        ['20', '8,4,1,6,3,9,2,10,5', 9, null, 23, false, null]
+      ];
+      
+      await connection.query(
+        'INSERT INTO number_recall_v2_questions (qid, correct_sequence, max_select, audio_file, display_order, is_teaching, teaching_audio) VALUES ?',
+        [nrV2Data]
+      );
+    }
     await connection.query(`
       CREATE TABLE IF NOT EXISTS test_runs (
         id           INT AUTO_INCREMENT PRIMARY KEY,
@@ -831,6 +971,7 @@ const initDb = async () => {
 
     const genericDefaults = {
       'number_recall_lottery': { path: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
+      'number_recall_lottery_v2': { path: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
       'rover_mela': { path: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg', name: 'chalo_mela_chale.jpg' },
       'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
       'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },

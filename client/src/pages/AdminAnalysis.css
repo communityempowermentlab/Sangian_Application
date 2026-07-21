@@ -638,3 +638,5 @@
   .ana-assess-grid { grid-template-columns: 1fr 1fr; }
   .ana-kpi-card { min-width: 130px; }
 }
+.ana-table-bordered th, .ana-table-bordered td { border-right: 1px solid var(--border, #e5e7eb); }
+.ana-table-bordered th:last-child, .ana-table-bordered td:last-child { border-right: none; }

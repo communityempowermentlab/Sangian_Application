@@ -4,12 +4,13 @@ const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
   numeracy_number_skill:    { title: 'Ankganit',            tag: 'Numeracy',         color: '#7c3aed', maxScore: 26 },
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 20 },
-  atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 13 },
-  working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 8  },
-  auditory_dhyan:           { title: 'Dhyan Kahan Hai',    tag: 'Listening Focus',  color: '#8b5cf6', maxScore: 4  },
+  number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 20 },
+  atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
+  working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
+  auditory_dhyan:           { title: 'Dhyan Kahan Hai',    tag: 'Listening Focus',  color: '#8b5cf6', maxScore: 33 },
   triangle_rachna:          { title: 'Rachna',              tag: 'Spatial Reasoning',color: '#ef4444', maxScore: 48 },
-  rover_mela:               { title: 'Chalo Mela Chalen',  tag: 'Spatial Planning', color: '#10b981', maxScore: 18 },
-  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 11 },
+  rover_mela:               { title: 'Chalo Mela Chalen',  tag: 'Spatial Planning', color: '#10b981', maxScore: 22 },
+  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
 };
 
 // Age group label → [minAge, maxAge] inclusive
@@ -163,18 +164,6 @@ exports.getOverview = async (req, res) => {
       GROUP BY c.gender
     `, noGenderParams);
 
-    // Top 10 active children
-    const [topChildren] = await pool.query(`
-      SELECT gs.child_id, c.name,
-             COUNT(*)                                  AS sessions,
-             CAST(SUM(gs.status = 'completed') AS UNSIGNED) AS completed,
-             ROUND(AVG(gs.score), 1)                   AS avgScore,
-             DATE_FORMAT(MAX(gs.created_at), '%Y-%m-%d') AS lastPlayed
-      FROM game_sessions gs ${CHILD_JOIN} ${where}
-      GROUP BY gs.child_id, c.name
-      ORDER BY sessions DESC LIMIT 10
-    `, allParams);
-
     const byGameEnriched = byGame.map(row => ({
       ...row,
       ...(GAME_META[row.gameKey] || {}),
@@ -186,8 +175,7 @@ exports.getOverview = async (req, res) => {
       byGame: byGameEnriched,
       dailyTrend,
       statusDist,
-      genderDist,
-      topChildren,
+      genderDist
     });
   } catch (err) {
     console.error('Analysis overview error:', err);
@@ -339,5 +327,72 @@ exports.getGameAnalytics = async (req, res) => {
   } catch (err) {
     console.error('Game analytics error:', err);
     res.status(500).json({ error: 'Failed to load game analytics' });
+  }
+};
+// ==========================================
+// TOP ACTIVE CHILDREN
+// ==========================================
+exports.getTopChildren = async (req, res) => {
+  try {
+    const { allClauses, allParams } = parseFilters(req);
+    const where = toWhere(allClauses);
+    
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const sortKey = req.query.sortKey || 'sessions';
+    const sortDir = req.query.sortDir === 'asc' ? 'ASC' : 'DESC';
+
+    const SORT_MAP = {
+      childId: 'gs.child_id',
+      name: 'c.name',
+      sessions: 'sessions',
+      completed: 'completed',
+      maxScore: 'maxScore',
+      totalScore: 'totalScore',
+      totalTime: 'totalTimeMins',
+      lastPlayed: 'MAX(gs.created_at)',
+      bagiya: 'score_bagiya',
+      lottery: 'score_lottery',
+      lottery_v2: 'score_lottery_v2',
+      mela: 'score_mela',
+      dhyan: 'score_dhyan',
+      herpher: 'score_herpher',
+      ankganit: 'score_ankganit',
+      reading: 'score_reading',
+      chor: 'score_chor',
+      rachna: 'score_rachna'
+    };
+
+    const orderByCol = SORT_MAP[sortKey] || 'sessions';
+
+    const [topChildren] = await pool.query(`
+      SELECT gs.child_id, c.name,
+             COUNT(*)                                  AS sessions,
+             CAST(SUM(gs.status = 'completed') AS UNSIGNED) AS completed,
+             MAX(gs.score)                             AS maxScore,
+             ROUND(AVG(gs.score), 1)                   AS avgScore,
+             CAST(SUM(gs.score) AS UNSIGNED)           AS totalScore,
+             ROUND(SUM(TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) / 60, 1) AS totalTimeMins,
+             ROUND(AVG(CASE WHEN gs.game_name = 'atlantis_bagiya' THEN gs.score END), 1) AS score_bagiya,
+             ROUND(AVG(CASE WHEN gs.game_name = 'number_recall_lottery' THEN gs.score END), 1) AS score_lottery,
+             ROUND(AVG(CASE WHEN gs.game_name = 'number_recall_lottery_v2' THEN gs.score END), 1) AS score_lottery_v2,
+             ROUND(AVG(CASE WHEN gs.game_name = 'rover_mela' THEN gs.score END), 1) AS score_mela,
+             ROUND(AVG(CASE WHEN gs.game_name = 'auditory_dhyan' THEN gs.score END), 1) AS score_dhyan,
+             ROUND(AVG(CASE WHEN gs.game_name = 'working_memory_herpher' THEN gs.score END), 1) AS score_herpher,
+             ROUND(AVG(CASE WHEN gs.game_name = 'numeracy_number_skill' THEN gs.score END), 1) AS score_ankganit,
+             ROUND(AVG(CASE WHEN gs.game_name = 'literacy_reading_skill' THEN gs.score END), 1) AS score_reading,
+             ROUND(AVG(CASE WHEN gs.game_name = 'cognitive_flex_chor' THEN gs.score END), 1) AS score_chor,
+             ROUND(AVG(CASE WHEN gs.game_name = 'triangle_rachna' THEN gs.score END), 1) AS score_rachna,
+             DATE_FORMAT(MAX(gs.created_at), '%Y-%m-%d') AS lastPlayed
+      FROM game_sessions gs ${CHILD_JOIN} ${where}
+      GROUP BY gs.child_id, c.name
+      ORDER BY ${orderByCol} ${sortDir} 
+      LIMIT ? OFFSET ?
+    `, [...allParams, limit, offset]);
+
+    res.json({ topChildren });
+  } catch (err) {
+    console.error('Analysis top-children error:', err);
+    res.status(500).json({ error: 'Failed to fetch top children data' });
   }
 };

@@ -6,6 +6,7 @@ const GAME_LABELS = {
     'literacy_reading_skill': 'Padh ke batao',
     'numeracy_number_skill': 'Ankganit',
     'number_recall_lottery': 'Lottery Ka Ticket',
+    'number_recall_lottery_v2': 'Lottery Ka Ticket - Version 2',
     'atlantis_bagiya': 'Bagiya',
     'working_memory_herpher': 'Her Pher',
     'auditory_dhyan': 'Dhyan Kahan Hai',

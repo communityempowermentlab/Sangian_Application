@@ -34,7 +34,7 @@ const computeActualGameTime = (parsedState, gameName) => {
     const scoringItems = ['rover_mela', 'chalo_mela_chale'].includes(gameName)
         ? allItems.filter(s => { const id = s.id || s.qId || ''; return !String(id).startsWith('tq'); })
         : allItems;
-    let time = scoringItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken) || 0), 0);
+    let time = scoringItems.reduce((sum, s) => sum + (parseFloat(s.timeTaken ?? s.duration_ms) || 0), 0);
     if (time === 0 && parsedState?.timerSeconds) time = parsedState.timerSeconds;
     return time;
 };
@@ -386,8 +386,12 @@ exports.getReportDetail = async (req, res) => {
             
             // Standard format (allScores)
             scores.forEach(s => {
-                const qid = s.qId || s.id;
+                let qid = s.qId || s.id || s.question;
                 if (qid !== undefined) {
+                    // Extract numeric part if it starts with Q or q (like "Q1")
+                    if (typeof qid === 'string' && qid.toUpperCase().startsWith('Q')) {
+                        qid = qid.toLowerCase();
+                    }
                     const key = (typeof qid === 'string' && (qid.startsWith('q') || qid.startsWith('tq')))
                         ? qid : `q${qid}`;
                     
@@ -396,7 +400,7 @@ exports.getReportDetail = async (req, res) => {
 
                     questionScores[key] = s.score;
                     allUniqueKeys.add(key);
-                    questionScores[`${key}_time`] = s.timeTaken ?? null;
+                    questionScores[`${key}_time`] = s.timeTaken ?? s.duration_ms ?? null;
                     questionScores[`${key}_moves`] = s.moves ?? null;
                     questionScores[`${key}_replays`] = s.replayCount ?? 0;
                     if (gameName === 'atlantis_bagiya') {

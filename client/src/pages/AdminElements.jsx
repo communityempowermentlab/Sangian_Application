@@ -5,6 +5,8 @@ import { API_URL } from '../services/api';
 import './AdminElements.css';
 import HerPherElements from '../components/HerPherElements';
 import AdminElementPositionManager from './AdminElementPositionManager';
+import AdminAnkganitV2Config from './AdminAnkganitV2Config';
+import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 
 const LANGUAGES = [
     { code: 'en', name: 'English' },
@@ -238,6 +240,18 @@ export default function AdminElements() {
                             aspectW={1180}
                             aspectH={650}
                         />
+                    </div>
+                )}
+
+                {activeTest === 'numeracy_number_skill_v2' && (
+                    <div className="elements-section">
+                        <AdminAnkganitV2Config />
+                    </div>
+                )}
+
+                {activeTest === 'number_recall_lottery_v2' && (
+                    <div className="elements-section">
+                        <AdminNumberRecallV2Config />
                     </div>
                 )}
             </div>

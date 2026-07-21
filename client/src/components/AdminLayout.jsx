@@ -40,6 +40,7 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/help-support')  ? 'help-support' :
         location.pathname.includes('/admin/multilingual')  ? 'multilingual' :
         location.pathname.includes('/admin/elements')      ? 'elements'     :
+        location.pathname.includes('/admin/ankganit-v2-config') ? 'ankganit-v2-config' :
         location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
 
@@ -233,6 +234,8 @@ const AdminLayoutInner = () => {
                         >
                             🧩 Elements
                         </Link>
+
+
 
                         <Link
                             to="/admin/settings"
