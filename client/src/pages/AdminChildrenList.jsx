@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
-import ChildGameHistoryModal from '../components/ChildGameHistoryModal';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 
 const calculateAge = (dob) => {
@@ -56,7 +55,6 @@ const AdminChildrenList = () => {
     const [goToPageInput, setGoToPageInput] = useState('');
     const [loading, setLoading] = useState(true);
     const [selectedChildForSessions, setSelectedChildForSessions] = useState(null);
-    const [selectedChildForHistory, setSelectedChildForHistory] = useState(null);
     const [generatingReportFor, setGeneratingReportFor] = useState(null);
 
     useEffect(() => {
@@ -302,12 +300,13 @@ const AdminChildrenList = () => {
                                                         <Link to={`/admin/children/edit/${child.child_id}`} style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}>
                                                             ✏️ Edit
                                                         </Link>
-                                                        <button 
-                                                            onClick={() => setSelectedChildForHistory(child.child_id)}
-                                                            style={{ fontSize: '13px', color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                        <Link 
+                                                            to={`/admin/children/scoreboard/${child.child_id}`}
+                                                            target="_blank"
+                                                            style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}
                                                         >
                                                             🏆 Scoreboard
-                                                        </button>
+                                                        </Link>
                                                         <button 
                                                             onClick={() => handleGenerateChildReport(child)}
                                                             disabled={generatingReportFor === child.child_id}
@@ -365,12 +364,6 @@ const AdminChildrenList = () => {
                 <ChildSessionHistoryModal 
                     childId={selectedChildForSessions} 
                     onClose={() => setSelectedChildForSessions(null)} 
-                />
-            )}
-            {selectedChildForHistory && (
-                <ChildGameHistoryModal 
-                    childId={selectedChildForHistory} 
-                    onClose={() => setSelectedChildForHistory(null)} 
                 />
             )}
         </main>

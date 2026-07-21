@@ -14,6 +14,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminChildrenList from './pages/AdminChildrenList';
 import AdminChildAdd from './pages/AdminChildAdd';
 import AdminChildEdit from './pages/AdminChildEdit';
+import AdminChildScoreboard from './pages/AdminChildScoreboard';
 import NumberSkillGame from './pages/NumberSkillGame';
 import NumberSkillGameV2 from './pages/NumberSkillGameV2';
 import ReadingSkillGame from './pages/ReadingSkillGame';
@@ -198,6 +199,7 @@ function App() {
                                 <Route path="children"               element={<AdminChildrenList />} />
                                 <Route path="children/add"           element={<AdminChildAdd />} />
                                 <Route path="children/edit/:id"      element={<AdminChildEdit />} />
+                                <Route path="children/scoreboard/:childId" element={<AdminChildScoreboard />} />
                                 <Route path="assessors"              element={<AdminAssessorsList />} />
                                 <Route path="assessors/add"          element={<AdminAssessorAdd />} />
                                 <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
