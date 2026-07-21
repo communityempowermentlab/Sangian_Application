@@ -519,13 +519,13 @@ const NumberSkillGameV2 = () => {
       const parts = cleanText.split('-');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '3.5rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '6rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
             <div>{parts[0].trim()}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '4px solid #333', paddingBottom: '4px', minWidth: '100px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '6px solid #333', paddingBottom: '4px', minWidth: '150px' }}>
               <span style={{ marginRight: '15px' }}>-</span>
               <span>{parts[1].trim()}</span>
             </div>
-            <div style={{ height: '1.2em', width: '100%', borderBottom: '4px solid #333' }}></div>
+            <div style={{ height: '1.2em', width: '100%', borderBottom: '6px solid #333' }}></div>
           </div>
         );
       }
@@ -533,17 +533,17 @@ const NumberSkillGameV2 = () => {
       const parts = cleanText.split('÷');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: '3.5rem', fontWeight: 800, color: '#333' }}>
-            <div style={{ paddingRight: '8px' }}>{parts[1].trim()}</div>
+          <div style={{ display: 'flex', alignItems: 'center', fontSize: '6rem', fontWeight: 800, color: '#333' }}>
+            <div style={{ paddingRight: '12px' }}>{parts[1].trim()}</div>
             <div style={{ display: 'flex', alignItems: 'stretch' }}>
-              <svg viewBox="0 0 20 100" width="16" height="1.4em" preserveAspectRatio="none">
-                <path d="M 18,2 Q 2,50 18,98" fill="none" stroke="#333" strokeWidth="4" />
+              <svg viewBox="0 0 20 100" width="24" height="1.4em" preserveAspectRatio="none">
+                <path d="M 18,3 Q 2,50 18,97" fill="none" stroke="#333" strokeWidth="6" />
               </svg>
-              <div style={{ borderTop: '4px solid #333', padding: '10px 15px 0', marginTop: '0px' }}>
+              <div style={{ borderTop: '6px solid #333', padding: '15px 20px 0', marginTop: '0px' }}>
                 {parts[0].trim()}
               </div>
-              <svg viewBox="0 0 20 100" width="16" height="1.4em" preserveAspectRatio="none">
-                <path d="M 2,2 Q 18,50 2,98" fill="none" stroke="#333" strokeWidth="4" />
+              <svg viewBox="0 0 20 100" width="24" height="1.4em" preserveAspectRatio="none">
+                <path d="M 2,3 Q 18,50 2,97" fill="none" stroke="#333" strokeWidth="6" />
               </svg>
             </div>
           </div>
