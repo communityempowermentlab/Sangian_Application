@@ -34,8 +34,31 @@ const AdminNumberRecallV2Config = () => {
         setEditingQuestion(q.id);
         setEditQData({
             correct_sequence: q.correct_sequence,
-            max_select: q.max_select
+            max_select: q.max_select,
+            audio_file: q.audio_file || '',
+            teaching_audio: q.teaching_audio || ''
         });
+    };
+
+    const handleFileUpload = async (e, field) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setSaving(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await axiosAdmin.post('/admin/elements/upload', formData);
+            if (res.data.success) {
+                setEditQData(prev => ({ ...prev, [field]: res.data.file_path }));
+            } else {
+                alert('Upload failed: ' + res.data.message);
+            }
+        } catch (error) {
+            console.error('Upload error', error);
+            alert('Upload failed');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const saveQuestion = async (id) => {
@@ -43,7 +66,9 @@ const AdminNumberRecallV2Config = () => {
         try {
             const dataToSave = {
                 correct_sequence: editQData.correct_sequence,
-                max_select: parseInt(editQData.max_select)
+                max_select: parseInt(editQData.max_select),
+                audio_file: editQData.audio_file,
+                teaching_audio: editQData.teaching_audio
             };
             await axiosAdmin.put(`/admin/number-recall-v2/questions/${id}`, dataToSave);
             setEditingQuestion(null);
@@ -78,8 +103,10 @@ const AdminNumberRecallV2Config = () => {
                                 <tr>
                                     <th>QID</th>
                                     <th>Type</th>
-                                    <th>Correct Sequence (Comma-separated)</th>
+                                    <th>Correct Sequence</th>
                                     <th>Max Select</th>
+                                    <th>Audio File</th>
+                                    <th>Teaching Audio</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -93,6 +120,18 @@ const AdminNumberRecallV2Config = () => {
                                                 <td><input type="text" value={editQData.correct_sequence} onChange={e=>setEditQData({...editQData, correct_sequence: e.target.value})} className="admin-input" style={{ minWidth: '150px' }} /></td>
                                                 <td><input type="number" value={editQData.max_select} onChange={e=>setEditQData({...editQData, max_select: e.target.value})} className="admin-input" style={{ width: '80px' }} /></td>
                                                 <td>
+                                                    <input type="text" value={editQData.audio_file} onChange={e=>setEditQData({...editQData, audio_file: e.target.value})} className="admin-input" placeholder="Audio Path" style={{ width: '120px' }} />
+                                                    <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio_file')} style={{display: 'block', fontSize: '10px', marginTop: '5px'}} />
+                                                </td>
+                                                <td>
+                                                    {q.is_teaching && (
+                                                        <>
+                                                            <input type="text" value={editQData.teaching_audio} onChange={e=>setEditQData({...editQData, teaching_audio: e.target.value})} className="admin-input" placeholder="Teaching Audio" style={{ width: '120px' }} />
+                                                            <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'teaching_audio')} style={{display: 'block', fontSize: '10px', marginTop: '5px'}} />
+                                                        </>
+                                                    )}
+                                                </td>
+                                                <td>
                                                     <button onClick={() => saveQuestion(q.id)} className="admin-btn-icon" style={{color: 'green'}} disabled={saving}>✔️</button>
                                                     <button onClick={() => setEditingQuestion(null)} className="admin-btn-icon" style={{color: 'red'}}>❌</button>
                                                 </td>
@@ -101,6 +140,8 @@ const AdminNumberRecallV2Config = () => {
                                             <>
                                                 <td>{q.correct_sequence}</td>
                                                 <td>{q.max_select}</td>
+                                                <td style={{fontSize: '12px', wordBreak: 'break-all'}}>{q.audio_file}</td>
+                                                <td style={{fontSize: '12px', wordBreak: 'break-all'}}>{q.is_teaching ? q.teaching_audio : '-'}</td>
                                                 <td>
                                                     <button onClick={() => startEditQuestion(q)} className="admin-btn-icon">✏️</button>
                                                 </td>

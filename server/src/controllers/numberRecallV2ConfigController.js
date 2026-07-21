@@ -35,11 +35,11 @@ const getQuestions = async (req, res) => {
 const updateQuestion = async (req, res) => {
     try {
         const { id } = req.params;
-        const { correct_sequence, max_select } = req.body;
+        const { correct_sequence, max_select, audio_file, teaching_audio } = req.body;
         
         await dbPool.query(
-            'UPDATE number_recall_v2_questions SET correct_sequence = ?, max_select = ? WHERE id = ?',
-            [correct_sequence, max_select, id]
+            'UPDATE number_recall_v2_questions SET correct_sequence = ?, max_select = ?, audio_file = ?, teaching_audio = ? WHERE id = ?',
+            [correct_sequence, max_select, audio_file, teaching_audio, id]
         );
         
         res.json({ success: true });

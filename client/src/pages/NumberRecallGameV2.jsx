@@ -87,12 +87,22 @@ const NumpadPanel = ({
 
   const audioRef = useRef(null);
 
+  const resolveAudio = (src) => {
+    if (!src) return '';
+    if (src.startsWith('/uploads/')) {
+      const SERVER_BASE = API_URL.replace(/\/api$/, '');
+      return `${SERVER_BASE}${src}`;
+    }
+    return `${AUDIO_PATH}/${src}`;
+  };
+
   const playAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
     if (isManual) setReplayCount(prev => prev + 1);
+    setIsPlaying(true);
     setSelected([]); // Clear selections when replaying audio
     if (!audioRef.current) {
-      audioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
+      audioRef.current = new Audio(resolveAudio(audioSrc));
       audioRef.current.addEventListener('playing', () => setIsPlaying(true));
       audioRef.current.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current.addEventListener('pause', () => setIsPlaying(false));
@@ -190,19 +200,34 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   const [isCorrect, setIsCorrect] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayCount, setReplayCount] = useState(0);
+  const [mainAudioDone, setMainAudioDone] = useState(false);
+  const [showTeachingAudio, setShowTeachingAudio] = useState(false);
 
   const mainAudioRef = useRef(null);
   const teachingAudioRef = useRef(null);
 
+  const resolveAudio = (src) => {
+    if (!src) return '';
+    if (src.startsWith('/uploads/')) {
+      const SERVER_BASE = API_URL.replace(/\/api$/, '');
+      return `${SERVER_BASE}${src}`;
+    }
+    return `${AUDIO_PATH}/${src}`;
+  };
+
   const playMainAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
     if (isManual) setReplayCount(prev => prev + 1);
-    setSelected([]); // Clear selections when replaying audio
+    setSelected([]);
     if (!mainAudioRef.current) {
-      mainAudioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
+      mainAudioRef.current = new Audio(resolveAudio(audioSrc));
       mainAudioRef.current.addEventListener('playing', () => setIsPlaying(true));
-      mainAudioRef.current.addEventListener('ended', () => setIsPlaying(false));
-      mainAudioRef.current.addEventListener('error', () => setIsPlaying(false));
+      mainAudioRef.current.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setMainAudioDone(true);
+      });
+    } else {
+      mainAudioRef.current.src = resolveAudio(audioSrc);
     }
     mainAudioRef.current.currentTime = 0;
     mainAudioRef.current.play().catch(() => setIsPlaying(false));
@@ -216,7 +241,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
       return;
     }
     if (!teachingAudioRef.current) {
-      teachingAudioRef.current = new Audio(`${AUDIO_PATH}/${teachingAudioSrc}`);
+      teachingAudioRef.current = new Audio(resolveAudio(teachingAudioSrc));
       teachingAudioRef.current.addEventListener('ended', () => {
         setTeachingAudioPlayed(true);
         setSelected([]);
@@ -227,6 +252,8 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
         setSelected([]);
         setIsWaiting(false);
       });
+    } else {
+      teachingAudioRef.current.src = resolveAudio(teachingAudioSrc);
     }
     teachingAudioRef.current.currentTime = 0;
     teachingAudioRef.current.play().catch(() => {

@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (_req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp3', '.mp4']; // Extensible
+  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp3', '.mp4', '.m4a', '.wav', '.ogg']; // Extensible
   if (allowed.includes(path.extname(file.originalname).toLowerCase())) cb(null, true);
   else cb(new Error('Invalid file type'), false);
 };
