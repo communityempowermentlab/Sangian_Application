@@ -192,7 +192,7 @@ const AdminAnkganitV2Config = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td>{q.text}</td>
+                                                    <td>{q.text.replace(/Identify number\s*-?\s*/ig, '')}</td>
                                                     <td>{q.title || '-'}</td>
                                                     <td>{q.correct_answer}</td>
                                                     {cat.evaluation_type === 'auto_division' && <td>{q.remainder}</td>}

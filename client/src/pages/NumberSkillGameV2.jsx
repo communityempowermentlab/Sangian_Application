@@ -569,7 +569,7 @@ const NumberSkillGameV2 = () => {
         {screen === 'game' && currentQuestion && questions[questionIndex].category.evaluation_type === 'manual' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card">
-              <div className="ns-question-content">{questions[questionIndex].text}</div>
+              <div className="ns-question-content">{questions[questionIndex].text.replace(/Identify number\s*-?\s*/ig, '')}</div>
             </div>
             <div className="ns-response-buttons">
               <button className="ns-response-btn ns-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct')}</button>
@@ -581,7 +581,7 @@ const NumberSkillGameV2 = () => {
         {screen === 'game' && currentQuestion && questions[questionIndex].category.evaluation_type !== 'manual' && (
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card ns-split-question">
-              <div className="ns-question-content">{questions[questionIndex].text}</div>
+              <div className="ns-question-content">{questions[questionIndex].text.replace(/Identify number\s*-?\s*/ig, '')}</div>
             </div>
 
             <div className="ns-auto-inputs ns-split-inputs">
