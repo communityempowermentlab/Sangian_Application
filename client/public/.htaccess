@@ -3,7 +3,7 @@
     Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
 
     # 2. CSP (Content-Security-Policy) - Locked to production API and self
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://sangianapi.celworld.org; media-src 'self' data: blob:; frame-src 'none'; object-src 'none';"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://sangianapi.celworld.org; connect-src 'self' https://sangianapi.celworld.org; media-src 'self' data: blob: https://sangianapi.celworld.org; frame-src 'none'; object-src 'none';"
 
     # 3. Prevent MIME Sniffing
     Header set X-Content-Type-Options "nosniff"
