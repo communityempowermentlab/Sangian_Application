@@ -139,8 +139,8 @@ const AdminChildScoreboard = () => {
                             ) : sortedHistory.length === 0 ? (
                                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
                             ) : (
-                                sortedHistory.map((session) => (
-                                    <tr key={session.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                sortedHistory.map((session, index) => (
+                                    <tr key={`${session.id}-${session.attempt_no || index}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                                             {GAME_LABELS[session.game_name] || session.game_name}
                                         </td>
