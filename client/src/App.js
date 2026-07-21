@@ -148,7 +148,7 @@ const PublicLayout = () => (
 
 function App() {
     return (
-        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ''}>
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
         <GoogleAnalyticsProvider>
         <CrashAnalyticsProvider>
         <LanguageProvider>
