@@ -302,7 +302,6 @@ const AdminChildrenList = () => {
                                                         </Link>
                                                         <Link 
                                                             to={`/admin/children/scoreboard/${child.child_id}`}
-                                                            target="_blank"
                                                             style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}
                                                         >
                                                             🏆 Scoreboard
