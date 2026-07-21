@@ -796,7 +796,7 @@ const NumberRecallGameV2 = () => {
   const correct = allScores.filter(s => s.score === 1).length;
   const wrong = allScores.filter(s => s.score === 0).length;
   const accuracyPct = ((correct / questions.length) * 100).toFixed(1);
-  const totalTimeMs = allScores.reduce((acc, s) => acc + (s.timeTaken || 0) * 1000, 0);
+  const totalTimeMs = allScores.reduce((acc, s) => acc + (s.duration_ms || 0), 0);
   const avgTimeMs = attempted > 0 ? (totalTimeMs / attempted) : 0;
   
   if (!childData || isCheckingSession || !isConfigLoaded) return <div className="nr-loading">Loading / Syncing...</div>;
