@@ -971,7 +971,7 @@ const initDb = async () => {
 
     const genericDefaults = {
       'number_recall_lottery': { path: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
-      'number_recall_lottery_v2': { path: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
+      'number_recall_lottery_v2': { path: '/assets/images/lottery_ka_ticket_V2/lottery_ka_ticket.jpg', name: 'lottery_ka_ticket.jpg' },
       'rover_mela': { path: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg', name: 'chalo_mela_chale.jpg' },
       'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
       'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },
