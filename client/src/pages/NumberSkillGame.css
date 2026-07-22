@@ -286,10 +286,10 @@
 .ns-input-group { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
 .ns-input-group label { font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 .ns-input-group input {
-  font-size: 2.2rem;
+  font-size: 3rem;
   font-weight: 800;
-  width: 160px;
-  padding: 14px 16px;
+  width: 240px;
+  padding: 18px 20px;
   border: 2.5px solid #e2e8f0;
   border-radius: 14px;
   text-align: center;

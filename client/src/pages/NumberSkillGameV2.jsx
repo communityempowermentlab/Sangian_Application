@@ -528,7 +528,7 @@ const NumberSkillGameV2 = () => {
               <span style={{ marginRight: '20px' }}>-</span>
               <span>{parts[1].trim()}</span>
             </div>
-            <div style={{ height: '1.2em', width: '100%', borderBottom: '10px solid #333' }}></div>
+            <div style={{ height: '0.5em', width: '100%', borderBottom: '10px solid #333' }}></div>
           </div>
         );
       }
@@ -536,34 +536,81 @@ const NumberSkillGameV2 = () => {
       const parts = cleanText.split('÷');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 800, color: '#333' }}>
-            <div style={{ paddingRight: '20px' }}>{parts[1].trim()}</div>
-            <div style={{ display: 'flex', alignItems: 'stretch' }}>
-              <svg viewBox="0 0 30 100" width="40" height="1.4em" preserveAspectRatio="none">
-                <path d="M 25,5 Q 5,50 25,95" fill="none" stroke="#333" strokeWidth="10" />
+          <div style={{ display: 'flex', alignItems: 'stretch', fontSize: '8rem', fontWeight: 800, color: '#333', lineHeight: 1.2 }}>
+            {/* Divisor */}
+            <div style={{ paddingRight: '0.15em', display: 'flex', alignItems: 'center' }}>
+              {parts[1].trim()}
+            </div>
+            
+            {/* Dividend Container */}
+            <div style={{ position: 'relative', display: 'flex' }}>
+              
+              {/* Main Top Bar */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                borderTop: '0.06em solid #333'
+              }}></div>
+
+              {/* Left Bracket ) (Uniform thickness, opens outside) */}
+              <svg 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  width: '0.25em',
+                  height: '100%',
+                  display: 'block',
+                  overflow: 'visible'
+                }} 
+                viewBox="0 0 100 100" 
+                preserveAspectRatio="none"
+              >
+                <path 
+                  d="M 0,2.5 C 50,2.5 100,20 100,50 C 100,80 50,97.5 0,97.5" 
+                  fill="none" 
+                  stroke="#333" 
+                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }} 
+                />
               </svg>
-              <div style={{ borderTop: '10px solid #333', padding: '15px 25px 0', marginTop: '0px' }}>
+              
+              {/* Right Bracket ( (Uniform thickness, opens outside) */}
+              <svg 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  width: '0.25em',
+                  height: '100%',
+                  display: 'block',
+                  overflow: 'visible'
+                }} 
+                viewBox="0 0 100 100" 
+                preserveAspectRatio="none"
+              >
+                <path 
+                  d="M 100,2.5 C 50,2.5 0,20 0,50 C 0,80 50,97.5 100,97.5" 
+                  fill="none" 
+                  stroke="#333" 
+                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }} 
+                />
+              </svg>
+
+              {/* Dividend Text */}
+              <div style={{ padding: '0.15em 0.35em 0 0.35em' }}>
                 {parts[0].trim()}
               </div>
-              <svg viewBox="0 0 30 100" width="40" height="1.4em" preserveAspectRatio="none">
-                <path d="M 5,5 Q 25,50 5,95" fill="none" stroke="#333" strokeWidth="10" />
-              </svg>
             </div>
           </div>
         );
       }
     }
 
-    return (
-      <div style={{ fontSize: '2rem', color: 'red' }}>
-        DEBUG INFO:<br/>
-        text: "{text}"<br/>
-        cleanText: "{cleanText}"<br/>
-        isStrictMath: {isStrictMath ? 'true' : 'false'}<br/>
-        includes hyphen: {cleanText.includes('-') ? 'true' : 'false'}<br/>
-        parts length: {cleanText.split('-').length}
-      </div>
-    );
+    return cleanText;
   };
 
 
@@ -734,7 +781,7 @@ const NumberSkillGameV2 = () => {
                       <tr>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.sNo')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.question')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.correctAnswer')}</th>
+                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.responseLabel') || 'Response'}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.status')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
                         <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.duration')}</th>
@@ -742,16 +789,24 @@ const NumberSkillGameV2 = () => {
                     </thead>
                     <tbody>
                       {allScores.map((scoreObj, idx) => {
-                        const qObj = questions.find(q => q.qid === scoreObj.qId);
+                        const qObj = questions.find(q => (q.id || q.qid) === scoreObj.qId);
                         const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
-                        let cAnsText = qObj?.correctAnswer || '—';
-                        if (qObj?.category?.evaluation_type === 'auto_division') cAnsText = `Q:${qObj.correctAnswer}, R:${qObj.remainder}`;
+                        
+                        let cAnsText = qObj?.correct_answer ?? qObj?.correctAnswer ?? '—';
+                        if (qObj?.category?.evaluation_type === 'auto_division') cAnsText = `Q:${qObj.correct_answer ?? qObj.correctAnswer}, R:${qObj.remainder}`;
+
+                        let uAnsText = '—';
+                        if (qObj?.category?.evaluation_type === 'auto_division') {
+                          uAnsText = `Q:${scoreObj.uQ ?? '—'}, R:${scoreObj.uR ?? '—'}`;
+                        } else if (scoreObj.uA !== undefined) {
+                          uAnsText = scoreObj.uA;
+                        }
 
                         return (
                           <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{idx + 1}</td>
                             <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{qObj?.text}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{cAnsText}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{uAnsText}</td>
                             <td style={{ padding: '12px 16px' }}>
                               <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 600, background: scoreObj.score === 1 ? '#d1fae5' : '#fee2e2', color: scoreObj.score === 1 ? '#065f46' : '#991b1b' }}>
                                 {scoreObj.score === 1 ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}
