@@ -522,9 +522,9 @@ const NumberSkillGameV2 = () => {
       const parts = cleanText.split('-');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '10rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '12rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
             <div>{parts[0].trim()}</div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px', minWidth: '300px' }}>
               <span style={{ marginRight: '20px' }}>-</span>
               <span>{parts[1].trim()}</span>
             </div>
@@ -536,7 +536,7 @@ const NumberSkillGameV2 = () => {
       const parts = cleanText.split('÷');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: '10rem', fontWeight: 800, color: '#333' }}>
+          <div style={{ display: 'flex', alignItems: 'center', fontSize: '12rem', fontWeight: 800, color: '#333' }}>
             <div style={{ paddingRight: '20px' }}>{parts[1].trim()}</div>
             <div style={{ display: 'flex', alignItems: 'stretch' }}>
               <svg viewBox="0 0 30 100" width="40" height="1.4em" preserveAspectRatio="none">
@@ -554,8 +554,18 @@ const NumberSkillGameV2 = () => {
       }
     }
 
-    return cleanText;
+    return (
+      <div style={{ fontSize: '2rem', color: 'red' }}>
+        DEBUG INFO:<br/>
+        text: "{text}"<br/>
+        cleanText: "{cleanText}"<br/>
+        isStrictMath: {isStrictMath ? 'true' : 'false'}<br/>
+        includes hyphen: {cleanText.includes('-') ? 'true' : 'false'}<br/>
+        parts length: {cleanText.split('-').length}
+      </div>
+    );
   };
+
 
   const currentQuestion = questions[questionIndex];
 
