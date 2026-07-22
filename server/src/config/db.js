@@ -976,6 +976,7 @@ const initDb = async () => {
       'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
       'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },
       'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
+      'numeracy_number_skill_v2': { path: '/assets/images/number_skill_v2/number_skill.jpg', name: 'number_skill.jpg' },
       'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
       'cognitive_flex_chor': { path: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg', name: 'chor_machaye_shor.jpg' },
       'triangle_rachna': { path: '/assets/images/rachna/rachna.jpg', name: 'rachna.jpg' }
