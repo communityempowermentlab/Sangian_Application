@@ -17,7 +17,7 @@ import { StatusBar } from '@capacitor/status-bar';
 import './HerPherGameV2.css';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-const GAME_NAME     = 'working_memory_herpher';
+const GAME_NAME     = 'working_memory_herpher_v2';
 const AUDIO_PATH    = '/assets/audios/her_pher_v2';
 const IMAGE_PATH    = '/assets/images/her_pher_v2/items';
 const MAX_POSITIONS = 15;
@@ -311,7 +311,7 @@ const HerPherGameV2 = () => {
     fetchActivity(child.child_id);
     const loadElements = async () => {
       try {
-        const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher`);
+        const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher_v2`);
         setAllElements(res.data.elements);
         setGAME_DATA(buildGameDataFromElements(res.data.elements));
       } catch (err) {
