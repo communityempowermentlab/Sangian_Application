@@ -53,6 +53,7 @@ const normalizeGameName = (name) => {
     if (['literacy_reading_skill', 'reading_skill', 'Padh ke batao'].includes(name)) return 'literacy_reading_skill';
     if (['numeracy_number_skill', 'Ankganit'].includes(name)) return 'numeracy_number_skill';
     if (['working_memory_herpher', 'Her Pher'].includes(name)) return 'working_memory_herpher';
+    if (['working_memory_herpher_v2', 'Her Pher - Version 2'].includes(name)) return 'working_memory_herpher_v2';
     if (['atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game'].includes(name)) return 'atlantis_bagiya';
     return name;
 };
@@ -407,7 +408,7 @@ exports.getReportDetail = async (req, res) => {
                         questionScores[`${key}_item_replays`] = parsedState?.itemExposureReplays?.[s.screen] ?? 0;
                     }
 
-                    if (gameName === 'working_memory_herpher') {
+                    if (gameName === 'working_memory_herpher' || gameName === 'working_memory_herpher_v2') {
                         questionScores[`${key}_correct`] = s.correctCount ?? null;
                         questionScores[`${key}_incorrect`] = s.incorrectSelections?.length ?? null;
                         questionScores[`${key}_total`] = s.expectedImages?.length ?? null;
@@ -656,6 +657,7 @@ exports.getGameSummaries = async (req, res) => {
                     WHEN game_name IN ('literacy_reading_skill', 'reading_skill', 'Padh ke batao') THEN 'literacy_reading_skill'
                     WHEN game_name IN ('numeracy_number_skill', 'Ankganit') THEN 'numeracy_number_skill'
                     WHEN game_name IN ('working_memory_herpher', 'Her Pher') THEN 'working_memory_herpher'
+                    WHEN game_name IN ('working_memory_herpher_v2', 'Her Pher - Version 2') THEN 'working_memory_herpher_v2'
                     WHEN game_name IN ('atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game') THEN 'atlantis_bagiya'
                     ELSE game_name
                 END AS game_name,

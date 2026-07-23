@@ -975,6 +975,7 @@ const initDb = async () => {
       'rover_mela': { path: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg', name: 'chalo_mela_chale.jpg' },
       'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
       'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },
+      'working_memory_herpher_v2': { path: '/assets/images/her_pher_v2/her_pher_v2.jpg', name: 'her_pher_v2.jpg' },
       'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
       'numeracy_number_skill_v2': { path: '/assets/images/number_skill_v2/number_skill.jpg', name: 'number_skill.jpg' },
       'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
@@ -1015,6 +1016,7 @@ const initDb = async () => {
 
     allSeeds.push({
       test_id: 'working_memory_herpher',
+test_id: 'working_memory_herpher_v2',
       seeds: hpSeeds
     });
 

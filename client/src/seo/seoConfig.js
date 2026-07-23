@@ -153,6 +153,7 @@ export const ROUTE_SEO = {
     '/games/chalo_mela_chale':  { title: `Chalo Mela Chalen | ${SITE_NAME}`,   robots: 'noindex,follow', jsonLd: null },
     '/games/dhyan_kahan_hai':   { title: `Dhyan Kahan Hai | ${SITE_NAME}`,     robots: 'noindex,follow', jsonLd: null },
     '/games/her_pher':          { title: `Her Pher | ${SITE_NAME}`,            robots: 'noindex,follow', jsonLd: null },
+    '/games/her_pher_v2':       { title: `Her Pher V2 | ${SITE_NAME}`,         robots: 'noindex,follow', jsonLd: null },
     '/games/number_skill':      { title: `Ankganit | ${SITE_NAME}`,            robots: 'noindex,follow', jsonLd: null },
     '/games/reading_skill':     { title: `Padh ke batao | ${SITE_NAME}`,       robots: 'noindex,follow', jsonLd: null },
     '/games/rachna':            { title: `Rachna | ${SITE_NAME}`,              robots: 'noindex,follow', jsonLd: null },

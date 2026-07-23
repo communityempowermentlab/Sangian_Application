@@ -42,5 +42,10 @@
   "numeracy_number_skill_v2": {
     "enabled": true,
     "display_order": 10
+  },
+  "working_memory_herpher_v2": {
+    "enabled": true,
+    "display_order": 4,
+    "title": "Her Pher - Version 2"
   }
 }

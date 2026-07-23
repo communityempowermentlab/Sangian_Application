@@ -455,7 +455,7 @@ const AdminReports = () => {
                                 {sortedRows.map((row, i) => {
                                     const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                                     const isChor = activeGame?.key === 'cognitive_flex_chor' || activeGame?.title?.includes('Chor Machaye');
-                                    const isHerPher = activeGame?.key === 'working_memory_herpher';
+                                    const isHerPher = activeGame?.key === 'working_memory_herpher' || activeGame?.key === 'working_memory_herpher_v2';
                                     
                                     return (
                                         <React.Fragment key={row.session_id}>

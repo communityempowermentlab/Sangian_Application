@@ -21,6 +21,7 @@ import ReadingSkillGame from './pages/ReadingSkillGame';
 import NumberRecallGame from './pages/NumberRecallGame';
 import NumberRecallGameV2 from './pages/NumberRecallGameV2';
 import HerPherGame from './pages/HerPherGame';
+import HerPherGameV2 from './pages/HerPherGameV2';
 import AuditoryAttentionGame from './pages/AuditoryAttentionGame';
 import TriangleRachnaGame from './pages/TriangleRachnaGame';
 import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
@@ -180,6 +181,7 @@ function App() {
                                 <Route path="/games/number_recall"     element={<NumberRecallGame />} />
                                 <Route path="/games/number_recall_v2"  element={<NumberRecallGameV2 />} />
                                 <Route path="/games/her_pher"          element={<HerPherGame />} />
+                                <Route path="/games/her_pher_v2"       element={<HerPherGameV2 />} />
                                 <Route path="/games/dhyan_kahan_hai"   element={<AuditoryAttentionGame />} />
                                 <Route path="/games/rachna"            element={<TriangleRachnaGame />} />
                                 <Route path="/games/bagiya"            element={<AtlantisBagiyaGame />} />

@@ -68,7 +68,7 @@ export default function AdminElements() {
     const loadElements = async (testId) => {
         setLoading(true);
         try {
-            const url = testId === 'working_memory_herpher' 
+            const url = (testId === 'working_memory_herpher' || testId === 'working_memory_herpher_v2') 
                 ? `/admin/elements?test_id=${testId}` 
                 : `/admin/elements?test_id=${testId}&asset_type=splash_screen`;
             const res = await axiosAdmin.get(url);
@@ -197,7 +197,7 @@ export default function AdminElements() {
                 )}
                 </div>
 
-                {activeTest === 'working_memory_herpher' && (
+                {(activeTest === 'working_memory_herpher' || activeTest === 'working_memory_herpher_v2') && (
                     <>
                         <HerPherElements
                             elements={elements}
@@ -211,9 +211,9 @@ export default function AdminElements() {
                                 without a code deployment.
                             </p>
                             <AdminElementPositionManager 
-                                gameKey="working_memory_herpher"
-                                screenNums={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
-                                screenCounts={{ 1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 6: 11, 7: 12, 8: 13, 9: 13 }}
+                                gameKey={activeTest}
+                                screenNums={activeTest === 'working_memory_herpher_v2' ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                                screenCounts={activeTest === 'working_memory_herpher_v2' ? { 0: 10, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10 } : { 1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 6: 11, 7: 12, 8: 13, 9: 13 }}
                                 aspectW={1024}
                                 aspectH={620}
                             />

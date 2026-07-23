@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import './AuditoryAttentionGame.css';
@@ -208,8 +208,7 @@ const AuditoryAttentionGame = () => {
     }
     const rec = new SR();
     rec.continuous = true; rec.interimResults = true; rec.lang = 'en-US';
-    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
-    rec.lang = langMap[language] || 'en-US';
+    rec.lang = STT_LANG_MAP[language] || 'en-US';
     rec.onresult = (e) => {
       let final = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {

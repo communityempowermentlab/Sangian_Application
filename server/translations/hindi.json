@@ -1,7 +1,7 @@
 {
   "common": {
     "selectLanguage": "भाषा चुनें",
-    "english": "English",
+    "english": "अंग्रेजी",
     "hindi": "हिंदी",
     "cancel": "रद्द करें",
     "logout": "लॉग आउट",
@@ -542,7 +542,7 @@
     "fEmail": "ईमेल पता",
     "fEmailPH": "you@example.com",
     "fPhone": "फ़ोन नंबर",
-    "fPhonePH": "+91 00000 00000",
+    "fPhonePH": "+९१ ००००० ०००००",
     "fSubject": "विषय",
     "fSubjectPH": "हम कैसे मदद कर सकते हैं?",
     "fMessage": "संदेश",

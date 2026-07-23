@@ -51,7 +51,7 @@ export const generateReportData = (activeGame, detail) => {
     const assessmentLabels = ['Enjoyed?','Feeling?','Tired?','Play Again?','Behaviours','Notes'];
     
     const isAuditory = activeGame?.key === 'auditory_dhyan';
-    const isHerPher  = activeGame?.key === 'working_memory_herpher';
+    const isHerPher  = activeGame?.key === 'working_memory_herpher' || activeGame?.key === 'working_memory_herpher_v2';
     const isChorCSV  = activeGame?.key === 'cognitive_flex_chor';
     const qHeaders = [];
     

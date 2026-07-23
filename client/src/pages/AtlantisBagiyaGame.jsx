@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
@@ -1197,8 +1197,7 @@ const AtlantisBagiyaGame = () => {
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
-    recognition.lang = langMap[language] || 'en-US';
+    recognition.lang = STT_LANG_MAP[language] || 'en-US';
     recognition.onresult = (event) => {
       let final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {

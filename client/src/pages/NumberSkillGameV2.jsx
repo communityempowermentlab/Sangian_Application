@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
@@ -278,8 +278,7 @@ const NumberSkillGameV2 = () => {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    const langMap = { hi: 'hi-IN', mr: 'mr-IN', ta: 'ta-IN', bn: 'bn-IN', gu: 'gu-IN', en: 'en-US' };
-    recognition.lang = langMap[language] || 'en-US';
+    recognition.lang = STT_LANG_MAP[language] || 'en-US';
 
     recognition.onresult = (event) => {
       let finalTranscript = '';

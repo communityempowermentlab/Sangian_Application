@@ -1,35 +1,28 @@
 {
   "defaultLanguage": "english",
   "languages": [
-    {
-      "code": "english",
-      "shortCode": "en",
-      "label": "English",
-      "enabled": true
-    },
-    {
-      "code": "hindi",
-      "shortCode": "hi",
-      "label": "Hindi",
-      "enabled": true
-    },
-    {
-      "code": "marathi",
-      "shortCode": "mr",
-      "label": "Marathi",
-      "enabled": true
-    },
-    {
-      "code": "telugu",
-      "shortCode": "te",
-      "label": "Telugu",
-      "enabled": true
-    },
-    {
-      "code": "kannada",
-      "shortCode": "kn",
-      "label": "Kannada",
-      "enabled": true
-    }
+    { "code": "english", "shortCode": "en", "label": "English (International)", "enabled": true },
+    { "code": "hindi", "shortCode": "hi", "label": "Hindi", "enabled": true },
+    { "code": "assamese", "shortCode": "as", "label": "Assamese", "enabled": true },
+    { "code": "bengali", "shortCode": "bn", "label": "Bengali", "enabled": true },
+    { "code": "bodo", "shortCode": "brx", "label": "Bodo", "enabled": true },
+    { "code": "dogri", "shortCode": "doi", "label": "Dogri", "enabled": true },
+    { "code": "gujarati", "shortCode": "gu", "label": "Gujarati", "enabled": true },
+    { "code": "kannada", "shortCode": "kn", "label": "Kannada", "enabled": true },
+    { "code": "kashmiri", "shortCode": "ks", "label": "Kashmiri", "enabled": true },
+    { "code": "konkani", "shortCode": "kok", "label": "Konkani", "enabled": true },
+    { "code": "maithili", "shortCode": "mai", "label": "Maithili", "enabled": true },
+    { "code": "malayalam", "shortCode": "ml", "label": "Malayalam", "enabled": true },
+    { "code": "manipuri", "shortCode": "mni", "label": "Manipuri", "enabled": true },
+    { "code": "marathi", "shortCode": "mr", "label": "Marathi", "enabled": true },
+    { "code": "nepali", "shortCode": "ne", "label": "Nepali", "enabled": true },
+    { "code": "odia", "shortCode": "or", "label": "Odia", "enabled": true },
+    { "code": "punjabi", "shortCode": "pa", "label": "Punjabi", "enabled": true },
+    { "code": "sanskrit", "shortCode": "sa", "label": "Sanskrit", "enabled": true },
+    { "code": "santali", "shortCode": "sat", "label": "Santali", "enabled": true },
+    { "code": "sindhi", "shortCode": "sd", "label": "Sindhi", "enabled": true },
+    { "code": "tamil", "shortCode": "ta", "label": "Tamil", "enabled": true },
+    { "code": "telugu", "shortCode": "te", "label": "Telugu", "enabled": true },
+    { "code": "urdu", "shortCode": "ur", "label": "Urdu", "enabled": true }
   ]
 }

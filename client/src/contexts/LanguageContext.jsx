@@ -10,6 +10,15 @@ const FALLBACK_TRANSLATIONS = en;
 
 export const LanguageContext = createContext();
 
+// Speech-to-Text language map for the 22 Indian Scheduled Languages + English
+export const STT_LANG_MAP = {
+    as: 'as-IN', bn: 'bn-IN', brx: 'brx-IN', doi: 'doi-IN', gu: 'gu-IN',
+    hi: 'hi-IN', kn: 'kn-IN', ks: 'ks-IN', kok: 'kok-IN', mai: 'mai-IN',
+    ml: 'ml-IN', mni: 'mni-IN', mr: 'mr-IN', ne: 'ne-IN', or: 'or-IN',
+    pa: 'pa-IN', sa: 'sa-IN', sat: 'sat-IN', sd: 'sd-IN', ta: 'ta-IN',
+    te: 'te-IN', ur: 'ur-IN', en: 'en-US'
+};
+
 export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState('en');
     const [availableLanguages, setAvailableLanguages] = useState([{ code: 'en', shortCode: 'en', label: 'English', enabled: true }]);

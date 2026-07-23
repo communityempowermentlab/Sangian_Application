@@ -29,6 +29,7 @@ const Home = () => {
             'rover_mela': '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg',
             'auditory_dhyan': '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg',
             'working_memory_herpher': '/assets/images/her_pher/her_pher.jpg',
+            'working_memory_herpher_v2': '/assets/images/her_pher_v2/her_pher_v2.jpg',
             'numeracy_number_skill': '/assets/images/number_skill/number_skill.jpg',
             'numeracy_number_skill_v2': '/assets/images/number_skill_v2/number_skill.jpg',
             'literacy_reading_skill': '/assets/images/reading_skill/reading_skill.jpg',
@@ -113,6 +114,19 @@ const Home = () => {
             startUrl: "/games/her_pher",
             image: getElementImage('working_memory_herpher'),
             shortTitle: t('home.games.herpher.title'),
+            local: t('home.games.herpher.local'),
+            tag: t('home.games.herpher.tag'),
+            tagClass: "test-tag"
+        },
+        {
+            id: 5.1,
+            gameKey: 'working_memory_herpher_v2',
+            title: t('home.games.herpher.title') + " - Version 2 " + t('home.games.herpher.local'),
+            subtitle: t('home.games.herpher.sub'),
+            desc: t('home.games.herpher.desc'),
+            startUrl: "/games/her_pher_v2",
+            image: getElementImage('working_memory_herpher_v2'),
+            shortTitle: t('home.games.herpher.title') + " - Version 2",
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"

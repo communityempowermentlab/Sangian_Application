@@ -3,18 +3,18 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 
 const CATEGORIES = [
-    { id: 'item0', label: 'Item 0', min: 6 },
-    { id: 'item1', label: 'Item 1', min: 7 },
-    { id: 'item2', label: 'Item 2', min: 8 },
-    { id: 'item3', label: 'Item 3', min: 9 },
-    { id: 'item4', label: 'Item 4', min: 10 },
-    { id: 'item5', label: 'Item 5', min: 11 },
-    { id: 'item6', label: 'Item 6', min: 12 },
-    { id: 'item7', label: 'Item 7', min: 13 },
-    { id: 'item8', label: 'Item 8', min: 14 }
+    { id: 'item0', label: 'Item 0 - Practice (Tools)', min: 10, max: 10 },
+    { id: 'item1', label: 'Item 1 - Fruits', min: 10, max: 10 },
+    { id: 'item2', label: 'Item 2 - Vegetables', min: 10, max: 10 },
+    { id: 'item3', label: 'Item 3 - Sports', min: 10, max: 10 },
+    { id: 'item4', label: 'Item 4 - Clothes', min: 10, max: 10 },
+    { id: 'item5', label: 'Item 5 - Kitchen', min: 10, max: 10 },
+    { id: 'item6', label: 'Item 6 - Household', min: 10, max: 10 },
+    { id: 'item7', label: 'Item 7 - Animals', min: 10, max: 10 },
+    { id: 'item8', label: 'Item 8 - Transport', min: 10, max: 10 }
 ];
 
-export default function HerPherElements({ elements, loadElements, showToast }) {
+export default function HerPherElements({ elements, loadElements, showToast, gameKey = 'working_memory_herpher' }) {
     const [uploading, setUploading] = useState(null);
     const fileRefs = useRef({});
 
@@ -68,7 +68,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
 
             const formData = new FormData();
             formData.append('file', resizedFile);
-            formData.append('test_id', 'working_memory_herpher');
+            formData.append('test_id', gameKey);
             formData.append('asset_type', category);
             formData.append('language', 'all'); // Her Pher images are language independent
             
@@ -82,7 +82,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
 
             if (res.data.success) {
                 showToast(replaceId ? 'Image replaced successfully' : 'Image uploaded successfully');
-                loadElements('working_memory_herpher');
+                loadElements(gameKey);
             }
         } catch (error) {
             console.error('Upload failed:', error);
@@ -99,7 +99,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
             const res = await axiosAdmin.put(`/admin/elements/${id}/status`);
             if (res.data.success) {
                 showToast('Status updated successfully');
-                loadElements('working_memory_herpher');
+                loadElements(gameKey);
             }
         } catch (error) {
             console.error('Toggle failed:', error);
@@ -121,8 +121,8 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h4 style={{ margin: 0 }}>{category.label}</h4>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <span style={{ fontSize: '0.85rem', color: categoryElements.length < category.min ? '#ef4444' : '#10b981' }}>
-                                    {categoryElements.length} / Min {category.min} required
+                                <span style={{ fontSize: '0.85rem', color: categoryElements.length !== category.max ? '#ef4444' : '#10b981' }}>
+                                    {categoryElements.length} / {category.max} items
                                 </span>
                                 <div>
                                     <input 
@@ -135,7 +135,7 @@ export default function HerPherElements({ elements, loadElements, showToast }) {
                                     <button 
                                         className="admin-btn admin-btn-primary" 
                                         onClick={() => fileRefs.current[category.id]?.click()}
-                                        disabled={uploading === `upload_${category.id}`}
+                                        disabled={uploading === `upload_${category.id}` || categoryElements.length >= category.max}
                                     >
                                         {uploading === `upload_${category.id}` ? 'Uploading...' : 'Add Image'}
                                     </button>

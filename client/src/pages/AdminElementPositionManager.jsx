@@ -183,7 +183,7 @@ const AdminElementPositionManager = ({
                                 color: selectedScreen === num ? '#4338ca' : '#374151',
                             }}
                         >
-                            Response {num}
+                            <span>Item {num}{num === 0 ? ' (Practice)' : ''}</span>
                             <span style={{ marginLeft: '6px', color: '#9ca3af', fontWeight: 500 }}>({screenCounts[num]})</span>
                         </button>
                     ))}
@@ -194,7 +194,7 @@ const AdminElementPositionManager = ({
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                     <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
-                        Response {selectedScreen} — element layout
+                        Item {selectedScreen} — element layout
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <label style={{ fontSize: '0.78rem', color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -246,7 +246,7 @@ const AdminElementPositionManager = ({
                                 <div style={guideLineStyle('66.66%', 'v')} />
                                 <div style={guideLineStyle('33.33%', 'h')} />
                                 <div style={guideLineStyle('66.66%', 'h')} />
-                            </>
+                                </>
                         )}
 
                         {positions.map((p, i) => (
