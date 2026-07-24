@@ -65,11 +65,11 @@ const uploadElement = async (req, res) => {
         
         const { replace_id } = req.body;
 
-        // If it is a splash screen (test_id !== 'working_memory_herpher'), we act as if it replaces everything for that language
-        if (test_id !== 'working_memory_herpher') {
+        // If it is a splash screen, we act as if it replaces everything for that language
+        if (asset_type === 'splash_screen') {
             await pool.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
         } else if (replace_id) {
-            // For Her Pher, if we are specifically replacing one image
+            // For Her Pher or other multi-image items, if we are specifically replacing one image
             await pool.query('DELETE FROM test_elements WHERE id = ?', [replace_id]);
         }
 

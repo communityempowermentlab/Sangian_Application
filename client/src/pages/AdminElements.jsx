@@ -203,6 +203,7 @@ export default function AdminElements() {
                             elements={elements}
                             loadElements={loadElements}
                             showToast={showToast}
+                            gameKey={activeTest}
                         />
                         <div className="elements-section">
                             <h3>Screen-wise Element Positioning</h3>
