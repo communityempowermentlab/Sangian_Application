@@ -220,9 +220,9 @@ exports.getGameHistory = async (req, res) => {
         const { childId } = req.params;
 
         const [rows] = await pool.query(
-            `SELECT gs.*, pdf.file_path AS pdf_url 
+            `SELECT gs.*, 
+                   (SELECT file_path FROM game_dashboard_pdfs WHERE session_id = gs.id ORDER BY id DESC LIMIT 1) AS pdf_url 
              FROM game_sessions gs
-             LEFT JOIN game_dashboard_pdfs pdf ON pdf.session_id = gs.id
              WHERE gs.child_id = ? 
              ORDER BY gs.start_time ASC`, // Changed to ASC to calculate attempt numbers easily
             [childId]

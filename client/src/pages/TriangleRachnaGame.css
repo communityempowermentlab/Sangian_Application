@@ -565,11 +565,11 @@
 /* ─── Rotation Handle ──────────────────────────────────────── */
 .rg-rotation-handle {
   position: absolute;
-  top: -38px;
+  top: -46px;
   left: 50%;
   transform: translateX(-50%);
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   border: 3px solid white;
   border-radius: 50%;
@@ -577,13 +577,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(102,126,234,0.5);
-  opacity: 0;
-  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.5);
+  opacity: 0.9;
+  transition: transform 0.2s, opacity 0.2s;
   z-index: 30;
-  font-size: 13px;
+  font-size: 18px;
   color: white;
   font-weight: bold;
+}
+
+/* Invisible expanded touch area for children's clumsy fingers */
+.rg-rotation-handle::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  bottom: -20px;
+  left: -20px;
+  right: -20px;
+  border-radius: 50%;
 }
 
 .rg-rotation-handle::before {
@@ -592,13 +603,23 @@
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  width: 2px;
-  height: 10px;
+  width: 3px;
+  height: 12px;
   background: linear-gradient(to bottom, #667eea, transparent);
 }
 
 .rg-workspace-item:hover .rg-rotation-handle { opacity: 1; }
-.rg-rotation-handle:hover { transform: translateX(-50%) scale(1.15); }
+.rg-rotation-handle:hover, .rg-rotation-handle:active { transform: translateX(-50%) scale(1.15); }
+
+/* Snapping Highlight Animation */
+.rg-snap-highlight svg {
+  animation: rg-snap-pulse-svg 0.4s ease-out;
+}
+@keyframes rg-snap-pulse-svg {
+  0% { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+  50% { filter: drop-shadow(0 0 15px rgba(16,185,129,0.9)) brightness(1.2); }
+  100% { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+}
 
 /* Remove button */
 .rg-remove-btn {

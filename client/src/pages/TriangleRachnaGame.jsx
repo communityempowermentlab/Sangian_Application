@@ -584,13 +584,44 @@ const TriangleRachnaGame = () => {
         });
       }
       if (rotateRef.current) {
-        const { id, centerX, centerY, startAngle, origRot } = rotateRef.current;
+        const { id, centerX, centerY } = rotateRef.current;
         const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+        
+        let deltaAngle = angle - rotateRef.current.lastAngle;
+        if (deltaAngle > 180) deltaAngle -= 360;
+        if (deltaAngle < -180) deltaAngle += 360;
+        
+        rotateRef.current.currentRot += deltaAngle;
+        rotateRef.current.lastAngle = angle;
+        
+        let targetRot = rotateRef.current.currentRot;
+        const snapThreshold = 12;
+        const nearestSnap = Math.round(targetRot / 45) * 45;
+        let isSnapping = false;
+        
+        if (Math.abs(targetRot - nearestSnap) <= snapThreshold) {
+          targetRot = nearestSnap;
+          if (rotateRef.current.lastSnapped !== nearestSnap) {
+            try { new Audio(`${AUDIO_PATH}/rotate.wav`).play().catch(() => {}); } catch(_) {}
+            rotateRef.current.lastSnapped = nearestSnap;
+          }
+          isSnapping = true;
+        } else {
+          rotateRef.current.lastSnapped = null;
+        }
+
         setWorkspaceItems(prev => prev.map(it =>
-          it.id === id ? { ...it, rotation: origRot + (angle - startAngle) } : it));
+          it.id === id ? { ...it, rotation: targetRot, isSnapping } : it));
       }
     };
-    const onPointerUp = () => { itemDragRef.current = null; rotateRef.current = null; };
+    const onPointerUp = () => { 
+      itemDragRef.current = null; 
+      if (rotateRef.current) {
+        const rotId = rotateRef.current.id;
+        setWorkspaceItems(prev => prev.map(it => it.id === rotId ? { ...it, isSnapping: false } : it));
+      }
+      rotateRef.current = null; 
+    };
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', onPointerUp);
     document.addEventListener('pointercancel', onPointerUp);
@@ -768,7 +799,14 @@ const TriangleRachnaGame = () => {
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top  + rect.height / 2;
     const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
-    rotateRef.current = { id: item.id, centerX, centerY, startAngle, origRot: item.rotation };
+    rotateRef.current = { 
+      id: item.id, 
+      centerX, 
+      centerY, 
+      lastAngle: startAngle, 
+      currentRot: item.rotation || 0,
+      lastSnapped: null 
+    };
   };
 
   // ── Double-click: rotate 90° snap ────────────────────────────
@@ -1074,7 +1112,7 @@ const TriangleRachnaGame = () => {
                   return (
                     <div
                       key={item.id}
-                      className="rg-workspace-item"
+                      className={`rg-workspace-item ${item.isSnapping ? 'rg-snap-highlight' : ''}`}
                       style={{ left: item.x, top: item.y, width: sz, height: sz, zIndex: 5 + index }}
                       onPointerDown={e => onItemPointerDown(e, item)}
                       onDoubleClick={e => rotatable && onItemDblClick(e, item)}

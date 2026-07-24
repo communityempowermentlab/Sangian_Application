@@ -409,11 +409,11 @@ const NumberSkillGameV2 = () => {
     if (q.category.evaluation_type === 'auto_division') {
       const cQuot = parseInt(quotientVal) || 0;
       const cRem = parseInt(remainderVal) || 0;
-      const pass = (cQuot === q.correct_answer && cRem === q.remainder);
+      const pass = (cQuot === Number(q.correct_answer) && cRem === Number(q.remainder));
       processScoring(pass ? 1 : 0, { uQ: cQuot, uR: cRem });
     } else {
       const cAns = parseInt(answerVal) || 0;
-      processScoring((cAns === q.correct_answer) ? 1 : 0, { uA: cAns });
+      processScoring((cAns === Number(q.correct_answer)) ? 1 : 0, { uA: cAns });
     }
   };
 
