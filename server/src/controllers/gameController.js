@@ -230,9 +230,22 @@ exports.getGameHistory = async (req, res) => {
 
         // Group by game_name to assign attempt numbers
         const gameCounts = {};
+        const fs = require('fs');
+        const path = require('path');
+        
         const historyWithAttempts = rows.map(row => {
             const gName = row.game_name;
             gameCounts[gName] = (gameCounts[gName] || 0) + 1;
+            
+            // Check if PDF physically exists on the disk
+            if (row.pdf_url) {
+                const fileName = row.pdf_url.split('/').pop();
+                const pdfPath = path.join(__dirname, '../../dashboard_pdfs', fileName);
+                if (!fs.existsSync(pdfPath)) {
+                    row.pdf_url = null; // Hide the button on frontend if file was deleted
+                }
+            }
+
             return { ...row, attempt_no: gameCounts[gName] };
         });
 
