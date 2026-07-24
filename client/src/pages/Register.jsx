@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 const Register = () => {
     const { t } = useLanguage();
     const [photoFile, setPhotoFile] = useState(null);
-    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '' });
+    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '' });
     const [errors, setErrors] = useState({});
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,10 +25,23 @@ const Register = () => {
         if (!dobString) return null;
         const dobDate = new Date(dobString);
         if (isNaN(dobDate.getTime())) return null;
-        let age = today.getFullYear() - dobDate.getFullYear();
-        const m = today.getMonth() - dobDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
-        return age;
+        
+        let years = today.getFullYear() - dobDate.getFullYear();
+        let months = today.getMonth() - dobDate.getMonth();
+        let days = today.getDate() - dobDate.getDate();
+
+        if (days < 0) {
+            months--;
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+        
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        
+        return { years, months, days };
     };
     
     const currentAge = calculateAge(getDobString());
@@ -43,6 +56,8 @@ const Register = () => {
         const newErrors = {};
         if (!formData.child_id.trim()) newErrors.child_id = t('register.errChildId') || 'Child ID is required';
         if (!formData.name.trim()) newErrors.name = t('register.errName');
+        if (!formData.father_name.trim()) newErrors.father_name = 'Father name is required.';
+        if (!formData.mother_name.trim()) newErrors.mother_name = 'Mother name is required.';
         const dobStr = getDobString();
         if (!dobStr) {
             newErrors.dob = t('register.errDobRequired');
@@ -50,8 +65,11 @@ const Register = () => {
             const dobDate = new Date(dobStr);
             if (isNaN(dobDate.getTime())) {
                 newErrors.dob = 'Invalid date';
-            } else if (dobStr < minDate || dobStr > maxDate) {
-                newErrors.dob = t('register.errDobAge') || 'Child must be between 7 and 15 years old.';
+            } else {
+                const currentAgeObj = calculateAge(dobStr);
+                if (currentAgeObj && (currentAgeObj.years < 7 || currentAgeObj.years > 15 || (currentAgeObj.years === 15 && (currentAgeObj.months > 0 || currentAgeObj.days > 0)))) {
+                    newErrors.dob = t('register.errDobAge') || 'Child must be between 7 and 15 years old.';
+                }
             }
         }
         if (!formData.gender) newErrors.gender = t('register.errGender');
@@ -73,6 +91,11 @@ const Register = () => {
             const data = new FormData();
             data.append('child_id', formData.child_id.trim());
             data.append('name',   formData.name.trim());
+            data.append('father_name', formData.father_name.trim());
+            data.append('mother_name', formData.mother_name.trim());
+            data.append('remarks',     formData.remarks.trim());
+            data.append('gram_sabha',  formData.gram_sabha.trim());
+            data.append('hamlet',      formData.hamlet.trim());
             data.append('dob',    getDobString());
             data.append('gender', formData.gender);
             data.append('mobile', formData.mobile);
@@ -80,7 +103,7 @@ const Register = () => {
             const response = await axios.post(API_URL + '/children/register', data);
             const generatedId = response.data.childId;
             setStatusMsg({ type: 'success', text: t('register.successMsg').replace('{id}', generatedId) });
-            setFormData({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '' });
+            setFormData({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '' });
             setPhotoFile(null);
         } catch (err) {
             const msg = err.response?.data?.message || t('register.errGeneral');
@@ -154,9 +177,9 @@ const Register = () => {
                             <div className="form-group">
                                 <label>
                                     {t('register.dobLabel')}<span className="required">*</span>
-                                    {currentAge !== null && currentAge >= 0 && (
+                                    {currentAge !== null && currentAge.years >= 0 && (
                                         <span style={{ marginLeft: '8px', fontWeight: 'normal', color: '#4b5563', fontSize: '13px' }}>
-                                            (Age: {currentAge} {currentAge === 1 ? 'year' : 'years'})
+                                            (Age: {currentAge.years} {currentAge.years === 1 ? 'year' : 'years'}, {currentAge.months} {currentAge.months === 1 ? 'month' : 'months'}, {currentAge.days} {currentAge.days === 1 ? 'day' : 'days'})
                                         </span>
                                     )}
                                 </label>
@@ -205,6 +228,58 @@ const Register = () => {
                                 />
                                 <small className="field-hint">{t('register.mobileHint')}</small>
                                 <p className="field-error">{errors.mobile}</p>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="father_name">{t('register.fatherNameLabel') || 'Father Name'} *</label>
+                                <input
+                                    type="text" id="father_name" name="father_name"
+                                    value={formData.father_name} onChange={handleChange}
+                                    placeholder={t('register.fatherNamePlaceholder') || 'Enter father name'}
+                                    maxLength={225}
+                                />
+                                {errors.father_name && <p className="field-error">{errors.father_name}</p>}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="mother_name">{t('register.motherNameLabel') || 'Mother Name'} *</label>
+                                <input
+                                    type="text" id="mother_name" name="mother_name"
+                                    value={formData.mother_name} onChange={handleChange}
+                                    placeholder={t('register.motherNamePlaceholder') || 'Enter mother name'}
+                                    maxLength={225}
+                                />
+                                {errors.mother_name && <p className="field-error">{errors.mother_name}</p>}
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="gram_sabha">Gram Sabha</label>
+                                <input
+                                    type="text" id="gram_sabha" name="gram_sabha"
+                                    value={formData.gram_sabha} onChange={handleChange}
+                                    placeholder="Enter Gram Sabha"
+                                />
+                                <p className="field-error"></p>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="hamlet">Hamlet Name</label>
+                                <input
+                                    type="text" id="hamlet" name="hamlet"
+                                    value={formData.hamlet} onChange={handleChange}
+                                    placeholder="Enter Hamlet Name"
+                                />
+                                <p className="field-error"></p>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="remarks">Remarks</label>
+                                <input
+                                    type="text" id="remarks" name="remarks"
+                                    value={formData.remarks} onChange={handleChange}
+                                    placeholder="Enter remarks"
+                                />
+                                <p className="field-error"></p>
                             </div>
 
                             <div className="form-actions">

@@ -10,9 +10,12 @@ const calculateAge = (dob) => {
     const today = new Date();
     let years = today.getFullYear() - birthDate.getFullYear();
     let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
 
-    if (today.getDate() < birthDate.getDate()) {
+    if (days < 0) {
         months--;
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
     }
 
     if (months < 0) {
@@ -20,7 +23,7 @@ const calculateAge = (dob) => {
         months += 12;
     }
 
-    return `${years} Yrs ${months} Mos`;
+    return `${years}y ${months}m ${days}d`;
 };
 
 const formatRelativeTime = (dateString) => {
@@ -151,7 +154,7 @@ const AdminChildrenList = () => {
     const handleExportCSV = () => {
         if (children.length === 0) return;
         
-        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Status', 'Last Login'];
+        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Father Name', 'Mother Name', 'Gram Sabha', 'Hamlet Name', 'Remarks', 'Status', 'Last Login'];
         
         const rows = children.map(child => [
             child.child_id || '',
@@ -160,6 +163,11 @@ const AdminChildrenList = () => {
             calculateAge(child.dob),
             child.gender || '',
             child.mobile || '',
+            `"${child.father_name || ''}"`,
+            `"${child.mother_name || ''}"`,
+            `"${child.gram_sabha || ''}"`,
+            `"${child.hamlet || ''}"`,
+            `"${child.remarks || ''}"`,
             child.status || '',
             child.last_login ? new Date(child.last_login).toLocaleString() : 'Never'
         ]);
@@ -289,7 +297,7 @@ const AdminChildrenList = () => {
                         <div style={{ overflowX: 'auto' }}>
                             <table className="admin-table" aria-label="Children Table">
                                 <thead>
-                                    <tr>
+                                    <tr style={{ whiteSpace: 'nowrap' }}>
                                         <th>#</th>
                                         <th style={{ width: '56px' }}>Photo</th>
                                         <th onClick={() => requestSort('child_id')} style={{cursor: 'pointer'}}>Child Unique ID{getSortIndicator('child_id')}</th>
@@ -298,6 +306,11 @@ const AdminChildrenList = () => {
                                         <th onClick={() => requestSort('age')} style={{cursor: 'pointer'}}>Age{getSortIndicator('age')}</th>
                                         <th onClick={() => requestSort('gender')} style={{cursor: 'pointer'}}>Gender{getSortIndicator('gender')}</th>
                                         <th onClick={() => requestSort('mobile')} style={{cursor: 'pointer'}}>Mobile{getSortIndicator('mobile')}</th>
+                                        <th onClick={() => requestSort('father_name')} style={{cursor: 'pointer'}}>Father{getSortIndicator('father_name')}</th>
+                                        <th onClick={() => requestSort('mother_name')} style={{cursor: 'pointer'}}>Mother{getSortIndicator('mother_name')}</th>
+                                        <th onClick={() => requestSort('gram_sabha')} style={{cursor: 'pointer'}}>Gram Sabha{getSortIndicator('gram_sabha')}</th>
+                                        <th onClick={() => requestSort('hamlet')} style={{cursor: 'pointer'}}>Hamlet{getSortIndicator('hamlet')}</th>
+                                        <th onClick={() => requestSort('remarks')} style={{cursor: 'pointer'}}>Remarks{getSortIndicator('remarks')}</th>
                                         <th onClick={() => requestSort('created_at')} style={{cursor: 'pointer'}}>Add Date{getSortIndicator('created_at')}</th>
                                         <th onClick={() => requestSort('last_login')} style={{ textAlign: 'left', cursor: 'pointer' }}>Last Login{getSortIndicator('last_login')}</th>
                                         <th onClick={() => requestSort('status')} style={{cursor: 'pointer'}}>Status{getSortIndicator('status')}</th>
@@ -325,9 +338,14 @@ const AdminChildrenList = () => {
                                                 <td>{child.name}</td>
                                                 {/* Ensure date format visually matches 2018-05-10 safely */}
                                                 <td>{child.dob ? new Date(child.dob).toISOString().split('T')[0] : ''}</td>
-                                                <td>{calculateAge(child.dob)}</td>
+                                                <td style={{ whiteSpace: 'nowrap' }}>{calculateAge(child.dob)}</td>
                                                 <td style={{ textTransform: 'capitalize' }}>{child.gender}</td>
                                                 <td>{child.mobile}</td>
+                                                <td>{child.father_name || '—'}</td>
+                                                <td>{child.mother_name || '—'}</td>
+                                                <td>{child.gram_sabha || '—'}</td>
+                                                <td>{child.hamlet || '—'}</td>
+                                                <td>{child.remarks || '—'}</td>
                                                 <td style={{ whiteSpace: 'nowrap', color: '#374151', fontSize: '13px' }}>
                                                     {child.created_at
                                                         ? new Date(child.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })

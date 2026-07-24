@@ -27,7 +27,7 @@ const deletePhoto = (filename) => {
 exports.getAllChildren = async (req, res) => {
     try {
         const [children] = await pool.query(`
-            SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.status, c.photo, c.created_at,
+            SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo, c.created_at,
                    (SELECT login_time FROM login_sessions ls
                     WHERE ls.child_id = c.child_id AND ls.status = 'success'
                     ORDER BY login_time DESC LIMIT 1) AS last_login
@@ -44,12 +44,17 @@ exports.getAllChildren = async (req, res) => {
 // @route   POST /api/admin/children
 exports.addChild = async (req, res) => {
     try {
-        const { child_id, name, dob, gender, mobile } = req.body;
+        const { child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet } = req.body;
 
-        if (!child_id || !name || !dob || !gender || !mobile) {
+        if (!child_id || !name || !dob || !gender || !mobile || !father_name || !mother_name) {
             // Clean up any uploaded file on validation failure
             if (req.file) fs.unlinkSync(req.file.path);
-            return res.status(400).json({ message: 'All fields are required.' });
+            return res.status(400).json({ message: 'Child ID, name, DOB, gender, mobile, father name, and mother name are required.' });
+        }
+
+        if (father_name.trim().length > 225 || mother_name.trim().length > 225) {
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ message: 'Father name and Mother name cannot exceed 225 characters.' });
         }
         
         // Check if child_id already exists
@@ -60,8 +65,8 @@ exports.addChild = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            'INSERT INTO children (child_id, name, dob, gender, mobile, status) VALUES (?, ?, ?, ?, ?, ?)',
-            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim(), 'active']
+            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), 'active']
         );
 
         const childIdStr = child_id.trim();
@@ -90,7 +95,7 @@ exports.getChildById = async (req, res) => {
     try {
         const { childId } = req.params;
         const [rows] = await pool.query(
-            'SELECT child_id, name, dob, gender, mobile, status, photo FROM children WHERE child_id = ?',
+            'SELECT child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, photo FROM children WHERE child_id = ?',
             [childId]
         );
 
@@ -112,9 +117,9 @@ exports.updateChild = async (req, res) => {
         await connection.beginTransaction();
 
         const { childId } = req.params;
-        const { new_child_id, name, dob, gender, mobile, status } = req.body;
+        const { new_child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status } = req.body;
 
-        const [oldRecord] = await connection.query('SELECT id, child_id, name, dob, gender, mobile, status, photo FROM children WHERE child_id = ?', [childId]);
+        const [oldRecord] = await connection.query('SELECT id, child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, photo FROM children WHERE child_id = ?', [childId]);
         if (oldRecord.length === 0) {
             if (req.file) fs.unlinkSync(req.file.path);
             await connection.rollback();
@@ -122,10 +127,16 @@ exports.updateChild = async (req, res) => {
         }
         const oldData = oldRecord[0];
 
-        if (!name || !dob || !gender || !mobile || !status) {
+        if (!new_child_id || !name || !dob || !gender || !mobile || !father_name || !mother_name) {
             if (req.file) fs.unlinkSync(req.file.path);
             await connection.rollback();
-            return res.status(400).json({ message: 'All fields are required.' });
+            return res.status(400).json({ message: 'Child ID, name, DOB, gender, mobile, father name, and mother name are required.' });
+        }
+
+        if (father_name.trim().length > 225 || mother_name.trim().length > 225) {
+            if (req.file) fs.unlinkSync(req.file.path);
+            await connection.rollback();
+            return res.status(400).json({ message: 'Father name and Mother name cannot exceed 225 characters.' });
         }
 
         let targetChildId = childId;
@@ -147,8 +158,8 @@ exports.updateChild = async (req, res) => {
 
             // Update main table child_id along with other fields
             const [result] = await connection.query(
-                'UPDATE children SET child_id = ?, name = ?, dob = ?, gender = ?, mobile = ?, status = ? WHERE child_id = ?',
-                [trimmedNewId, name.trim(), dob, gender.trim(), mobile.trim(), status, childId]
+                'UPDATE children SET child_id = ?, name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ? WHERE child_id = ?',
+                [trimmedNewId, name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, childId]
             );
 
             if (result.affectedRows === 0) {
@@ -160,8 +171,8 @@ exports.updateChild = async (req, res) => {
             targetChildId = trimmedNewId;
         } else {
             const [result] = await connection.query(
-                'UPDATE children SET name = ?, dob = ?, gender = ?, mobile = ?, status = ? WHERE child_id = ?',
-                [name.trim(), dob, gender.trim(), mobile.trim(), status, childId]
+                'UPDATE children SET name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ? WHERE child_id = ?',
+                [name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, childId]
             );
 
             if (result.affectedRows === 0) {
@@ -211,6 +222,21 @@ exports.updateChild = async (req, res) => {
         }
         if (status !== oldData.status) {
             logs.push(['Status', oldData.status, status]);
+        }
+        if ((father_name || '').trim() !== (oldData.father_name || '')) {
+            logs.push(['Father Name', oldData.father_name || '', (father_name || '').trim()]);
+        }
+        if ((mother_name || '').trim() !== (oldData.mother_name || '')) {
+            logs.push(['Mother Name', oldData.mother_name || '', (mother_name || '').trim()]);
+        }
+        if ((remarks || '').trim() !== (oldData.remarks || '')) {
+            logs.push(['Remarks', oldData.remarks || '', (remarks || '').trim()]);
+        }
+        if ((gram_sabha || '').trim() !== (oldData.gram_sabha || '')) {
+            logs.push(['Gram Sabha', oldData.gram_sabha || '', (gram_sabha || '').trim()]);
+        }
+        if ((hamlet || '').trim() !== (oldData.hamlet || '')) {
+            logs.push(['Hamlet Name', oldData.hamlet || '', (hamlet || '').trim()]);
         }
         if (req.file && newFilename !== oldData.photo) {
             logs.push(['Photo', oldData.photo || 'None', newFilename]);

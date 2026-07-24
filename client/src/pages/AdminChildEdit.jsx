@@ -7,7 +7,7 @@ const AdminChildEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [formData, setFormData] = useState({ new_child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', status: 'active' });
+    const [formData, setFormData] = useState({ new_child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '', status: 'active' });
     const [currentPhoto, setCurrentPhoto] = useState(null);  // filename from DB
     const [photoFile, setPhotoFile]       = useState(null);  // new File selected
     const [errors, setErrors]     = useState({});
@@ -29,16 +29,29 @@ const AdminChildEdit = () => {
     };
 
     const calculateAge = (dobString) => {
-        if (!dobString) return '';
+        if (!dobString) return null;
         const dobDate = new Date(dobString);
-        if (isNaN(dobDate.getTime())) return ''; // invalid date like Feb 30
-        let age = today.getFullYear() - dobDate.getFullYear();
-        const m = today.getMonth() - dobDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
-            age--;
+        if (isNaN(dobDate.getTime())) return null;
+        
+        let years = today.getFullYear() - dobDate.getFullYear();
+        let months = today.getMonth() - dobDate.getMonth();
+        let days = today.getDate() - dobDate.getDate();
+
+        if (days < 0) {
+            months--;
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
         }
-        return `${age} years old`;
+        
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        
+        return { years, months, days };
     };
+
+    const currentAge = calculateAge(getDobString());
 
     useEffect(() => { 
         fetchChildDetails(); 
@@ -71,6 +84,11 @@ const AdminChildEdit = () => {
                 dobDay, dobMonth, dobYear,
                 gender: data.gender || '',
                 mobile: data.mobile || '',
+                father_name: data.father_name || '',
+                mother_name: data.mother_name || '',
+                remarks: data.remarks || '',
+                gram_sabha: data.gram_sabha || '',
+                hamlet: data.hamlet || '',
                 status: data.status || 'active',
             });
             setCurrentPhoto(data.photo || null);
@@ -87,11 +105,25 @@ const AdminChildEdit = () => {
         const e = {};
         if (!formData.new_child_id?.trim())                e.new_child_id = 'Child ID is required.';
         if (!formData.name.trim())                         e.name   = 'Name is required.';
+        if (!formData.father_name.trim())                  e.father_name = 'Father Name is required.';
+        else if (formData.father_name.trim().length > 225) e.father_name = 'Father Name cannot exceed 225 characters.';
+        if (!formData.mother_name.trim())                  e.mother_name = 'Mother Name is required.';
+        else if (formData.mother_name.trim().length > 225) e.mother_name = 'Mother Name cannot exceed 225 characters.';
+
         const dobStr = getDobString();
-        if (!dobStr)                                        e.dob    = 'Date of birth is required.';
-        else if (isNaN(new Date(dobStr).getTime()))         e.dob    = 'Invalid date.';
-        else if (dobStr < minDate || dobStr > maxDate)
-                                                            e.dob    = 'Child must be between 7 and 15 years old.';
+        if (!dobStr) {
+            e.dob = 'Date of birth is required.';
+        } else {
+            const dobDate = new Date(dobStr);
+            if (isNaN(dobDate.getTime())) {
+                e.dob = 'Invalid date';
+            } else {
+                const currentAgeObj = calculateAge(dobStr);
+                if (currentAgeObj && (currentAgeObj.years < 7 || currentAgeObj.years > 15 || (currentAgeObj.years === 15 && (currentAgeObj.months > 0 || currentAgeObj.days > 0)))) {
+                    e.dob = 'Child must be between 7 and 15 years old.';
+                }
+            }
+        }
         if (!formData.gender)                              e.gender = 'Gender is required.';
         if (!/^[0-9]{10}$/.test(formData.mobile))         e.mobile = 'Enter a valid 10-digit mobile number.';
         setErrors(e);
@@ -115,7 +147,12 @@ const AdminChildEdit = () => {
             data.append('name',   formData.name.trim());
             data.append('dob',    getDobString());
             data.append('gender', formData.gender);
-            data.append('mobile', formData.mobile);
+            data.append('mobile', formData.mobile.trim());
+            data.append('father_name', formData.father_name.trim());
+            data.append('mother_name', formData.mother_name.trim());
+            data.append('remarks', formData.remarks.trim());
+            data.append('gram_sabha', formData.gram_sabha.trim());
+            data.append('hamlet', formData.hamlet.trim());
             data.append('status', formData.status);
             if (photoFile) data.append('photo', photoFile);
 
@@ -203,7 +240,11 @@ const AdminChildEdit = () => {
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
                             <span>Date of Birth *</span>
-                            {getDobString() && <span style={{ color: '#4f46e5', fontWeight: 'bold' }}>{calculateAge(getDobString())}</span>}
+                            {currentAge !== null && currentAge.years >= 0 && (
+                                <span style={{ color: '#4f46e5', fontWeight: 'bold' }}>
+                                    {currentAge.years}y {currentAge.months}m {currentAge.days}d
+                                </span>
+                            )}
                         </label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <select id="dobDay" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobDay} onChange={handleInputChange}>
@@ -216,7 +257,7 @@ const AdminChildEdit = () => {
                             </select>
                             <select id="dobYear" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobYear} onChange={handleInputChange}>
                                 <option value="">Year</option>
-                                {[...Array(9)].map((_, i) => {
+                                {[...Array(15)].map((_, i) => {
                                     const y = today.getFullYear() - 15 + i;
                                     return <option key={y} value={String(y)}>{y}</option>;
                                 })}
@@ -240,6 +281,33 @@ const AdminChildEdit = () => {
                         <label htmlFor="mobile" style={{ fontSize: '13px', fontWeight: 'bold' }}>Mobile Number *</label>
                         <input id="mobile" type="tel" placeholder="10-digit mobile number" inputMode="numeric" style={fieldStyle('mobile')} value={formData.mobile} onChange={handleInputChange} />
                         {errors.mobile && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.mobile}</div>}
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="father_name" style={{ fontSize: '13px', fontWeight: 'bold' }}>Father Name *</label>
+                        <input id="father_name" type="text" placeholder="Enter father name" style={fieldStyle('father_name')} value={formData.father_name} onChange={handleInputChange} maxLength={225} />
+                        {errors.father_name && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.father_name}</div>}
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="mother_name" style={{ fontSize: '13px', fontWeight: 'bold' }}>Mother Name *</label>
+                        <input id="mother_name" type="text" placeholder="Enter mother name" style={fieldStyle('mother_name')} value={formData.mother_name} onChange={handleInputChange} maxLength={225} />
+                        {errors.mother_name && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.mother_name}</div>}
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="gram_sabha" style={{ fontSize: '13px', fontWeight: 'bold' }}>Gram Sabha</label>
+                        <input id="gram_sabha" type="text" placeholder="Enter Gram Sabha" style={fieldStyle('gram_sabha')} value={formData.gram_sabha} onChange={handleInputChange} />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="hamlet" style={{ fontSize: '13px', fontWeight: 'bold' }}>Hamlet Name</label>
+                        <input id="hamlet" type="text" placeholder="Enter Hamlet Name" style={fieldStyle('hamlet')} value={formData.hamlet} onChange={handleInputChange} />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="remarks" style={{ fontSize: '13px', fontWeight: 'bold' }}>Remarks</label>
+                        <input id="remarks" type="text" placeholder="Enter remarks" style={fieldStyle('remarks')} value={formData.remarks} onChange={handleInputChange} />
                     </div>
 
                     <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>

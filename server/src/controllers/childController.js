@@ -16,12 +16,17 @@ const finalizePhoto = (tmpFile, childId) => {
 // @access  Public
 const registerChild = async (req, res) => {
     try {
-        const { child_id, name, dob, gender, mobile } = req.body;
+        const { child_id, name, dob, gender, mobile, father_name, mother_name } = req.body;
 
         // Basic Validation
-        if (!child_id || !name || !dob || !gender || !mobile) {
+        if (!name || !dob || !gender || !mobile || !father_name || !mother_name) {
             if (req.file) fs.unlinkSync(req.file.path);
-            return res.status(400).json({ message: 'All fields are required.' });
+            return res.status(400).json({ message: 'Name, date of birth, gender, mobile, father name, and mother name are required.' });
+        }
+        
+        if (father_name.trim().length > 225 || mother_name.trim().length > 225) {
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ message: 'Father name and Mother name cannot exceed 225 characters.' });
         }
 
         if (mobile.trim().length !== 10) {
@@ -36,18 +41,24 @@ const registerChild = async (req, res) => {
         }
 
         // Check uniqueness
-        const [existing] = await pool.query('SELECT id FROM children WHERE child_id = ?', [child_id.trim()]);
-        if (existing.length > 0) {
-            if (req.file) fs.unlinkSync(req.file.path);
-            return res.status(400).json({ message: 'Child ID already exists. Please choose a unique ID.' });
+        if (child_id) {
+            const [existing] = await pool.query('SELECT id FROM children WHERE child_id = ?', [child_id.trim()]);
+            if (existing.length > 0) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ message: 'Child ID already exists. Please choose a unique ID.' });
+            }
         }
 
+        const remarks = req.body.remarks || '';
+        const gram_sabha = req.body.gram_sabha || '';
+        const hamlet = req.body.hamlet || '';
+
         const [result] = await pool.query(
-            'INSERT INTO children (child_id, name, dob, gender, mobile) VALUES (?, ?, ?, ?, ?)',
-            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim()]
+            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [child_id ? child_id.trim() : null, name.trim(), dob, gender.trim(), mobile.trim(), father_name.trim(), mother_name.trim(), remarks.trim(), gram_sabha.trim(), hamlet.trim()]
         );
 
-        const childIdStr = child_id.trim();
+        const childIdStr = child_id ? child_id.trim() : result.insertId.toString();
 
         // Optional photo upload
         if (req.file) {
