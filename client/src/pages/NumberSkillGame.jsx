@@ -397,7 +397,7 @@ const NumberSkillGame = () => {
         axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
           score: upScores.filter(s => s.score === 1).length,
           progress_level: questionIndex + 1,
-          status: 'completed',
+          status: shouldStop ? 'dropped' : 'completed',
           saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
         }).then(() => {
           setTimeout(generateAndUploadPDF, 1500);
