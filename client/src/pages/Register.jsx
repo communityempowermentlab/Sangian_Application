@@ -7,14 +7,31 @@ import { useLanguage } from '../contexts/LanguageContext';
 const Register = () => {
     const { t } = useLanguage();
     const [photoFile, setPhotoFile] = useState(null);
-    const [formData, setFormData] = useState({ name: '', dob: '', gender: '', mobile: '' });
+    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '' });
     const [errors, setErrors] = useState({});
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const today = new Date();
-    const maxDate = new Date(today.getFullYear() - 8,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
-    const minDate = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const maxDate = new Date(today.getFullYear() - 7,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const minDate = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+
+    const getDobString = () => {
+        if (!formData.dobYear || !formData.dobMonth || !formData.dobDay) return '';
+        return `${formData.dobYear}-${formData.dobMonth.padStart(2, '0')}-${formData.dobDay.padStart(2, '0')}`;
+    };
+
+    const calculateAge = (dobString) => {
+        if (!dobString) return null;
+        const dobDate = new Date(dobString);
+        if (isNaN(dobDate.getTime())) return null;
+        let age = today.getFullYear() - dobDate.getFullYear();
+        const m = today.getMonth() - dobDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+        return age;
+    };
+    
+    const currentAge = calculateAge(getDobString());
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,15 +41,18 @@ const Register = () => {
 
     const validateForm = () => {
         const newErrors = {};
+        if (!formData.child_id.trim()) newErrors.child_id = t('register.errChildId') || 'Child ID is required';
         if (!formData.name.trim()) newErrors.name = t('register.errName');
-        if (!formData.dob) {
+        const dobStr = getDobString();
+        if (!dobStr) {
             newErrors.dob = t('register.errDobRequired');
         } else {
-            const dobDate = new Date(formData.dob);
-            let age = today.getFullYear() - dobDate.getFullYear();
-            const m = today.getMonth() - dobDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
-            if (age < 8 || age >= 11) newErrors.dob = t('register.errDobAge');
+            const dobDate = new Date(dobStr);
+            if (isNaN(dobDate.getTime())) {
+                newErrors.dob = 'Invalid date';
+            } else if (dobStr < minDate || dobStr > maxDate) {
+                newErrors.dob = t('register.errDobAge') || 'Child must be between 7 and 15 years old.';
+            }
         }
         if (!formData.gender) newErrors.gender = t('register.errGender');
         if (!formData.mobile) {
@@ -51,19 +71,24 @@ const Register = () => {
         setStatusMsg({ type: '', text: '' });
         try {
             const data = new FormData();
+            data.append('child_id', formData.child_id.trim());
             data.append('name',   formData.name.trim());
-            data.append('dob',    formData.dob);
+            data.append('dob',    getDobString());
             data.append('gender', formData.gender);
             data.append('mobile', formData.mobile);
             if (photoFile) data.append('photo', photoFile);
             const response = await axios.post(API_URL + '/children/register', data);
             const generatedId = response.data.childId;
             setStatusMsg({ type: 'success', text: t('register.successMsg').replace('{id}', generatedId) });
-            setFormData({ name: '', dob: '', gender: '', mobile: '' });
+            setFormData({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '' });
             setPhotoFile(null);
         } catch (err) {
             const msg = err.response?.data?.message || t('register.errGeneral');
-            setStatusMsg({ type: 'error', text: msg });
+            if (msg.toLowerCase().includes('already exists')) {
+                setErrors({ ...errors, child_id: msg });
+            } else {
+                setStatusMsg({ type: 'error', text: msg });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -105,6 +130,17 @@ const Register = () => {
                             </div>
 
                             <div className="form-group">
+                                <label htmlFor="child_id">{t('register.childIdLabel') || 'Child Unique ID'}<span className="required">*</span></label>
+                                <input
+                                    type="text" id="child_id" name="child_id"
+                                    value={formData.child_id} onChange={handleChange}
+                                    placeholder={t('register.childIdPlaceholder') || 'Enter unique ID'}
+                                    className={errors.child_id ? 'input-error' : ''} required
+                                />
+                                <p className="field-error">{errors.child_id}</p>
+                            </div>
+
+                            <div className="form-group">
                                 <label htmlFor="name">{t('register.nameLabel')}<span className="required">*</span></label>
                                 <input
                                     type="text" id="name" name="name"
@@ -116,13 +152,31 @@ const Register = () => {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="dob">{t('register.dobLabel')}<span className="required">*</span></label>
-                                <input
-                                    type="date" id="dob" name="dob"
-                                    value={formData.dob} onChange={handleChange}
-                                    min={minDate} max={maxDate}
-                                    className={errors.dob ? 'input-error' : ''} required
-                                />
+                                <label>
+                                    {t('register.dobLabel')}<span className="required">*</span>
+                                    {currentAge !== null && currentAge >= 0 && (
+                                        <span style={{ marginLeft: '8px', fontWeight: 'normal', color: '#4b5563', fontSize: '13px' }}>
+                                            (Age: {currentAge} {currentAge === 1 ? 'year' : 'years'})
+                                        </span>
+                                    )}
+                                </label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <select name="dobDay" className={errors.dob ? 'input-error' : ''} style={{ flex: 1, padding: '10px' }} value={formData.dobDay} onChange={handleChange}>
+                                        <option value="">Day</option>
+                                        {[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1)}>{i+1}</option>)}
+                                    </select>
+                                    <select name="dobMonth" className={errors.dob ? 'input-error' : ''} style={{ flex: 1, padding: '10px' }} value={formData.dobMonth} onChange={handleChange}>
+                                        <option value="">Month</option>
+                                        {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => <option key={i+1} value={String(i+1)}>{m}</option>)}
+                                    </select>
+                                    <select name="dobYear" className={errors.dob ? 'input-error' : ''} style={{ flex: 1, padding: '10px' }} value={formData.dobYear} onChange={handleChange}>
+                                        <option value="">Year</option>
+                                        {[...Array(9)].map((_, i) => {
+                                            const y = today.getFullYear() - 15 + i;
+                                            return <option key={y} value={String(y)}>{y}</option>;
+                                        })}
+                                    </select>
+                                </div>
                                 <p className="field-error">{errors.dob}</p>
                             </div>
 

@@ -16,10 +16,10 @@ const finalizePhoto = (tmpFile, childId) => {
 // @access  Public
 const registerChild = async (req, res) => {
     try {
-        const { name, dob, gender, mobile } = req.body;
+        const { child_id, name, dob, gender, mobile } = req.body;
 
         // Basic Validation
-        if (!name || !dob || !gender || !mobile) {
+        if (!child_id || !name || !dob || !gender || !mobile) {
             if (req.file) fs.unlinkSync(req.file.path);
             return res.status(400).json({ message: 'All fields are required.' });
         }
@@ -35,13 +35,19 @@ const registerChild = async (req, res) => {
             return res.status(400).json({ message: 'Invalid Date of Birth.' });
         }
 
+        // Check uniqueness
+        const [existing] = await pool.query('SELECT id FROM children WHERE child_id = ?', [child_id.trim()]);
+        if (existing.length > 0) {
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ message: 'Child ID already exists. Please choose a unique ID.' });
+        }
+
         const [result] = await pool.query(
-            'INSERT INTO children (name, dob, gender, mobile) VALUES (?, ?, ?, ?)',
-            [name.trim(), dob, gender.trim(), mobile.trim()]
+            'INSERT INTO children (child_id, name, dob, gender, mobile) VALUES (?, ?, ?, ?, ?)',
+            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim()]
         );
 
-        const childIdStr = 'CH' + String(result.insertId).padStart(3, '0');
-        await pool.query('UPDATE children SET child_id = ? WHERE id = ?', [childIdStr, result.insertId]);
+        const childIdStr = child_id.trim();
 
         // Optional photo upload
         if (req.file) {

@@ -35,6 +35,7 @@ router.get('/children/:childId/sessions', adminAuth, adminChildController.getChi
 router.get('/children/:childId',          adminAuth, adminChildController.getChildById);
 router.put('/children/:childId',          adminAuth, upload.single('photo'), adminChildController.updateChild);
 router.put('/children/:childId/status',   adminAuth, adminChildController.toggleStatus);
+router.get('/children/:childId/logs',     adminAuth, adminChildController.getChildLogs);
 
 // Assessor management
 router.get('/assessors',      adminAuth, adminAssessorController.getAllAssessors);

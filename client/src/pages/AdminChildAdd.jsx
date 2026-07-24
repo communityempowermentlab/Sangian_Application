@@ -5,22 +5,42 @@ import ChildPhotoUpload from '../components/ChildPhotoUpload';
 
 const AdminChildAdd = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ name: '', dob: '', gender: '', mobile: '' });
+    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '' });
     const [photoFile, setPhotoFile]   = useState(null);
     const [errors, setErrors]         = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
 
     const today      = new Date();
-    const maxDate    = new Date(today.getFullYear() - 8,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
-    const minDate    = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const maxDate    = new Date(today.getFullYear() - 7,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const minDate    = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+
+    const getDobString = () => {
+        if (!formData.dobYear || !formData.dobMonth || !formData.dobDay) return '';
+        return `${formData.dobYear}-${formData.dobMonth.padStart(2, '0')}-${formData.dobDay.padStart(2, '0')}`;
+    };
+
+    const calculateAge = (dobString) => {
+        if (!dobString) return '';
+        const dobDate = new Date(dobString);
+        if (isNaN(dobDate.getTime())) return ''; // invalid date like Feb 30
+        let age = today.getFullYear() - dobDate.getFullYear();
+        const m = today.getMonth() - dobDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+            age--;
+        }
+        return `${age} years old`;
+    };
 
     const validate = () => {
         const e = {};
+        if (!formData.child_id.trim())                      e.child_id = 'Child ID is required.';
         if (!formData.name.trim())                          e.name   = 'Name is required.';
-        if (!formData.dob)                                  e.dob    = 'Date of birth is required.';
-        else if (formData.dob < minDate || formData.dob > maxDate)
-                                                            e.dob    = 'Child must be between 8 and 10 years old.';
+        const dobStr = getDobString();
+        if (!dobStr)                                        e.dob    = 'Date of birth is required.';
+        else if (isNaN(new Date(dobStr).getTime()))         e.dob    = 'Invalid date.';
+        else if (dobStr < minDate || dobStr > maxDate)
+                                                            e.dob    = 'Child must be between 7 and 15 years old.';
         if (!formData.gender)                               e.gender = 'Gender is required.';
         if (!/^[0-9]{10}$/.test(formData.mobile))          e.mobile = 'Enter a valid 10-digit mobile number.';
         setErrors(e);
@@ -41,18 +61,24 @@ const AdminChildAdd = () => {
         try {
             // Use FormData to support optional photo upload
             const data = new FormData();
+            data.append('child_id', formData.child_id.trim());
             data.append('name',   formData.name.trim());
-            data.append('dob',    formData.dob);
+            data.append('dob',    getDobString());
             data.append('gender', formData.gender);
             data.append('mobile', formData.mobile);
             if (photoFile) data.append('photo', photoFile);
 
             const response = await axiosAdmin.post('/admin/children', data);
-            setSuccessMsg(`Child registered successfully! Generated ID: ${response.data.child_id}`);
+            setSuccessMsg(`Child registered successfully! ID: ${response.data.child_id}`);
             setTimeout(() => navigate('/admin/children'), 1200);
         } catch (error) {
             console.error('Add child error:', error);
-            alert(error.response?.data?.message || 'Failed to add child.');
+            const msg = error.response?.data?.message;
+            if (msg && msg.toLowerCase().includes('already exists')) {
+                setErrors({ ...errors, child_id: msg });
+            } else {
+                alert(msg || 'Failed to add child.');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -71,7 +97,7 @@ const AdminChildAdd = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <div>
                         <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>Add New Child</h3>
-                        <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>Enter child details. Unique ID will be generated after saving.</p>
+                        <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>Enter child details below.</p>
                     </div>
                     <Link to="/admin/children" className="admin-btn admin-btn-ghost" style={{ padding: '8px 16px' }}>← Back to List</Link>
                 </div>
@@ -91,14 +117,39 @@ const AdminChildAdd = () => {
                     </div>
 
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label htmlFor="child_id" style={{ fontSize: '13px', fontWeight: 'bold' }}>Child Unique ID *</label>
+                        <input id="child_id" type="text" placeholder="Enter unique ID (e.g., CH001)" style={fieldStyle('child_id')} value={formData.child_id} onChange={handleInputChange} />
+                        {errors.child_id && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.child_id}</div>}
+                    </div>
+
+                    <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label htmlFor="name" style={{ fontSize: '13px', fontWeight: 'bold' }}>Child's Full Name *</label>
                         <input id="name" type="text" placeholder="Enter full name" style={fieldStyle('name')} value={formData.name} onChange={handleInputChange} />
                         {errors.name && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.name}</div>}
                     </div>
 
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="dob" style={{ fontSize: '13px', fontWeight: 'bold' }}>Date of Birth *</label>
-                        <input id="dob" type="date" min={minDate} max={maxDate} style={fieldStyle('dob')} value={formData.dob} onChange={handleInputChange} />
+                        <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Date of Birth *</span>
+                            {getDobString() && <span style={{ color: '#4f46e5', fontWeight: 'bold' }}>{calculateAge(getDobString())}</span>}
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <select id="dobDay" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobDay} onChange={handleInputChange}>
+                                <option value="">Day</option>
+                                {[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1)}>{i+1}</option>)}
+                            </select>
+                            <select id="dobMonth" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobMonth} onChange={handleInputChange}>
+                                <option value="">Month</option>
+                                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => <option key={i+1} value={String(i+1)}>{m}</option>)}
+                            </select>
+                            <select id="dobYear" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobYear} onChange={handleInputChange}>
+                                <option value="">Year</option>
+                                {[...Array(9)].map((_, i) => {
+                                    const y = today.getFullYear() - 15 + i;
+                                    return <option key={y} value={String(y)}>{y}</option>;
+                                })}
+                            </select>
+                        </div>
                         {errors.dob && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.dob}</div>}
                     </div>
 
@@ -123,7 +174,6 @@ const AdminChildAdd = () => {
                         <button className="admin-btn admin-btn-primary" type="submit" disabled={isSubmitting} style={{ width: 'auto', minWidth: '150px' }}>
                             {isSubmitting ? 'Saving...' : 'Save Child'}
                         </button>
-                        <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>Child Unique ID will be auto-generated after saving.</div>
                     </div>
 
                 </form>
