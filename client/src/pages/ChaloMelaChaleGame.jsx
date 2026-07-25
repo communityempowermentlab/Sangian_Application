@@ -2200,9 +2200,10 @@ const ChaloMelaChaleGame = () => {
       )}
 
       {isPaused && <div style={{ position: 'fixed', inset: 0, zIndex: 999, cursor: 'not-allowed' }} />}
-      <audio 
-        ref={audioRef} 
+      <audio
+        ref={audioRef}
         src={screen === 'splash' ? `${AUDIO_DIR}/splash.wav` : undefined}
+        preload="auto"
         onEnded={() => setAudioFinished(true)}
       />
     </div>
