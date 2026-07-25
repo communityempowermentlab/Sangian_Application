@@ -13,6 +13,8 @@ import './NumberRecallGameV2.css';
 // ─── Game Name ─────────────────────────────────────────────────
 const GAME_NAME = 'number_recall_lottery_v2';
 const TOTAL_SCORED_QUESTIONS = 20;
+const TEACHING_QUESTION_COUNT = 2;
+const TOTAL_ALL_QUESTIONS = TOTAL_SCORED_QUESTIONS + TEACHING_QUESTION_COUNT;
 const MAX_CONSECUTIVE_WRONG = 3;
 
 // ─── Asset Paths ───────────────────────────────────────────────
@@ -190,7 +192,7 @@ const NumpadPanel = ({
 };
 
 // ─── Teaching Screen Sub-Component ──────────────────────────────
-const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachingAudioSrc, nextLabel, nextIcon, onNext }) => {
+const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachingAudioSrc, nextLabel, nextIcon, onNext, onScored }) => {
   const { t } = useLanguage();
   const { displayUserInputString } = useResponseMatching();
   const [selected, setSelected] = useState([]);
@@ -289,6 +291,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
 
     if (!firstAttemptDone) {
       setFirstAttemptDone(true);
+      onScored && onScored(sel, correct_); // Score is locked to the first attempt only
       if (!correct_ && teachingAudioSrc) {
         setIsWaiting(true);
         playTeachingAudio();
@@ -365,6 +368,7 @@ const NumberRecallGameV2 = () => {
   const [screen, setScreen] = useState('splash'); // splash | practice | teaching1 | teaching2 | game | score
   const [questionIndex, setQuestionIndex] = useState(0);
   const [allScores, setAllScores] = useState([]);
+  const [teachingScores, setTeachingScores] = useState([]);
   const [attemptNo, setAttemptNo] = useState(1);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [qTimer, setQTimer] = useState(0);
@@ -383,6 +387,7 @@ const NumberRecallGameV2 = () => {
   const questionIndexRef = useRef(0);
   const consecutiveWrongRef = useRef(0);
   const allScoresRef = useRef([]);
+  const teachingScoresRef = useRef([]);
   const qTimerRef = useRef(0);
   const gameSessionIdRef = useRef(null);
   const timerSecondsRef = useRef(0);
@@ -409,7 +414,7 @@ const NumberRecallGameV2 = () => {
   const audioRef = useRef(null);
 
   const sp = childData?.age ? getSP(childData.age) : '—';
-  const totalScore = allScores.filter(s => s.score === 1).length;
+  const totalScore = allScores.filter(s => s.score === 1).length + teachingScores.filter(s => s.score === 1).length;
 
   // ─── StatusBar: hide on native during this game ───────────────────────────
   useEffect(() => {
@@ -496,11 +501,47 @@ const NumberRecallGameV2 = () => {
   };
 
   // ── Splash audio autoplay ──────────────────────────────────
+  // Browsers (esp. iOS Safari/WKWebView, and Chromium under a strict
+  // autoplay policy) block a bare programmatic play() call that isn't
+  // inside a user-gesture handler. Some builds reject the returned promise;
+  // others just leave it pending forever without resolving OR rejecting —
+  // so we can't gate the fallback on that promise settling. Instead we
+  // arm a one-time "play on first interaction" listener unconditionally
+  // alongside the attempt, and disarm it if real autoplay does succeed.
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => setAudioFinished(true));
-    }
+    if (isCheckingSession || screen !== 'splash' || showResumeModal || audioFinished) return;
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+
+    const events = ['pointerdown', 'touchstart', 'keydown'];
+    let armed = true;
+
+    const clearFallbackListeners = () => {
+      events.forEach(evt => document.removeEventListener(evt, playOnFirstInteraction));
+    };
+    const playOnFirstInteraction = () => {
+      if (!armed) return;
+      armed = false;
+      clearFallbackListeners();
+      audioEl.currentTime = 0;
+      audioEl.play().catch(() => {});
+    };
+    const onPlaying = () => {
+      // Real autoplay succeeded — the interaction fallback is no longer needed.
+      armed = false;
+      clearFallbackListeners();
+    };
+
+    audioEl.addEventListener('playing', onPlaying);
+    events.forEach(evt => document.addEventListener(evt, playOnFirstInteraction, { once: true }));
+
+    audioEl.currentTime = 0;
+    audioEl.play().catch(() => {});
+
+    return () => {
+      audioEl.removeEventListener('playing', onPlaying);
+      clearFallbackListeners();
+    };
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Session timer ──────────────────────────────────────────
@@ -529,6 +570,7 @@ const NumberRecallGameV2 = () => {
   // ── Sync refs with state ───────────────────────────────────
   useEffect(() => { questionIndexRef.current = questionIndex; }, [questionIndex]);
   useEffect(() => { allScoresRef.current = allScores; }, [allScores]);
+  useEffect(() => { teachingScoresRef.current = teachingScores; }, [teachingScores]);
   useEffect(() => { qTimerRef.current = qTimer; }, [qTimer]);
   useEffect(() => { gameSessionIdRef.current = gameSessionId; }, [gameSessionId]);
   useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
@@ -560,7 +602,7 @@ const NumberRecallGameV2 = () => {
       const res = await axios.post(`${API_URL}/games/sessions/start`, {
         child_id: childData.child_id,
         game_name: GAME_NAME,
-        total_questions: TOTAL_SCORED_QUESTIONS,
+        total_questions: TOTAL_ALL_QUESTIONS,
       });
       setGameSessionId(res.data.sessionId);
       setAttemptNo(res.data.attempt_no || 1);
@@ -579,6 +621,8 @@ const NumberRecallGameV2 = () => {
     const saved = resumeData.saved_state || {};
     setQuestionIndex(saved.questionIndex || 0);
     setAllScores(saved.allScores || []);
+    setTeachingScores(saved.teachingScores || []);
+    teachingScoresRef.current = saved.teachingScores || [];
     setTimerSeconds(saved.timerSeconds || 0);
     setQTimer(saved.qTimer || 0);
     setPauses(saved.pauses || []);
@@ -590,6 +634,7 @@ const NumberRecallGameV2 = () => {
   const resetInternalState = () => {
     setQuestionIndex(0); questionIndexRef.current = 0;
     setAllScores([]); allScoresRef.current = [];
+    setTeachingScores([]); teachingScoresRef.current = [];
     setTimerSeconds(0); timerSecondsRef.current = 0;
     setQTimer(0); qTimerRef.current = 0;
     setPauses([]); pausesRef.current = [];
@@ -609,21 +654,40 @@ const NumberRecallGameV2 = () => {
         pausesRef.current = updatedPauses;
       }
       await axios.put(`${API_URL}/games/sessions/update/${gameSessionIdRef.current}`, {
-        score: allScoresRef.current.filter(s => s.score === 1).length,
+        score: allScoresRef.current.filter(s => s.score === 1).length + teachingScoresRef.current.filter(s => s.score === 1).length,
         progress_level: questionIndexRef.current + 1,
         status: statusOverride || 'in_progress',
         quit_reason: reason || null,
-        saved_state: { 
-          questionIndex: questionIndexRef.current, 
-          allScores: allScoresRef.current, 
-          timerSeconds: timerSecondsRef.current, 
-          qTimer: qTimerRef.current, 
-          pauses: updatedPauses, 
-          consecutiveWrong: consecutiveWrongRef.current 
+        saved_state: {
+          questionIndex: questionIndexRef.current,
+          allScores: allScoresRef.current,
+          teachingScores: teachingScoresRef.current,
+          timerSeconds: timerSecondsRef.current,
+          qTimer: qTimerRef.current,
+          pauses: updatedPauses,
+          consecutiveWrong: consecutiveWrongRef.current
         },
       });
     } catch (e) { console.error('Save error', e); }
   };
+
+  // Teaching Q1/Q2 are scored like standard questions — locked to the child's first
+  // attempt, before any teaching-audio correction is played (see TeachingScreen's onScored).
+  const recordTeachingScore = useCallback((qId, qLabel, correctAnswer, sel, isCorrect) => {
+    const entry = {
+      qId,
+      question: qLabel,
+      score: isCorrect ? 1 : 0,
+      attempts: 1,
+      duration_ms: null,
+      expected_response: correctAnswer.join(', '),
+      user_response: (sel || []).join(', '),
+      replayCount: 0,
+    };
+    const updated = [...teachingScoresRef.current, entry];
+    teachingScoresRef.current = updated;
+    setTeachingScores(updated);
+  }, []);
 
   // ── Scoring logic — uses refs to avoid stale closures ──────
   const handleCorrect = useCallback((sel, replays = 0) => {
@@ -759,6 +823,7 @@ const NumberRecallGameV2 = () => {
           saved_state: {
             questionIndex: allScoresRef.current.length,
             allScores: allScoresRef.current,
+            teachingScores: teachingScoresRef.current,
             timerSeconds: timerSecondsRef.current,
             pauses: pausesRef.current,
             consecutiveWrong: consecutiveWrongRef.current,
@@ -818,11 +883,14 @@ const NumberRecallGameV2 = () => {
     }
   };
 
-  const attempted = allScores.length;
-  const correct = allScores.filter(s => s.score === 1).length;
-  const wrong = allScores.filter(s => s.score === 0).length;
-  const accuracyPct = ((correct / questions.length) * 100).toFixed(1);
-  const totalTimeMs = allScores.reduce((acc, s) => acc + (s.duration_ms || 0) * 1000, 0);
+  // Teaching Q1/Q2 are treated as standard scored questions here: they're folded into
+  // the combined total, correct/incorrect counts, accuracy %, and the results table.
+  const combinedScores = [...teachingScores, ...allScores];
+  const attempted = combinedScores.length;
+  const correct = combinedScores.filter(s => s.score === 1).length;
+  const wrong = combinedScores.filter(s => s.score === 0).length;
+  const accuracyPct = ((correct / (questions.length + TEACHING_QUESTION_COUNT)) * 100).toFixed(1);
+  const totalTimeMs = combinedScores.reduce((acc, s) => acc + (s.duration_ms || 0) * 1000, 0);
   const avgTimeMs = attempted > 0 ? (totalTimeMs / attempted) : 0;
   
   if (!childData || isCheckingSession || !isConfigLoaded) return <div className="nr-loading">Loading / Syncing...</div>;
@@ -936,6 +1004,7 @@ const NumberRecallGameV2 = () => {
               nextLabel={t('game.teachingQ2Label')}
               nextIcon=""
               onNext={() => setScreen('teaching2')}
+              onScored={(sel, isCorrect) => recordTeachingScore('teaching1', 'Teaching 1', [2, 8], sel, isCorrect)}
             />
           </div>
         )}
@@ -953,6 +1022,7 @@ const NumberRecallGameV2 = () => {
               nextLabel={t('modal.startGame')}
               nextIcon=""
               onNext={() => setScreen('game')}
+              onScored={(sel, isCorrect) => recordTeachingScore('teaching2', 'Teaching 2', [5, 10], sel, isCorrect)}
             />
           </div>
         )}
@@ -1000,8 +1070,8 @@ const NumberRecallGameV2 = () => {
               <div className="nr-score-top">
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div className="nr-score-dial-container">
-                    <div className="nr-score-dial-big">{correct + wrong}</div>
-                    <div className="nr-score-dial-small">/ {TOTAL_SCORED_QUESTIONS}</div>
+                    <div className="nr-score-dial-big">{correct}</div>
+                    <div className="nr-score-dial-small">/ {TOTAL_ALL_QUESTIONS}</div>
                   </div>
                 </div>
 
@@ -1009,7 +1079,7 @@ const NumberRecallGameV2 = () => {
                   {[
                     { label: t('game.correctMetric'), val: correct, cls: 'green' },
                     { label: t('game.incorrectMetric'), val: wrong, cls: 'red' },
-                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '', info: true, sub: `${correct} / ${TOTAL_SCORED_QUESTIONS}` },
+                    { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, cls: '', info: true, sub: `${correct} / ${TOTAL_ALL_QUESTIONS}` },
                     { label: t('game.totalTimeMetric'), val: formatDurationMs(totalTimeMs), cls: '' },
                     { label: t('game.avgQMetric'), val: formatDurationMs(avgTimeMs), cls: '' },
                   ].map((m, i) => (
@@ -1041,7 +1111,7 @@ const NumberRecallGameV2 = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {allScores.map((s, i) => {
+                    {combinedScores.map((s, i) => {
                       const ok = s.score === 1;
                       return (
                         <tr key={i} className={ok ? 'nr-row-correct' : 'nr-row-incorrect'}>

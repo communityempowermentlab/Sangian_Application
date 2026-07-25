@@ -436,7 +436,7 @@ export const en = {
     "practiceQuestionLabel": "Practice Question",
     "submitResponse": "Submit",
     "notQuiteRight": "❌ Not quite right.",
-    "lotteryAccuracyTooltip": "Correct Answers ÷ Total Questions (20) × 100",
+    "lotteryAccuracyTooltip": "Correct Answers ÷ Total Questions (22) × 100",
     "restartTrial": "Restart Trial {n}?",
     "dictateReason": "Dictate Reason",
     "assessmentTitle": "Assessment",

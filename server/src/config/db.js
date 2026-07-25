@@ -995,24 +995,29 @@ const initDb = async () => {
     }
 
     const hpSeeds = [];
-    // Tools -> item0 (14)
-    for(let i=1; i<=14; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item0/${i}.png`, name: `${i}.png`, type: 'item0' });
+    // Each Her Pher category is capped at exactly 10 active images (see
+    // HerPherElements.jsx's CATEGORIES min/max). Seeding must match that cap —
+    // INSERT IGNORE below only skips a row if its (test_id, asset_type,
+    // language, file_name) key still exists, so seeding more than 10 here
+    // would silently resurrect deleted "extra" images on every server restart.
+    // Tools -> item0 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item0/${i}.png`, name: `${i}.png`, type: 'item0' });
     // Birds -> item1 (10)
     for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item1/${i}.png`, name: `${i}.png`, type: 'item1' });
     // Vegetables -> item2 (10)
     for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item2/${i}.png`, name: `${i}.png`, type: 'item2' });
-    // Sports -> item3 (14)
-    for(let i=1; i<=14; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item3/${i}.png`, name: `${i}.png`, type: 'item3' });
+    // Sports -> item3 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item3/${i}.png`, name: `${i}.png`, type: 'item3' });
     // Flowers -> item4 (10)
     for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item4/${i}.png`, name: `${i}.png`, type: 'item4' });
-    // Insects -> item5 (11)
-    for(let i=1; i<=11; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item5/${i}.png`, name: `${i}.png`, type: 'item5' });
-    // Household -> item6 (14)
-    for(let i=1; i<=14; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item6/${i}.png`, name: `${i}.png`, type: 'item6' });
-    // Animals -> item7 (14)
-    for(let i=1; i<=14; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item7/${i}.png`, name: `${i}.png`, type: 'item7' });
-    // Transport -> item8 (14)
-    for(let i=1; i<=14; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item8/${i}.png`, name: `${i}.png`, type: 'item8' });
+    // Insects -> item5 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item5/${i}.png`, name: `${i}.png`, type: 'item5' });
+    // Household -> item6 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item6/${i}.png`, name: `${i}.png`, type: 'item6' });
+    // Animals -> item7 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item7/${i}.png`, name: `${i}.png`, type: 'item7' });
+    // Transport -> item8 (10)
+    for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item8/${i}.png`, name: `${i}.png`, type: 'item8' });
 
     allSeeds.push({
       test_id: 'working_memory_herpher',

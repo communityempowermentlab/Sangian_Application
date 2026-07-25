@@ -10,8 +10,8 @@ const isLocalhost = Boolean(
 
 const LOCAL_BACKEND = process.env.REACT_APP_LOCAL_BACKEND === 'true';
 
-const API_URL = (isLocalhost && LOCAL_BACKEND)
-    ? 'http://localhost:5000/api'
+const API_URL = isLocalhost
+    ? 'http://localhost:5020/api'
     : 'https://sangianapi.celworld.org/api';
 
 export { API_URL };

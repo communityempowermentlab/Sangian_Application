@@ -28,7 +28,11 @@ const parseSavedState = (raw) => {
 // and the dashboard's Average Game Time KPI — keep all three wired through this function so
 // they can't drift apart again.
 const computeActualGameTime = (parsedState, gameName) => {
-    const scores = Array.isArray(parsedState?.allScores) ? parsedState.allScores : [];
+    // Teaching-question entries (e.g. number_recall_lottery[/_v2]) are stored separately
+    // in saved_state.teachingScores but scored like standard questions — fold them in here
+    // so Duration/avg-game-time stay consistent with the client's combined total.
+    const teachingScores = Array.isArray(parsedState?.teachingScores) ? parsedState.teachingScores : [];
+    const scores = [...teachingScores, ...(Array.isArray(parsedState?.allScores) ? parsedState.allScores : [])];
     const chorItems = Array.isArray(parsedState?.itemResults) ? parsedState.itemResults : [];
     const allItems = chorItems.length > 0 ? chorItems : scores;
     const scoringItems = ['rover_mela', 'chalo_mela_chale'].includes(gameName)
@@ -394,7 +398,12 @@ exports.getReportDetail = async (req, res) => {
 
             const parsedState = parseSavedState(row.saved_state);
 
-            const scores = Array.isArray(parsedState?.allScores) ? parsedState.allScores : [];
+            // Teaching-question entries (e.g. number_recall_lottery[/_v2]) live separately
+            // in saved_state.teachingScores but are scored like standard questions — fold
+            // them into `scores` so every downstream figure (correct_count, question_scores,
+            // raw_scores, CSV columns) matches the combined total shown on the client.
+            const teachingScores = Array.isArray(parsedState?.teachingScores) ? parsedState.teachingScores : [];
+            const scores = [...teachingScores, ...(Array.isArray(parsedState?.allScores) ? parsedState.allScores : [])];
             const chorItems = Array.isArray(parsedState?.itemResults) ? parsedState.itemResults : [];
             const questionScores = {};
             
@@ -589,6 +598,8 @@ exports.getReportDetail = async (req, res) => {
             ];
         } else if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
             sortedQIds = ['q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11'];
+        } else if (['number_recall_lottery', 'number_recall_lottery_v2'].includes(gameName)) {
+            sortedQIds = ['qteaching1', 'qteaching2', ...Array.from({ length: 20 }, (_, i) => `q${i + 1}`)];
         } else {
             sortedQIds = Array.from(allUniqueKeys).sort((a, b) => {
                 const na = parseInt(a.replace(/\D/g, '')) || 0;

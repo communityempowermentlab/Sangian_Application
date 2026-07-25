@@ -444,7 +444,7 @@ function OverviewPanel({ data, loading, filters }) {
               <SortThChild label="Completed" sortId="completed" />
               <SortThChild label="Sessions" sortId="sessions" />
               <SortThChild label="Bagiya (108)" sortId="bagiya" />
-              <SortThChild label="Lottery Ka Ticket (20)" sortId="lottery" />
+              <SortThChild label="Lottery Ka Ticket (22)" sortId="lottery" />
               <SortThChild label="Chalo Mela Chalen (22)" sortId="mela" />
               <SortThChild label="Dhyan Kahan Hai (33)" sortId="dhyan" />
               <SortThChild label="Her Pher (25)" sortId="herpher" />
