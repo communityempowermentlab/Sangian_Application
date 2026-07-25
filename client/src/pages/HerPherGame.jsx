@@ -1242,7 +1242,6 @@ const HerPherGame = () => {
                 <div className="hp-q-grid" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {scoredHistory.map((h, i) => {
                     const isPractice = h.isSample;
-                    const cat = h.category || GAME_DATA[h.question]?.category;
                     const expected = h.expectedImages || [];
                     const selected = h.selectedImages || h.selected || [];
                     const matched = h.matchedImages || [];
@@ -1254,10 +1253,23 @@ const HerPherGame = () => {
                         <div className="hp-q-detailed-header">
                           <div className="hp-q-detailed-title">
                             <span className="hp-q-num">{isPractice ? 'Sample Round' : `Item ${h.question - 1}`}</span>
-                            <span className="hp-q-cat" style={{ textTransform: 'capitalize' }}>{cat}</span>
                             {isPractice && <span className="hp-practice-badge">{t('game.practiceLabel')}</span>}
                           </div>
                           <div className="hp-q-detailed-metrics">
+                            <div className="hp-match-analysis inline">
+                              <span className="hp-match-item">
+                                <span className="hp-match-label">Matched Correctly:</span>
+                                <span className="hp-match-value green">{matched.length}</span>
+                              </span>
+                              <span className="hp-match-item">
+                                <span className="hp-match-label">Incorrect Selections (Duplicates):</span>
+                                <span className="hp-match-value red">{incorrect.length}</span>
+                              </span>
+                              <span className="hp-match-item">
+                                <span className="hp-match-label">Missed Items:</span>
+                                <span className="hp-match-value orange">{missed.length}</span>
+                              </span>
+                            </div>
                             <span className="hp-q-time">⏱ {formatTime(h.time)}</span>
                             {!isPractice && (
                               <span style={{
@@ -1305,21 +1317,6 @@ const HerPherGame = () => {
                             </div>
                           </div>
 
-                          {/* Match Analysis */}
-                          <div className="hp-match-analysis">
-                            <div className="hp-match-item">
-                              <span className="hp-match-label">Matched Correctly:</span>
-                              <span className="hp-match-value green">{matched.length > 0 ? matched.join(', ') : 'None'}</span>
-                            </div>
-                            <div className="hp-match-item">
-                              <span className="hp-match-label">Incorrect Selections (Duplicates):</span>
-                              <span className="hp-match-value red">{incorrect.length > 0 ? incorrect.join(', ') : 'None'}</span>
-                            </div>
-                            <div className="hp-match-item">
-                              <span className="hp-match-label">Missed Items:</span>
-                              <span className="hp-match-value orange">{missed.length > 0 ? missed.join(', ') : 'None'}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     );

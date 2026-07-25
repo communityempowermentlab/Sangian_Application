@@ -355,7 +355,7 @@ const ChaloMelaChaleGame = () => {
   const [retakeCount, setRetakeCount] = useState(0);
   const [collectedCoins, setCollectedCoins] = useState(0);
   const [audioFinished, setAudioFinished] = useState(false);
-  const totalScore = allScores.filter(s => !s.id.startsWith('tq')).reduce((acc, s) => acc + s.score, 0);
+  const totalScore = allScores.reduce((acc, s) => acc + s.score, 0);
   const [gameSessionId, setGameSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [qStartTime, setQStartTime] = useState(null);
@@ -1151,7 +1151,7 @@ const ChaloMelaChaleGame = () => {
     } else {
       computedArr = [...currentScores, scoreEntry];
     }
-    const latestTotal = computedArr.filter(e => !e.id.startsWith('tq')).reduce((acc, item) => acc + item.score, 0);
+    const latestTotal = computedArr.reduce((acc, item) => acc + item.score, 0);
     const isFinalQ = s.id === 'q18';
     saveToServer(isFinalQ ? 'completed' : 'in_progress', computedArr, latestTotal);
     

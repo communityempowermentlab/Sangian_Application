@@ -875,3 +875,15 @@
 .hp-match-value.green { color: #059669; }
 .hp-match-value.red { color: #e11d48; }
 .hp-match-value.orange { color: #d97706; }
+
+.hp-match-analysis.inline {
+  flex-direction: row;
+  background: none;
+  padding: 0;
+  gap: 14px;
+}
+
+.hp-match-analysis.inline .hp-match-item {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
