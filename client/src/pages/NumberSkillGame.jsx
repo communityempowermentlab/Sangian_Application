@@ -484,7 +484,11 @@ const NumberSkillGame = () => {
       wrapper = document.createElement('div');
       wrapper.style.cssText = [
         'position:fixed', 'top:-99999px', 'left:0',
-        'width:' + el.scrollWidth + 'px',
+        // Generous fixed desktop-class width rather than the live element's
+        // scrollWidth — see ChorMachayeShorGame's PDF capture for why tying
+        // wrapper width to the live (possibly narrow) viewport re-triggers
+        // clipping inside the app shell's width:100%+overflow:hidden.
+        'width:' + Math.max(el.scrollWidth, 1400) + 'px',
         'background:#ffffff', 'padding:20px',
         'z-index:-9999', 'pointer-events:none',
       ].join(';');

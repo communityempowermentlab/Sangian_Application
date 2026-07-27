@@ -1280,7 +1280,12 @@ const ChorMachayeShorGame = () => {
             wrapper = document.createElement('div');
             wrapper.style.cssText = [
               'position:fixed', 'top:-99999px', 'left:0',
-              'width:' + element.scrollWidth + 'px',
+              // Use a generous fixed desktop-class width rather than the live
+              // element's scrollWidth: on a narrower assessor device/window,
+              // .chor-app's `width:100%` + overflow:hidden would inherit
+              // that same narrow width, forcing the CSS-grid stat row and
+              // wide table to clip instead of laying out naturally.
+              'width:' + Math.max(element.scrollWidth, 1400) + 'px',
               'background:#ffffff', 'padding:20px',
               'z-index:-9999', 'pointer-events:none',
             ].join(';');
