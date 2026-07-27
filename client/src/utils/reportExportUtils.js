@@ -6,6 +6,7 @@ export const GAME_CATALOG = [
     { key: 'rover_mela',                icon: '🗺️', title: 'Chalo Mela Chalen',           local: '', tag: '',                 color: '#10b981' },
     { key: 'auditory_dhyan',            icon: '👂', title: 'Dhyan Kahan Hai',   local: '',  tag: '',                 color: '#8b5cf6' },
     { key: 'working_memory_herpher',    icon: '🔄', title: 'Her Pher',       local: '',         tag: '',                 color: '#0891b2' },
+    { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher - Version 2', local: '', tag: '', color: '#0891b2' },
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: '',                 color: '#7c3aed' },
     { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },

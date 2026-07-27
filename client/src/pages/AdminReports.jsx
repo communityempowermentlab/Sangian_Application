@@ -282,13 +282,13 @@ const AdminReports = () => {
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
                                 </div>
                                 <div
-                                    style={{ ...S.kpi(filterStatus === 'dropped'), ...(activeGame.key === 'working_memory_herpher' ? { cursor: 'not-allowed', opacity: 0.5 } : {}) }}
-                                    onClick={() => activeGame.key !== 'working_memory_herpher' && setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}
-                                    title={activeGame.key === 'working_memory_herpher' ? 'No dropout rule for Her Pher' : undefined}
+                                    style={{ ...S.kpi(filterStatus === 'dropped'), ...(['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? { cursor: 'not-allowed', opacity: 0.5 } : {}) }}
+                                    onClick={() => !['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) && setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}
+                                    title={['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? 'No dropout rule for Her Pher' : undefined}
                                 >
-                                    <div style={{ fontSize: '0.65rem', color: activeGame.key === 'working_memory_herpher' ? '#94a3b8' : '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: activeGame.key === 'working_memory_herpher' ? '#94a3b8' : '#dc2626' }}>
-                                        {activeGame.key === 'working_memory_herpher' ? '—' : (s.dropped_count ?? 0)}
+                                    <div style={{ fontSize: '0.65rem', color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '#94a3b8' : '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '#94a3b8' : '#dc2626' }}>
+                                        {['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '—' : (s.dropped_count ?? 0)}
                                     </div>
                                 </div>
                                 <div style={S.kpi(filterStatus === 'paused')} onClick={() => setFilterStatus(filterStatus === 'paused' ? null : 'paused')}>
@@ -336,7 +336,7 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>Q{q} Playtime(s)</th>
                                             </React.Fragment>
                                         ))
-                                    ) : activeGame?.key === 'working_memory_herpher' ? (
+                                    ) : ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) ? (
                                         [1,2,3,4,5,6,7,8].map(q => (
                                             <React.Fragment key={`hph-${q}`}>
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#e2e8f0', minWidth: 60 }}>Q{q} Total Images</th>
@@ -435,9 +435,9 @@ const AdminReports = () => {
                                     )}
                                     
                                     <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
-                                        {['working_memory_herpher', 'auditory_dhyan'].includes(activeGame?.key) ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
+                                        {['working_memory_herpher', 'working_memory_herpher_v2', 'auditory_dhyan'].includes(activeGame?.key) ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
                                     </th>
-                                    {activeGame?.key === 'working_memory_herpher' && (
+                                    {['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) && (
                                         <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Match Analysis</th>
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
@@ -501,7 +501,7 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : activeGame?.key === 'working_memory_herpher' ? (
+                                            ) : ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) ? (
                                                 [2,3,4,5,6,7,8,9].map((qId, i) => {
                                                     const qs = row.question_scores;
                                                     const total = qs[`q${qId}_total`];
@@ -637,7 +637,7 @@ const AdminReports = () => {
                                             )}
                                             
                                             <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
-                                                {['working_memory_herpher', 'auditory_dhyan'].includes(activeGame?.key)
+                                                {['working_memory_herpher', 'working_memory_herpher_v2', 'auditory_dhyan'].includes(activeGame?.key)
                                                     ? (row.score ?? '—')
                                                     : (
                                                         <>
@@ -881,12 +881,12 @@ const AdminReports = () => {
                                     </div>
                                     <div
                                         style={S.kpi(false)}
-                                        title={game.key === 'working_memory_herpher' ? 'No dropout rule for Her Pher' : undefined}
+                                        title={['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? 'No dropout rule for Her Pher' : undefined}
                                     >
-                                        <div style={{ ...S.kpiVal, color: game.key === 'working_memory_herpher' ? '#cbd5e1' : '#dc2626' }}>
-                                            {game.key === 'working_memory_herpher' ? '—' : (s.dropped_count ?? 0)}
+                                        <div style={{ ...S.kpiVal, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '#cbd5e1' : '#dc2626' }}>
+                                            {['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '—' : (s.dropped_count ?? 0)}
                                         </div>
-                                        <div style={{ ...S.kpiLbl, color: game.key === 'working_memory_herpher' ? '#cbd5e1' : undefined }}>Dropped</div>
+                                        <div style={{ ...S.kpiLbl, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '#cbd5e1' : undefined }}>Dropped</div>
                                     </div>
                                     <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#854d0e' }}>{s.paused ?? 0}</div>
