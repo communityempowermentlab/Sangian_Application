@@ -1244,29 +1244,59 @@ const ChorMachayeShorGame = () => {
 
       // Generate PDF Dashboard
       setTimeout(async () => {
+        let wrapper = null;
         try {
           const element = document.getElementById('dashboard-container');
           if (element) {
             const html2canvas = (await import('html2canvas')).default;
             const { jsPDF } = await import('jspdf');
 
-            const canvas = await html2canvas(element, { 
-              scale: 1.5, 
+            // Clone content into a clean wrapper directly on document.body so it has
+            // NO .chor-app / .chor-body-shell ancestors — .chor-app has backdrop-filter
+            // plus height:100%+overflow:hidden chained to a 100dvh ancestor, which
+            // clips the dashboard content (score circle + breakdown table) out of the
+            // capture and leaves only the header and assessment form visible in the PDF.
+            const clone = element.cloneNode(true);
+
+            // Kill all CSS animations BEFORE appending to DOM, same reason as
+            // ChaloMelaChaleGame's PDF capture: mid-animation opacity:0 renders blank.
+            clone.style.animation = 'none';
+            clone.style.opacity = '1';
+            clone.querySelectorAll('*').forEach(node => {
+              node.style.animation = 'none';
+              node.style.transition = 'none';
+              node.style.opacity = '';
+            });
+
+            wrapper = document.createElement('div');
+            wrapper.style.cssText = [
+              'position:fixed', 'top:-99999px', 'left:0',
+              'width:' + element.scrollWidth + 'px',
+              'background:#ffffff', 'padding:20px',
+              'z-index:-9999', 'pointer-events:none',
+            ].join(';');
+            wrapper.appendChild(clone);
+            document.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 100));
+
+            const canvas = await html2canvas(wrapper, {
+              scale: 1.5,
               useCORS: true,
-              windowWidth: element.scrollWidth,
-              windowHeight: element.scrollHeight,
+              backgroundColor: '#ffffff',
+              windowWidth: wrapper.scrollWidth,
+              windowHeight: wrapper.scrollHeight,
               logging: false
             });
             const imgData = canvas.toDataURL('image/jpeg', 0.9);
-            
-            const pdfWidth = 210; 
+
+            const pdfWidth = 210;
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
+
             const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            
+
             const pdfBlob = pdf.output('blob');
-            
+
             const formData = new FormData();
             const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
             const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
@@ -1274,12 +1304,14 @@ const ChorMachayeShorGame = () => {
             formData.append('child_id', childData.child_id);
             formData.append('session_id', gameSessionId);
             formData.append('game_name', 'chor_machaye_shor');
-            
+
             await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
             console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
           }
         } catch (err) {
           console.error("PDF generation failed:", err);
+        } finally {
+          if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
         }
       }, 1000);
 
