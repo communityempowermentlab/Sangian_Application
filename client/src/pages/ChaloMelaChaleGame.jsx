@@ -1709,44 +1709,6 @@ const ChaloMelaChaleGame = () => {
           </div>
         )}
 
-        {/* Assessment summary — always rendered so PDF always captures responses */}
-        {assessmentSubmitted && (
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px 24px', marginBottom: '4px' }}>
-            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', marginBottom: '14px' }}>
-              📋 {t('game.sessionDetails')}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-              {[
-                { label: t('game.q1Label'), val: assessment.q1 },
-                { label: t('game.q2Label'), val: assessment.q2 },
-                { label: t('game.q3Label'), val: assessment.q3 },
-                { label: t('game.q4Label'), val: assessment.q4 },
-              ].map(({ label, val }) => (
-                <div key={label} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: val ? '#0f172a' : '#cbd5e1' }}>{val || '—'}</div>
-                </div>
-              ))}
-            </div>
-            {assessment.behaviors?.length > 0 && (
-              <div style={{ marginTop: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{t('game.q5Label')}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {assessment.behaviors.map(b => (
-                    <span key={b} style={{ background: '#ede9fe', color: '#5b21b6', padding: '2px 10px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600 }}>{b}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {assessment.notes && (
-              <div style={{ marginTop: '10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{t('game.extraNotes')}</div>
-                <div style={{ fontSize: '0.85rem', color: '#334155', lineHeight: 1.5 }}>{assessment.notes}</div>
-              </div>
-            )}
-          </div>
-        )}
-
         <SessionAssessmentForm
           assessment={assessment}
           setAssessment={setAssessment}
