@@ -388,6 +388,20 @@ exports.getReportDetail = async (req, res) => {
 
         const [rows] = await pool.query(queryStr, queryParams);
 
+        // Hide the "View PDF" link if the file was deleted from disk after the
+        // DB row was created (mirrors the same check in getGameHistory).
+        const fs = require('fs');
+        const path = require('path');
+        rows.forEach(row => {
+            if (row.pdf_url) {
+                const fileName = row.pdf_url.split('/').pop();
+                const pdfPath = path.join(__dirname, '../../dashboard_pdfs', fileName);
+                if (!fs.existsSync(pdfPath)) {
+                    row.pdf_url = null;
+                }
+            }
+        });
+
         // Calculate per-child attempt numbers
         const childAttemptCounts = {};
         const allUniqueKeys = new Set();
