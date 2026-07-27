@@ -453,28 +453,60 @@ const NumberSkillGame = () => {
 
   const generateAndUploadPDF = async () => {
     if (!gameSessionId) return;
+    let wrapper = null;
     try {
       setShowGrid(true); // Force table to be visible for PDF capture
       await new Promise(r => setTimeout(r, 500)); // Wait for render
-      
+
       const el = document.querySelector('.ns-main');
       if (!el) return;
-      
-      const canvas = await html2canvas(el, { 
-        scale: 1.5, 
-        useCORS: true, 
+
+      // Clone into a clean wrapper on document.body — .ns-app has
+      // overflow:hidden + height:100dvh, so capturing the live element in
+      // place clips it to the viewport instead of its full content size.
+      // Also neutralize any scrollable inner region — html2canvas paints
+      // scrollable content as currently scrolled, so it stays clipped even
+      // once the outer container is unconstrained.
+      const originalNodes = el.querySelectorAll('*');
+      const clone = el.cloneNode(true);
+      const cloneNodes = clone.querySelectorAll('*');
+      clone.style.animation = 'none';
+      clone.style.opacity = '1';
+      cloneNodes.forEach((node, i) => {
+        node.style.animation = 'none';
+        node.style.transition = 'none';
+        node.style.opacity = '';
+        const cs = window.getComputedStyle(originalNodes[i]);
+        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
+      });
+
+      wrapper = document.createElement('div');
+      wrapper.style.cssText = [
+        'position:fixed', 'top:-99999px', 'left:0',
+        'width:' + el.scrollWidth + 'px',
+        'background:#ffffff', 'padding:20px',
+        'z-index:-9999', 'pointer-events:none',
+      ].join(';');
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
+        scale: 1.5,
+        useCORS: true,
+        backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight
+        windowWidth: wrapper.scrollWidth,
+        windowHeight: wrapper.scrollHeight
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
+
       const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       const pdfBlob = pdf.output('blob');
-      
+
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
@@ -482,10 +514,12 @@ const NumberSkillGame = () => {
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
       formData.append('game_name', 'numeracy_number_skill');
-      
+
       await axios.post(`${API_URL}/games/pdfs/upload`, formData);
     } catch (e) {
       console.error('Failed to generate and upload PDF:', e);
+    } finally {
+      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
     }
   };
 

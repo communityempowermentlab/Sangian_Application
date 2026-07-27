@@ -1219,17 +1219,25 @@ const ChaloMelaChaleGame = () => {
 
       // Clone content into a clean wrapper directly on document.body so it has
       // NO .app / .rover-body-shell ancestors — no backdrop-filter, no rgba bleed.
+      const originalNodes = element.querySelectorAll('*');
       const clone = element.cloneNode(true);
+      const cloneNodes = clone.querySelectorAll('*');
 
       // Kill all CSS animations BEFORE appending to DOM.
       // The fadeIn animation starts from opacity:0 — if html2canvas captures during
       // that animation the whole PDF appears washed-out/grey.
+      // Also neutralize any scrollable inner region — html2canvas paints scrollable
+      // content as currently scrolled, so wide/tall content stays clipped even once
+      // the outer container is unconstrained.
       clone.style.animation = 'none';
       clone.style.opacity = '1';
-      clone.querySelectorAll('*').forEach(node => {
+      cloneNodes.forEach((node, i) => {
         node.style.animation = 'none';
         node.style.transition = 'none';
         node.style.opacity = '';   // clear any inline opacity so full opacity is used
+        const cs = window.getComputedStyle(originalNodes[i]);
+        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
       });
 
       wrapper = document.createElement('div');

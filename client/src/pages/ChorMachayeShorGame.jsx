@@ -1256,16 +1256,25 @@ const ChorMachayeShorGame = () => {
             // plus height:100%+overflow:hidden chained to a 100dvh ancestor, which
             // clips the dashboard content (score circle + breakdown table) out of the
             // capture and leaves only the header and assessment form visible in the PDF.
+            const originalNodes = element.querySelectorAll('*');
             const clone = element.cloneNode(true);
+            const cloneNodes = clone.querySelectorAll('*');
 
             // Kill all CSS animations BEFORE appending to DOM, same reason as
             // ChaloMelaChaleGame's PDF capture: mid-animation opacity:0 renders blank.
+            // Also neutralize any scrollable inner region (e.g. .chor-table-wrapper's
+            // overflow-x:auto) — html2canvas paints scrollable content as currently
+            // scrolled, so a wide table stays clipped even once the outer container
+            // is unconstrained.
             clone.style.animation = 'none';
             clone.style.opacity = '1';
-            clone.querySelectorAll('*').forEach(node => {
+            cloneNodes.forEach((node, i) => {
               node.style.animation = 'none';
               node.style.transition = 'none';
               node.style.opacity = '';
+              const cs = window.getComputedStyle(originalNodes[i]);
+              if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+              if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
             });
 
             wrapper = document.createElement('div');

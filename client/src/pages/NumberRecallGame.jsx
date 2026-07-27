@@ -775,31 +775,60 @@ const NumberRecallGame = () => {
   };
 
   const generateAndUploadPDF = async () => {
+    let wrapper = null;
     try {
       const element = document.getElementById('dashboard-capture-area');
       if (!element) return;
-      
+
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(element, { 
-        scale: 1.5, 
+      // Clone into a clean wrapper on document.body — .nr-app is
+      // `position:fixed` with backdrop-filter, so capturing the live element
+      // in place clips it to the viewport instead of its full content size.
+      const originalNodes = element.querySelectorAll('*');
+      const clone = element.cloneNode(true);
+      const cloneNodes = clone.querySelectorAll('*');
+      clone.style.animation = 'none';
+      clone.style.opacity = '1';
+      cloneNodes.forEach((node, i) => {
+        node.style.animation = 'none';
+        node.style.transition = 'none';
+        node.style.opacity = '';
+        const cs = window.getComputedStyle(originalNodes[i]);
+        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
+      });
+
+      wrapper = document.createElement('div');
+      wrapper.style.cssText = [
+        'position:fixed', 'top:-99999px', 'left:0',
+        'width:' + element.scrollWidth + 'px',
+        'background:#ffffff', 'padding:20px',
+        'z-index:-9999', 'pointer-events:none',
+      ].join(';');
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
+        scale: 1.5,
         useCORS: true,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
+        backgroundColor: '#ffffff',
+        windowWidth: wrapper.scrollWidth,
+        windowHeight: wrapper.scrollHeight
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      
+
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
+
       // Use dynamic height to prevent cropping long dashboards
       const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
-      
+
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      
+
       const pdfBlob = pdf.output('blob');
-      
+
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
@@ -807,10 +836,12 @@ const NumberRecallGame = () => {
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
       formData.append('game_name', 'number_recall_lottery');
-      
+
       await axios.post(`${API_URL}/games/pdfs/upload`, formData);
     } catch (e) {
       console.error('Failed to generate and upload PDF:', e);
+    } finally {
+      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
     }
   };
 
