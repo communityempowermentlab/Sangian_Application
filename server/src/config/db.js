@@ -945,12 +945,42 @@ const initDb = async () => {
       )
     `);
 
-    // Ensure we run the migration for existing tables safely
+    // Ensure we run the migration for existing tables safely.
+    // This must actually succeed on every startup: the seed step below uses
+    // INSERT IGNORE, which only no-ops on a duplicate if this unique key
+    // exists. If ADD UNIQUE KEY silently fails (e.g. duplicate rows already
+    // violate it) every restart re-inserts a fresh batch of default rows
+    // forever — that caused the Her Pher V2 item-duplication incident of
+    // 2026-07-27. So this dedupes first and logs instead of swallowing.
     try {
       await connection.query('ALTER TABLE test_elements DROP INDEX uq_test_asset_lang');
-      await connection.query('ALTER TABLE test_elements ADD UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)');
     } catch (e) {}
-    
+
+    try {
+      await connection.query('ALTER TABLE test_elements ADD UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)');
+    } catch (e) {
+      if (e.code === 'ER_DUP_ENTRY') {
+        // Duplicate rows are blocking the unique key — keep the oldest row
+        // per (test_id, asset_type, language, file_name) group and drop the rest.
+        await connection.query(`
+          DELETE t1 FROM test_elements t1
+          INNER JOIN test_elements t2
+            ON t1.test_id = t2.test_id
+           AND t1.asset_type = t2.asset_type
+           AND t1.language = t2.language
+           AND t1.file_name = t2.file_name
+           AND t1.id > t2.id
+        `);
+        try {
+          await connection.query('ALTER TABLE test_elements ADD UNIQUE KEY uq_test_asset_lang_file (test_id, asset_type, language, file_name)');
+        } catch (e2) {
+          console.error('Failed to add uq_test_asset_lang_file unique key after dedupe:', e2.message);
+        }
+      } else if (e.code !== 'ER_DUP_KEYNAME') {
+        console.error('Failed to add uq_test_asset_lang_file unique key:', e.message);
+      }
+    }
+
     try {
       await connection.query('ALTER TABLE test_elements ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER file_path');
     } catch (e) {}
@@ -1020,8 +1050,7 @@ const initDb = async () => {
     for(let i=1; i<=10; i++) hpSeeds.push({ lang: 'all', path: `/assets/images/her_pher/items/item8/${i}.png`, name: `${i}.png`, type: 'item8' });
 
     allSeeds.push({
-      test_id: 'working_memory_herpher',
-test_id: 'working_memory_herpher_v2',
+      test_id: 'working_memory_herpher_v2',
       seeds: hpSeeds
     });
 
