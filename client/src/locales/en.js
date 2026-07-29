@@ -179,7 +179,7 @@ export const en = {
     "errChildId": "Child Unique ID is required.",
     "errName": "Child's name is required.",
     "errDobRequired": "Date of Birth is required.",
-    "errDobAge": "Child's age must be between 7 and 15 years.",
+    "errDobAge": "Child's age must be between 7 and 16 years.",
     "errGender": "Please select a gender.",
     "errMobileRequired": "Mobile number is required.",
     "errMobileInvalid": "Enter a valid 10-digit mobile number.",

@@ -15,8 +15,8 @@ const GAME_META = {
   cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
 };
 
-// Age group label → [minAge, maxAge] inclusive (registration range is 7–15)
-const AGE_MAP = { '7-9': [7, 9], '10-12': [10, 12], '13-15': [13, 15] };
+// Age group label → [minAge, maxAge] inclusive (registration range is 7–16)
+const AGE_MAP = { '7-9': [7, 9], '10-12': [10, 12], '13-16': [13, 16] };
 
 function parseFilters(req) {
   const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId } = req.query;

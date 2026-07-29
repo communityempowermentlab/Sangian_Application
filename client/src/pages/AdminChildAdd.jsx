@@ -27,7 +27,7 @@ const AdminChildAdd = () => {
 
     const today      = new Date();
     const maxDate    = new Date(today.getFullYear() - 7,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
-    const minDate    = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    const minDate    = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate()).toISOString().split('T')[0];
 
     const getDobString = () => {
         if (!formData.dobYear || !formData.dobMonth || !formData.dobDay) return '';
@@ -77,8 +77,8 @@ const AdminChildAdd = () => {
                 e.dob = 'Invalid date';
             } else {
                 const currentAgeObj = calculateAge(dobStr);
-                if (currentAgeObj && (currentAgeObj.years < 7 || currentAgeObj.years > 15 || (currentAgeObj.years === 15 && (currentAgeObj.months > 0 || currentAgeObj.days > 0)))) {
-                    e.dob = 'Child must be between 7 and 15 years old.';
+                if (currentAgeObj && (currentAgeObj.years < 7 || currentAgeObj.years > 16 || (currentAgeObj.years === 16 && (currentAgeObj.months > 0 || currentAgeObj.days > 0)))) {
+                    e.dob = 'Child must be between 7 and 16 years old.';
                 }
             }
         }
@@ -193,8 +193,8 @@ const AdminChildAdd = () => {
                             </select>
                             <select id="dobYear" style={{ ...fieldStyle('dob'), padding: '6px 10px', flex: 1, background: '#fff' }} value={formData.dobYear} onChange={handleInputChange}>
                                 <option value="">Year</option>
-                                {[...Array(15)].map((_, i) => {
-                                    const y = today.getFullYear() - 15 + i;
+                                {[...Array(16)].map((_, i) => {
+                                    const y = today.getFullYear() - 16 + i;
                                     return <option key={y} value={String(y)}>{y}</option>;
                                 })}
                             </select>

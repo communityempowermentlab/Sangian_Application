@@ -62,7 +62,7 @@ const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], c
 const AGE_CHIP_OPTIONS = [
   { key: '7-9',   label: '7-9 yrs',   color: '#f59e0b' },
   { key: '10-12', label: '10-12 yrs', color: '#f59e0b' },
-  { key: '13-15', label: '13-15 yrs', color: '#f59e0b' },
+  { key: '13-16', label: '13-16 yrs', color: '#f59e0b' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────

@@ -41,8 +41,8 @@ const isStale = (child) => {
 const completionPct = (child) =>
     child.total_sessions > 0 ? Math.round((child.completed_sessions / child.total_sessions) * 100) : null;
 
-// Age bands matching the app's registration range (7–15 years)
-const AGE_BAND_ORDER = ['Under 7', '7-9', '10-12', '13-15', '15+', 'Unknown'];
+// Age bands matching the app's registration range (7–16 years)
+const AGE_BAND_ORDER = ['Under 7', '7-9', '10-12', '13-16', '17+', 'Unknown'];
 
 const ageYears = (dob) => {
     if (!dob) return null;
@@ -55,8 +55,8 @@ const ageBandOf = (child) => {
     if (y < 7)   return 'Under 7';
     if (y <= 9)  return '7-9';
     if (y <= 12) return '10-12';
-    if (y <= 15) return '13-15';
-    return '15+';
+    if (y <= 16) return '13-16';
+    return '17+';
 };
 
 const GENDER_LABELS = { male: 'Male', female: 'Female', other: 'Other', prefer_not_to_say: 'Prefer not to say' };
