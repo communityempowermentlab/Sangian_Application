@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
@@ -81,6 +82,12 @@ function formatDate(d) {
   catch { return d; }
 }
 
+function formatDateOnly(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }); }
+  catch { return d; }
+}
+
 function formatDuration(secs) {
   if (!secs || secs <= 0) return '—';
   const m = Math.floor(secs / 60), s = secs % 60;
@@ -133,8 +140,11 @@ function ChipGroup({ label, options, selected, onToggle }) {
   );
 }
 
-function TrendLine({ data = [], valueKey = 'sessions', color = '#4f46e5', secondKey, secondColor }) {
+function TrendLine({ data = [], valueKey = 'sessions', color = '#4f46e5', secondKey, secondColor,
+                     primaryLabel = 'Sessions', secondaryLabel = 'Completed', dateKey = 'date' }) {
+  const [hover, setHover] = React.useState(null);   // { idx, x, y } — x/y are viewport coords
   if (!data.length) return <div className="ana-chart-empty">No trend data available</div>;
+  const hoverIdx = hover?.idx ?? null;
   const W = 400, H = 80, P = 8;
   const vals1 = data.map(d => Number(d[valueKey]) || 0);
   const vals2 = secondKey ? data.map(d => Number(d[secondKey]) || 0) : [];
@@ -146,21 +156,57 @@ function TrendLine({ data = [], valueKey = 'sessions', color = '#4f46e5', second
   const pts2  = secondKey ? xs.map((x, i) => `${x.toFixed(1)},${ys2[i].toFixed(1)}`).join(' ') : '';
   const uid   = valueKey.replace(/[^a-z]/gi, '');
 
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fracX = ((e.clientX - rect.left) / rect.width) * W;
+    const idx = Math.round(((fracX - P) / Math.max(W - 2 * P, 1)) * (data.length - 1));
+    setHover({ idx: Math.max(0, Math.min(data.length - 1, idx)), x: e.clientX, y: e.clientY });
+  };
+
+  const hovered = hoverIdx != null ? data[hoverIdx] : null;
+  const flipX = hover ? hover.x > window.innerWidth - 240 : false;
+  const flipY = hover ? hover.y < 140 : false;
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="ana-trend-svg" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`tg-${uid}-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <polygon points={`${P},${H} ${pts1} ${W - P},${H}`} fill={`url(#tg-${uid}-${color.replace('#','')})`} />
-      <polyline points={pts1} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {secondKey && pts2 && (
-        <polyline points={pts2} fill="none" stroke={secondColor || '#22c55e'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="4 2" />
+    <div style={{ position: 'relative' }} onMouseMove={handleMove} onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="ana-trend-svg" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`tg-${uid}-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor={color} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <polygon points={`${P},${H} ${pts1} ${W - P},${H}`} fill={`url(#tg-${uid}-${color.replace('#','')})`} />
+        <polyline points={pts1} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {secondKey && pts2 && (
+          <polyline points={pts2} fill="none" stroke={secondColor || '#22c55e'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="4 2" />
+        )}
+        {hoverIdx != null && (
+          <line x1={xs[hoverIdx]} y1="0" x2={xs[hoverIdx]} y2={H} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
+        )}
+        {data.map((_, i) => <circle key={i} cx={xs[i]} cy={ys1[i]} r={i === hoverIdx ? 4 : 2.5} fill={color} />)}
+        {hoverIdx != null && secondKey && <circle cx={xs[hoverIdx]} cy={ys2[hoverIdx]} r="3.5" fill={secondColor || '#22c55e'} />}
+      </svg>
+      {/* Rendered via portal to <body>: transformed ancestors break position:fixed
+          coordinates for in-tree elements, which pushed the tooltip off-target */}
+      {hovered && createPortal(
+        <div style={{
+          position: 'fixed',
+          left: hover.x + (flipX ? -14 : 14),
+          top: hover.y + (flipY ? 14 : -12),
+          transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '0' : '-100%'})`,
+          background: '#1e293b', color: '#fff', borderRadius: '8px', padding: '8px 12px',
+          fontSize: '12px', lineHeight: '1.6', whiteSpace: 'nowrap', pointerEvents: 'none',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 10000,
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: '2px' }}>{formatDateOnly(hovered[dateKey])}</div>
+          <div><span style={{ color }}>●</span> {primaryLabel}: <strong>{fmt(hovered[valueKey])}</strong></div>
+          {secondKey && <div><span style={{ color: secondColor || '#22c55e' }}>●</span> {secondaryLabel}: <strong>{fmt(hovered[secondKey])}</strong></div>}
+          {hovered.avgScore != null && <div><span style={{ color: '#a78bfa' }}>●</span> Avg Score: <strong>{fmt(hovered.avgScore, 1)}</strong></div>}
+        </div>,
+        document.body
       )}
-      {data.map((_, i) => <circle key={i} cx={xs[i]} cy={ys1[i]} r="2.5" fill={color} />)}
-    </svg>
+    </div>
   );
 }
 
@@ -168,8 +214,8 @@ function TrendLabels({ data = [], dateKey = 'date' }) {
   if (data.length < 2) return null;
   return (
     <div className="ana-trend-labels">
-      <span>{formatDate(data[0]?.[dateKey])}</span>
-      <span>{formatDate(data[data.length - 1]?.[dateKey])}</span>
+      <span>{formatDateOnly(data[0]?.[dateKey])}</span>
+      <span>{formatDateOnly(data[data.length - 1]?.[dateKey])}</span>
     </div>
   );
 }
@@ -504,7 +550,40 @@ function OverviewPanel({ data, loading, filters }) {
 
 // ── Game Panel ────────────────────────────────────────────
 
-function GamePanel({ gameMeta, data, loading }) {
+function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
+  const [sessions,         setSessions]         = React.useState([]);
+  const [sessionsPage,     setSessionsPage]     = React.useState(0);
+  const [loadingSessions,  setLoadingSessions]  = React.useState(false);
+  const [hasMoreSessions,  setHasMoreSessions]  = React.useState(true);
+
+  React.useEffect(() => {
+    setSessionsPage(0);
+  }, [filters, gameKey]);
+
+  React.useEffect(() => {
+    if (!filters || !gameKey) return;
+    let isMounted = true;
+    const fetchSessions = async () => {
+      setLoadingSessions(true);
+      try {
+        const { data: resData } = await axiosAdmin.get(`/analysis/game/${gameKey}/sessions`, {
+          params: { ...buildApiParams(filters), limit: 50, offset: sessionsPage * 50 }
+        });
+        if (!isMounted) return;
+        const rows = resData.sessions || [];
+        setHasMoreSessions(rows.length === 50);
+        if (sessionsPage === 0) setSessions(rows);
+        else setSessions(prev => [...prev, ...rows]);
+      } catch (err) {
+        console.error('Error fetching game sessions:', err);
+      } finally {
+        if (isMounted) setLoadingSessions(false);
+      }
+    };
+    fetchSessions();
+    return () => { isMounted = false; };
+  }, [filters, gameKey, sessionsPage]);
+
   if (loading && !data) return (
     <div className="ana-content">
       <div className="ana-kpi-row">{Array(5).fill(0).map((_, i) => <SkeletonCard key={i} />)}</div>
@@ -516,7 +595,7 @@ function GamePanel({ gameMeta, data, loading }) {
   const {
     kpis, scoreDist, quitReasons = [], genderBreakdown = [],
     dailyTrend = [], assessmentDist = {}, behaviorFreq = {},
-    attemptBuckets = {}, recentSessions = [],
+    attemptBuckets = {},
   } = data;
 
   const scoreEntries   = scoreDist ? Object.entries(scoreDist) : [];
@@ -669,15 +748,16 @@ function GamePanel({ gameMeta, data, loading }) {
         </Card>
       )}
 
-      <Card title="Recent Sessions (last 20)" noPad>
+      <Card title={`Recent Sessions${sessions.length ? ` (${sessions.length} loaded)` : ''}`} noPad>
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
-              <tr><th>Child</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>Date & Time</th></tr>
+              <tr><th>#</th><th>Child</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>Date & Time</th></tr>
             </thead>
             <tbody>
-              {recentSessions.map(s => (
+              {sessions.map((s, i) => (
                 <tr key={s.id}>
+                  <td><span className="ana-rank">{i + 1}</span></td>
                   <td>
                     <div className="ana-child-cell">
                       <code>{s.child_id}</code>
@@ -695,9 +775,15 @@ function GamePanel({ gameMeta, data, loading }) {
                   <td>{formatDate(s.start_time)}</td>
                 </tr>
               ))}
-              {recentSessions.length === 0 && <tr><td colSpan="6" className="ana-table-empty">No sessions recorded</td></tr>}
+              {sessions.length === 0 && !loadingSessions && <tr><td colSpan="7" className="ana-table-empty">No sessions recorded</td></tr>}
+              {loadingSessions && <tr><td colSpan="7" className="ana-table-empty">Loading...</td></tr>}
             </tbody>
           </table>
+          {hasMoreSessions && !loadingSessions && sessions.length > 0 && (
+            <div style={{ textAlign: 'center', padding: '15px' }}>
+              <button className="ana-btn" onClick={() => setSessionsPage(p => p + 1)}>Load More</button>
+            </div>
+          )}
         </div>
       </Card>
     </div>
@@ -995,8 +1081,10 @@ export default function AdminAnalysis() {
             ? <OverviewPanel data={overviewData} loading={loading} filters={filters} />
             : <GamePanel
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
+                gameKey={activeTab}
                 data={gameData[activeTab]}
                 loading={loading}
+                filters={filters}
               />
           }
         </main>

@@ -348,6 +348,35 @@ exports.getGameAnalytics = async (req, res) => {
     res.status(500).json({ error: 'Failed to load game analytics' });
   }
 };
+// ── GET /api/analysis/game/:gameKey/sessions — paginated session list ────────
+exports.getGameSessions = async (req, res) => {
+  try {
+    const { gameKey } = req.params;
+    const { allClauses, allParams } = parseFilters(req);
+    const clauses = [...allClauses, 'gs.game_name = ?'];
+    const params  = [...allParams, gameKey];
+    const where   = toWhere(clauses);
+
+    const limit  = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    const [sessions] = await pool.query(`
+      SELECT gs.id, gs.child_id, c.name AS childName,
+             gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
+             DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
+             DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
+             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec
+      FROM game_sessions gs ${CHILD_JOIN} ${where}
+      ORDER BY gs.created_at DESC LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+
+    res.json({ sessions });
+  } catch (err) {
+    console.error('Game sessions error:', err);
+    res.status(500).json({ error: 'Failed to load game sessions' });
+  }
+};
+
 // ==========================================
 // TOP ACTIVE CHILDREN
 // ==========================================
