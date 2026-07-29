@@ -88,6 +88,54 @@ function formatDateOnly(d) {
   catch { return d; }
 }
 
+function timeAgo(d) {
+  if (!d) return '—';
+  const secs = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (secs < 60)          return 'just now';
+  if (secs < 3600)        return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400)       return `${Math.floor(secs / 3600)}h ago`;
+  if (secs < 30 * 86400)  return `${Math.floor(secs / 86400)}d ago`;
+  if (secs < 365 * 86400) return `${Math.floor(secs / (30 * 86400))}mo ago`;
+  return `${Math.floor(secs / (365 * 86400))}y ago`;
+}
+
+const scoreBandColor = (pct) => pct >= 80 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444';
+
+function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
+  const headers = ['#', 'Child ID', 'Name', 'Gender', 'Age', 'Attempt No', 'Status', 'Quit Reason',
+                   'Score', 'Max Score', 'Score %', 'Prev Attempt Score', 'Score Change',
+                   'Progress Level', 'Duration (sec)', 'Start Time', 'End Time'];
+  const rows = sessions.map((s, i) => [
+    i + 1,
+    s.child_id || '',
+    `"${s.childName || ''}"`,
+    s.gender || '',
+    s.age ?? '',
+    s.attemptNo ?? '',
+    s.status || '',
+    `"${s.quit_reason || ''}"`,
+    s.score ?? '',
+    maxGameScore ?? '',
+    maxGameScore && s.score != null ? Math.round((s.score / maxGameScore) * 100) : '',
+    s.prevScore ?? '',
+    s.prevScore != null && s.score != null ? s.score - s.prevScore : '',
+    s.progress_level ?? '',
+    s.durationSec ?? '',
+    s.start_time || '',
+    s.end_time || '',
+  ]);
+  const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_sessions_export.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function formatDuration(secs) {
   if (!secs || secs <= 0) return '—';
   const m = Math.floor(secs / 60), s = secs % 60;
@@ -617,6 +665,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
     }));
   }
 
+  const maxGameScore = GAME_MAX_SCORES[gameKey] ?? data.meta?.maxScore ?? null;
+
   const behaviorEntries = Object.entries(behaviorFreq).sort((a, b) => b[1] - a[1]);
   const maxBehavior     = Math.max(...behaviorEntries.map(([, v]) => v), 1);
   const attemptEntries  = Object.entries(attemptBuckets);
@@ -748,35 +798,86 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
         </Card>
       )}
 
-      <Card title={`Recent Sessions${sessions.length ? ` (${sessions.length} loaded)` : ''}`} noPad>
+      <Card
+        title={
+          <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+            <span>Recent Sessions{sessions.length ? ` (${sessions.length} loaded)` : ''}</span>
+            {sessions.length > 0 && (
+              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => exportSessionsCSV(sessions, gameMeta, maxGameScore)}>
+                📥 Export CSV
+              </button>
+            )}
+          </span>
+        }
+        noPad
+      >
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
-              <tr><th>#</th><th>Child</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>Date & Time</th></tr>
+              <tr><th>#</th><th>Child</th><th>Attempt</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>When</th></tr>
             </thead>
             <tbody>
-              {sessions.map((s, i) => (
-                <tr key={s.id}>
-                  <td><span className="ana-rank">{i + 1}</span></td>
-                  <td>
-                    <div className="ana-child-cell">
-                      <code>{s.child_id}</code>
-                      {s.childName && <span className="ana-child-name">{s.childName}</span>}
-                    </div>
-                  </td>
-                  <td>
-                    <span className="ana-status-pill" style={{ background: `${STATUS_COLORS[s.status] || '#94a3b8'}22`, color: STATUS_COLORS[s.status] || '#64748b' }}>
-                      {s.status?.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td>{fmt(s.score)} / {fmt(s.total_questions)}</td>
-                  <td>Lv {s.progress_level}</td>
-                  <td>{formatDuration(s.durationSec)}</td>
-                  <td>{formatDate(s.start_time)}</td>
-                </tr>
-              ))}
-              {sessions.length === 0 && !loadingSessions && <tr><td colSpan="7" className="ana-table-empty">No sessions recorded</td></tr>}
-              {loadingSessions && <tr><td colSpan="7" className="ana-table-empty">Loading...</td></tr>}
+              {sessions.map((s, i) => {
+                const pct   = maxGameScore && s.score != null ? Math.round((s.score / maxGameScore) * 100) : null;
+                const delta = s.prevScore != null && s.score != null ? s.score - s.prevScore : null;
+                const shortSession = s.durationSec != null && s.durationSec < 30;
+                return (
+                  <tr key={s.id}>
+                    <td><span className="ana-rank">{i + 1}</span></td>
+                    <td>
+                      <div className="ana-child-cell">
+                        <code>{s.child_id}</code>
+                        {s.childName && <span className="ana-child-name">{s.childName}</span>}
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                          {s.gender === 'male' ? '♂' : s.gender === 'female' ? '♀' : ''}{s.age != null ? ` ${s.age}y` : ''}
+                        </span>
+                      </div>
+                    </td>
+                    <td title={`Attempt no. ${s.attemptNo} of this child on this game (all-time)`}>
+                      <span style={{ fontWeight: 600, color: s.attemptNo === 1 ? '#0891b2' : '#64748b' }}>
+                        #{s.attemptNo}{s.attemptNo === 1 ? ' 🆕' : ''}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="ana-status-pill" style={{ background: `${STATUS_COLORS[s.status] || '#94a3b8'}22`, color: STATUS_COLORS[s.status] || '#64748b' }}>
+                        {s.status?.replace('_', ' ')}
+                      </span>
+                      {s.quit_reason && (
+                        <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.quit_reason}>
+                          {s.quit_reason}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ minWidth: '110px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <strong>{fmt(s.score)}</strong>
+                        {pct != null && <span style={{ fontSize: '11px', color: scoreBandColor(pct) }}>{pct}%</span>}
+                        {delta != null && delta !== 0 && (
+                          <span title={`vs previous attempt (${fmt(s.prevScore)})`} style={{ fontSize: '11px', fontWeight: 700, color: delta > 0 ? '#22c55e' : '#ef4444' }}>
+                            {delta > 0 ? `▲+${delta}` : `▼${delta}`}
+                          </span>
+                        )}
+                      </div>
+                      {pct != null && (
+                        <div style={{ width: '80px', height: '4px', borderRadius: '2px', background: '#f1f5f9', marginTop: '3px' }}>
+                          <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', borderRadius: '2px', background: scoreBandColor(pct) }} />
+                        </div>
+                      )}
+                    </td>
+                    <td>Lv {s.progress_level}</td>
+                    <td>
+                      {formatDuration(s.durationSec)}
+                      {shortSession && <span title="Unusually short session (under 30s) — possibly an accidental start" style={{ marginLeft: '4px', cursor: 'help' }}>⚠️</span>}
+                    </td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ fontWeight: 600, fontSize: '12px' }}>{timeAgo(s.start_time)}</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(s.start_time)}</div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {sessions.length === 0 && !loadingSessions && <tr><td colSpan="8" className="ana-table-empty">No sessions recorded</td></tr>}
+              {loadingSessions && <tr><td colSpan="8" className="ana-table-empty">Loading...</td></tr>}
             </tbody>
           </table>
           {hasMoreSessions && !loadingSessions && sessions.length > 0 && (

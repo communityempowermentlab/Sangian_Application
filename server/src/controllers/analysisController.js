@@ -361,11 +361,19 @@ exports.getGameSessions = async (req, res) => {
     const offset = parseInt(req.query.offset, 10) || 0;
 
     const [sessions] = await pool.query(`
-      SELECT gs.id, gs.child_id, c.name AS childName,
+      SELECT gs.id, gs.child_id, c.name AS childName, c.gender,
+             TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) AS age,
              gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
-             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec
+             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
+             (SELECT COUNT(*) FROM game_sessions g2
+              WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
+                AND g2.created_at <= gs.created_at) AS attemptNo,
+             (SELECT g3.score FROM game_sessions g3
+              WHERE g3.child_id = gs.child_id AND g3.game_name = gs.game_name
+                AND g3.created_at < gs.created_at
+              ORDER BY g3.created_at DESC LIMIT 1) AS prevScore
       FROM game_sessions gs ${CHILD_JOIN} ${where}
       ORDER BY gs.created_at DESC LIMIT ? OFFSET ?
     `, [...params, limit, offset]);
