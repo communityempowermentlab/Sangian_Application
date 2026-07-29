@@ -1,22 +1,34 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { GAME_CATALOG } from '../utils/reportExportUtils';
 import './AdminAnalysis.css';
 
 // ── Constants ─────────────────────────────────────────────
 
-const GAME_CATALOG = [
-  { key: 'atlantis_bagiya',        icon: '🧠', title: 'Bagiya',            tag: '',                 color: '#6366f1' },
-  { key: 'number_recall_lottery',  icon: '🎟️', title: 'Lottery Ka Ticket', tag: '',                 color: '#f59e0b' },
-  { key: 'number_recall_lottery_v2', icon: '🎟️', title: 'Lottery Ka Ticket - Version 2', tag: '', color: '#f59e0b' },
-  { key: 'rover_mela',             icon: '🗺️', title: 'Chalo Mela Chalen', tag: '',                 color: '#10b981' },
-  { key: 'auditory_dhyan',         icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6' },
-  { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',          tag: '',                 color: '#0891b2' },
-  { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',          tag: '',                 color: '#7c3aed' },
-  { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke Batao',     tag: '',                 color: '#059669' },
-  { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor', tag: '',                 color: '#dc2626' },
-  { key: 'triangle_rachna',        icon: '🔺', title: 'Rachna',            tag: '',                 color: '#ef4444' },
-];
+// Per-game max scores (V2 games are config-driven: Lottery V2 = 23 questions, Ankganit V2 = 30)
+const GAME_MAX_SCORES = {
+  atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 23,
+  rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 25,
+  numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
+  cognitive_flex_chor: 87, triangle_rachna: 48,
+};
+
+// Game key → per-game average-score field / sort key returned by /analysis/top-children
+const CHILD_SCORE_COLS = {
+  atlantis_bagiya:           { field: 'score_bagiya',      sortId: 'bagiya' },
+  number_recall_lottery:     { field: 'score_lottery',     sortId: 'lottery' },
+  number_recall_lottery_v2:  { field: 'score_lottery_v2',  sortId: 'lottery_v2' },
+  rover_mela:                { field: 'score_mela',        sortId: 'mela' },
+  auditory_dhyan:            { field: 'score_dhyan',       sortId: 'dhyan' },
+  working_memory_herpher:    { field: 'score_herpher',     sortId: 'herpher' },
+  working_memory_herpher_v2: { field: 'score_herpher_v2',  sortId: 'herpher_v2' },
+  numeracy_number_skill:     { field: 'score_ankganit',    sortId: 'ankganit' },
+  numeracy_number_skill_v2:  { field: 'score_ankganit_v2', sortId: 'ankganit_v2' },
+  literacy_reading_skill:    { field: 'score_reading',     sortId: 'reading' },
+  cognitive_flex_chor:       { field: 'score_chor',        sortId: 'chor' },
+  triangle_rachna:           { field: 'score_rachna',      sortId: 'rachna' },
+};
 
 const STATUS_COLORS = {
   completed: '#22c55e', in_progress: '#4f46e5',
@@ -44,7 +56,13 @@ const ASSESS_LABELS = {
 
 const ASSESS_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#ec4899'];
 
-const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [] };
+const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [], ageGroups: [] };
+
+const AGE_CHIP_OPTIONS = [
+  { key: '7-9',   label: '7-9 yrs',   color: '#f59e0b' },
+  { key: '10-12', label: '10-12 yrs', color: '#f59e0b' },
+  { key: '13-15', label: '13-15 yrs', color: '#f59e0b' },
+];
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -86,8 +104,9 @@ function buildApiParams(f) {
   if (f.genders?.length)  p.gender    = f.genders.join(',');
   if (f.statuses?.length) p.status    = f.statuses.join(',');
   if (f.childId?.trim())  p.childId   = f.childId.trim();
-  if (f.gameKeys?.length) p.gameKey   = f.gameKeys.join(',');
-  if (f.groupIds?.length) p.groupId   = f.groupIds.join(',');
+  if (f.gameKeys?.length)  p.gameKey  = f.gameKeys.join(',');
+  if (f.groupIds?.length)  p.groupId  = f.groupIds.join(',');
+  if (f.ageGroups?.length) p.ageGroup = f.ageGroups.join(',');
   return p;
 }
 
@@ -257,7 +276,7 @@ function OverviewPanel({ data, loading, filters }) {
       setLoadingChildren(true);
       try {
         const { data: resData } = await axiosAdmin.get('/analysis/top-children', {
-          params: { ...filters, limit: 50, offset: childrenPage * 50, sortKey: childSortKey, sortDir: childSortDir }
+          params: { ...buildApiParams(filters), limit: 50, offset: childrenPage * 50, sortKey: childSortKey, sortDir: childSortDir }
         });
         if (!isMounted) return;
         const newChildren = resData.topChildren || [];
@@ -445,15 +464,9 @@ function OverviewPanel({ data, loading, filters }) {
               <SortThChild label="Name" sortId="name" />
               <SortThChild label="Completed" sortId="completed" />
               <SortThChild label="Sessions" sortId="sessions" />
-              <SortThChild label="Bagiya (108)" sortId="bagiya" />
-              <SortThChild label="Lottery Ka Ticket (22)" sortId="lottery" />
-              <SortThChild label="Chalo Mela Chalen (22)" sortId="mela" />
-              <SortThChild label="Dhyan Kahan Hai (33)" sortId="dhyan" />
-              <SortThChild label="Her Pher (25)" sortId="herpher" />
-              <SortThChild label="Ankganit (26)" sortId="ankganit" />
-              <SortThChild label="Padh Ke Batao (22)" sortId="reading" />
-              <SortThChild label="Chor Machaye Shor (87)" sortId="chor" />
-              <SortThChild label="Rachna (48)" sortId="rachna" />
+              {GAME_CATALOG.map(g => (
+                <SortThChild key={g.key} label={`${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`} sortId={CHILD_SCORE_COLS[g.key]?.sortId} />
+              ))}
               <SortThChild label="Total Score" sortId="totalScore" />
               <SortThChild label="Total Time" sortId="totalTime" />
               <SortThChild label="Last Played" sortId="lastPlayed" />
@@ -466,22 +479,16 @@ function OverviewPanel({ data, loading, filters }) {
                   <td>{c.name || '—'}</td>
                   <td>{fmt(c.completed)}</td>
                   <td>{fmt(c.sessions)}</td>
-                  <td>{fmt(c.score_bagiya, 1)}</td>
-                  <td>{fmt(c.score_lottery, 1)}</td>
-                  <td>{fmt(c.score_mela, 1)}</td>
-                  <td>{fmt(c.score_dhyan, 1)}</td>
-                  <td>{fmt(c.score_herpher, 1)}</td>
-                  <td>{fmt(c.score_ankganit, 1)}</td>
-                  <td>{fmt(c.score_reading, 1)}</td>
-                  <td>{fmt(c.score_chor, 1)}</td>
-                  <td>{fmt(c.score_rachna, 1)}</td>
+                  {GAME_CATALOG.map(g => (
+                    <td key={g.key}>{fmt(c[CHILD_SCORE_COLS[g.key]?.field], 1)}</td>
+                  ))}
                   <td>{fmt(c.totalScore)}</td>
                   <td>{formatHoursMins(c.totalTimeMins)}</td>
                   <td>{formatDate(c.lastPlayed)}</td>
                 </tr>
               ))}
-              {childrenData.length === 0 && !loadingChildren && <tr><td colSpan="17" className="ana-table-empty">No children data</td></tr>}
-              {loadingChildren && <tr><td colSpan="17" className="ana-table-empty">Loading...</td></tr>}
+              {childrenData.length === 0 && !loadingChildren && <tr><td colSpan={8 + GAME_CATALOG.length} className="ana-table-empty">No children data</td></tr>}
+              {loadingChildren && <tr><td colSpan={8 + GAME_CATALOG.length} className="ana-table-empty">Loading...</td></tr>}
             </tbody>
           </table>
           {hasMoreChildren && !loadingChildren && childrenData.length > 0 && (
@@ -724,6 +731,12 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
           options={[{ key: 'male', label: 'Male', color: '#3b82f6' }, { key: 'female', label: 'Female', color: '#ec4899' }]}
           selected={pending.genders}
           onToggle={v => toggle('genders', v)}
+        />
+        <span className="ana-filter-sep" />
+        <ChipGroup label="Age"
+          options={AGE_CHIP_OPTIONS}
+          selected={pending.ageGroups}
+          onToggle={v => toggle('ageGroups', v)}
         />
         <span className="ana-filter-sep" />
         <ChipGroup label="Status"

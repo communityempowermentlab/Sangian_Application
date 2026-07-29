@@ -4,7 +4,8 @@ const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
   numeracy_number_skill:    { title: 'Ankganit',            tag: 'Numeracy',         color: '#7c3aed', maxScore: 26 },
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
-  number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
+  number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 23 },
+  numeracy_number_skill_v2: { title: 'Ankganit - Version 2', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
   atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
   working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
   working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
@@ -14,8 +15,8 @@ const GAME_META = {
   cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
 };
 
-// Age group label → [minAge, maxAge] inclusive
-const AGE_MAP = { '3-5': [3, 5], '6-8': [6, 8], '9-11': [9, 11], '12+': [12, 99] };
+// Age group label → [minAge, maxAge] inclusive (registration range is 7–15)
+const AGE_MAP = { '7-9': [7, 9], '10-12': [10, 12], '13-15': [13, 15] };
 
 function parseFilters(req) {
   const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId } = req.query;
@@ -368,7 +369,9 @@ exports.getTopChildren = async (req, res) => {
       mela: 'score_mela',
       dhyan: 'score_dhyan',
       herpher: 'score_herpher',
+      herpher_v2: 'score_herpher_v2',
       ankganit: 'score_ankganit',
+      ankganit_v2: 'score_ankganit_v2',
       reading: 'score_reading',
       chor: 'score_chor',
       rachna: 'score_rachna'
@@ -392,6 +395,7 @@ exports.getTopChildren = async (req, res) => {
              ROUND(AVG(CASE WHEN gs.game_name = 'working_memory_herpher' THEN gs.score END), 1) AS score_herpher,
              ROUND(AVG(CASE WHEN gs.game_name = 'working_memory_herpher_v2' THEN gs.score END), 1) AS score_herpher_v2,
              ROUND(AVG(CASE WHEN gs.game_name = 'numeracy_number_skill' THEN gs.score END), 1) AS score_ankganit,
+             ROUND(AVG(CASE WHEN gs.game_name = 'numeracy_number_skill_v2' THEN gs.score END), 1) AS score_ankganit_v2,
              ROUND(AVG(CASE WHEN gs.game_name = 'literacy_reading_skill' THEN gs.score END), 1) AS score_reading,
              ROUND(AVG(CASE WHEN gs.game_name = 'cognitive_flex_chor' THEN gs.score END), 1) AS score_chor,
              ROUND(AVG(CASE WHEN gs.game_name = 'triangle_rachna' THEN gs.score END), 1) AS score_rachna,
