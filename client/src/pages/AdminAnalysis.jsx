@@ -349,7 +349,7 @@ function SkeletonCard() {
 
 // ── Overview Panel ────────────────────────────────────────
 
-function OverviewPanel({ data, loading, filters }) {
+function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
   const [sortKey, setSortKey] = React.useState('sessions');
   const [sortDir, setSortDir] = React.useState('desc');
   const [childSortKey, setChildSortKey] = React.useState('sessions');
@@ -455,15 +455,15 @@ function OverviewPanel({ data, loading, filters }) {
         <KpiCard icon="🎮" label="Total Sessions"  value={fmt(kpis.totalSessions)}  color="#4f46e5" />
         <KpiCard icon="👦" label="Unique Children" value={fmt(kpis.uniqueChildren)} color="#0891b2" />
         <KpiCard icon="✅" label="Completion Rate" value={`${fmt(kpis.completionRate)}%`} sub={`${fmt(kpis.completedSessions)} completed`} color="#22c55e" />
-        <KpiCard icon="📊" label="Avg Score"       value={fmt(kpis.avgScore, 1)} sub="across all games" color="#7c3aed" />
+        <KpiCard icon="📊" label="Avg Score"       value={fmt(kpis.avgScore, 1)} sub="across all tests" color="#7c3aed" />
         <KpiCard icon="⏱️" label="Avg Duration"    value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} color="#f59e0b" />
       </div>
 
       <div className="ana-grid-2">
-        <Card title="Sessions by Game" stretch>
+        <Card title="Sessions by Test" stretch>
           <div className="ana-hbar-list">
             {byGame.length === 0
-              ? <div className="ana-chart-empty">No game data for selected filters</div>
+              ? <div className="ana-chart-empty">No test data for selected filters</div>
               : byGame.map(g => {
                 const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
                 return (
@@ -513,12 +513,12 @@ function OverviewPanel({ data, loading, filters }) {
         </div>
       </Card>
 
-      <Card title="Game Performance Summary" noPad>
+      <Card title="Test Performance Summary" noPad>
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
               <tr>
-                <SortTh label="Game"      sortId="game" />
+                <SortTh label="Test"      sortId="game" />
                 <SortTh label="Sessions"  sortId="sessions" />
                 <SortTh label="Children"  sortId="children" />
                 <SortTh label="Completed" sortId="completed" />
@@ -559,7 +559,7 @@ function OverviewPanel({ data, loading, filters }) {
               <SortThChild label="Name" sortId="name" />
               <SortThChild label="Completed" sortId="completed" />
               <SortThChild label="Sessions" sortId="sessions" />
-              {GAME_CATALOG.map(g => (
+              {catalog.map(g => (
                 <SortThChild key={g.key} label={`${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`} sortId={CHILD_SCORE_COLS[g.key]?.sortId} />
               ))}
               <SortThChild label="Total Score" sortId="totalScore" />
@@ -574,7 +574,7 @@ function OverviewPanel({ data, loading, filters }) {
                   <td>{c.name || '—'}</td>
                   <td>{fmt(c.completed)}</td>
                   <td>{fmt(c.sessions)}</td>
-                  {GAME_CATALOG.map(g => (
+                  {catalog.map(g => (
                     <td key={g.key}>{fmt(c[CHILD_SCORE_COLS[g.key]?.field], 1)}</td>
                   ))}
                   <td>{fmt(c.totalScore)}</td>
@@ -864,7 +864,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
                         </span>
                       </div>
                     </td>
-                    <td title={`Attempt no. ${s.attemptNo} of this child on this game (all-time)`}>
+                    <td title={`Attempt no. ${s.attemptNo} of this child on this test (all-time)`}>
                       <span style={{ fontWeight: 600, color: s.attemptNo === 1 ? '#0891b2' : '#64748b' }}>
                         #{s.attemptNo}{s.attemptNo === 1 ? ' 🆕' : ''}
                       </span>
@@ -897,7 +897,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
                     </td>
                     <td style={{ minWidth: '90px' }} title={totalQ
                         ? `Reached item ${reached} of ${totalQ} before the session ended`
-                        : `Reached item/screen ${reached} (this game doesn't record a total)`}>
+                        : `Reached item/screen ${reached} (this test doesn't record a total)`}>
                       <div style={{ fontSize: '12.5px' }}>
                         {totalQ ? <><strong>{reached}</strong>/{totalQ} <span style={{ fontSize: '11px', color: '#94a3b8' }}>{progPct}%</span></> : <strong>{reached}</strong>}
                       </div>
@@ -935,7 +935,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
 
 // ── Filter Bar ────────────────────────────────────────────
 
-function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading, groupOptions }) {
+function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading, groupOptions, catalog = GAME_CATALOG }) {
   const toggle = (key, val) => onChange(prev => ({
     ...prev,
     [key]: prev[key].includes(val) ? prev[key].filter(x => x !== val) : [...prev[key], val],
@@ -993,8 +993,8 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
         {activeTab === 'overall' && (
           <>
             <span className="ana-filter-sep" />
-            <ChipGroup label="Game"
-              options={GAME_CATALOG.map(g => ({ key: g.key, label: g.title, color: g.color }))}
+            <ChipGroup label="Test"
+              options={catalog.map(g => ({ key: g.key, label: g.title, color: g.color }))}
               selected={pending.gameKeys}
               onToggle={v => toggle('gameKeys', v)}
             />
@@ -1034,13 +1034,24 @@ export default function AdminAnalysis() {
   const [loading,         setLoading]       = useState(false);
   const [error,           setError]         = useState(null);
   const [groupOptions,    setGroupOptions]  = useState([]);
+  const [testOrder,       setTestOrder]     = useState(null);   // ordered keys from Settings → Test Configuration
   const metaFetchedRef = useRef(false);
 
   useEffect(() => {
     axiosAdmin.get('/admin/child-groups')
       .then(res => setGroupOptions(res.data.filter(g => g.status === 'active')))
       .catch(err => console.error('Failed to fetch child groups:', err));
+    axiosAdmin.get('/admin/test-config')
+      .then(({ data }) => setTestOrder((data.tests || []).map(t => t.key)))
+      .catch(err => console.error('Failed to fetch test config order:', err));
   }, []);
+
+  // All tests, ordered as configured in Admin Settings → Test Configuration
+  const orderedCatalog = React.useMemo(() => {
+    if (!testOrder?.length) return GAME_CATALOG;
+    const pos = new Map(testOrder.map((k, i) => [k, i]));
+    return [...GAME_CATALOG].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
+  }, [testOrder]);
 
   // Fetch meta once on mount → set default date range
   useEffect(() => {
@@ -1152,6 +1163,7 @@ export default function AdminAnalysis() {
         hasChanges={hasChanges}
         loading={loading}
         groupOptions={groupOptions}
+        catalog={orderedCatalog}
       />
 
       <div className="ana-layout">
@@ -1169,9 +1181,9 @@ export default function AdminAnalysis() {
             </div>
           </button>
 
-          <div className="ana-tab-divider">Games</div>
+          <div className="ana-tab-divider">Tests</div>
 
-          {GAME_CATALOG.map(g => (
+          {orderedCatalog.map(g => (
             <button key={g.key}
               className={`ana-tab-item${activeTab === g.key ? ' active' : ''}`}
               onClick={() => handleTabChange(g.key)}
@@ -1221,7 +1233,7 @@ export default function AdminAnalysis() {
           )}
 
           {activeTab === 'overall'
-            ? <OverviewPanel data={overviewData} loading={loading} filters={filters} />
+            ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} />
             : <GamePanel
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
                 gameKey={activeTab}
