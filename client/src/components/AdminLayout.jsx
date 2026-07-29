@@ -33,6 +33,7 @@ const AdminLayoutInner = () => {
     const activeGroup =
         location.pathname.includes('/admin/children')      ? 'children'     :
         location.pathname.includes('/admin/assessors')     ? 'assessors'    :
+        location.pathname.includes('/admin/child-groups')  ? 'child-groups' :
         location.pathname.includes('/admin/analysis')      ? 'analysis'     :
         location.pathname.includes('/admin/meta')          ? 'meta'         :
         location.pathname.includes('/admin/reports')       ? 'reports'      :
@@ -44,7 +45,7 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
 
-    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors';
+    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors' || activeGroup === 'child-groups';
     const appVersion = 'v1.0.0';
 
     // Sync profile from localStorage when updated by profile settings page
@@ -176,6 +177,13 @@ const AdminLayoutInner = () => {
                                         onClick={() => setUsersOpen(false)}
                                     >
                                         🧑‍🏫 Assessors
+                                    </Link>
+                                    <Link
+                                        to="/admin/child-groups"
+                                        className={`admin-dropdown-item ${activeGroup === 'child-groups' ? 'active' : ''}`}
+                                        onClick={() => setUsersOpen(false)}
+                                    >
+                                        🗂️ Child Groups
                                     </Link>
                                 </div>
                             )}

@@ -18,7 +18,7 @@ const GAME_META = {
 const AGE_MAP = { '3-5': [3, 5], '6-8': [6, 8], '9-11': [9, 11], '12+': [12, 99] };
 
 function parseFilters(req) {
-  const { startDate, endDate, gender, status, ageGroup, childId, gameKey } = req.query;
+  const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId } = req.query;
 
   // Date clauses (on gs.created_at)
   const dateClauses = [], dateParams = [];
@@ -30,6 +30,7 @@ function parseFilters(req) {
   const statuses  = status   ? status.split(',').filter(Boolean)   : [];
   const ageGroups = ageGroup ? ageGroup.split(',').filter(Boolean) : [];
   const gameKeys  = gameKey  ? gameKey.split(',').filter(Boolean)  : [];
+  const groupIds  = groupId  ? groupId.split(',').filter(Boolean)  : [];
 
   const genderClauses = [], genderParams = [];
   if (genders.length === 1)    { genderClauses.push('c.gender = ?');    genderParams.push(genders[0]); }
@@ -61,12 +62,21 @@ function parseFilters(req) {
   if (gameKeys.length === 1)    { gameClauses.push('gs.game_name = ?');    gameParams.push(gameKeys[0]); }
   else if (gameKeys.length > 1) { gameClauses.push('gs.game_name IN (?)'); gameParams.push(gameKeys); }
 
-  const allClauses     = [...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses];
-  const allParams      = [...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams];
+  // Group filter — a child can belong to multiple groups, so this is an EXISTS
+  // subquery rather than a join (a plain join would multiply session rows for
+  // children in more than one selected group).
+  const groupClauses = [], groupParams = [];
+  if (groupIds.length > 0) {
+    groupClauses.push('EXISTS (SELECT 1 FROM child_group_members cgm WHERE cgm.children_id = c.id AND cgm.group_id IN (?))');
+    groupParams.push(groupIds);
+  }
+
+  const allClauses     = [...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses];
+  const allParams      = [...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams];
 
   // For gender distribution: skip gender filter so all genders are visible
-  const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses];
-  const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams];
+  const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses];
+  const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams];
 
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
 

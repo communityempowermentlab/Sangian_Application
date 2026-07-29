@@ -203,6 +203,34 @@ const initDb = async () => {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
     }
 
+    // Create child_groups table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS child_groups (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        description VARCHAR(500),
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create child_group_members table — keyed on children.id (the stable numeric
+    // PK), not the mutable string child_id, so renaming a child's ID never needs
+    // to cascade into group membership the way it does for login_sessions /
+    // game_sessions / game_assessments / game_dashboard_pdfs.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS child_group_members (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        children_id INT NOT NULL,
+        group_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_child_group (children_id, group_id),
+        FOREIGN KEY (children_id) REFERENCES children(id) ON DELETE CASCADE,
+        FOREIGN KEY (group_id) REFERENCES child_groups(id) ON DELETE CASCADE
+      )
+    `);
+
     // ── Ankganit Version 2 ─────────────────────────────────────────────────────
     
     await connection.query(`

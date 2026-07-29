@@ -30,7 +30,13 @@ exports.getAllChildren = async (req, res) => {
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo, c.created_at,
                    (SELECT login_time FROM login_sessions ls
                     WHERE ls.child_id = c.child_id AND ls.status = 'success'
-                    ORDER BY login_time DESC LIMIT 1) AS last_login
+                    ORDER BY login_time DESC LIMIT 1) AS last_login,
+                   (SELECT GROUP_CONCAT(cg.id ORDER BY cg.name)
+                    FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
+                    WHERE cgm.children_id = c.id) AS group_ids,
+                   (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name)
+                    FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
+                    WHERE cgm.children_id = c.id) AS group_names
             FROM children c
             ORDER BY c.created_at DESC
         `);
@@ -78,6 +84,19 @@ exports.addChild = async (req, res) => {
             await pool.query('UPDATE children SET photo = ? WHERE child_id = ?', [photoFilename, childIdStr]);
         }
 
+        // Handle group assignment
+        if (req.body.group_ids) {
+            try {
+                const groupIds = JSON.parse(req.body.group_ids);
+                if (Array.isArray(groupIds) && groupIds.length > 0) {
+                    const values = groupIds.map(gid => [result.insertId, gid]);
+                    await pool.query('INSERT INTO child_group_members (children_id, group_id) VALUES ?', [values]);
+                }
+            } catch (e) {
+                console.error('Failed to assign groups on child creation:', e);
+            }
+        }
+
         res.status(201).json({
             message: 'Child registered successfully by Admin.',
             child_id: childIdStr,
@@ -94,10 +113,16 @@ exports.addChild = async (req, res) => {
 exports.getChildById = async (req, res) => {
     try {
         const { childId } = req.params;
-        const [rows] = await pool.query(
-            'SELECT child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, photo FROM children WHERE child_id = ?',
-            [childId]
-        );
+        const [rows] = await pool.query(`
+            SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo,
+                   (SELECT GROUP_CONCAT(cg.id ORDER BY cg.name)
+                    FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
+                    WHERE cgm.children_id = c.id) AS group_ids,
+                   (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name)
+                    FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
+                    WHERE cgm.children_id = c.id) AS group_names
+            FROM children c WHERE c.child_id = ?
+        `, [childId]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Child ID not found.' });
@@ -192,6 +217,35 @@ exports.updateChild = async (req, res) => {
             await connection.query('UPDATE children SET photo = ? WHERE child_id = ?', [newFilename, targetChildId]);
         }
 
+        // Sync group assignment (many-to-many, keyed on the stable numeric id —
+        // see child_group_members in db.js for why child_id isn't used here)
+        const [oldGroupRows] = await connection.query(
+            'SELECT cg.name FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id WHERE cgm.children_id = ? ORDER BY cg.name',
+            [oldData.id]
+        );
+        const oldGroupNames = oldGroupRows.map(g => g.name);
+        let newGroupNames = oldGroupNames;
+
+        if (req.body.group_ids !== undefined) {
+            let groupIds = [];
+            try {
+                groupIds = JSON.parse(req.body.group_ids);
+                if (!Array.isArray(groupIds)) groupIds = [];
+            } catch (e) {
+                groupIds = [];
+            }
+
+            await connection.query('DELETE FROM child_group_members WHERE children_id = ?', [oldData.id]);
+            if (groupIds.length > 0) {
+                const [newGroupRows] = await connection.query('SELECT id, name FROM child_groups WHERE id IN (?) ORDER BY name', [groupIds]);
+                newGroupNames = newGroupRows.map(g => g.name);
+                const values = newGroupRows.map(g => [oldData.id, g.id]);
+                await connection.query('INSERT INTO child_group_members (children_id, group_id) VALUES ?', [values]);
+            } else {
+                newGroupNames = [];
+            }
+        }
+
         // Log changes
         const adminId = req.admin?.id || null;
         let adminName = req.admin?.email || 'Admin';
@@ -240,6 +294,9 @@ exports.updateChild = async (req, res) => {
         }
         if (req.file && newFilename !== oldData.photo) {
             logs.push(['Photo', oldData.photo || 'None', newFilename]);
+        }
+        if (oldGroupNames.join(', ') !== newGroupNames.join(', ')) {
+            logs.push(['Groups', oldGroupNames.join(', ') || 'None', newGroupNames.join(', ') || 'None']);
         }
 
         for (const log of logs) {

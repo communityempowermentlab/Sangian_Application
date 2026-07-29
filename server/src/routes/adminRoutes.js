@@ -3,6 +3,7 @@ const router  = express.Router();
 const adminController      = require('../controllers/adminController');
 const adminChildController = require('../controllers/adminChildController');
 const adminAssessorController = require('../controllers/adminAssessorController');
+const adminChildGroupController = require('../controllers/adminChildGroupController');
 const contactController    = require('../controllers/contactController');
 const ticketController     = require('../controllers/ticketController');
 const helpContentController = require('../controllers/helpContentController');
@@ -42,6 +43,12 @@ router.get('/assessors',      adminAuth, adminAssessorController.getAllAssessors
 router.post('/assessors',     adminAuth, adminAssessorController.addAssessor);
 router.get('/assessors/:id',  adminAuth, adminAssessorController.getAssessorById);
 router.put('/assessors/:id',  adminAuth, adminAssessorController.updateAssessor);
+
+// Child Group management
+router.get('/child-groups',          adminAuth, adminChildGroupController.getAllGroups);
+router.post('/child-groups',         adminAuth, adminChildGroupController.addGroup);
+router.get('/child-groups/:id',      adminAuth, adminChildGroupController.getGroupById);
+router.put('/child-groups/:id',      adminAuth, adminChildGroupController.updateGroup);
 
 // Contact message badge count
 router.get('/contact-messages/new-count', adminAuth, contactController.getNewMessageCount);

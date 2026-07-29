@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildPhotoUpload from '../components/ChildPhotoUpload';
@@ -10,6 +10,20 @@ const AdminChildAdd = () => {
     const [errors, setErrors]         = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
+    const [groupOptions, setGroupOptions] = useState([]);
+    const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/child-groups')
+            .then(res => setGroupOptions(res.data.filter(g => g.status === 'active')))
+            .catch(err => console.error('Failed to fetch child groups:', err));
+    }, []);
+
+    const toggleGroup = (groupId) => {
+        setSelectedGroupIds(prev =>
+            prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
+        );
+    };
 
     const today      = new Date();
     const maxDate    = new Date(today.getFullYear() - 7,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
@@ -97,6 +111,7 @@ const AdminChildAdd = () => {
             data.append('remarks', formData.remarks.trim());
             data.append('gram_sabha', formData.gram_sabha.trim());
             data.append('hamlet', formData.hamlet.trim());
+            data.append('group_ids', JSON.stringify(selectedGroupIds));
             if (photoFile) data.append('photo', photoFile);
 
             const response = await axiosAdmin.post('/admin/children', data);
@@ -229,6 +244,22 @@ const AdminChildAdd = () => {
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label htmlFor="remarks" style={{ fontSize: '13px', fontWeight: 'bold' }}>Remarks</label>
                         <input id="remarks" type="text" placeholder="Enter remarks" style={fieldStyle('remarks')} value={formData.remarks} onChange={handleInputChange} />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Groups</label>
+                        {groupOptions.length === 0 ? (
+                            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No active groups yet — create one under Users → Child Groups.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 20px', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                                {groupOptions.map(g => (
+                                    <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                                        <input type="checkbox" checked={selectedGroupIds.includes(g.id)} onChange={() => toggleGroup(g.id)} />
+                                        {g.name}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ gridColumn: 'span 12', marginTop: '10px' }}>

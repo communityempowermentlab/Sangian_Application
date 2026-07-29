@@ -993,7 +993,6 @@ const ChorMachayeShorGame = () => {
       if (h.isResponseHouse) return { ...h, animationClass: 'highlight-blur' };
       return h;
     }));
-    showFeedbackMsg(t('game.incorrectFeedbackChor'), 'incorrect');
     await playAudio('cm_neglect.wav');
     setHouses(prev => prev.map(h => h.isResponseHouse ? { ...h, animationClass: 'highlight-sharp' } : { ...h, animationClass: '' }));
     await new Promise(r => setTimeout(r, 800));
@@ -1011,7 +1010,6 @@ const ChorMachayeShorGame = () => {
   const handleMilestone = async (item) => {
     if (currentPhase < item.maxPhases) {
       if (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) {
-        showFeedbackMsg(t('game.phase1Complete'), 'correct');
         return;
       }
       setPhase1TimeTaken(timerSeconds);
@@ -1621,8 +1619,6 @@ const ChorMachayeShorGame = () => {
 
         <main className="chor-main">
           <div className="chor-screen">
-
-            {targetLabel && <div style={{textAlign:'center', fontWeight:600, color:'#3b82f6', marginTop:'5px'}}>{targetLabel}</div>}
 
             {phase1CompletedPending && (
               <div className="phase1-complete-banner">

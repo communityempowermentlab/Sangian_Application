@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import './AdminAnalysis.css';
 
@@ -43,7 +44,7 @@ const ASSESS_LABELS = {
 
 const ASSESS_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#ec4899'];
 
-const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [] };
+const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [] };
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ function buildApiParams(f) {
   if (f.statuses?.length) p.status    = f.statuses.join(',');
   if (f.childId?.trim())  p.childId   = f.childId.trim();
   if (f.gameKeys?.length) p.gameKey   = f.gameKeys.join(',');
+  if (f.groupIds?.length) p.groupId   = f.groupIds.join(',');
   return p;
 }
 
@@ -690,7 +692,7 @@ function GamePanel({ gameMeta, data, loading }) {
 
 // ── Filter Bar ────────────────────────────────────────────
 
-function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading }) {
+function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading, groupOptions }) {
   const toggle = (key, val) => onChange(prev => ({
     ...prev,
     [key]: prev[key].includes(val) ? prev[key].filter(x => x !== val) : [...prev[key], val],
@@ -729,6 +731,16 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
           selected={pending.statuses}
           onToggle={v => toggle('statuses', v)}
         />
+        {groupOptions.length > 0 && (
+          <>
+            <span className="ana-filter-sep" />
+            <ChipGroup label="Group"
+              options={groupOptions.map(g => ({ key: String(g.id), label: g.name, color: '#6366f1' }))}
+              selected={pending.groupIds}
+              onToggle={v => toggle('groupIds', v)}
+            />
+          </>
+        )}
         {activeTab === 'overall' && (
           <>
             <span className="ana-filter-sep" />
@@ -763,15 +775,23 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
 // ── Main Component ────────────────────────────────────────
 
 export default function AdminAnalysis() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [meta,            setMeta]          = useState(null);
-  const [activeTab,       setActiveTab]     = useState('overall');
+  const [activeTab,       setActiveTab]     = useState(() => searchParams.get('tab') || 'overall');
   const [pendingFilters,  setPendingFilters] = useState(EMPTY_FILTERS);
   const [filters,         setFilters]       = useState(null);   // null = meta not yet loaded
   const [overviewData,    setOverviewData]  = useState(null);
   const [gameData,        setGameData]      = useState({});
   const [loading,         setLoading]       = useState(false);
   const [error,           setError]         = useState(null);
+  const [groupOptions,    setGroupOptions]  = useState([]);
   const metaFetchedRef = useRef(false);
+
+  useEffect(() => {
+    axiosAdmin.get('/admin/child-groups')
+      .then(res => setGroupOptions(res.data.filter(g => g.status === 'active')))
+      .catch(err => console.error('Failed to fetch child groups:', err));
+  }, []);
 
   // Fetch meta once on mount → set default date range
   useEffect(() => {
@@ -838,9 +858,21 @@ export default function AdminAnalysis() {
     setFilters(defaults);
   }, [meta]);
 
+  // ── Single source of truth: apply whatever the `?tab=` URL param says ──────
+  // Fires on mount (so a bookmarked/shared /admin/analysis?tab=... link opens
+  // straight into that dashboard), when handleTabChange updates the URL, and
+  // on browser back/forward.
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') || 'overall');
+  }, [searchParams]);
+
   const handleTabChange = (tab) => {
-    setActiveTab(tab);
     setError(null);
+    if (tab === 'overall') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ tab }, { replace: true });
+    }
   };
 
   const hasChanges = filters ? !filtersEqual(pendingFilters, filters) : false;
@@ -870,6 +902,7 @@ export default function AdminAnalysis() {
         activeTab={activeTab}
         hasChanges={hasChanges}
         loading={loading}
+        groupOptions={groupOptions}
       />
 
       <div className="ana-layout">

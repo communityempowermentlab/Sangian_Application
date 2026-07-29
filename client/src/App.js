@@ -35,6 +35,9 @@ import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
 import AdminAssessorsList from './pages/AdminAssessorsList';
 import AdminAssessorAdd from './pages/AdminAssessorAdd';
 import AdminAssessorEdit from './pages/AdminAssessorEdit';
+import AdminChildGroupsList from './pages/AdminChildGroupsList';
+import AdminChildGroupAdd from './pages/AdminChildGroupAdd';
+import AdminChildGroupEdit from './pages/AdminChildGroupEdit';
 import AdminScreenshots from './pages/AdminScreenshots';
 import AdminAnalysis from './pages/AdminAnalysis';
 import AdminMeta from './pages/AdminMeta';
@@ -61,6 +64,8 @@ const ADMIN_TITLES = {
     '/admin/children/add':   'Add Child | Admin Panel',
     '/admin/assessors':      'Assessors | Admin Panel',
     '/admin/assessors/add':  'Add Assessor | Admin Panel',
+    '/admin/child-groups':      'Child Groups | Admin Panel',
+    '/admin/child-groups/add':  'Add Child Group | Admin Panel',
     '/admin/reports':        'Reports | Admin Panel',
     '/admin/docs':           'Documentation | Admin Panel',
     '/admin/analysis':       'Analysis | Admin Panel',
@@ -205,6 +210,9 @@ function App() {
                                 <Route path="assessors"              element={<AdminAssessorsList />} />
                                 <Route path="assessors/add"          element={<AdminAssessorAdd />} />
                                 <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
+                                <Route path="child-groups"           element={<AdminChildGroupsList />} />
+                                <Route path="child-groups/add"       element={<AdminChildGroupAdd />} />
+                                <Route path="child-groups/edit/:id"  element={<AdminChildGroupEdit />} />
                                 <Route path="analysis"               element={<AdminAnalysis />} />
                                 <Route path="reports"                element={<AdminReports />} />
                                 <Route path="docs"                   element={<AdminDocs />} />

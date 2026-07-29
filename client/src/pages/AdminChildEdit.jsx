@@ -19,6 +19,9 @@ const AdminChildEdit = () => {
     const [logs, setLogs]                 = useState([]);
     const [logSearch, setLogSearch]       = useState('');
 
+    const [allGroups, setAllGroups]             = useState([]); // full catalog, incl. inactive
+    const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+
     const today   = new Date();
     const maxDate = new Date(today.getFullYear() - 7,  today.getMonth(), today.getDate()).toISOString().split('T')[0];
     const minDate = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate()).toISOString().split('T')[0];
@@ -53,10 +56,26 @@ const AdminChildEdit = () => {
 
     const currentAge = calculateAge(getDobString());
 
-    useEffect(() => { 
-        fetchChildDetails(); 
+    useEffect(() => {
+        fetchChildDetails();
         fetchLogs();
     }, [id]);
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/child-groups')
+            .then(res => setAllGroups(res.data))
+            .catch(err => console.error('Failed to fetch child groups:', err));
+    }, []);
+
+    // Active groups are always offered; a group the child is already in stays
+    // visible (tagged) even if it's since gone inactive, so it can be seen/unchecked.
+    const groupOptions = allGroups.filter(g => g.status === 'active' || selectedGroupIds.includes(g.id));
+
+    const toggleGroup = (groupId) => {
+        setSelectedGroupIds(prev =>
+            prev.includes(groupId) ? prev.filter(gid => gid !== groupId) : [...prev, groupId]
+        );
+    };
 
     const fetchLogs = async () => {
         try {
@@ -92,6 +111,7 @@ const AdminChildEdit = () => {
                 status: data.status || 'active',
             });
             setCurrentPhoto(data.photo || null);
+            setSelectedGroupIds(data.group_ids ? data.group_ids.split(',').map(Number) : []);
         } catch (error) {
             console.error('Failed to fetch child details:', error);
             alert('Error fetching child details.');
@@ -154,6 +174,7 @@ const AdminChildEdit = () => {
             data.append('gram_sabha', formData.gram_sabha.trim());
             data.append('hamlet', formData.hamlet.trim());
             data.append('status', formData.status);
+            data.append('group_ids', JSON.stringify(selectedGroupIds));
             if (photoFile) data.append('photo', photoFile);
 
             const res = await axiosAdmin.put(`/admin/children/${id}`, data);
@@ -308,6 +329,22 @@ const AdminChildEdit = () => {
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label htmlFor="remarks" style={{ fontSize: '13px', fontWeight: 'bold' }}>Remarks</label>
                         <input id="remarks" type="text" placeholder="Enter remarks" style={fieldStyle('remarks')} value={formData.remarks} onChange={handleInputChange} />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Groups</label>
+                        {groupOptions.length === 0 ? (
+                            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No groups yet — create one under Users → Child Groups.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 20px', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                                {groupOptions.map(g => (
+                                    <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                                        <input type="checkbox" checked={selectedGroupIds.includes(g.id)} onChange={() => toggleGroup(g.id)} />
+                                        {g.name}{g.status !== 'active' && <span style={{ color: 'var(--muted)' }}> (inactive)</span>}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ gridColumn: 'span 12', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>

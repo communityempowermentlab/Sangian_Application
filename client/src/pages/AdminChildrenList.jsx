@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
@@ -53,6 +53,33 @@ const formatRelativeTime = (dateString) => {
 const AdminChildrenList = () => {
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [groupFilterIds, setGroupFilterIds] = useState([]);
+    const [groupOptions, setGroupOptions] = useState([]);
+    const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
+    const groupDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) {
+                setGroupDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const toggleGroupFilter = (groupId) => {
+        setGroupFilterIds(prev =>
+            prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
+        );
+        setCurrentPage(1);
+    };
+
+    const groupFilterLabel = groupFilterIds.length === 0
+        ? 'All Groups'
+        : groupFilterIds.length === 1
+            ? (groupOptions.find(g => String(g.id) === groupFilterIds[0])?.name || '1 Group')
+            : `${groupFilterIds.length} Groups`;
     const [pageSize, setPageSize] = useState(100);
     const [currentPage, setCurrentPage] = useState(1);
     const [goToPageInput, setGoToPageInput] = useState('');
@@ -64,6 +91,9 @@ const AdminChildrenList = () => {
 
     useEffect(() => {
         fetchChildren();
+        axiosAdmin.get('/admin/child-groups')
+            .then(res => setGroupOptions(res.data))
+            .catch(err => console.error('Failed to fetch child groups:', err));
     }, []);
 
     const fetchChildren = async () => {
@@ -77,11 +107,16 @@ const AdminChildrenList = () => {
         }
     };
 
-    const filteredChildren = children.filter(child =>
-        child.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        child.child_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        child.mobile?.includes(searchTerm)
-    );
+    const filteredChildren = children.filter(child => {
+        const matchesSearch =
+            child.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            child.child_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            child.mobile?.includes(searchTerm);
+        const matchesGroup =
+            groupFilterIds.length === 0 ||
+            (child.group_ids || '').split(',').some(gid => groupFilterIds.includes(gid));
+        return matchesSearch && matchesGroup;
+    });
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -154,8 +189,8 @@ const AdminChildrenList = () => {
     const handleExportCSV = () => {
         if (children.length === 0) return;
         
-        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Father Name', 'Mother Name', 'Gram Sabha', 'Hamlet Name', 'Remarks', 'Status', 'Last Login'];
-        
+        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Father Name', 'Mother Name', 'Gram Sabha', 'Hamlet Name', 'Remarks', 'Groups', 'Status', 'Last Login'];
+
         const rows = children.map(child => [
             child.child_id || '',
             `"${child.name || ''}"`,
@@ -168,6 +203,7 @@ const AdminChildrenList = () => {
             `"${child.gram_sabha || ''}"`,
             `"${child.hamlet || ''}"`,
             `"${child.remarks || ''}"`,
+            `"${child.group_names || ''}"`,
             child.status || '',
             child.last_login ? new Date(child.last_login).toLocaleString() : 'Never'
         ]);
@@ -278,7 +314,48 @@ const AdminChildrenList = () => {
                                 )}
                             </div>
 
-                            <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div ref={groupDropdownRef} style={{ position: 'relative' }}>
+                                    <button
+                                        type="button"
+                                        aria-label="Filter by group"
+                                        onClick={() => setGroupDropdownOpen(o => !o)}
+                                        style={{ padding: '10px 12px', borderRadius: '14px', border: '1px solid var(--border)', outline: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '140px', justifyContent: 'space-between' }}
+                                    >
+                                        <span>{groupFilterLabel}</span>
+                                        <span style={{ fontSize: '11px' }}>{groupDropdownOpen ? '▴' : '▾'}</span>
+                                    </button>
+                                    {groupDropdownOpen && (
+                                        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 20, background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '8px', minWidth: '220px', maxHeight: '260px', overflowY: 'auto' }}>
+                                            {groupOptions.length === 0 ? (
+                                                <div style={{ padding: '8px', fontSize: '13px', color: 'var(--muted)' }}>No groups yet.</div>
+                                            ) : (
+                                                <>
+                                                    {groupFilterIds.length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setGroupFilterIds([]); setCurrentPage(1); }}
+                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: '12px', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '4px' }}
+                                                        >
+                                                            Clear selection
+                                                        </button>
+                                                    )}
+                                                    {groupOptions.map(g => (
+                                                        <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', fontSize: '13px', cursor: 'pointer', borderRadius: '6px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={groupFilterIds.includes(String(g.id))}
+                                                                onChange={() => toggleGroupFilter(String(g.id))}
+                                                            />
+                                                            {g.name}{g.status !== 'active' ? ' (inactive)' : ''}
+                                                        </label>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
                                 <select
                                     aria-label="Page size"
                                     style={{ padding: '10px 12px', borderRadius: '14px', border: '1px solid var(--border)', outline: 'none' }}
@@ -311,6 +388,7 @@ const AdminChildrenList = () => {
                                         <th onClick={() => requestSort('gram_sabha')} style={{cursor: 'pointer'}}>Gram Sabha{getSortIndicator('gram_sabha')}</th>
                                         <th onClick={() => requestSort('hamlet')} style={{cursor: 'pointer'}}>Hamlet{getSortIndicator('hamlet')}</th>
                                         <th onClick={() => requestSort('remarks')} style={{cursor: 'pointer'}}>Remarks{getSortIndicator('remarks')}</th>
+                                        <th>Groups</th>
                                         <th onClick={() => requestSort('created_at')} style={{cursor: 'pointer'}}>Add Date{getSortIndicator('created_at')}</th>
                                         <th onClick={() => requestSort('last_login')} style={{ textAlign: 'left', cursor: 'pointer' }}>Last Login{getSortIndicator('last_login')}</th>
                                         <th onClick={() => requestSort('status')} style={{cursor: 'pointer'}}>Status{getSortIndicator('status')}</th>
@@ -346,6 +424,7 @@ const AdminChildrenList = () => {
                                                 <td>{child.gram_sabha || '—'}</td>
                                                 <td>{child.hamlet || '—'}</td>
                                                 <td>{child.remarks || '—'}</td>
+                                                <td>{child.group_names || '—'}</td>
                                                 <td style={{ whiteSpace: 'nowrap', color: '#374151', fontSize: '13px' }}>
                                                     {child.created_at
                                                         ? new Date(child.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
