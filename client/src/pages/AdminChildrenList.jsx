@@ -3,6 +3,63 @@ import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
+import { GAME_CATALOG } from '../utils/reportExportUtils';
+
+const TOTAL_GAMES = GAME_CATALOG.length;
+
+// Profile fields an admin is expected to fill — used to flag data-quality gaps
+const REQUIRED_FIELDS = [
+    ['photo',       'Photo'],
+    ['dob',         'Date of birth'],
+    ['mobile',      'Mobile'],
+    ['father_name', 'Father name'],
+    ['mother_name', 'Mother name'],
+    ['gram_sabha',  'Gram Sabha'],
+    ['hamlet',      'Hamlet'],
+];
+
+const getMissingFields = (child) =>
+    REQUIRED_FIELDS.filter(([key]) => !child[key]).map(([, label]) => label);
+
+// Active children untouched (no game activity or login) for this many days need follow-up
+const STALE_DAYS = 14;
+
+const lastTouchMs = (child) => {
+    const t = Math.max(
+        child.last_activity ? new Date(child.last_activity).getTime() : 0,
+        child.last_login    ? new Date(child.last_login).getTime()    : 0,
+    );
+    return t || null;
+};
+
+const isStale = (child) => {
+    if (child.status !== 'active') return false;
+    const t = lastTouchMs(child);
+    return !t || (Date.now() - t) > STALE_DAYS * 24 * 60 * 60 * 1000;
+};
+
+const completionPct = (child) =>
+    child.total_sessions > 0 ? Math.round((child.completed_sessions / child.total_sessions) * 100) : null;
+
+// Age bands matching the app's registration range (7–15 years)
+const AGE_BAND_ORDER = ['Under 7', '7-9', '10-12', '13-15', '15+', 'Unknown'];
+
+const ageYears = (dob) => {
+    if (!dob) return null;
+    return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+};
+
+const ageBandOf = (child) => {
+    const y = ageYears(child.dob);
+    if (y === null) return 'Unknown';
+    if (y < 7)   return 'Under 7';
+    if (y <= 9)  return '7-9';
+    if (y <= 12) return '10-12';
+    if (y <= 15) return '13-15';
+    return '15+';
+};
+
+const GENDER_LABELS = { male: 'Male', female: 'Female', other: 'Other', prefer_not_to_say: 'Prefer not to say' };
 
 const calculateAge = (dob) => {
     if (!dob) return 'N/A';
@@ -54,6 +111,8 @@ const AdminChildrenList = () => {
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [groupFilterIds, setGroupFilterIds] = useState([]);
+    const [kpiSegment, setKpiSegment] = useState('all');
+    const [demoFilters, setDemoFilters] = useState({ genders: [], ageBands: [], gramSabhas: [], hamlets: [] });
     const [groupOptions, setGroupOptions] = useState([]);
     const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
     const groupDropdownRef = useRef(null);
@@ -78,7 +137,7 @@ const AdminChildrenList = () => {
     const groupFilterLabel = groupFilterIds.length === 0
         ? 'All Groups'
         : groupFilterIds.length === 1
-            ? (groupOptions.find(g => String(g.id) === groupFilterIds[0])?.name || '1 Group')
+            ? (groupFilterIds[0] === 'none' ? 'Ungrouped' : (groupOptions.find(g => String(g.id) === groupFilterIds[0])?.name || '1 Group'))
             : `${groupFilterIds.length} Groups`;
     const [pageSize, setPageSize] = useState(100);
     const [currentPage, setCurrentPage] = useState(1);
@@ -107,15 +166,116 @@ const AdminChildrenList = () => {
         }
     };
 
-    const filteredChildren = children.filter(child => {
-        const matchesSearch =
-            child.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            child.child_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            child.mobile?.includes(searchTerm);
-        const matchesGroup =
-            groupFilterIds.length === 0 ||
-            (child.group_ids || '').split(',').some(gid => groupFilterIds.includes(gid));
-        return matchesSearch && matchesGroup;
+    const matchesSearch = (child) =>
+        child.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        child.child_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        child.mobile?.includes(searchTerm);
+
+    const matchesGroup = (child) => {
+        if (groupFilterIds.length === 0) return true;
+        const ids = (child.group_ids || '').split(',').filter(Boolean);
+        if (groupFilterIds.includes('none') && ids.length === 0) return true;
+        return ids.some(gid => groupFilterIds.includes(gid));
+    };
+
+    const matchesSegment = (child) => {
+        switch (kpiSegment) {
+            case 'never':    return !child.total_sessions;
+            case 'complete': return child.games_completed >= TOTAL_GAMES;
+            case 'stale':    return isStale(child);
+            case 'issues':   return getMissingFields(child).length > 0;
+            default:         return true;
+        }
+    };
+
+    // A child's value(s) for each KPI dimension ('none'/'Not set' are real facets too)
+    const DIMENSIONS = {
+        groups:     (c) => { const ids = (c.group_ids || '').split(',').filter(Boolean); return ids.length ? ids : ['none']; },
+        genders:    (c) => c.gender || 'Not set',
+        ageBands:   (c) => ageBandOf(c),
+        gramSabhas: (c) => c.gram_sabha || 'Not set',
+        hamlets:    (c) => c.hamlet || 'Not set',
+    };
+
+    // `exclude` skips one dimension's own filter — used for facet counts, so a
+    // card still shows the counts of options you could add to the selection.
+    const matchesDemo = (child, exclude) => (
+        (exclude === 'groups'     || matchesGroup(child)) &&
+        (exclude === 'genders'    || demoFilters.genders.length === 0    || demoFilters.genders.includes(DIMENSIONS.genders(child))) &&
+        (exclude === 'ageBands'   || demoFilters.ageBands.length === 0   || demoFilters.ageBands.includes(DIMENSIONS.ageBands(child))) &&
+        (exclude === 'gramSabhas' || demoFilters.gramSabhas.length === 0 || demoFilters.gramSabhas.includes(DIMENSIONS.gramSabhas(child))) &&
+        (exclude === 'hamlets'    || demoFilters.hamlets.length === 0    || demoFilters.hamlets.includes(DIMENSIONS.hamlets(child)))
+    );
+
+    const filteredChildren = children.filter(c => matchesSearch(c) && matchesDemo(c, null) && matchesSegment(c));
+
+    const facetCounts = (dim) => {
+        const counts = new Map();
+        children.forEach(c => {
+            if (!matchesSearch(c) || !matchesDemo(c, dim) || !matchesSegment(c)) return;
+            const keys = DIMENSIONS[dim](c);
+            (Array.isArray(keys) ? keys : [keys]).forEach(k => counts.set(k, (counts.get(k) || 0) + 1));
+        });
+        return counts;
+    };
+
+    const chipScope = children.filter(c => matchesSearch(c) && matchesDemo(c, null));
+    const kpis = {
+        never:    chipScope.filter(c => !c.total_sessions).length,
+        complete: chipScope.filter(c => c.games_completed >= TOTAL_GAMES).length,
+        stale:    chipScope.filter(isStale).length,
+        issues:   chipScope.filter(c => getMissingFields(c).length > 0).length,
+        sessions: chipScope.reduce((s, c) => s + (Number(c.total_sessions) || 0), 0),
+        completedSessions: chipScope.reduce((s, c) => s + (Number(c.completed_sessions) || 0), 0),
+    };
+    kpis.sessionCompletionPct = kpis.sessions ? Math.round((kpis.completedSessions / kpis.sessions) * 100) : 0;
+
+    const toggleSegment = (segment) => {
+        setKpiSegment(prev => (prev === segment ? 'all' : segment));
+        setCurrentPage(1);
+    };
+
+    const toggleDemo = (dim, val) => {
+        setDemoFilters(prev => ({
+            ...prev,
+            [dim]: prev[dim].includes(val) ? prev[dim].filter(v => v !== val) : [...prev[dim], val],
+        }));
+        setCurrentPage(1);
+    };
+
+    const anyFilterActive = kpiSegment !== 'all' || groupFilterIds.length > 0 ||
+        Object.values(demoFilters).some(arr => arr.length > 0);
+
+    const clearAllFilters = () => {
+        setKpiSegment('all');
+        setGroupFilterIds([]);
+        setDemoFilters({ genders: [], ageBands: [], gramSabhas: [], hamlets: [] });
+        setCurrentPage(1);
+    };
+
+    const groupNameById = new Map(groupOptions.map(g => [String(g.id), g.name]));
+
+    // Per-dimension card definitions: value entries sorted by count (or fixed order for age/gender)
+    const facetCards = [
+        { dim: 'groups',     icon: '🗂️', title: 'Groups',     color: '#6366f1', selected: groupFilterIds,        toggle: toggleGroupFilter,
+          label: (k) => k === 'none' ? 'Ungrouped' : (groupNameById.get(k) || `Group ${k}`) },
+        { dim: 'gramSabhas', icon: '🏛️', title: 'Gram Sabha', color: '#0891b2', selected: demoFilters.gramSabhas, toggle: (v) => toggleDemo('gramSabhas', v),
+          label: (k) => k },
+        { dim: 'hamlets',    icon: '🏘️', title: 'Hamlet',     color: '#10b981', selected: demoFilters.hamlets,    toggle: (v) => toggleDemo('hamlets', v),
+          label: (k) => k },
+        { dim: 'ageBands',   icon: '🎂', title: 'Age',        color: '#f59e0b', selected: demoFilters.ageBands,   toggle: (v) => toggleDemo('ageBands', v),
+          label: (k) => k === 'Unknown' ? 'Unknown' : `${k} yrs`, order: AGE_BAND_ORDER },
+        { dim: 'genders',    icon: '🚻', title: 'Gender',     color: '#8b5cf6', selected: demoFilters.genders,    toggle: (v) => toggleDemo('genders', v),
+          label: (k) => GENDER_LABELS[k] || k, order: ['male', 'female', 'other', 'prefer_not_to_say', 'Not set'] },
+    ].map(card => {
+        const counts = facetCounts(card.dim);
+        let entries = [...counts.entries()];
+        entries = card.order
+            ? card.order.filter(k => counts.has(k)).map(k => [k, counts.get(k)])
+            : entries.sort((a, b) => b[1] - a[1]);
+        // keep selected values visible even when their current count is 0
+        card.selected.forEach(v => { if (!counts.has(v)) entries.push([v, 0]); });
+        return { ...card, entries, maxCount: Math.max(1, ...entries.map(([, n]) => n)) };
     });
 
     const requestSort = (key) => {
@@ -151,6 +311,11 @@ const AdminChildrenList = () => {
                     return 0;
                 }
                 
+                if (['total_sessions', 'completed_sessions', 'games_played', 'games_completed'].includes(sortConfig.key)) {
+                    aValue = Number(aValue) || 0;
+                    bValue = Number(bValue) || 0;
+                }
+
                 if (aValue === null || aValue === undefined) aValue = '';
                 if (bValue === null || bValue === undefined) bValue = '';
                 
@@ -189,7 +354,7 @@ const AdminChildrenList = () => {
     const handleExportCSV = () => {
         if (children.length === 0) return;
         
-        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Father Name', 'Mother Name', 'Gram Sabha', 'Hamlet Name', 'Remarks', 'Groups', 'Status', 'Last Login'];
+        const headers = ['Child ID', 'Name', 'Date of Birth', 'Age', 'Gender', 'Mobile', 'Father Name', 'Mother Name', 'Gram Sabha', 'Hamlet Name', 'Remarks', 'Groups', `Games Completed (of ${TOTAL_GAMES})`, 'Games Attempted', 'Total Sessions', 'Completed Sessions', 'Session Completion %', 'Last Game Activity', 'Missing Profile Fields', 'Status', 'Last Login'];
 
         const rows = children.map(child => [
             child.child_id || '',
@@ -204,6 +369,13 @@ const AdminChildrenList = () => {
             `"${child.hamlet || ''}"`,
             `"${child.remarks || ''}"`,
             `"${child.group_names || ''}"`,
+            child.games_completed ?? 0,
+            child.games_played ?? 0,
+            child.total_sessions ?? 0,
+            child.completed_sessions ?? 0,
+            completionPct(child) !== null ? `${completionPct(child)}%` : '',
+            child.last_activity ? new Date(child.last_activity).toLocaleString() : 'Never',
+            `"${getMissingFields(child).join('; ')}"`,
             child.status || '',
             child.last_login ? new Date(child.last_login).toLocaleString() : 'Never'
         ]);
@@ -294,6 +466,81 @@ const AdminChildrenList = () => {
                             <span style={{ fontSize: '16px' }}>➕</span> Add New Child
                         </Link>
                     </div>
+                </div>
+
+                {/* Children KPI facets — click any value to filter the table (multi-select) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '12px' }}>
+                    {facetCards.map(card => (
+                        <div key={card.dim} style={{ background: '#fff', border: '1px solid var(--border)', borderTop: `3px solid ${card.color}`, borderRadius: '12px', padding: '10px 12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '700' }}>{card.icon} {card.title} <span style={{ color: 'var(--muted)', fontWeight: '400' }}>({card.entries.length})</span></span>
+                                {card.selected.length > 0 && (
+                                    <button type="button" onClick={() => card.selected.slice().forEach(v => card.toggle(v))}
+                                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '11px', padding: 0 }}>
+                                        clear
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '8px' }}>
+                                {card.entries.length === 0 ? (
+                                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>No data</span>
+                                ) : card.entries.map(([val, count]) => {
+                                    const on = card.selected.includes(val);
+                                    const barPct = Math.round((count / card.maxCount) * 100);
+                                    return (
+                                        <button
+                                            key={val}
+                                            type="button"
+                                            onClick={() => card.toggle(val)}
+                                            title={on ? 'Click to remove filter' : `Filter: ${card.title} = ${card.label(val)}`}
+                                            style={{
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px',
+                                                padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12.5px', textAlign: 'left',
+                                                border: `1px solid ${on ? card.color : 'transparent'}`,
+                                                background: `linear-gradient(90deg, ${card.color}${on ? '2e' : '14'} ${barPct}%, transparent ${barPct}%)`,
+                                                fontWeight: on ? '700' : '400', color: 'var(--text)',
+                                            }}
+                                        >
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.label(val)}</span>
+                                            <span style={{ fontWeight: '700', color: card.color }}>{count}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Assessment quick filters + scope summary */}
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                    {[
+                        { seg: 'never',    label: '🚫 Never Assessed',                 n: kpis.never,    color: '#ef4444' },
+                        { seg: 'complete', label: `🏁 All ${TOTAL_GAMES} Games Done`,  n: kpis.complete, color: '#10b981' },
+                        { seg: 'stale',    label: `⏰ Idle ${STALE_DAYS}+ days`,       n: kpis.stale,    color: '#f59e0b' },
+                        { seg: 'issues',   label: '⚠️ Profile Gaps',                   n: kpis.issues,   color: '#b45309' },
+                    ].map(chip => {
+                        const on = kpiSegment === chip.seg;
+                        return (
+                            <button key={chip.seg} type="button" onClick={() => toggleSegment(chip.seg)}
+                                style={{
+                                    padding: '5px 12px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer',
+                                    border: `1px solid ${on ? chip.color : 'var(--border)'}`,
+                                    background: on ? `${chip.color}1a` : '#fff',
+                                    fontWeight: on ? '700' : '500', color: 'var(--text)',
+                                }}
+                            >
+                                {chip.label} <span style={{ fontWeight: '700', color: chip.color }}>{chip.n}</span>
+                            </button>
+                        );
+                    })}
+                    <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: 'auto' }}>
+                        📊 {filteredChildren.length} children · {kpis.sessions} sessions · {kpis.sessionCompletionPct}% completed
+                        {anyFilterActive && (
+                            <button type="button" onClick={clearAllFilters} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '12px', padding: 0, marginLeft: '10px' }}>
+                                ✖ Clear all filters
+                            </button>
+                        )}
+                    </span>
                 </div>
 
                 <div className="admin-grid" style={{ marginTop: '12px' }}>
@@ -389,6 +636,9 @@ const AdminChildrenList = () => {
                                         <th onClick={() => requestSort('hamlet')} style={{cursor: 'pointer'}}>Hamlet{getSortIndicator('hamlet')}</th>
                                         <th onClick={() => requestSort('remarks')} style={{cursor: 'pointer'}}>Remarks{getSortIndicator('remarks')}</th>
                                         <th>Groups</th>
+                                        <th onClick={() => requestSort('games_completed')} style={{cursor: 'pointer'}}>Games{getSortIndicator('games_completed')}</th>
+                                        <th onClick={() => requestSort('total_sessions')} style={{cursor: 'pointer'}}>Sessions{getSortIndicator('total_sessions')}</th>
+                                        <th onClick={() => requestSort('last_activity')} style={{cursor: 'pointer'}}>Last Activity{getSortIndicator('last_activity')}</th>
                                         <th onClick={() => requestSort('created_at')} style={{cursor: 'pointer'}}>Add Date{getSortIndicator('created_at')}</th>
                                         <th onClick={() => requestSort('last_login')} style={{ textAlign: 'left', cursor: 'pointer' }}>Last Login{getSortIndicator('last_login')}</th>
                                         <th onClick={() => requestSort('status')} style={{cursor: 'pointer'}}>Status{getSortIndicator('status')}</th>
@@ -397,9 +647,9 @@ const AdminChildrenList = () => {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="12" style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
+                                        <tr><td colSpan="21" style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
                                     ) : currentChildren.length === 0 ? (
-                                        <tr><td colSpan="12" style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
+                                        <tr><td colSpan="21" style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
                                     ) : (
                                         currentChildren.map((child, index) => (
                                             <tr key={child.child_id}>
@@ -413,7 +663,12 @@ const AdminChildrenList = () => {
                                                     />
                                                 </td>
                                                 <td style={{ fontWeight: '600' }}>{child.child_id}</td>
-                                                <td>{child.name}</td>
+                                                <td>
+                                                    {child.name}
+                                                    {getMissingFields(child).length > 0 && (
+                                                        <span title={`Missing: ${getMissingFields(child).join(', ')}`} style={{ marginLeft: '6px', cursor: 'help', fontSize: '12px' }}>⚠️</span>
+                                                    )}
+                                                </td>
                                                 {/* Ensure date format visually matches 2018-05-10 safely */}
                                                 <td>{child.dob ? new Date(child.dob).toISOString().split('T')[0] : ''}</td>
                                                 <td style={{ whiteSpace: 'nowrap' }}>{calculateAge(child.dob)}</td>
@@ -425,6 +680,30 @@ const AdminChildrenList = () => {
                                                 <td>{child.hamlet || '—'}</td>
                                                 <td>{child.remarks || '—'}</td>
                                                 <td>{child.group_names || '—'}</td>
+                                                <td style={{ whiteSpace: 'nowrap' }} title={`${child.games_played} of ${TOTAL_GAMES} games attempted, ${child.games_completed} completed`}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontSize: '13px', fontWeight: '600', color: child.games_completed >= TOTAL_GAMES ? '#059669' : '#374151' }}>
+                                                            {child.games_completed}/{TOTAL_GAMES}
+                                                        </span>
+                                                        <div style={{ width: '56px', height: '6px', borderRadius: '3px', background: '#e5e7eb', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${Math.min(100, (child.games_completed / TOTAL_GAMES) * 100)}%`, height: '100%', borderRadius: '3px', background: child.games_completed >= TOTAL_GAMES ? '#10b981' : '#6366f1' }} />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ whiteSpace: 'nowrap', fontSize: '13px' }} title={completionPct(child) !== null ? `${child.completed_sessions} of ${child.total_sessions} sessions completed (${completionPct(child)}%)` : 'No sessions yet'}>
+                                                    {child.total_sessions > 0 ? (
+                                                        <>
+                                                            <span style={{ fontWeight: '600' }}>{child.total_sessions}</span>
+                                                            <span style={{ color: completionPct(child) >= 70 ? '#059669' : completionPct(child) >= 40 ? '#b45309' : '#dc2626', marginLeft: '6px' }}>
+                                                                {completionPct(child)}%✓
+                                                            </span>
+                                                        </>
+                                                    ) : <span style={{ color: '#dc2626' }}>None</span>}
+                                                </td>
+                                                <td style={{ whiteSpace: 'nowrap', fontSize: '13px' }} title={child.last_activity ? new Date(child.last_activity).toLocaleString() : 'No game activity recorded'}>
+                                                    {isStale(child) && <span title={`No activity for ${STALE_DAYS}+ days — needs follow-up`} style={{ marginRight: '4px' }}>⏰</span>}
+                                                    {formatRelativeTime(child.last_activity)}
+                                                </td>
                                                 <td style={{ whiteSpace: 'nowrap', color: '#374151', fontSize: '13px' }}>
                                                     {child.created_at
                                                         ? new Date(child.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })

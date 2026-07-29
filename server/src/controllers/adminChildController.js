@@ -36,8 +36,23 @@ exports.getAllChildren = async (req, res) => {
                     WHERE cgm.children_id = c.id) AS group_ids,
                    (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name)
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
-                    WHERE cgm.children_id = c.id) AS group_names
+                    WHERE cgm.children_id = c.id) AS group_names,
+                   COALESCE(agg.total_sessions, 0)     AS total_sessions,
+                   COALESCE(agg.completed_sessions, 0) AS completed_sessions,
+                   COALESCE(agg.games_played, 0)       AS games_played,
+                   COALESCE(agg.games_completed, 0)    AS games_completed,
+                   agg.last_activity                   AS last_activity
             FROM children c
+            LEFT JOIN (
+                SELECT child_id,
+                       COUNT(*)                                                          AS total_sessions,
+                       CAST(SUM(status = 'completed') AS UNSIGNED)                       AS completed_sessions,
+                       COUNT(DISTINCT game_name)                                         AS games_played,
+                       COUNT(DISTINCT CASE WHEN status = 'completed' THEN game_name END) AS games_completed,
+                       MAX(created_at)                                                   AS last_activity
+                FROM game_sessions
+                GROUP BY child_id
+            ) agg ON agg.child_id = c.child_id
             ORDER BY c.created_at DESC
         `);
         res.status(200).json(children);
