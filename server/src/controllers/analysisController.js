@@ -360,6 +360,18 @@ exports.getGameSessions = async (req, res) => {
     const limit  = Math.min(parseInt(req.query.limit, 10) || 50, 200);
     const offset = parseInt(req.query.offset, 10) || 0;
 
+    const SESSION_SORT_MAP = {
+      child:    'gs.child_id',
+      attempt:  'attemptNo',
+      status:   'gs.status',
+      score:    'gs.score',
+      progress: 'gs.progress_level',
+      duration: 'durationSec',
+      time:     'gs.created_at',
+    };
+    const orderCol = SESSION_SORT_MAP[req.query.sortKey] || 'gs.created_at';
+    const sortDir  = req.query.sortDir === 'asc' ? 'ASC' : 'DESC';
+
     const [sessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName, c.gender,
              TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) AS age,
@@ -375,7 +387,7 @@ exports.getGameSessions = async (req, res) => {
                 AND g3.created_at < gs.created_at
               ORDER BY g3.created_at DESC LIMIT 1) AS prevScore
       FROM game_sessions gs ${CHILD_JOIN} ${where}
-      ORDER BY gs.created_at DESC LIMIT ? OFFSET ?
+      ORDER BY ${orderCol} ${sortDir}, gs.created_at DESC LIMIT ? OFFSET ?
     `, [...params, limit, offset]);
 
     res.json({ sessions });

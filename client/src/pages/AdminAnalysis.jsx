@@ -104,7 +104,7 @@ const scoreBandColor = (pct) => pct >= 80 ? '#22c55e' : pct >= 40 ? '#f59e0b' : 
 function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   const headers = ['#', 'Child ID', 'Name', 'Gender', 'Age', 'Attempt No', 'Status', 'Quit Reason',
                    'Score', 'Max Score', 'Score %', 'Prev Attempt Score', 'Score Change',
-                   'Progress Level', 'Duration (sec)', 'Start Time', 'End Time'];
+                   'Progress (items reached)', 'Total Items', 'Duration (sec)', 'Start Time', 'End Time'];
   const rows = sessions.map((s, i) => [
     i + 1,
     s.child_id || '',
@@ -120,6 +120,7 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
     s.prevScore ?? '',
     s.prevScore != null && s.score != null ? s.score - s.prevScore : '',
     s.progress_level ?? '',
+    s.total_questions ?? '',
     s.durationSec ?? '',
     s.start_time || '',
     s.end_time || '',
@@ -603,10 +604,28 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
   const [sessionsPage,     setSessionsPage]     = React.useState(0);
   const [loadingSessions,  setLoadingSessions]  = React.useState(false);
   const [hasMoreSessions,  setHasMoreSessions]  = React.useState(true);
+  const [sessionSortKey,   setSessionSortKey]   = React.useState('time');
+  const [sessionSortDir,   setSessionSortDir]   = React.useState('desc');
 
   React.useEffect(() => {
     setSessionsPage(0);
   }, [filters, gameKey]);
+
+  const handleSessionSort = (key) => {
+    if (sessionSortKey === key) setSessionSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSessionSortKey(key); setSessionSortDir('desc'); }
+    setSessionsPage(0);
+  };
+
+  function SortThSess({ label, sortId, hint }) {
+    const active = sessionSortKey === sortId;
+    return (
+      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleSessionSort(sortId)} title={hint}>
+        {label}
+        <span className="ana-sort-icon">{active ? (sessionSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+      </th>
+    );
+  }
 
   React.useEffect(() => {
     if (!filters || !gameKey) return;
@@ -615,7 +634,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
       setLoadingSessions(true);
       try {
         const { data: resData } = await axiosAdmin.get(`/analysis/game/${gameKey}/sessions`, {
-          params: { ...buildApiParams(filters), limit: 50, offset: sessionsPage * 50 }
+          params: { ...buildApiParams(filters), limit: 50, offset: sessionsPage * 50, sortKey: sessionSortKey, sortDir: sessionSortDir }
         });
         if (!isMounted) return;
         const rows = resData.sessions || [];
@@ -630,7 +649,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
     };
     fetchSessions();
     return () => { isMounted = false; };
-  }, [filters, gameKey, sessionsPage]);
+  }, [filters, gameKey, sessionsPage, sessionSortKey, sessionSortDir]);
 
   if (loading && !data) return (
     <div className="ana-content">
@@ -814,13 +833,25 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead>
-              <tr><th>#</th><th>Child</th><th>Attempt</th><th>Status</th><th>Score</th><th>Progress</th><th>Duration</th><th>When</th></tr>
+              <tr>
+                <th>#</th>
+                <SortThSess label="Child"    sortId="child" />
+                <SortThSess label="Attempt"  sortId="attempt" />
+                <SortThSess label="Status"   sortId="status" />
+                <SortThSess label="Score"    sortId="score" />
+                <SortThSess label="Progress" sortId="progress" hint="How far into the game the session reached (questions/screens completed)" />
+                <SortThSess label="Duration" sortId="duration" />
+                <SortThSess label="When"     sortId="time" />
+              </tr>
             </thead>
             <tbody>
               {sessions.map((s, i) => {
                 const pct   = maxGameScore && s.score != null ? Math.round((s.score / maxGameScore) * 100) : null;
                 const delta = s.prevScore != null && s.score != null ? s.score - s.prevScore : null;
                 const shortSession = s.durationSec != null && s.durationSec < 30;
+                const totalQ   = Number(s.total_questions) || null;
+                const reached  = Number(s.progress_level) || 0;
+                const progPct  = totalQ ? Math.min(100, Math.round((reached / totalQ) * 100)) : null;
                 return (
                   <tr key={s.id}>
                     <td><span className="ana-rank">{i + 1}</span></td>
@@ -864,7 +895,18 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
                         </div>
                       )}
                     </td>
-                    <td>Lv {s.progress_level}</td>
+                    <td style={{ minWidth: '90px' }} title={totalQ
+                        ? `Reached item ${reached} of ${totalQ} before the session ended`
+                        : `Reached item/screen ${reached} (this game doesn't record a total)`}>
+                      <div style={{ fontSize: '12.5px' }}>
+                        {totalQ ? <><strong>{reached}</strong>/{totalQ} <span style={{ fontSize: '11px', color: '#94a3b8' }}>{progPct}%</span></> : <strong>{reached}</strong>}
+                      </div>
+                      {progPct != null && (
+                        <div style={{ width: '70px', height: '4px', borderRadius: '2px', background: '#f1f5f9', marginTop: '3px' }}>
+                          <div style={{ width: `${progPct}%`, height: '100%', borderRadius: '2px', background: progPct >= 100 ? '#22c55e' : '#0891b2' }} />
+                        </div>
+                      )}
+                    </td>
                     <td>
                       {formatDuration(s.durationSec)}
                       {shortSession && <span title="Unusually short session (under 30s) — possibly an accidental start" style={{ marginLeft: '4px', cursor: 'help' }}>⚠️</span>}
