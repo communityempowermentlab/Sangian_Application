@@ -221,18 +221,25 @@ exports.getGameAnalytics = async (req, res) => {
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, params);
 
-    // Score distribution — 5 equal buckets (completed sessions only)
+    // Score distribution — 5 equal buckets. Not restricted to completed
+    // sessions: in games like Padh ke Batao, completion implies a near-perfect
+    // score and the real ability spread lives in dropped/quit sessions'
+    // partial scores. In-progress/paused sessions are excluded (their score is
+    // still changing) unless the admin explicitly filters by status.
     const bucketSize  = Math.ceil(meta.maxScore / 5);
     const bucketCases = Array.from({ length: 5 }, (_, i) => {
       const lo = i * bucketSize;
       const hi = Math.min((i + 1) * bucketSize - 1, meta.maxScore);
-      return `CAST(SUM(gs.score BETWEEN ${lo} AND ${hi}) AS UNSIGNED) AS \`${lo}-${hi}\``;
+      // last bucket is open-ended so scores above the configured max still count
+      const cond = i === 4 ? `gs.score >= ${lo}` : `gs.score BETWEEN ${lo} AND ${hi}`;
+      return `CAST(SUM(${cond}) AS UNSIGNED) AS \`${lo}-${hi}\``;
     }).join(', ');
 
-    const completedWhere = toWhere([...clauses, "gs.status = 'completed'"]);
-    const [[scoreDist]]  = await pool.query(`
+    const distClauses = [...clauses, 'gs.score IS NOT NULL'];
+    if (!req.query.status) distClauses.push("gs.status IN ('completed','dropped','quit')");
+    const [[scoreDist]] = await pool.query(`
       SELECT ${bucketCases}
-      FROM game_sessions gs ${CHILD_JOIN} ${completedWhere}
+      FROM game_sessions gs ${CHILD_JOIN} ${toWhere(distClauses)}
     `, params);
 
     // Quit reasons

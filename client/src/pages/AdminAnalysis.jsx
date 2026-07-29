@@ -521,6 +521,7 @@ function GamePanel({ gameMeta, data, loading }) {
 
   const scoreEntries   = scoreDist ? Object.entries(scoreDist) : [];
   const maxScoreCount  = Math.max(...scoreEntries.map(([, v]) => Number(v) || 0), 1);
+  const totalScored    = scoreEntries.reduce((s, [, v]) => s + (Number(v) || 0), 0);
 
   const statusSegs = [
     { label: 'Completed',    color: '#22c55e', value: Number(kpis.completedSessions) || 0 },
@@ -555,11 +556,17 @@ function GamePanel({ gameMeta, data, loading }) {
       <div className="ana-grid-3">
         <Card title="Score Distribution">
           <div className="ana-hbar-list">
-            {scoreEntries.length === 0
-              ? <div className="ana-chart-empty">No completed sessions</div>
-              : scoreEntries.map(([range, count]) => (
-                  <HBar key={range} label={range} value={Number(count)} maxValue={maxScoreCount} color={gameMeta.color} />
-                ))
+            {totalScored === 0
+              ? <div className="ana-chart-empty">No scored sessions for selected filters</div>
+              : <>
+                  {scoreEntries.map(([range, count]) => (
+                    <HBar key={range} label={range} value={Number(count)} maxValue={maxScoreCount} color={gameMeta.color}
+                      badge={`${Math.round((Number(count) / totalScored) * 100)}%`} />
+                  ))}
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                    {totalScored} scored session{totalScored === 1 ? '' : 's'} — includes partial scores of dropped / quit sessions
+                  </div>
+                </>
             }
           </div>
         </Card>
