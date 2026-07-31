@@ -22,7 +22,7 @@ const GAME_META = {
 const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 
 function parseFilters(req) {
-  const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId } = req.query;
+  const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId, attempt } = req.query;
 
   // Date clauses (on gs.created_at)
   const dateClauses = [], dateParams = [];
@@ -35,6 +35,23 @@ function parseFilters(req) {
   const ageGroups = ageGroup ? ageGroup.split(',').filter(Boolean) : [];
   const gameKeys  = gameKey  ? gameKey.split(',').filter(Boolean)  : [];
   const groupIds  = groupId  ? groupId.split(',').filter(Boolean)  : [];
+  const attempts  = attempt  ? attempt.split(',').filter(Boolean)  : [];
+
+  // Attempt number = the Nth time this child played this specific test
+  // (same meaning as the "Attempt" column elsewhere) — not stored, computed
+  // per row via a correlated subquery. '6+' matches everything from 6 up.
+  const attemptClauses = [], attemptParams = [];
+  if (attempts.length > 0) {
+    const ATTEMPT_EXPR = `(SELECT COUNT(*) FROM game_sessions g2
+       WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name AND g2.created_at <= gs.created_at)`;
+    const exact   = attempts.filter(a => a !== '6+').map(Number).filter(n => Number.isInteger(n) && n > 0);
+    const hasPlus = attempts.includes('6+');
+    const orParts = [];
+    if (exact.length === 1)    { orParts.push(`${ATTEMPT_EXPR} = ?`);    attemptParams.push(exact[0]); }
+    else if (exact.length > 1) { orParts.push(`${ATTEMPT_EXPR} IN (?)`); attemptParams.push(exact); }
+    if (hasPlus)                orParts.push(`${ATTEMPT_EXPR} >= 6`);
+    if (orParts.length) attemptClauses.push(`(${orParts.join(' OR ')})`);
+  }
 
   const genderClauses = [], genderParams = [];
   if (genders.length === 1)    { genderClauses.push('c.gender = ?');    genderParams.push(genders[0]); }
@@ -75,12 +92,12 @@ function parseFilters(req) {
     groupParams.push(groupIds);
   }
 
-  const allClauses     = [...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses];
-  const allParams      = [...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams];
+  const allClauses     = [...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const allParams      = [...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For gender distribution: skip gender filter so all genders are visible
-  const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses];
-  const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams];
+  const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
 

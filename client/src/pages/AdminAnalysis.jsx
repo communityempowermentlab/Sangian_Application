@@ -57,11 +57,24 @@ const ASSESS_LABELS = {
 
 const ASSESS_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#ec4899'];
 
-const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [], ageGroups: [] };
+const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [], ageGroups: [], attempts: [] };
 
 const AGE_CHIP_OPTIONS = [
   { key: '7-11',  label: '7-11 yrs',  color: '#f59e0b' },
   { key: '12-16', label: '12-16 yrs', color: '#f59e0b' },
+];
+
+// Attempt number is per-test (the Nth time a child played that specific
+// test) — same meaning as the "Attempt" column on Top Active Children and
+// the per-game Recent Sessions table. '6+' catches everything beyond, since
+// per-game replay counts trail off fast in practice.
+const ATTEMPT_CHIP_OPTIONS = [
+  { key: '1',  label: '1st Attempt', color: '#0891b2' },
+  { key: '2',  label: '2nd Attempt', color: '#0891b2' },
+  { key: '3',  label: '3rd Attempt', color: '#0891b2' },
+  { key: '4',  label: '4th Attempt', color: '#0891b2' },
+  { key: '5',  label: '5th Attempt', color: '#0891b2' },
+  { key: '6+', label: '6th+ Attempt', color: '#0891b2' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────
@@ -162,11 +175,31 @@ function buildApiParams(f) {
   if (f.gameKeys?.length)  p.gameKey  = f.gameKeys.join(',');
   if (f.groupIds?.length)  p.groupId  = f.groupIds.join(',');
   if (f.ageGroups?.length) p.ageGroup = f.ageGroups.join(',');
+  if (f.attempts?.length)  p.attempt  = f.attempts.join(',');
   return p;
 }
 
 function filtersEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// Rebuilds a filters object from the URL's query string — the exact inverse
+// of buildApiParams — so a refresh (or a shared/bookmarked link) restores
+// whatever was applied instead of resetting to defaults. dateDefaults only
+// fills in startDate/endDate when the URL doesn't already have them.
+function filtersFromSearchParams(sp, dateDefaults) {
+  const splitList = (key) => { const v = sp.get(key); return v ? v.split(',').filter(Boolean) : []; };
+  return {
+    startDate: sp.get('startDate') || dateDefaults.startDate,
+    endDate:   sp.get('endDate')   || dateDefaults.endDate,
+    genders:   splitList('gender'),
+    statuses:  splitList('status'),
+    childId:   sp.get('childId') || '',
+    gameKeys:  splitList('gameKey'),
+    groupIds:  splitList('groupId'),
+    ageGroups: splitList('ageGroup'),
+    attempts:  splitList('attempt'),
+  };
 }
 
 // ── Primitive chart / UI components ──────────────────────
@@ -983,6 +1016,12 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
           selected={pending.statuses}
           onToggle={v => toggle('statuses', v)}
         />
+        <span className="ana-filter-sep" />
+        <ChipGroup label="Attempt"
+          options={ATTEMPT_CHIP_OPTIONS}
+          selected={pending.attempts}
+          onToggle={v => toggle('attempts', v)}
+        />
         {groupOptions.length > 0 && (
           <>
             <span className="ana-filter-sep" />
@@ -1056,28 +1095,27 @@ export default function AdminAnalysis() {
     return [...GAME_CATALOG].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
   }, [testOrder]);
 
-  // Fetch meta once on mount → set default date range
+  // Fetch meta once on mount → set default date range, then restore whatever
+  // filters were already in the URL (e.g. from a refresh or shared link) on
+  // top of those defaults.
   useEffect(() => {
     if (metaFetchedRef.current) return;
     metaFetchedRef.current = true;
     axiosAdmin.get('/analysis/meta')
       .then(({ data }) => {
         setMeta(data);
-        const defaults = {
-          ...EMPTY_FILTERS,
-          startDate: data.minDate || todayStr(),
-          endDate:   data.today  || todayStr(),
-        };
-        setPendingFilters(defaults);
-        setFilters(defaults);
+        const dateDefaults = { startDate: data.minDate || todayStr(), endDate: data.today || todayStr() };
+        const restored = filtersFromSearchParams(searchParams, dateDefaults);
+        setPendingFilters(restored);
+        setFilters(restored);
       })
       .catch(() => {
-        const today   = todayStr();
-        const defaults = { ...EMPTY_FILTERS, startDate: today, endDate: today };
-        setPendingFilters(defaults);
-        setFilters(defaults);
+        const today = todayStr();
+        const restored = filtersFromSearchParams(searchParams, { startDate: today, endDate: today });
+        setPendingFilters(restored);
+        setFilters(restored);
       });
-  }, []);
+  }, []); // eslint-disable-line -- read the URL once, at whatever it was on mount
 
   // Fetch analytics data whenever applied filters or active tab change
   const fetchData = useCallback(async () => {
@@ -1123,19 +1161,26 @@ export default function AdminAnalysis() {
 
   // ── Single source of truth: apply whatever the `?tab=` URL param says ──────
   // Fires on mount (so a bookmarked/shared /admin/analysis?tab=... link opens
-  // straight into that dashboard), when handleTabChange updates the URL, and
-  // on browser back/forward.
+  // straight into that dashboard) and on browser back/forward. Tab clicks
+  // themselves just update local state — the writer effect below pushes it
+  // (together with the current filters) into the URL right after.
   useEffect(() => {
     setActiveTab(searchParams.get('tab') || 'overall');
   }, [searchParams]);
 
+  // Keep the URL in sync with the applied filters + active tab, so refreshing
+  // the page (or opening a shared/bookmarked link) restores exactly this
+  // state instead of resetting to defaults.
+  useEffect(() => {
+    if (!filters) return;
+    const params = buildApiParams(filters);
+    if (activeTab !== 'overall') params.tab = activeTab;
+    setSearchParams(params, { replace: true });
+  }, [filters, activeTab]); // eslint-disable-line
+
   const handleTabChange = (tab) => {
     setError(null);
-    if (tab === 'overall') {
-      setSearchParams({}, { replace: true });
-    } else {
-      setSearchParams({ tab }, { replace: true });
-    }
+    setActiveTab(tab);
   };
 
   const hasChanges = filters ? !filtersEqual(pendingFilters, filters) : false;
