@@ -371,8 +371,6 @@ const ChaloMelaChaleGame = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
   const [isDropped, setIsDropped] = useState(false);
-  
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
   const [isPaused, setIsPaused] = useState(false);
@@ -558,8 +556,6 @@ const ChaloMelaChaleGame = () => {
     } catch (e) {
       console.error('Resume check failed', e);
       startNewGame(childId);
-    } finally {
-      setIsCheckingSession(false);
     }
   };
 
@@ -1006,9 +1002,14 @@ const ChaloMelaChaleGame = () => {
   }, [screen]);
 
   // ── Audio auto-play + demo-screen trigger (after paint) ──────────────────
+  // Plays as soon as the splash screen is visible — it used to also wait on
+  // an in-flight resume-check network call that had no bearing on whether
+  // the audio should play, which just delayed it for no functional reason.
+  // showResumeModal (plus the pause-on-resume-modal effect right after this
+  // one) already covers the one case that actually matters: not talking
+  // over the resume modal if a resumable session turns up mid-playback.
   useEffect(() => {
     if (
-      !isCheckingSession &&
       screen === 'splash' &&
       !showResumeModal &&
       !splashAudioStartedRef.current &&
@@ -1032,7 +1033,14 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
+  }, [screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
+
+  // If a resumable session turns up mid-playback, don't talk over the modal.
+  useEffect(() => {
+    if (showResumeModal && audioRef.current) {
+      audioRef.current.pause();
+    }
+  }, [showResumeModal]);
 
   // ── iOS Safari audio unlock ───────────────────────────────────────────────
   // iOS/iPadOS Safari blocks audio.play() unless it's tied to a user gesture.
