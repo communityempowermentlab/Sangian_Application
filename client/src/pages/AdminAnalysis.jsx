@@ -136,8 +136,11 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   URL.revokeObjectURL(url);
 }
 
-async function exportChildrenExcel(children, catalog) {
+async function exportChildrenExcel(children, catalog, filters) {
   const XLSX = await import('xlsx');
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1 — one row per child (aggregated), same as the on-screen table
   const headers = ['#', 'Child ID', 'Name', 'Completed', 'Sessions',
                    ...catalog.map(g => `${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`),
                    'Total Score', 'Total Time (mins)', 'Last Played'];
@@ -155,9 +158,40 @@ async function exportChildrenExcel(children, catalog) {
     c.totalTimeMins != null ? Number(c.totalTimeMins) : '',
     c.lastPlayed || '',
   ]);
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Top Active Children');
+  const summaryWs = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+  // Sheet 2 — one row per individual session, across all tests, for these children
+  const sessHeaders = ['Child ID', 'Name', 'Gender', 'Age', 'Test', 'Attempt No', 'Status', 'Quit Reason',
+                       'Score', 'Progress (items reached)', 'Total Items', 'Duration (sec)', 'Start Time', 'End Time'];
+  let sessRows = [];
+  try {
+    const childIds = children.map(c => c.child_id).filter(Boolean).join(',');
+    const { data } = await axiosAdmin.get('/analysis/children-sessions', {
+      params: { ...buildApiParams(filters), childIds },
+    });
+    sessRows = (data.sessions || []).map(s => [
+      s.child_id || '',
+      s.childName || '',
+      s.gender || '',
+      s.age ?? '',
+      s.gameTitle || s.gameKey || '',
+      s.attemptNo ?? '',
+      s.status || '',
+      s.quit_reason || '',
+      s.score ?? '',
+      s.progress_level ?? '',
+      s.total_questions ?? '',
+      s.durationSec ?? '',
+      s.start_time || '',
+      s.end_time || '',
+    ]);
+  } catch (err) {
+    console.error('Failed to fetch session-wise data for export:', err);
+  }
+  const sessionsWs = XLSX.utils.aoa_to_sheet([sessHeaders, ...sessRows]);
+  XLSX.utils.book_append_sheet(wb, sessionsWs, 'Sessions');
+
   XLSX.writeFile(wb, 'top_active_children_export.xlsx');
 }
 
@@ -383,6 +417,16 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
   const [childrenPage, setChildrenPage] = React.useState(0);
   const [loadingChildren, setLoadingChildren] = React.useState(false);
   const [hasMoreChildren, setHasMoreChildren] = React.useState(true);
+  const [exportingChildren, setExportingChildren] = React.useState(false);
+
+  const handleExportChildren = async () => {
+    setExportingChildren(true);
+    try {
+      await exportChildrenExcel(childrenData, catalog, filters);
+    } finally {
+      setExportingChildren(false);
+    }
+  };
 
   React.useEffect(() => {
     setChildrenPage(0);
@@ -579,8 +623,8 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
             <span>Top Active Children{childrenData.length ? ` (${childrenData.length} loaded)` : ''}</span>
             {childrenData.length > 0 && (
-              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => exportChildrenExcel(childrenData, catalog)}>
-                📥 Export Excel
+              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={handleExportChildren} disabled={exportingChildren}>
+                {exportingChildren ? '⏳ Exporting…' : '📥 Export Excel'}
               </button>
             )}
           </span>
