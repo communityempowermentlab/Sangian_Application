@@ -421,6 +421,15 @@ const ChaloMelaChaleGame = () => {
   const tqTrialsRef           = useRef({});   // stores per-trial data for teaching questions
   const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
 
+  // Single reused Audio element for all narration played via playAudio() (samplea/
+  // sampleb/sa_path*/sb_path*/last_instruction). iOS Safari's autoplay-unlock is
+  // tied to the specific HTMLMediaElement instance that was played during a user
+  // gesture — a brand-new `new Audio()` created later doesn't inherit that unlock.
+  // Reusing one instance (just swapping its src) means once it's unlocked, every
+  // future narration clip played through it stays unlocked too.
+  const pooledAudioRef = useRef(null);
+  if (pooledAudioRef.current === null) pooledAudioRef.current = new Audio();
+
   // ── Session screentime timer ─────────────────────────────────────────────
   // Starts only when "Start Now" is clicked (or game is resumed); stops when assessment is submitted.
   const [timerSeconds, setTimerSeconds]   = useState(0);
@@ -689,7 +698,9 @@ const ChaloMelaChaleGame = () => {
   const playAudio = useCallback((file, onEnded) => {
     if (isStoppedRef.current) return; // don't start new audio after stopAll
     stopAudio();
-    const audio = new Audio(`${AUDIO_DIR}/${file}`);
+    const audio = pooledAudioRef.current; // reused, not `new Audio()` — see note above
+    audio.src = `${AUDIO_DIR}/${file}`;
+    audio.currentTime = 0;
     audioRef.current = audio;
     playingAudiosRef.current.push(audio); // track so stopAll/unmount can kill it
     
@@ -1043,33 +1054,48 @@ const ChaloMelaChaleGame = () => {
   }, [showResumeModal]);
 
   // ── iOS Safari audio unlock ───────────────────────────────────────────────
-  // iOS/iPadOS Safari blocks audio.play() unless it's tied to a user gesture.
-  // The splash audio autoplays on mount (no gesture yet), and the demo-path
-  // audio (sa_path*/sb_path*.wav) is scheduled asynchronously — after several
-  // seconds of awaited delays past the "Start Now" tap — so by the time it
-  // plays, the gesture context iOS looks for has expired. This arms a
-  // one-time listener for the very first tap/touch/key anywhere on the page:
-  // it plays (and immediately discards) a silent audio clip, which is enough
-  // for iOS Safari to mark the page as "interacted with for media" so every
-  // later programmatic play() call — including ones made well after this
-  // gesture, on freshly-created Audio objects — is allowed to autoplay. It
-  // also retries the splash audio directly, in case that one is still
-  // waiting. Nothing about game flow/timing/logic changes; this only makes
+  // iOS/iPadOS Safari ties its autoplay-unlock to the specific HTMLMediaElement
+  // instance that was played during a user gesture — not to the page as a
+  // whole. The splash audio autoplays on mount (no gesture yet), and the
+  // demo-path narration (played through the reused pooledAudioRef) is
+  // scheduled asynchronously, well after the "Start Now" tap. So this arms a
+  // one-time listener for the very first tap/touch/key anywhere on the page
+  // and, in that same gesture, directly primes BOTH real audio elements this
+  // game ever plays through — the splash <audio> element and the pooled
+  // narration element — with a real (silent) clip each, then immediately
+  // resets them. Because both are reused for everything played later (the
+  // splash element is only ever used for splash.wav; pooledAudioRef is
+  // reused for every playAudio() call), priming them once here keeps them
+  // unlocked for all later plays, regardless of how much time/async has
+  // passed. Nothing about game flow/timing/logic changes — this only makes
   // the existing autoplay calls actually succeed on iOS Safari.
   const audioUnlockedRef = useRef(false);
   useEffect(() => {
     if (audioUnlockedRef.current) return;
     const events = ['touchstart', 'pointerdown', 'keydown'];
+    const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+    const primeElement = (el) => {
+      if (!el) return;
+      const prevSrc = el.src;
+      try {
+        el.src = SILENT_WAV;
+        el.play().then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.src = prevSrc || '';
+        }).catch(() => { el.src = prevSrc || ''; });
+      } catch (_) { el.src = prevSrc || ''; }
+    };
     const unlock = () => {
       if (audioUnlockedRef.current) return;
       audioUnlockedRef.current = true;
       events.forEach(evt => document.removeEventListener(evt, unlock));
-      try {
-        const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
-        silent.play().catch(() => {});
-      } catch (_) {}
-      if (audioRef.current && audioRef.current.paused && screen === 'splash') {
-        audioRef.current.play().catch(() => {});
+      primeElement(pooledAudioRef.current);
+      if (screen === 'splash' && audioRef.current && audioRef.current !== pooledAudioRef.current) {
+        if (audioRef.current.paused) {
+          audioRef.current.load();
+          audioRef.current.play().catch(() => {});
+        }
       }
     };
     events.forEach(evt => document.addEventListener(evt, unlock, { passive: true }));
