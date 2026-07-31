@@ -572,8 +572,8 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
                   <td><span className="ana-rank">{i + 1}</span></td>
                   <td><code>{c.child_id}</code></td>
                   <td>{c.name || '—'}</td>
-                  <td title={c.attemptNo != null ? `Login visit #${c.attemptNo} for this child` : 'No matching login record'}>
-                    {c.attemptNo != null ? `#${c.attemptNo}` : '—'}
+                  <td title={`Attempt #${c.attemptNo} — the ${c.attemptNo === 1 ? '1st' : c.attemptNo === 2 ? '2nd' : c.attemptNo === 3 ? '3rd' : `${c.attemptNo}th`} time this child played each test grouped in this row`}>
+                    #{c.attemptNo}
                   </td>
                   <td>{fmt(c.completed)}</td>
                   <td>{fmt(c.testCount)}</td>

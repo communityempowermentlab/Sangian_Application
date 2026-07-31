@@ -401,15 +401,15 @@ exports.getGameSessions = async (req, res) => {
 };
 
 // ==========================================
-// TOP ACTIVE CHILDREN — session-wise: one row per (child, login visit).
-// A child's "Attempt" is which numbered visit-with-activity this was for
-// them: failed login tries (e.g. a mistyped Child ID) don't count, since no
-// visit happened, and neither do successful logins where the child checked
-// in but didn't play anything — only visits with at least one test played
-// get an Attempt number. "Test" is how many tests they played during that
-// visit. Test plays that can't be matched to any login visit (e.g.
-// seeded/legacy data with no login_sessions row) each fall back to their own
-// singleton row.
+// TOP ACTIVE CHILDREN — one row per (child, attempt number), where "attempt
+// number" is per-GAME, not per-login: a session's attemptNo is which time
+// this child played that specific game (1st, 2nd, ...), matching the
+// per-game "Attempt" column on the individual child scoreboard page. All
+// sessions sharing the same attemptNo — regardless of which game or which
+// day they happened on — are grouped into one row. E.g. if a child played
+// 9 different games for the first time on day 1, then on day 2 replayed 4
+// of those plus tried a 10th game for the first time, that's "Attempt 1"
+// (9 + 1 first-plays = 10 tests) and "Attempt 2" (4 replays).
 // ==========================================
 exports.getTopChildren = async (req, res) => {
   try {
@@ -446,48 +446,35 @@ exports.getTopChildren = async (req, res) => {
     const orderByCol = SORT_MAP[sortKey] || 'attemptNo';
 
     const [topChildren] = await pool.query(`
-      WITH filtered AS (
+      WITH game_attempts AS (
         SELECT gs.*, c.name AS childName,
-               (SELECT rl.id FROM login_sessions rl
-                WHERE rl.child_id = gs.child_id AND rl.status = 'success' AND rl.login_time <= gs.start_time
-                ORDER BY rl.login_time DESC LIMIT 1) AS login_session_id
+               (SELECT COUNT(*) FROM game_sessions g2
+                WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
+                  AND g2.created_at <= gs.created_at) AS attemptNo
         FROM game_sessions gs ${CHILD_JOIN} ${where}
-      ),
-      active_logins AS (
-        -- Only logins with at least one test actually played get an Attempt
-        -- number — a login where the child checked in and left without
-        -- playing anything shouldn't burn an attempt slot.
-        SELECT DISTINCT f.child_id, f.login_session_id, ls.login_time
-        FROM filtered f
-        JOIN login_sessions ls ON ls.id = f.login_session_id
-      ),
-      ranked_logins AS (
-        SELECT login_session_id AS id, ROW_NUMBER() OVER (PARTITION BY child_id ORDER BY login_time) AS attemptNo
-        FROM active_logins
       )
       SELECT
-        f.child_id, MAX(f.childName) AS name,
-        rl.attemptNo,
-        COUNT(*)                                                       AS testCount,
-        CAST(SUM(f.status = 'completed') AS UNSIGNED)                  AS completed,
-        CAST(SUM(f.score) AS UNSIGNED)                                 AS totalScore,
-        ROUND(SUM(TIMESTAMPDIFF(SECOND, f.start_time, f.end_time)) / 60, 1) AS totalTimeMins,
-        ROUND(AVG(CASE WHEN f.game_name = 'atlantis_bagiya' THEN f.score END), 1) AS score_bagiya,
-        ROUND(AVG(CASE WHEN f.game_name = 'number_recall_lottery' THEN f.score END), 1) AS score_lottery,
-        ROUND(AVG(CASE WHEN f.game_name = 'number_recall_lottery_v2' THEN f.score END), 1) AS score_lottery_v2,
-        ROUND(AVG(CASE WHEN f.game_name = 'rover_mela' THEN f.score END), 1) AS score_mela,
-        ROUND(AVG(CASE WHEN f.game_name = 'auditory_dhyan' THEN f.score END), 1) AS score_dhyan,
-        ROUND(AVG(CASE WHEN f.game_name = 'working_memory_herpher' THEN f.score END), 1) AS score_herpher,
-        ROUND(AVG(CASE WHEN f.game_name = 'working_memory_herpher_v2' THEN f.score END), 1) AS score_herpher_v2,
-        ROUND(AVG(CASE WHEN f.game_name = 'numeracy_number_skill' THEN f.score END), 1) AS score_ankganit,
-        ROUND(AVG(CASE WHEN f.game_name = 'numeracy_number_skill_v2' THEN f.score END), 1) AS score_ankganit_v2,
-        ROUND(AVG(CASE WHEN f.game_name = 'literacy_reading_skill' THEN f.score END), 1) AS score_reading,
-        ROUND(AVG(CASE WHEN f.game_name = 'cognitive_flex_chor' THEN f.score END), 1) AS score_chor,
-        ROUND(AVG(CASE WHEN f.game_name = 'triangle_rachna' THEN f.score END), 1) AS score_rachna,
-        DATE_FORMAT(MAX(f.created_at), '%Y-%m-%d %H:%i') AS lastPlayed
-      FROM filtered f
-      LEFT JOIN ranked_logins rl ON rl.id = f.login_session_id
-      GROUP BY f.child_id, COALESCE(f.login_session_id, -f.id), rl.attemptNo
+        ga.child_id, MAX(ga.childName) AS name,
+        ga.attemptNo,
+        COUNT(*)                                                        AS testCount,
+        CAST(SUM(ga.status = 'completed') AS UNSIGNED)                  AS completed,
+        CAST(SUM(ga.score) AS UNSIGNED)                                 AS totalScore,
+        ROUND(SUM(TIMESTAMPDIFF(SECOND, ga.start_time, ga.end_time)) / 60, 1) AS totalTimeMins,
+        ROUND(AVG(CASE WHEN ga.game_name = 'atlantis_bagiya' THEN ga.score END), 1) AS score_bagiya,
+        ROUND(AVG(CASE WHEN ga.game_name = 'number_recall_lottery' THEN ga.score END), 1) AS score_lottery,
+        ROUND(AVG(CASE WHEN ga.game_name = 'number_recall_lottery_v2' THEN ga.score END), 1) AS score_lottery_v2,
+        ROUND(AVG(CASE WHEN ga.game_name = 'rover_mela' THEN ga.score END), 1) AS score_mela,
+        ROUND(AVG(CASE WHEN ga.game_name = 'auditory_dhyan' THEN ga.score END), 1) AS score_dhyan,
+        ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher' THEN ga.score END), 1) AS score_herpher,
+        ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher_v2' THEN ga.score END), 1) AS score_herpher_v2,
+        ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill' THEN ga.score END), 1) AS score_ankganit,
+        ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill_v2' THEN ga.score END), 1) AS score_ankganit_v2,
+        ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill' THEN ga.score END), 1) AS score_reading,
+        ROUND(AVG(CASE WHEN ga.game_name = 'cognitive_flex_chor' THEN ga.score END), 1) AS score_chor,
+        ROUND(AVG(CASE WHEN ga.game_name = 'triangle_rachna' THEN ga.score END), 1) AS score_rachna,
+        DATE_FORMAT(MAX(ga.created_at), '%Y-%m-%d %H:%i') AS lastPlayed
+      FROM game_attempts ga
+      GROUP BY ga.child_id, ga.attemptNo
       ORDER BY ${orderByCol} ${sortDir}
       LIMIT ? OFFSET ?
     `, [...allParams, limit, offset]);
