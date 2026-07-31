@@ -1074,17 +1074,19 @@ const ChaloMelaChaleGame = () => {
     if (audioUnlockedRef.current) return;
     const events = ['touchstart', 'pointerdown', 'keydown'];
     const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+    // No async cleanup here on purpose: this fires on the very first tap
+    // anywhere, which can be the same tap as a real playAudio() call on this
+    // same shared element (e.g. tapping "Repeat" as the first interaction).
+    // An earlier version reset el.src back afterward via .then(), and that
+    // reset could land *after* the real call had already started playing the
+    // real file — silently cutting it off. Playing the element at all is
+    // enough to satisfy the gesture requirement; nothing needs undoing.
     const primeElement = (el) => {
-      if (!el) return;
-      const prevSrc = el.src;
+      if (!el || el.src) return; // only prime a still-unused element
       try {
         el.src = SILENT_WAV;
-        el.play().then(() => {
-          el.pause();
-          el.currentTime = 0;
-          el.src = prevSrc || '';
-        }).catch(() => { el.src = prevSrc || ''; });
-      } catch (_) { el.src = prevSrc || ''; }
+        el.play().catch(() => {});
+      } catch (_) { /* ignore */ }
     };
     const unlock = () => {
       if (audioUnlockedRef.current) return;
