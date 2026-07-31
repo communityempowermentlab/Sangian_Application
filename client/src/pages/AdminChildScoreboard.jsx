@@ -20,11 +20,74 @@ const GAME_LABELS = {
     'chor_machaye_shor': 'Chor Machaye Shor',
 };
 
+// ── "Why was this dropped?" explanations ───────────────────────────────────
+// Every game has its own automatic stop-rule for a 'dropped' session — a
+// built-in safeguard that ends the test early once continuing wouldn't give
+// a valid result (e.g. the child is clearly struggling with the easiest
+// items). A couple of games store the exact trigger in `quit_reason`, which
+// we translate into plain language below; the rest don't record a reason
+// string at all, so those fall back to a fixed explanation of that game's
+// one and only drop rule (the source of truth is each game's own code, not
+// the admin's internal docs, which are inconsistent on this point).
+function parseQuitReason(gameName, quitReason) {
+    if (!quitReason) return null;
+
+    if (gameName === 'rover_mela' || gameName === 'chalo_mela_chale') {
+        if (/Clinical Drop-Out Rule Triggered/i.test(quitReason)) {
+            return 'The child scored fewer than 2 points on each of the first three questions. To avoid unnecessary frustration and protect the accuracy of the results, the test ends early once this pattern shows up — the remaining, harder questions would not have added meaningful information at that point.';
+        }
+    }
+
+    if (gameName === 'literacy_reading_skill') {
+        let m = quitReason.match(/^(Single Letter|Double Letter) Drop: (\d+)\/(\d+) correct \(minimum (\d+) required\)\.?$/i);
+        if (m) {
+            const [, category, got, total, min] = m;
+            return `In the ${category} section, the child got only ${got} out of ${total} correct — at least ${min} correct answers are required to move on, so the test stopped here.`;
+        }
+        m = quitReason.match(/^Sentence Category Drop: (\d+)\/(\d+) correct/i);
+        if (m) {
+            const [, got, total] = m;
+            return `In the Sentence section, the child got ${got} out of ${total} correct — at least 1 correct answer is required to continue, so the test stopped here.`;
+        }
+        if (/^Story Drop/i.test(quitReason)) {
+            return 'The assessor scored the Story/Paragraph section as 0, which does not meet the minimum needed to continue the test.';
+        }
+    }
+
+    return quitReason; // Unrecognized format — show the raw stored reason rather than hide it.
+}
+
+const STATIC_DROP_EXPLANATIONS = {
+    atlantis_bagiya: "This test checks the child's running total score at 4 checkpoints spread through the game. If the score at a checkpoint doesn't clear the required minimum for that stage, the test ends there — continuing with harder questions afterward wouldn't give a valid result.",
+    numeracy_number_skill: 'This test stops automatically the moment either rule is hit: 3 wrong answers in a row, or too few correct answers in a question category before moving on to the next one.',
+    numeracy_number_skill_v2: 'This test stops automatically the moment either rule is hit: 3 wrong answers in a row, or too few correct answers in a question category before moving on to the next one.',
+    number_recall_lottery: "This test stops automatically as soon as the child gives 3 wrong answers in a row — the test's built-in signal that continuing wouldn't add useful information.",
+    number_recall_lottery_v2: "This test stops automatically as soon as the child gives 3 wrong answers in a row — the test's built-in signal that continuing wouldn't add useful information.",
+    chor_machaye_shor: "This isn't a scoring rule — it means an earlier, unfinished attempt at this test was replaced when the child (or assessor) chose to start fresh instead of resuming it. The old session is simply marked this way to keep the records clean.",
+    cognitive_flex_chor: "This isn't a scoring rule — it means an earlier, unfinished attempt at this test was replaced when the child (or assessor) chose to start fresh instead of resuming it. The old session is simply marked this way to keep the records clean.",
+};
+
+function explainDrop(session) {
+    const parsed = parseQuitReason(session.game_name, session.quit_reason);
+    if (parsed) return parsed;
+    if (STATIC_DROP_EXPLANATIONS[session.game_name]) return STATIC_DROP_EXPLANATIONS[session.game_name];
+    return "This test ended early based on the assessment's built-in stop-rule for this game, rather than the child completing every question.";
+}
+
 const AdminChildScoreboard = () => {
     const { childId } = useParams();
     const navigate = useNavigate();
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [expandedIds, setExpandedIds] = useState(new Set());
+
+    const toggleExplain = (id) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
 
     const [sortConfig, setSortConfig] = useState({ key: 'start_time', direction: 'descending' });
 
@@ -141,22 +204,27 @@ const AdminChildScoreboard = () => {
                             ) : sortedHistory.length === 0 ? (
                                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
                             ) : (
-                                sortedHistory.map((session, index) => (
-                                    <tr key={`${session.id}-${session.attempt_no || index}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                sortedHistory.map((session, index) => {
+                                    const rowKey = `${session.id}-${session.attempt_no || index}`;
+                                    const isDropped = session.status === 'dropped';
+                                    const isExpanded = expandedIds.has(rowKey);
+                                    return (
+                                    <React.Fragment key={rowKey}>
+                                    <tr style={{ borderBottom: isExpanded ? 'none' : '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                                             {GAME_LABELS[session.game_name] || session.game_name}
                                         </td>
                                         <td style={{ padding: '14px', textAlign: 'center' }}>
-                                            <span style={{ 
-                                                background: '#f1f5f9', color: '#475569', 
-                                                padding: '2px 8px', borderRadius: '6px', 
-                                                fontSize: '0.75rem', fontWeight: 700 
+                                            <span style={{
+                                                background: '#f1f5f9', color: '#475569',
+                                                padding: '2px 8px', borderRadius: '6px',
+                                                fontSize: '0.75rem', fontWeight: 700
                                             }}>
                                                 #{session.attempt_no || '1'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '14px', textAlign: 'center' }}>
-                                            <span style={{ 
+                                            <span style={{
                                                 display: 'inline-block', padding: '4px 10px', borderRadius: '20px',
                                                 background: session.score > 0 ? '#f0fdf4' : '#f8fafc',
                                                 color: session.score > 0 ? '#166534' : '#64748b',
@@ -172,6 +240,18 @@ const AdminChildScoreboard = () => {
                                                 <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Quit</span>
                                             ) : session.status === 'paused' ? (
                                                 <span className="admin-tag" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>Paused</span>
+                                            ) : isDropped ? (
+                                                <button
+                                                    onClick={() => toggleExplain(rowKey)}
+                                                    title="Click to see why this test stopped early"
+                                                    style={{
+                                                        background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca',
+                                                        borderRadius: '20px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700,
+                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                    }}
+                                                >
+                                                    Dropped <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▲' : 'ℹ️'}</span>
+                                                </button>
                                             ) : (
                                                 <span className="admin-tag" style={{ background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>{session.status}</span>
                                             )}
@@ -181,13 +261,13 @@ const AdminChildScoreboard = () => {
                                         </td>
                                         <td style={{ padding: '14px', textAlign: 'center' }}>
                                             {session.pdf_url ? (
-                                                <a 
-                                                    href={`${API_URL.replace('/api', '')}${session.pdf_url}`} 
-                                                    target="_blank" 
-                                                    rel="noreferrer" 
-                                                    style={{ 
-                                                        textDecoration: 'none', background: '#4f46e5', color: '#fff', 
-                                                        padding: '6px 14px', borderRadius: '8px', fontSize: '0.75rem', 
+                                                <a
+                                                    href={`${API_URL.replace('/api', '')}${session.pdf_url}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    style={{
+                                                        textDecoration: 'none', background: '#4f46e5', color: '#fff',
+                                                        padding: '6px 14px', borderRadius: '8px', fontSize: '0.75rem',
                                                         fontWeight: 'bold', display: 'inline-block', transition: 'all 0.2s',
                                                         boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
                                                     }}
@@ -201,7 +281,30 @@ const AdminChildScoreboard = () => {
                                             )}
                                         </td>
                                     </tr>
-                                ))
+                                    {isDropped && isExpanded && (
+                                        <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td colSpan="6" style={{ padding: '0 14px 16px 14px', background: '#fffafa' }}>
+                                                <div style={{
+                                                    display: 'flex', gap: '10px', alignItems: 'flex-start',
+                                                    background: '#fff1f1', border: '1px solid #fecaca', borderRadius: '10px',
+                                                    padding: '12px 16px',
+                                                }}>
+                                                    <span style={{ fontSize: '18px', lineHeight: 1 }}>🛑</span>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, color: '#991b1b', marginBottom: '4px', fontSize: '13px' }}>
+                                                            Why did {GAME_LABELS[session.game_name] || session.game_name} stop early?
+                                                        </div>
+                                                        <div style={{ color: '#475569', fontSize: '13.5px', lineHeight: 1.55, maxWidth: '820px' }}>
+                                                            {explainDrop(session)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </React.Fragment>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
