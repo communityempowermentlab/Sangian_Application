@@ -74,20 +74,24 @@ function explainDrop(session) {
     return "This test ended early based on the assessment's built-in stop-rule for this game, rather than the child completing every question.";
 }
 
+// 'dropped' is always a system-triggered stop-rule (explained above). 'quit'
+// and 'paused' share the same assessor-facing modal — a required free-text
+// reason the assessor types before either action — stored in the same
+// quit_reason column, so for those two statuses we just surface their own
+// words rather than trying to explain a rule.
+function explainReason(session) {
+    if (session.status === 'dropped') return explainDrop(session);
+    if (session.status === 'quit' || session.status === 'paused') {
+        return session.quit_reason && session.quit_reason.trim() ? session.quit_reason.trim() : null;
+    }
+    return null;
+}
+
 const AdminChildScoreboard = () => {
     const { childId } = useParams();
     const navigate = useNavigate();
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [expandedIds, setExpandedIds] = useState(new Set());
-
-    const toggleExplain = (id) => {
-        setExpandedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id); else next.add(id);
-            return next;
-        });
-    };
 
     const [sortConfig, setSortConfig] = useState({ key: 'start_time', direction: 'descending' });
 
@@ -194,23 +198,22 @@ const AdminChildScoreboard = () => {
                                 <th onClick={() => requestSort('attempt_no')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Attempt{getSortIndicator('attempt_no')}</th>
                                 <th onClick={() => requestSort('score')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Score{getSortIndicator('score')}</th>
                                 <th onClick={() => requestSort('status')} style={{ textAlign: 'center', padding: '14px', cursor: 'pointer' }}>Status{getSortIndicator('status')}</th>
+                                <th style={{ textAlign: 'left', padding: '14px' }}>Reason</th>
                                 <th onClick={() => requestSort('start_time')} style={{ textAlign: 'left', padding: '14px', cursor: 'pointer' }}>Date & Time{getSortIndicator('start_time')}</th>
                                 <th style={{ textAlign: 'center', padding: '14px' }}>Final Dashboard</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Loading history...</td></tr>
+                                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>Loading history...</td></tr>
                             ) : sortedHistory.length === 0 ? (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
+                                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>No game sessions found for this child.</td></tr>
                             ) : (
                                 sortedHistory.map((session, index) => {
                                     const rowKey = `${session.id}-${session.attempt_no || index}`;
-                                    const isDropped = session.status === 'dropped';
-                                    const isExpanded = expandedIds.has(rowKey);
+                                    const reason = explainReason(session);
                                     return (
-                                    <React.Fragment key={rowKey}>
-                                    <tr style={{ borderBottom: isExpanded ? 'none' : '1px solid #f1f5f9' }}>
+                                    <tr key={rowKey} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                         <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                                             {GAME_LABELS[session.game_name] || session.game_name}
                                         </td>
@@ -240,21 +243,14 @@ const AdminChildScoreboard = () => {
                                                 <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Quit</span>
                                             ) : session.status === 'paused' ? (
                                                 <span className="admin-tag" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>Paused</span>
-                                            ) : isDropped ? (
-                                                <button
-                                                    onClick={() => toggleExplain(rowKey)}
-                                                    title="Click to see why this test stopped early"
-                                                    style={{
-                                                        background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca',
-                                                        borderRadius: '20px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700,
-                                                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                    }}
-                                                >
-                                                    Dropped <span style={{ fontSize: '0.7rem' }}>{isExpanded ? '▲' : 'ℹ️'}</span>
-                                                </button>
+                                            ) : session.status === 'dropped' ? (
+                                                <span className="admin-tag" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Dropped</span>
                                             ) : (
                                                 <span className="admin-tag" style={{ background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>{session.status}</span>
                                             )}
+                                        </td>
+                                        <td style={{ padding: '14px', fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5, minWidth: '260px', maxWidth: '420px' }}>
+                                            {reason || <span style={{ color: '#cbd5e1' }}>—</span>}
                                         </td>
                                         <td style={{ padding: '14px', fontSize: '0.875rem', color: '#475569' }}>
                                             {formatDateTime(session.start_time)}
@@ -281,28 +277,6 @@ const AdminChildScoreboard = () => {
                                             )}
                                         </td>
                                     </tr>
-                                    {isDropped && isExpanded && (
-                                        <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                            <td colSpan="6" style={{ padding: '0 14px 16px 14px', background: '#fffafa' }}>
-                                                <div style={{
-                                                    display: 'flex', gap: '10px', alignItems: 'flex-start',
-                                                    background: '#fff1f1', border: '1px solid #fecaca', borderRadius: '10px',
-                                                    padding: '12px 16px',
-                                                }}>
-                                                    <span style={{ fontSize: '18px', lineHeight: 1 }}>🛑</span>
-                                                    <div>
-                                                        <div style={{ fontWeight: 700, color: '#991b1b', marginBottom: '4px', fontSize: '13px' }}>
-                                                            Why did {GAME_LABELS[session.game_name] || session.game_name} stop early?
-                                                        </div>
-                                                        <div style={{ color: '#475569', fontSize: '13.5px', lineHeight: 1.55, maxWidth: '820px' }}>
-                                                            {explainDrop(session)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                    </React.Fragment>
                                     );
                                 })
                             )}
