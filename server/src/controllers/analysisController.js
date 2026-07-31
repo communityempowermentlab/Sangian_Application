@@ -402,12 +402,14 @@ exports.getGameSessions = async (req, res) => {
 
 // ==========================================
 // TOP ACTIVE CHILDREN — session-wise: one row per (child, login visit).
-// A child's "Attempt" is which numbered *successful* login visit this was
-// for them (failed login tries — e.g. a mistyped Child ID — don't count,
-// since no visit actually happened); "Test" is how many tests they played
-// during that visit. Test plays that can't be matched to a successful login
-// visit (e.g. seeded/legacy data with no login_sessions row) each fall back
-// to their own singleton row.
+// A child's "Attempt" is which numbered visit-with-activity this was for
+// them: failed login tries (e.g. a mistyped Child ID) don't count, since no
+// visit happened, and neither do successful logins where the child checked
+// in but didn't play anything — only visits with at least one test played
+// get an Attempt number. "Test" is how many tests they played during that
+// visit. Test plays that can't be matched to any login visit (e.g.
+// seeded/legacy data with no login_sessions row) each fall back to their own
+// singleton row.
 // ==========================================
 exports.getTopChildren = async (req, res) => {
   try {
@@ -451,10 +453,17 @@ exports.getTopChildren = async (req, res) => {
                 ORDER BY rl.login_time DESC LIMIT 1) AS login_session_id
         FROM game_sessions gs ${CHILD_JOIN} ${where}
       ),
+      active_logins AS (
+        -- Only logins with at least one test actually played get an Attempt
+        -- number — a login where the child checked in and left without
+        -- playing anything shouldn't burn an attempt slot.
+        SELECT DISTINCT f.child_id, f.login_session_id, ls.login_time
+        FROM filtered f
+        JOIN login_sessions ls ON ls.id = f.login_session_id
+      ),
       ranked_logins AS (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY child_id ORDER BY login_time) AS attemptNo
-        FROM login_sessions
-        WHERE status = 'success'
+        SELECT login_session_id AS id, ROW_NUMBER() OVER (PARTITION BY child_id ORDER BY login_time) AS attemptNo
+        FROM active_logins
       )
       SELECT
         f.child_id, MAX(f.childName) AS name,
