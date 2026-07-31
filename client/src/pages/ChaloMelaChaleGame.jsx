@@ -371,6 +371,8 @@ const ChaloMelaChaleGame = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
   const [isDropped, setIsDropped] = useState(false);
+  
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
   const [isPaused, setIsPaused] = useState(false);
@@ -420,15 +422,6 @@ const ChaloMelaChaleGame = () => {
   const pdfGeneratedRef       = useRef(false);
   const tqTrialsRef           = useRef({});   // stores per-trial data for teaching questions
   const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
-
-  // Single reused Audio element for all narration played via playAudio() (samplea/
-  // sampleb/sa_path*/sb_path*/last_instruction). iOS Safari's autoplay-unlock is
-  // tied to the specific HTMLMediaElement instance that was played during a user
-  // gesture — a brand-new `new Audio()` created later doesn't inherit that unlock.
-  // Reusing one instance (just swapping its src) means once it's unlocked, every
-  // future narration clip played through it stays unlocked too.
-  const pooledAudioRef = useRef(null);
-  if (pooledAudioRef.current === null) pooledAudioRef.current = new Audio();
 
   // ── Session screentime timer ─────────────────────────────────────────────
   // Starts only when "Start Now" is clicked (or game is resumed); stops when assessment is submitted.
@@ -565,6 +558,8 @@ const ChaloMelaChaleGame = () => {
     } catch (e) {
       console.error('Resume check failed', e);
       startNewGame(childId);
+    } finally {
+      setIsCheckingSession(false);
     }
   };
 
@@ -698,9 +693,7 @@ const ChaloMelaChaleGame = () => {
   const playAudio = useCallback((file, onEnded) => {
     if (isStoppedRef.current) return; // don't start new audio after stopAll
     stopAudio();
-    const audio = pooledAudioRef.current; // reused, not `new Audio()` — see note above
-    audio.src = `${AUDIO_DIR}/${file}`;
-    audio.currentTime = 0;
+    const audio = new Audio(`${AUDIO_DIR}/${file}`);
     audioRef.current = audio;
     playingAudiosRef.current.push(audio); // track so stopAll/unmount can kill it
     
@@ -1013,14 +1006,9 @@ const ChaloMelaChaleGame = () => {
   }, [screen]);
 
   // ── Audio auto-play + demo-screen trigger (after paint) ──────────────────
-  // Plays as soon as the splash screen is visible — it used to also wait on
-  // an in-flight resume-check network call that had no bearing on whether
-  // the audio should play, which just delayed it for no functional reason.
-  // showResumeModal (plus the pause-on-resume-modal effect right after this
-  // one) already covers the one case that actually matters: not talking
-  // over the resume modal if a resumable session turns up mid-playback.
   useEffect(() => {
     if (
+      !isCheckingSession &&
       screen === 'splash' &&
       !showResumeModal &&
       !splashAudioStartedRef.current &&
@@ -1044,65 +1032,7 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
-
-  // If a resumable session turns up mid-playback, don't talk over the modal.
-  useEffect(() => {
-    if (showResumeModal && audioRef.current) {
-      audioRef.current.pause();
-    }
-  }, [showResumeModal]);
-
-  // ── iOS Safari audio unlock ───────────────────────────────────────────────
-  // iOS/iPadOS Safari ties its autoplay-unlock to the specific HTMLMediaElement
-  // instance that was played during a user gesture — not to the page as a
-  // whole. The splash audio autoplays on mount (no gesture yet), and the
-  // demo-path narration (played through the reused pooledAudioRef) is
-  // scheduled asynchronously, well after the "Start Now" tap. So this arms a
-  // one-time listener for the very first tap/touch/key anywhere on the page
-  // and, in that same gesture, directly primes BOTH real audio elements this
-  // game ever plays through — the splash <audio> element and the pooled
-  // narration element — with a real (silent) clip each, then immediately
-  // resets them. Because both are reused for everything played later (the
-  // splash element is only ever used for splash.wav; pooledAudioRef is
-  // reused for every playAudio() call), priming them once here keeps them
-  // unlocked for all later plays, regardless of how much time/async has
-  // passed. Nothing about game flow/timing/logic changes — this only makes
-  // the existing autoplay calls actually succeed on iOS Safari.
-  const audioUnlockedRef = useRef(false);
-  useEffect(() => {
-    if (audioUnlockedRef.current) return;
-    const events = ['touchstart', 'pointerdown', 'keydown'];
-    const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-    // No async cleanup here on purpose: this fires on the very first tap
-    // anywhere, which can be the same tap as a real playAudio() call on this
-    // same shared element (e.g. tapping "Repeat" as the first interaction).
-    // An earlier version reset el.src back afterward via .then(), and that
-    // reset could land *after* the real call had already started playing the
-    // real file — silently cutting it off. Playing the element at all is
-    // enough to satisfy the gesture requirement; nothing needs undoing.
-    const primeElement = (el) => {
-      if (!el || el.src) return; // only prime a still-unused element
-      try {
-        el.src = SILENT_WAV;
-        el.play().catch(() => {});
-      } catch (_) { /* ignore */ }
-    };
-    const unlock = () => {
-      if (audioUnlockedRef.current) return;
-      audioUnlockedRef.current = true;
-      events.forEach(evt => document.removeEventListener(evt, unlock));
-      primeElement(pooledAudioRef.current);
-      if (screen === 'splash' && audioRef.current && audioRef.current !== pooledAudioRef.current) {
-        if (audioRef.current.paused) {
-          audioRef.current.load();
-          audioRef.current.play().catch(() => {});
-        }
-      }
-    };
-    events.forEach(evt => document.addEventListener(evt, unlock, { passive: true }));
-    return () => events.forEach(evt => document.removeEventListener(evt, unlock));
-  }, [screen]);
+  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
 
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
