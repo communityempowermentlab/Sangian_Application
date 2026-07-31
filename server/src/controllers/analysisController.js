@@ -402,10 +402,12 @@ exports.getGameSessions = async (req, res) => {
 
 // ==========================================
 // TOP ACTIVE CHILDREN — session-wise: one row per (child, login visit).
-// A child's "Attempt" is which numbered login visit this was for them;
-// "Test" is how many tests they played during that visit. Test plays that
-// can't be matched to a login visit (e.g. seeded/legacy data with no
-// login_sessions row) each fall back to their own singleton row.
+// A child's "Attempt" is which numbered *successful* login visit this was
+// for them (failed login tries — e.g. a mistyped Child ID — don't count,
+// since no visit actually happened); "Test" is how many tests they played
+// during that visit. Test plays that can't be matched to a successful login
+// visit (e.g. seeded/legacy data with no login_sessions row) each fall back
+// to their own singleton row.
 // ==========================================
 exports.getTopChildren = async (req, res) => {
   try {
@@ -445,13 +447,14 @@ exports.getTopChildren = async (req, res) => {
       WITH filtered AS (
         SELECT gs.*, c.name AS childName,
                (SELECT rl.id FROM login_sessions rl
-                WHERE rl.child_id = gs.child_id AND rl.login_time <= gs.start_time
+                WHERE rl.child_id = gs.child_id AND rl.status = 'success' AND rl.login_time <= gs.start_time
                 ORDER BY rl.login_time DESC LIMIT 1) AS login_session_id
         FROM game_sessions gs ${CHILD_JOIN} ${where}
       ),
       ranked_logins AS (
         SELECT id, ROW_NUMBER() OVER (PARTITION BY child_id ORDER BY login_time) AS attemptNo
         FROM login_sessions
+        WHERE status = 'success'
       )
       SELECT
         f.child_id, MAX(f.childName) AS name,
