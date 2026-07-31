@@ -60,9 +60,8 @@ const ASSESS_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#
 const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [], ageGroups: [] };
 
 const AGE_CHIP_OPTIONS = [
-  { key: '7-9',   label: '7-9 yrs',   color: '#f59e0b' },
-  { key: '10-12', label: '10-12 yrs', color: '#f59e0b' },
-  { key: '13-16', label: '13-16 yrs', color: '#f59e0b' },
+  { key: '7-11',  label: '7-11 yrs',  color: '#f59e0b' },
+  { key: '12-16', label: '12-16 yrs', color: '#f59e0b' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────

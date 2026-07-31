@@ -15,8 +15,11 @@ const GAME_META = {
   cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
 };
 
-// Age group label → [minAge, maxAge] inclusive (registration range is 7–16)
-const AGE_MAP = { '7-9': [7, 9], '10-12': [10, 12], '13-16': [13, 16] };
+// Age group label → [lo, hi] (registration range is 7–16). Boundaries are
+// exact-day, not calendar "completed years": band "lo-hi" covers
+// (dob + (lo-1) years, dob + hi years] — starts the day after the child's
+// (lo-1)th birthday and ends on their hi-th birthday itself.
+const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 
 function parseFilters(req) {
   const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId } = req.query;
@@ -47,7 +50,7 @@ function parseFilters(req) {
     const conditions = ageGroups
       .map(ag => AGE_MAP[ag])
       .filter(Boolean)
-      .map(([lo, hi]) => `TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) BETWEEN ${lo} AND ${hi}`);
+      .map(([lo, hi]) => `(DATE_ADD(c.dob, INTERVAL ${lo - 1} YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL ${hi} YEAR))`);
     if (conditions.length) ageClauses.push(`(${conditions.join(' OR ')})`);
   }
 

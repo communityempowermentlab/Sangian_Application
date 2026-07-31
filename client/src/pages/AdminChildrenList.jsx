@@ -41,21 +41,25 @@ const isStale = (child) => {
 const completionPct = (child) =>
     child.total_sessions > 0 ? Math.round((child.completed_sessions / child.total_sessions) * 100) : null;
 
-// Age bands matching the app's registration range (7–16 years)
-const AGE_BAND_ORDER = ['Under 7', '7-9', '10-12', '13-16', '17+', 'Unknown'];
+// Age bands matching the app's registration range (7–16 years).
+// Boundaries are exact-day, not calendar "completed years": band "lo-hi"
+// covers (dob + (lo-1) years, dob + hi years] — starts the day after the
+// child's (lo-1)th birthday and ends on their hi-th birthday itself.
+const AGE_BAND_ORDER = ['Under 7', '7-11', '12-16', '17+', 'Unknown'];
 
-const ageYears = (dob) => {
-    if (!dob) return null;
-    return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+const addYears = (dob, years) => {
+    const d = new Date(dob);
+    d.setFullYear(d.getFullYear() + years);
+    return d;
 };
 
 const ageBandOf = (child) => {
-    const y = ageYears(child.dob);
-    if (y === null) return 'Unknown';
-    if (y < 7)   return 'Under 7';
-    if (y <= 9)  return '7-9';
-    if (y <= 12) return '10-12';
-    if (y <= 16) return '13-16';
+    if (!child.dob) return 'Unknown';
+    const dobDate = new Date(child.dob);
+    const today = new Date();
+    if (today <= addYears(dobDate, 6))  return 'Under 7';
+    if (today <= addYears(dobDate, 11)) return '7-11';
+    if (today <= addYears(dobDate, 16)) return '12-16';
     return '17+';
 };
 
