@@ -136,6 +136,31 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   URL.revokeObjectURL(url);
 }
 
+async function exportChildrenExcel(children, catalog) {
+  const XLSX = await import('xlsx');
+  const headers = ['#', 'Child ID', 'Name', 'Completed', 'Sessions',
+                   ...catalog.map(g => `${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`),
+                   'Total Score', 'Total Time (mins)', 'Last Played'];
+  const rows = children.map((c, i) => [
+    i + 1,
+    c.child_id || '',
+    c.name || '',
+    Number(c.completed) || 0,
+    Number(c.sessions) || 0,
+    ...catalog.map(g => {
+      const v = c[CHILD_SCORE_COLS[g.key]?.field];
+      return v != null ? Number(v) : '';
+    }),
+    Number(c.totalScore) || 0,
+    c.totalTimeMins != null ? Number(c.totalTimeMins) : '',
+    c.lastPlayed || '',
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Top Active Children');
+  XLSX.writeFile(wb, 'top_active_children_export.xlsx');
+}
+
 function formatDuration(secs) {
   if (!secs || secs <= 0) return '—';
   const m = Math.floor(secs / 60), s = secs % 60;
@@ -549,7 +574,19 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
         </div>
       </Card>
 
-      <Card title="Top Active Children" noPad>
+      <Card
+        title={
+          <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+            <span>Top Active Children{childrenData.length ? ` (${childrenData.length} loaded)` : ''}</span>
+            {childrenData.length > 0 && (
+              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => exportChildrenExcel(childrenData, catalog)}>
+                📥 Export Excel
+              </button>
+            )}
+          </span>
+        }
+        noPad
+      >
         <div className="ana-table-wrap">
           <table className="ana-table ana-table-bordered">
             <thead><tr>
