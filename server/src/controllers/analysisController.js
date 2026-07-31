@@ -400,42 +400,6 @@ exports.getGameSessions = async (req, res) => {
   }
 };
 
-// ── GET /api/analysis/children-sessions — session-level detail (all tests) for
-// a given set of child IDs. Backs the "session-wise" sheet in the Top Active
-// Children Excel export — one row per session, across every test they played.
-exports.getChildrenSessions = async (req, res) => {
-  try {
-    const ids = (req.query.childIds || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (ids.length === 0) return res.json({ sessions: [] });
-
-    const { allClauses, allParams } = parseFilters(req);
-    const clauses = [...allClauses, 'gs.child_id IN (?)'];
-    const params  = [...allParams, ids];
-    const where   = toWhere(clauses);
-
-    const [sessions] = await pool.query(`
-      SELECT gs.child_id, c.name AS childName, c.gender,
-             TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) AS age,
-             gs.game_name AS gameKey,
-             gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
-             DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
-             DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
-             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
-             (SELECT COUNT(*) FROM game_sessions g2
-              WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
-                AND g2.created_at <= gs.created_at) AS attemptNo
-      FROM game_sessions gs ${CHILD_JOIN} ${where}
-      ORDER BY gs.child_id ASC, gs.game_name ASC, gs.created_at ASC
-    `, params);
-
-    const enriched = sessions.map(s => ({ ...s, gameTitle: (GAME_META[s.gameKey] || {}).title || s.gameKey }));
-    res.json({ sessions: enriched });
-  } catch (err) {
-    console.error('Children sessions error:', err);
-    res.status(500).json({ error: 'Failed to load children sessions' });
-  }
-};
-
 // ==========================================
 // TOP ACTIVE CHILDREN — session-wise: one row per (child, login visit).
 // A child's "Attempt" is which numbered login visit this was for them;

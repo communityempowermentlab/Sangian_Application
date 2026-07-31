@@ -136,66 +136,6 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   URL.revokeObjectURL(url);
 }
 
-async function exportChildrenExcel(children, catalog, filters) {
-  const XLSX = await import('xlsx');
-  const wb = XLSX.utils.book_new();
-
-  // Sheet 1 — one row per (child, login visit), same as the on-screen table
-  const headers = ['#', 'Child ID', 'Name', 'Attempt', 'Completed', 'Test',
-                   ...catalog.map(g => `${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`),
-                   'Total Score', 'Total Time (mins)', 'Last Played'];
-  const rows = children.map((c, i) => [
-    i + 1,
-    c.child_id || '',
-    c.name || '',
-    c.attemptNo ?? '',
-    Number(c.completed) || 0,
-    Number(c.testCount) || 0,
-    ...catalog.map(g => {
-      const v = c[CHILD_SCORE_COLS[g.key]?.field];
-      return v != null ? Number(v) : '';
-    }),
-    Number(c.totalScore) || 0,
-    c.totalTimeMins != null ? Number(c.totalTimeMins) : '',
-    c.lastPlayed || '',
-  ]);
-  const summaryWs = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-
-  // Sheet 2 — one row per individual session, across all tests, for these children
-  const sessHeaders = ['Child ID', 'Name', 'Gender', 'Age', 'Test', 'Attempt No', 'Status', 'Quit Reason',
-                       'Score', 'Progress (items reached)', 'Total Items', 'Duration (sec)', 'Start Time', 'End Time'];
-  let sessRows = [];
-  try {
-    const childIds = [...new Set(children.map(c => c.child_id).filter(Boolean))].join(',');
-    const { data } = await axiosAdmin.get('/analysis/children-sessions', {
-      params: { ...buildApiParams(filters), childIds },
-    });
-    sessRows = (data.sessions || []).map(s => [
-      s.child_id || '',
-      s.childName || '',
-      s.gender || '',
-      s.age ?? '',
-      s.gameTitle || s.gameKey || '',
-      s.attemptNo ?? '',
-      s.status || '',
-      s.quit_reason || '',
-      s.score ?? '',
-      s.progress_level ?? '',
-      s.total_questions ?? '',
-      s.durationSec ?? '',
-      s.start_time || '',
-      s.end_time || '',
-    ]);
-  } catch (err) {
-    console.error('Failed to fetch session-wise data for export:', err);
-  }
-  const sessionsWs = XLSX.utils.aoa_to_sheet([sessHeaders, ...sessRows]);
-  XLSX.utils.book_append_sheet(wb, sessionsWs, 'Sessions');
-
-  XLSX.writeFile(wb, 'top_active_children_export.xlsx');
-}
-
 function formatDuration(secs) {
   if (!secs || secs <= 0) return '—';
   const m = Math.floor(secs / 60), s = secs % 60;
@@ -418,16 +358,6 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
   const [childrenPage, setChildrenPage] = React.useState(0);
   const [loadingChildren, setLoadingChildren] = React.useState(false);
   const [hasMoreChildren, setHasMoreChildren] = React.useState(true);
-  const [exportingChildren, setExportingChildren] = React.useState(false);
-
-  const handleExportChildren = async () => {
-    setExportingChildren(true);
-    try {
-      await exportChildrenExcel(childrenData, catalog, filters);
-    } finally {
-      setExportingChildren(false);
-    }
-  };
 
   React.useEffect(() => {
     setChildrenPage(0);
@@ -619,19 +549,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
         </div>
       </Card>
 
-      <Card
-        title={
-          <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
-            <span>Top Active Children{childrenData.length ? ` (${childrenData.length} loaded)` : ''}</span>
-            {childrenData.length > 0 && (
-              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={handleExportChildren} disabled={exportingChildren}>
-                {exportingChildren ? '⏳ Exporting…' : '📥 Export Excel'}
-              </button>
-            )}
-          </span>
-        }
-        noPad
-      >
+      <Card title={`Top Active Children${childrenData.length ? ` (${childrenData.length} loaded)` : ''}`} noPad>
         <div className="ana-table-wrap">
           <table className="ana-table ana-table-bordered">
             <thead><tr>
