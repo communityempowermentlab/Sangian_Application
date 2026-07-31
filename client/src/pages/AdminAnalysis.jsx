@@ -140,16 +140,17 @@ async function exportChildrenExcel(children, catalog, filters) {
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
-  // Sheet 1 — one row per child (aggregated), same as the on-screen table
-  const headers = ['#', 'Child ID', 'Name', 'Completed', 'Sessions',
+  // Sheet 1 — one row per (child, login visit), same as the on-screen table
+  const headers = ['#', 'Child ID', 'Name', 'Attempt', 'Completed', 'Test',
                    ...catalog.map(g => `${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`),
                    'Total Score', 'Total Time (mins)', 'Last Played'];
   const rows = children.map((c, i) => [
     i + 1,
     c.child_id || '',
     c.name || '',
+    c.attemptNo ?? '',
     Number(c.completed) || 0,
-    Number(c.sessions) || 0,
+    Number(c.testCount) || 0,
     ...catalog.map(g => {
       const v = c[CHILD_SCORE_COLS[g.key]?.field];
       return v != null ? Number(v) : '';
@@ -166,7 +167,7 @@ async function exportChildrenExcel(children, catalog, filters) {
                        'Score', 'Progress (items reached)', 'Total Items', 'Duration (sec)', 'Start Time', 'End Time'];
   let sessRows = [];
   try {
-    const childIds = children.map(c => c.child_id).filter(Boolean).join(',');
+    const childIds = [...new Set(children.map(c => c.child_id).filter(Boolean))].join(',');
     const { data } = await axiosAdmin.get('/analysis/children-sessions', {
       params: { ...buildApiParams(filters), childIds },
     });
@@ -410,7 +411,7 @@ function SkeletonCard() {
 function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
   const [sortKey, setSortKey] = React.useState('sessions');
   const [sortDir, setSortDir] = React.useState('desc');
-  const [childSortKey, setChildSortKey] = React.useState('sessions');
+  const [childSortKey, setChildSortKey] = React.useState('attempt');
   const [childSortDir, setChildSortDir] = React.useState('desc');
 
   const [childrenData, setChildrenData] = React.useState([]);
@@ -637,8 +638,9 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
               <th>#</th>
               <SortThChild label="Child ID" sortId="childId" />
               <SortThChild label="Name" sortId="name" />
+              <SortThChild label="Attempt" sortId="attempt" />
               <SortThChild label="Completed" sortId="completed" />
-              <SortThChild label="Sessions" sortId="sessions" />
+              <SortThChild label="Test" sortId="testCount" />
               {catalog.map(g => (
                 <SortThChild key={g.key} label={`${g.title} (${GAME_MAX_SCORES[g.key] ?? '—'})`} sortId={CHILD_SCORE_COLS[g.key]?.sortId} />
               ))}
@@ -648,12 +650,15 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
             </tr></thead>
             <tbody>
               {childrenData.map((c, i) => (
-                <tr key={c.child_id}>
+                <tr key={`${c.child_id}-${c.attemptNo ?? 'x'}-${i}`}>
                   <td><span className="ana-rank">{i + 1}</span></td>
                   <td><code>{c.child_id}</code></td>
                   <td>{c.name || '—'}</td>
+                  <td title={c.attemptNo != null ? `Login visit #${c.attemptNo} for this child` : 'No matching login record'}>
+                    {c.attemptNo != null ? `#${c.attemptNo}` : '—'}
+                  </td>
                   <td>{fmt(c.completed)}</td>
-                  <td>{fmt(c.sessions)}</td>
+                  <td>{fmt(c.testCount)}</td>
                   {catalog.map(g => (
                     <td key={g.key}>{fmt(c[CHILD_SCORE_COLS[g.key]?.field], 1)}</td>
                   ))}
@@ -662,8 +667,8 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG }) {
                   <td>{formatDate(c.lastPlayed)}</td>
                 </tr>
               ))}
-              {childrenData.length === 0 && !loadingChildren && <tr><td colSpan={8 + GAME_CATALOG.length} className="ana-table-empty">No children data</td></tr>}
-              {loadingChildren && <tr><td colSpan={8 + GAME_CATALOG.length} className="ana-table-empty">Loading...</td></tr>}
+              {childrenData.length === 0 && !loadingChildren && <tr><td colSpan={9 + GAME_CATALOG.length} className="ana-table-empty">No children data</td></tr>}
+              {loadingChildren && <tr><td colSpan={9 + GAME_CATALOG.length} className="ana-table-empty">Loading...</td></tr>}
             </tbody>
           </table>
           {hasMoreChildren && !loadingChildren && childrenData.length > 0 && (

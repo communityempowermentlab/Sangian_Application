@@ -437,67 +437,82 @@ exports.getChildrenSessions = async (req, res) => {
 };
 
 // ==========================================
-// TOP ACTIVE CHILDREN
+// TOP ACTIVE CHILDREN — session-wise: one row per (child, login visit).
+// A child's "Attempt" is which numbered login visit this was for them;
+// "Test" is how many tests they played during that visit. Test plays that
+// can't be matched to a login visit (e.g. seeded/legacy data with no
+// login_sessions row) each fall back to their own singleton row.
 // ==========================================
 exports.getTopChildren = async (req, res) => {
   try {
     const { allClauses, allParams } = parseFilters(req);
     const where = toWhere(allClauses);
-    
+
     const limit = parseInt(req.query.limit, 10) || 50;
     const offset = parseInt(req.query.offset, 10) || 0;
-    const sortKey = req.query.sortKey || 'sessions';
+    const sortKey = req.query.sortKey || 'attempt';
     const sortDir = req.query.sortDir === 'asc' ? 'ASC' : 'DESC';
 
     const SORT_MAP = {
-      childId: 'gs.child_id',
-      name: 'c.name',
-      sessions: 'sessions',
-      completed: 'completed',
-      maxScore: 'maxScore',
-      totalScore: 'totalScore',
-      totalTime: 'totalTimeMins',
-      lastPlayed: 'MAX(gs.created_at)',
-      bagiya: 'score_bagiya',
-      lottery: 'score_lottery',
-      lottery_v2: 'score_lottery_v2',
-      mela: 'score_mela',
-      dhyan: 'score_dhyan',
-      herpher: 'score_herpher',
-      herpher_v2: 'score_herpher_v2',
-      ankganit: 'score_ankganit',
+      childId:     'child_id',
+      name:        'name',
+      attempt:     'attemptNo',
+      testCount:   'testCount',
+      completed:   'completed',
+      totalScore:  'totalScore',
+      totalTime:   'totalTimeMins',
+      lastPlayed:  'lastPlayed',
+      bagiya:      'score_bagiya',
+      lottery:     'score_lottery',
+      lottery_v2:  'score_lottery_v2',
+      mela:        'score_mela',
+      dhyan:       'score_dhyan',
+      herpher:     'score_herpher',
+      herpher_v2:  'score_herpher_v2',
+      ankganit:    'score_ankganit',
       ankganit_v2: 'score_ankganit_v2',
-      reading: 'score_reading',
-      chor: 'score_chor',
-      rachna: 'score_rachna'
+      reading:     'score_reading',
+      chor:        'score_chor',
+      rachna:      'score_rachna',
     };
-
-    const orderByCol = SORT_MAP[sortKey] || 'sessions';
+    const orderByCol = SORT_MAP[sortKey] || 'attemptNo';
 
     const [topChildren] = await pool.query(`
-      SELECT gs.child_id, c.name,
-             COUNT(*)                                  AS sessions,
-             CAST(SUM(gs.status = 'completed') AS UNSIGNED) AS completed,
-             MAX(gs.score)                             AS maxScore,
-             ROUND(AVG(gs.score), 1)                   AS avgScore,
-             CAST(SUM(gs.score) AS UNSIGNED)           AS totalScore,
-             ROUND(SUM(TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) / 60, 1) AS totalTimeMins,
-             ROUND(AVG(CASE WHEN gs.game_name = 'atlantis_bagiya' THEN gs.score END), 1) AS score_bagiya,
-             ROUND(AVG(CASE WHEN gs.game_name = 'number_recall_lottery' THEN gs.score END), 1) AS score_lottery,
-             ROUND(AVG(CASE WHEN gs.game_name = 'number_recall_lottery_v2' THEN gs.score END), 1) AS score_lottery_v2,
-             ROUND(AVG(CASE WHEN gs.game_name = 'rover_mela' THEN gs.score END), 1) AS score_mela,
-             ROUND(AVG(CASE WHEN gs.game_name = 'auditory_dhyan' THEN gs.score END), 1) AS score_dhyan,
-             ROUND(AVG(CASE WHEN gs.game_name = 'working_memory_herpher' THEN gs.score END), 1) AS score_herpher,
-             ROUND(AVG(CASE WHEN gs.game_name = 'working_memory_herpher_v2' THEN gs.score END), 1) AS score_herpher_v2,
-             ROUND(AVG(CASE WHEN gs.game_name = 'numeracy_number_skill' THEN gs.score END), 1) AS score_ankganit,
-             ROUND(AVG(CASE WHEN gs.game_name = 'numeracy_number_skill_v2' THEN gs.score END), 1) AS score_ankganit_v2,
-             ROUND(AVG(CASE WHEN gs.game_name = 'literacy_reading_skill' THEN gs.score END), 1) AS score_reading,
-             ROUND(AVG(CASE WHEN gs.game_name = 'cognitive_flex_chor' THEN gs.score END), 1) AS score_chor,
-             ROUND(AVG(CASE WHEN gs.game_name = 'triangle_rachna' THEN gs.score END), 1) AS score_rachna,
-             DATE_FORMAT(MAX(gs.created_at), '%Y-%m-%d') AS lastPlayed
-      FROM game_sessions gs ${CHILD_JOIN} ${where}
-      GROUP BY gs.child_id, c.name
-      ORDER BY ${orderByCol} ${sortDir} 
+      WITH filtered AS (
+        SELECT gs.*, c.name AS childName,
+               (SELECT rl.id FROM login_sessions rl
+                WHERE rl.child_id = gs.child_id AND rl.login_time <= gs.start_time
+                ORDER BY rl.login_time DESC LIMIT 1) AS login_session_id
+        FROM game_sessions gs ${CHILD_JOIN} ${where}
+      ),
+      ranked_logins AS (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY child_id ORDER BY login_time) AS attemptNo
+        FROM login_sessions
+      )
+      SELECT
+        f.child_id, MAX(f.childName) AS name,
+        rl.attemptNo,
+        COUNT(*)                                                       AS testCount,
+        CAST(SUM(f.status = 'completed') AS UNSIGNED)                  AS completed,
+        CAST(SUM(f.score) AS UNSIGNED)                                 AS totalScore,
+        ROUND(SUM(TIMESTAMPDIFF(SECOND, f.start_time, f.end_time)) / 60, 1) AS totalTimeMins,
+        ROUND(AVG(CASE WHEN f.game_name = 'atlantis_bagiya' THEN f.score END), 1) AS score_bagiya,
+        ROUND(AVG(CASE WHEN f.game_name = 'number_recall_lottery' THEN f.score END), 1) AS score_lottery,
+        ROUND(AVG(CASE WHEN f.game_name = 'number_recall_lottery_v2' THEN f.score END), 1) AS score_lottery_v2,
+        ROUND(AVG(CASE WHEN f.game_name = 'rover_mela' THEN f.score END), 1) AS score_mela,
+        ROUND(AVG(CASE WHEN f.game_name = 'auditory_dhyan' THEN f.score END), 1) AS score_dhyan,
+        ROUND(AVG(CASE WHEN f.game_name = 'working_memory_herpher' THEN f.score END), 1) AS score_herpher,
+        ROUND(AVG(CASE WHEN f.game_name = 'working_memory_herpher_v2' THEN f.score END), 1) AS score_herpher_v2,
+        ROUND(AVG(CASE WHEN f.game_name = 'numeracy_number_skill' THEN f.score END), 1) AS score_ankganit,
+        ROUND(AVG(CASE WHEN f.game_name = 'numeracy_number_skill_v2' THEN f.score END), 1) AS score_ankganit_v2,
+        ROUND(AVG(CASE WHEN f.game_name = 'literacy_reading_skill' THEN f.score END), 1) AS score_reading,
+        ROUND(AVG(CASE WHEN f.game_name = 'cognitive_flex_chor' THEN f.score END), 1) AS score_chor,
+        ROUND(AVG(CASE WHEN f.game_name = 'triangle_rachna' THEN f.score END), 1) AS score_rachna,
+        DATE_FORMAT(MAX(f.created_at), '%Y-%m-%d %H:%i') AS lastPlayed
+      FROM filtered f
+      LEFT JOIN ranked_logins rl ON rl.id = f.login_session_id
+      GROUP BY f.child_id, COALESCE(f.login_session_id, -f.id), rl.attemptNo
+      ORDER BY ${orderByCol} ${sortDir}
       LIMIT ? OFFSET ?
     `, [...allParams, limit, offset]);
 
