@@ -1034,6 +1034,40 @@ const ChaloMelaChaleGame = () => {
     }
   }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
 
+  // ── iOS Safari audio unlock ───────────────────────────────────────────────
+  // iOS/iPadOS Safari blocks audio.play() unless it's tied to a user gesture.
+  // The splash audio autoplays on mount (no gesture yet), and the demo-path
+  // audio (sa_path*/sb_path*.wav) is scheduled asynchronously — after several
+  // seconds of awaited delays past the "Start Now" tap — so by the time it
+  // plays, the gesture context iOS looks for has expired. This arms a
+  // one-time listener for the very first tap/touch/key anywhere on the page:
+  // it plays (and immediately discards) a silent audio clip, which is enough
+  // for iOS Safari to mark the page as "interacted with for media" so every
+  // later programmatic play() call — including ones made well after this
+  // gesture, on freshly-created Audio objects — is allowed to autoplay. It
+  // also retries the splash audio directly, in case that one is still
+  // waiting. Nothing about game flow/timing/logic changes; this only makes
+  // the existing autoplay calls actually succeed on iOS Safari.
+  const audioUnlockedRef = useRef(false);
+  useEffect(() => {
+    if (audioUnlockedRef.current) return;
+    const events = ['touchstart', 'pointerdown', 'keydown'];
+    const unlock = () => {
+      if (audioUnlockedRef.current) return;
+      audioUnlockedRef.current = true;
+      events.forEach(evt => document.removeEventListener(evt, unlock));
+      try {
+        const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+        silent.play().catch(() => {});
+      } catch (_) {}
+      if (audioRef.current && audioRef.current.paused && screen === 'splash') {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+    events.forEach(evt => document.addEventListener(evt, unlock, { passive: true }));
+    return () => events.forEach(evt => document.removeEventListener(evt, unlock));
+  }, [screen]);
+
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
     if (!s.gameStarted || s.isComplete) return;
