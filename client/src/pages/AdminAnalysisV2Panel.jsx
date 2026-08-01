@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import './AdminAnalysis.css';
 
 // ── Local formatting + primitives ────────────────────────────────────────
@@ -106,16 +107,92 @@ function HighlightCard({ icon, label, test, valueKey, valueFmt, color }) {
   );
 }
 
-function ScoreDistBar({ dist = [] }) {
+function ScoreDistBar({ dist = [], onClick }) {
   const max = Math.max(...dist.map(d => d.count), 1);
   return (
-    <div className="anv2-dist-row" title={dist.map(d => `${d.label}: ${d.count}`).join(' · ')}>
+    <div
+      className={`anv2-dist-row${onClick ? ' anv2-dist-row--clickable' : ''}`}
+      title={onClick ? 'Click for detailed score distribution' : dist.map(d => `${d.label}: ${d.count}`).join(' · ')}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       {dist.map(d => (
         <div key={d.label} className="anv2-dist-bar-wrap">
           <div className="anv2-dist-bar" style={{ height: `${d.count > 0 ? Math.max(8, (d.count / max) * 100) : 2}%` }} />
         </div>
       ))}
     </div>
+  );
+}
+
+// Detailed single-test Score Distribution popup — opened by clicking a row's
+// mini chart. Portals to document.body: .ana-right-panel scrolls internally
+// (overflow-y: auto), which breaks position:fixed for in-tree elements the
+// same way it does for TrendLine's hover tooltip in AdminAnalysis.jsx.
+function ScoreDistModal({ test, onClose }) {
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  if (!test) return null;
+  const dist = test.scoreDist || [];
+  const total = dist.reduce((s, d) => s + d.count, 0);
+  const max = Math.max(...dist.map(d => d.count), 1);
+
+  const stats = [
+    { label: 'Attempts', value: fmt(test.totalAttempts) },
+    { label: 'Avg Score', value: fmtPct(test.avgScorePct) },
+    { label: 'Max Achieved', value: fmt(test.maxScoreAchieved) },
+    { label: 'Min Achieved', value: fmt(test.minScoreAchieved) },
+    { label: 'Completion', value: `${test.completionPct}%` },
+    { label: 'Drop-off', value: `${test.dropOffPct}%` },
+    { label: 'Avg Time', value: fmtMins(test.avgDurationMins) },
+    { label: '1st / Repeat', value: `${fmt(test.firstAttempts)} / ${fmt(test.repeatAttempts)}` },
+  ];
+
+  return createPortal(
+    <div className="anv2-modal-backdrop" onClick={onClose}>
+      <div className="anv2-modal-panel" onClick={e => e.stopPropagation()}>
+        <button type="button" className="anv2-modal-close" onClick={onClose} aria-label="Close">&times;</button>
+        <div className="anv2-modal-header">
+          <span className="anv2-modal-swatch" style={{ background: test.color }} />
+          <div>
+            <h3>{test.title}</h3>
+            {test.tag && <div className="anv2-modal-tag">{test.tag}</div>}
+          </div>
+        </div>
+
+        <div className="anv2-modal-stats">
+          {stats.map(s => (
+            <div key={s.label} className="anv2-modal-stat">
+              <span>{s.label}</span>
+              <strong>{s.value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="anv2-modal-section-title">Score Distribution</div>
+        {total === 0
+          ? <div className="ana-chart-empty">No scored attempts for this test in the selected filters</div>
+          : <div className="anv2-modal-hbar-list">
+              {dist.map(d => (
+                <div key={d.label} className="anv2-modal-hbar-row">
+                  <div className="anv2-modal-hbar-label">{d.label}</div>
+                  <div className="anv2-modal-hbar-track">
+                    <div className="anv2-modal-hbar-fill" style={{ width: `${(d.count / max) * 100}%`, background: test.color }} />
+                  </div>
+                  <div className="anv2-modal-hbar-val">
+                    {fmt(d.count)} <span>({total ? Math.round((d.count / total) * 100) : 0}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+        }
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -141,6 +218,8 @@ function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel }) {
 // ── Main Panel ────────────────────────────────────────────
 
 export default function OverviewV2Panel({ data, loading }) {
+  const [selectedTest, setSelectedTest] = React.useState(null);
+
   if (loading && !data) return (
     <div className="ana-content">
       <div className="ana-kpi-row">{Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)}</div>
@@ -253,7 +332,7 @@ export default function OverviewV2Panel({ data, loading }) {
                   <td>{fmtPct(t.avgScorePct)}</td>
                   <td>{fmt(t.maxScoreAchieved)}</td>
                   <td>{fmt(t.minScoreAchieved)}</td>
-                  <td><ScoreDistBar dist={t.scoreDist} /></td>
+                  <td><ScoreDistBar dist={t.scoreDist} onClick={() => setSelectedTest(t)} /></td>
                   <td><span className="ana-pct-bar" style={{ '--p': `${t.completionPct}%` }}>{t.completionPct}%</span></td>
                   <td>{t.dropOffPct}%</td>
                   <td>{fmtMins(t.avgDurationMins)}</td>
@@ -313,6 +392,8 @@ export default function OverviewV2Panel({ data, loading }) {
         <RankList title="⚡ Fastest Tests" rows={rankings.fastest} valueKey="avgDurationMins" valueFmt={fmtMins} />
         <RankList title="🐢 Slowest Tests" rows={rankings.slowest} valueKey="avgDurationMins" valueFmt={fmtMins} />
       </div>
+
+      {selectedTest && <ScoreDistModal test={selectedTest} onClose={() => setSelectedTest(null)} />}
 
     </div>
   );
