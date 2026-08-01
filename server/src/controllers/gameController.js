@@ -374,7 +374,14 @@ exports.getReportDetail = async (req, res) => {
                 (SELECT file_path FROM game_dashboard_pdfs WHERE session_id = gs.id ORDER BY id DESC LIMIT 1) AS pdf_url
             FROM game_sessions gs
             LEFT JOIN children c ON gs.child_id = c.child_id
-            LEFT JOIN game_assessments ga ON ga.session_id = gs.id
+            LEFT JOIN game_assessments ga
+              ON ga.session_id = gs.id
+              -- A session can end up with more than one assessment row (e.g. a
+              -- resumed session re-prompting the end-of-game questionnaire) —
+              -- a plain join would duplicate the whole session row per match,
+              -- which also threw off child_attempt_no (computed by row order
+              -- below). Only join the most recent submission.
+              AND ga.id = (SELECT MAX(ga2.id) FROM game_assessments ga2 WHERE ga2.session_id = gs.id)
             WHERE gs.game_name IN (?)
         `;
         let queryParams = [gameFilter];

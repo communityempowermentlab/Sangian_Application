@@ -326,7 +326,12 @@ exports.getGameAnalytics = async (req, res) => {
       SELECT ga.q1_enjoyment, ga.q2_feeling, ga.q3_tiredness,
              ga.q4_play_again, ga.q5_behaviors
       FROM game_assessments ga
-      INNER JOIN game_sessions gs ON ga.session_id = gs.id
+      INNER JOIN game_sessions gs
+        ON ga.session_id = gs.id
+        -- Dedupe to the latest submission per session — a session can have more
+        -- than one assessment row (e.g. a resumed session re-prompting the
+        -- questionnaire), and a plain join would double-count those responses.
+        AND ga.id = (SELECT MAX(ga2.id) FROM game_assessments ga2 WHERE ga2.session_id = ga.session_id)
       ${CHILD_JOIN} ${where}
     `, params);
 
