@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
+import OverviewV2Panel from './AdminAnalysisV2Panel';
 import './AdminAnalysis.css';
 
 // ── Constants ─────────────────────────────────────────────
@@ -1114,7 +1115,7 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
             />
           </>
         )}
-        {activeTab === 'overall' && (
+        {(activeTab === 'overall' || activeTab === 'overall-v2') && (
           <>
             <span className="ana-filter-sep" />
             <ChipGroup label="Test"
@@ -1154,6 +1155,7 @@ export default function AdminAnalysis() {
   const [pendingFilters,  setPendingFilters] = useState(EMPTY_FILTERS);
   const [filters,         setFilters]       = useState(null);   // null = meta not yet loaded
   const [overviewData,    setOverviewData]  = useState(null);
+  const [overviewV2Data,  setOverviewV2Data] = useState(null);
   const [gameData,        setGameData]      = useState({});
   const [loading,         setLoading]       = useState(false);
   const [error,           setError]         = useState(null);
@@ -1213,6 +1215,9 @@ export default function AdminAnalysis() {
       if (activeTab === 'overall') {
         const { data } = await axiosAdmin.get('/analysis/overview', { params });
         setOverviewData(data);
+      } else if (activeTab === 'overall-v2') {
+        const { data } = await axiosAdmin.get('/analysis/overview-v2', { params });
+        setOverviewV2Data(data);
       } else {
         const { data } = await axiosAdmin.get(`/analysis/game/${activeTab}`, { params });
         setGameData(prev => ({ ...prev, [activeTab]: data }));
@@ -1315,6 +1320,17 @@ export default function AdminAnalysis() {
             </div>
           </button>
 
+          <button
+            className={`ana-tab-item${activeTab === 'overall-v2' ? ' active' : ''}`}
+            onClick={() => handleTabChange('overall-v2')}
+          >
+            <span className="ana-tab-icon">🧠</span>
+            <div className="ana-tab-text">
+              <div className="ana-tab-name">Overall V2</div>
+              <div className="ana-tab-sub">Executive Insights</div>
+            </div>
+          </button>
+
           <div className="ana-tab-divider">Tests</div>
 
           {orderedCatalog.map(g => (
@@ -1340,15 +1356,17 @@ export default function AdminAnalysis() {
             <h2 className="ana-panel-title">
               {activeTab === 'overall'
                 ? 'Platform Overview'
+                : activeTab === 'overall-v2'
+                ? 'Overall V2 — Executive Analytics'
                 : <>{activeGame?.icon} {activeGame?.title} Analytics</>
               }
             </h2>
-            {activeTab !== 'overall' && activeGame && activeGame.tag && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeGame && activeGame.tag && (
               <span className="ana-panel-tag" style={{ background: `${activeGame.color}1a`, color: activeGame.color }}>
                 {activeGame.tag}
               </span>
             )}
-            {activeTab !== 'overall' && gameData[activeTab]?.meta?.maxScore != null && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && gameData[activeTab]?.meta?.maxScore != null && (
               <span className="ana-panel-tag" style={{ background: '#f1f5f9', color: '#64748b' }}>
                 Max Score: <strong>{gameData[activeTab].meta.maxScore}</strong>
               </span>
@@ -1368,6 +1386,8 @@ export default function AdminAnalysis() {
 
           {activeTab === 'overall'
             ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} />
+            : activeTab === 'overall-v2'
+            ? <OverviewV2Panel data={overviewV2Data} loading={loading} />
             : <GamePanel
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
                 gameKey={activeTab}

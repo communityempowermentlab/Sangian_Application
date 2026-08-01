@@ -640,3 +640,71 @@
 }
 .ana-table-bordered th, .ana-table-bordered td { border-right: 1px solid var(--border, #e5e7eb); }
 .ana-table-bordered th:last-child, .ana-table-bordered td:last-child { border-right: none; }
+
+/* ── Overall V2 — Executive Analytics ────────────────────────── */
+
+.anv2-insights-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.anv2-insights-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  background: rgba(79,70,229,.05);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text, #0f172a);
+}
+.anv2-insight-icon { font-size: 16px; flex: 0 0 auto; line-height: 1.4; }
+.anv2-trend-chip {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  background: #f8fafc;
+  border: 1px dashed var(--border, #e5e7eb);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.anv2-highlight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.anv2-highlight-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+.anv2-highlight-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex: 0 0 auto;
+}
+.anv2-highlight-body { min-width: 0; }
+.anv2-highlight-label { font-size: 11px; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: .03em; }
+.anv2-highlight-test { font-size: 13.5px; font-weight: 600; color: var(--text, #0f172a); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anv2-highlight-val { font-size: 12px; font-weight: 700; margin-top: 3px; }
+
+.anv2-dist-row { display: flex; align-items: flex-end; gap: 2px; height: 28px; width: 90px; }
+.anv2-dist-bar-wrap { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.anv2-dist-bar { width: 100%; min-height: 2px; border-radius: 2px 2px 0 0; background: var(--accent, #4f46e5); opacity: .75; }
+
+.anv2-rank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.anv2-rank-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border, #e5e7eb); }
+.anv2-rank-list li:last-child { border-bottom: none; }
+.anv2-rank-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #f1f5f9; color: var(--muted, #64748b);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto;
+}
+.anv2-rank-name { flex: 1; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anv2-rank-val { font-size: 13px; font-weight: 700; color: var(--text, #0f172a); }
+
+.anv2-time-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.anv2-time-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f8fafc; border-radius: 8px; }
+.anv2-time-stats span { font-size: 11px; color: var(--muted, #64748b); }
+.anv2-time-stats strong { font-size: 14px; color: var(--text, #0f172a); }
+
+@media (max-width: 700px) {
+  .anv2-highlight-grid { grid-template-columns: 1fr 1fr; }
+}

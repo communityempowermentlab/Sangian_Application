@@ -562,3 +562,380 @@ exports.getTopChildren = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch top children data' });
   }
 };
+
+// ==========================================
+// OVERALL V2 — executive analytics dashboard. Builds on the same filter
+// engine as the rest of /analysis, but scores every session as a % of that
+// game's own max (SCORE_PCT_CASE) so tests with different point scales
+// (Bagiya /108 vs Ankganit /26) can be compared, ranked, and averaged
+// together on one 0-100 axis. All the age/gender/test breakdowns share one
+// `sd` (session detail) CTE so ageBand/scorePct/attemptNo are computed once
+// and reused consistently across every aggregation below.
+// ==========================================
+
+function pickExtreme(arr, key, mode) {
+  if (!arr.length) return null;
+  return arr.reduce((best, cur) => {
+    const bv = best[key], cv = cur[key];
+    if (bv == null) return cur;
+    if (cv == null) return best;
+    return mode === 'max' ? (cv > bv ? cur : best) : (cv < bv ? cur : best);
+  });
+}
+
+// Rule-based "AI Summary" — deterministic observations computed from the
+// aggregated numbers, no external LLM call (no API cost/latency/nondeterminism).
+function buildInsights({ ageAnalysis, genderAnalysis, testAnalysis, highlights, trend }) {
+  const insights = [];
+  const GENDER_LABEL = { male: 'Boys', female: 'Girls', other: 'Other-gender children', prefer_not_to_say: 'Children who preferred not to say', unknown: 'Children with unspecified gender' };
+
+  const bands = ageAnalysis.filter(a => a.avgScorePct != null && a.childrenAssessed > 0);
+  if (bands.length === 2) {
+    const [a, b] = bands;
+    const [hi, lo] = a.avgScorePct >= b.avgScorePct ? [a, b] : [b, a];
+    if (hi.avgScorePct !== lo.avgScorePct) {
+      insights.push({ icon: '🎯', text: `Children aged ${hi.ageBand} perform better overall — ${hi.avgScorePct}% average score vs ${lo.avgScorePct}% for ${lo.ageBand}.` });
+    }
+  }
+
+  const genders = genderAnalysis.filter(g => g.avgScorePct != null && ['male', 'female'].includes(g.gender) && g.children > 0);
+  if (genders.length === 2) {
+    const [a, b] = genders;
+    const [hi, lo] = a.avgScorePct >= b.avgScorePct ? [a, b] : [b, a];
+    if (hi.avgScorePct !== lo.avgScorePct) {
+      insights.push({ icon: '⚖️', text: `${GENDER_LABEL[hi.gender]} score higher on average than ${GENDER_LABEL[lo.gender].toLowerCase()} — ${hi.avgScorePct}% vs ${lo.avgScorePct}%.` });
+    }
+  }
+
+  for (const g of genderAnalysis) {
+    if (['male', 'female'].includes(g.gender) && g.bestTest && g.children > 0) {
+      insights.push({ icon: g.gender === 'male' ? '♂️' : '♀️', text: `${GENDER_LABEL[g.gender]} perform best on "${g.bestTest.title}".` });
+    }
+  }
+
+  if (highlights.mostDifficult) insights.push({ icon: '🧗', text: `"${highlights.mostDifficult.title}" is the most difficult test — only ${highlights.mostDifficult.completionPct}% of attempts are completed.` });
+  if (highlights.easiest && highlights.easiest.gameKey !== highlights.mostDifficult?.gameKey) insights.push({ icon: '✅', text: `"${highlights.easiest.title}" is the easiest to complete — ${highlights.easiest.completionPct}% completion rate.` });
+  if (highlights.mostScored) insights.push({ icon: '🏆', text: `"${highlights.mostScored.title}" has the highest average score at ${highlights.mostScored.avgScorePct}% of max.` });
+  if (highlights.leastScored && highlights.leastScored.gameKey !== highlights.mostScored?.gameKey) insights.push({ icon: '📉', text: `"${highlights.leastScored.title}" has the lowest average score at ${highlights.leastScored.avgScorePct}% of max — may need review.` });
+
+  const byTime = [...testAnalysis].filter(t => t.avgDurationMins > 0).sort((a, b) => b.avgDurationMins - a.avgDurationMins);
+  if (byTime[0]) insights.push({ icon: '⏱️', text: `"${byTime[0].title}" takes the longest on average — ${byTime[0].avgDurationMins} min per session.` });
+
+  const byDropoff = [...testAnalysis].filter(t => t.totalAttempts >= 5).sort((a, b) => b.dropOffPct - a.dropOffPct);
+  if (byDropoff[0] && byDropoff[0].dropOffPct >= 20) insights.push({ icon: '🚪', text: `"${byDropoff[0].title}" has the highest drop-off rate at ${byDropoff[0].dropOffPct}% — children are quitting or dropping before finishing.` });
+
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  if (highlights.mostFrequent) insights.push({ icon: '🔥', text: `"${highlights.mostFrequent.title}" is the most played test with ${plural(highlights.mostFrequent.totalAttempts, 'attempt')}.` });
+  if (highlights.leastFrequent && highlights.leastFrequent.gameKey !== highlights.mostFrequent?.gameKey) insights.push({ icon: '💤', text: `"${highlights.leastFrequent.title}" is the least played test with only ${plural(highlights.leastFrequent.totalAttempts, 'attempt')}.` });
+
+  if (trend && trend.prevAvgScorePct != null && trend.currAvgScorePct != null && trend.prevSessions > 0) {
+    const delta = Math.round((trend.currAvgScorePct - trend.prevAvgScorePct) * 10) / 10;
+    if (Math.abs(delta) >= 0.5) {
+      insights.push({ icon: delta > 0 ? '📈' : '📉', text: `Average score ${delta > 0 ? 'improved' : 'declined'} by ${Math.abs(delta)} point${Math.abs(delta) === 1 ? '' : 's'} compared to the previous period (${trend.prevAvgScorePct}% → ${trend.currAvgScorePct}%).` });
+    }
+  }
+
+  const lowCompletionTests = testAnalysis.filter(t => t.totalAttempts >= 5 && t.completionPct < 40);
+  if (lowCompletionTests.length > 0) {
+    insights.push({ icon: '⚠️', text: `${lowCompletionTests.length} test${lowCompletionTests.length > 1 ? 's' : ''} — ${lowCompletionTests.map(t => `"${t.title}"`).join(', ')} — ${lowCompletionTests.length > 1 ? 'have' : 'has'} a completion rate below 40% and may need attention.` });
+  }
+
+  return insights;
+}
+
+// ── GET /api/analysis/overview-v2 ────────────────────────────────────────────
+exports.getOverviewV2 = async (req, res) => {
+  try {
+    const f = parseFilters(req);
+    const where = toWhere(f.allClauses);
+
+    const sdSQL = `
+      WITH sd AS (
+        SELECT gs.id, gs.child_id, gs.game_name, gs.score, gs.status, gs.created_at,
+               c.gender, ${AGE_BAND_CASE} AS ageBand,
+               ${SCORE_PCT_CASE} AS scorePct,
+               TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
+               (SELECT COUNT(*) FROM game_sessions g2
+                WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
+                  AND g2.created_at <= gs.created_at) AS attemptNo
+        FROM game_sessions gs ${CHILD_JOIN} ${where}
+      )
+    `;
+
+    // ── Session-level KPIs ───────────────────────────────────────────────────
+    const [[sessionKpis]] = await pool.query(`
+      ${sdSQL}
+      SELECT
+        COUNT(*)                                     AS totalTestsConducted,
+        COUNT(DISTINCT child_id)                     AS uniqueChildren,
+        CAST(SUM(status = 'completed') AS UNSIGNED)  AS totalAssessmentsCompleted,
+        CAST(SUM(attemptNo >= 2) AS UNSIGNED)         AS totalRepeatAssessments,
+        ROUND(AVG(scorePct), 1)                       AS avgOverallScorePct,
+        ROUND(AVG(durationSec) / 60, 1)                AS avgCompletionTimeMins
+      FROM sd
+    `, f.allParams);
+
+    // ── Registered children + demographic distributions — these come from the
+    // `children` table directly (not date-scoped by session activity, since
+    // registration is a one-time event, not something that happens "in" a
+    // date range of gameplay). Child-search here matches c.child_id directly
+    // rather than reusing f.childClauses, which references gs.child_id (no
+    // `gs` alias exists in a children-only query). ──────────────────────────
+    const childSearchClauses = [], childSearchParams = [];
+    if (req.query.childId && req.query.childId.trim()) {
+      const cid = req.query.childId.trim();
+      childSearchClauses.push('(c.child_id = ? OR c.name LIKE ?)');
+      childSearchParams.push(cid, `%${cid}%`);
+    }
+
+    const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
+    const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams];
+    const [[{ totalRegisteredChildren }]] = await pool.query(`
+      SELECT COUNT(*) AS totalRegisteredChildren FROM children c ${toWhere(childOnlyClauses)}
+    `, childOnlyParams);
+
+    const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
+    const noGenderChildParams  = [...childSearchParams, ...f.groupParams];
+    const [genderDistRaw] = await pool.query(`
+      SELECT COALESCE(c.gender, 'unknown') AS gender, COUNT(*) AS count
+      FROM children c ${toWhere(noGenderChildClauses)}
+      GROUP BY c.gender
+    `, noGenderChildParams);
+
+    const noAgeChildClauses = [...f.genderClauses, ...childSearchClauses, ...f.groupClauses];
+    const noAgeChildParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams];
+    const [ageGroupDistRaw] = await pool.query(`
+      SELECT ${AGE_BAND_CASE} AS ageBand, COUNT(*) AS count
+      FROM children c ${toWhere(noAgeChildClauses)}
+      GROUP BY ageBand
+    `, noAgeChildParams);
+
+    // ── Age-wise performance ─────────────────────────────────────────────────
+    const [ageRows] = await pool.query(`
+      ${sdSQL}
+      SELECT ageBand,
+        COUNT(DISTINCT child_id)                     AS childrenAssessed,
+        COUNT(*)                                      AS totalSessions,
+        CAST(SUM(status = 'completed') AS UNSIGNED)  AS completedAssessments,
+        ROUND(AVG(scorePct), 1)                       AS avgScorePct,
+        ROUND(AVG(durationSec) / 60, 1)                AS avgDurationMins,
+        CAST(SUM(attemptNo >= 2) AS UNSIGNED)          AS repeatSessions
+      FROM sd WHERE ageBand IS NOT NULL
+      GROUP BY ageBand
+    `, f.allParams);
+
+    const [ageGameRows] = await pool.query(`
+      ${sdSQL}
+      SELECT ageBand, game_name AS gameKey, ROUND(AVG(scorePct), 1) AS avgScorePct, COUNT(*) AS sessions
+      FROM sd WHERE ageBand IS NOT NULL
+      GROUP BY ageBand, game_name
+    `, f.allParams);
+
+    // ── Gender-wise performance ──────────────────────────────────────────────
+    const [genderRows] = await pool.query(`
+      ${sdSQL}
+      SELECT COALESCE(gender, 'unknown') AS gender,
+        COUNT(DISTINCT child_id)                      AS children,
+        COUNT(*)                                       AS totalSessions,
+        CAST(SUM(status = 'completed') AS UNSIGNED)   AS completedAssessments,
+        ROUND(AVG(scorePct), 1)                        AS avgScorePct,
+        ROUND(AVG(durationSec) / 60, 1)                 AS avgDurationMins,
+        ROUND(SUM(status = 'completed') / NULLIF(COUNT(*),0) * 100, 1) AS completionRate,
+        CAST(SUM(attemptNo >= 2) AS UNSIGNED)           AS repeatSessions
+      FROM sd GROUP BY gender
+    `, f.allParams);
+
+    const [genderGameRows] = await pool.query(`
+      ${sdSQL}
+      SELECT COALESCE(gender, 'unknown') AS gender, game_name AS gameKey, ROUND(AVG(scorePct), 1) AS avgScorePct, COUNT(*) AS sessions
+      FROM sd GROUP BY gender, game_name
+    `, f.allParams);
+
+    // ── Test-wise performance ────────────────────────────────────────────────
+    const [testRows] = await pool.query(`
+      ${sdSQL}
+      SELECT game_name AS gameKey,
+        COUNT(*)                                             AS totalAttempts,
+        ROUND(AVG(score), 2)                                  AS avgScoreRaw,
+        MAX(score)                                             AS maxScoreAchieved,
+        MIN(score)                                             AS minScoreAchieved,
+        ROUND(AVG(scorePct), 1)                               AS avgScorePct,
+        CAST(SUM(status = 'completed') AS UNSIGNED)           AS completed,
+        CAST(SUM(status IN ('quit','dropped')) AS UNSIGNED)   AS droppedOff,
+        ROUND(AVG(durationSec) / 60, 1)                        AS avgDurationMins,
+        CAST(SUM(attemptNo = 1) AS UNSIGNED)                   AS firstAttempts,
+        CAST(SUM(attemptNo >= 2) AS UNSIGNED)                  AS repeatAttempts
+      FROM sd GROUP BY game_name
+    `, f.allParams);
+
+    const [scoreDistRows] = await pool.query(`
+      ${sdSQL}
+      SELECT game_name AS gameKey, FLOOR(LEAST(scorePct, 99.999) / 20) AS bucket, COUNT(*) AS count
+      FROM sd WHERE scorePct IS NOT NULL
+      GROUP BY game_name, bucket
+    `, f.allParams);
+
+    const [[{ avgDurationPerChildMins }]] = await pool.query(`
+      ${sdSQL}
+      SELECT ROUND(AVG(childMins), 1) AS avgDurationPerChildMins FROM (
+        SELECT child_id, SUM(durationSec) / 60 AS childMins FROM sd GROUP BY child_id
+      ) t
+    `, f.allParams);
+
+    // ── Trend vs previous period — same-length window immediately before the
+    // selected date range, every other filter held constant. ────────────────
+    let trend = null;
+    if (req.query.startDate && req.query.endDate) {
+      const days     = Math.max(1, Math.round((new Date(`${req.query.endDate}T00:00:00`) - new Date(`${req.query.startDate}T00:00:00`)) / 86400000) + 1);
+      const prevEnd   = new Date(`${req.query.startDate}T00:00:00`); prevEnd.setDate(prevEnd.getDate() - 1);
+      const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - (days - 1));
+      const iso = (d) => d.toISOString().slice(0, 10);
+      const prevClauses = ['gs.created_at >= ?', 'gs.created_at <= ?', ...f.genderClauses, ...f.statusClauses, ...f.ageClauses, ...f.childClauses, ...f.gameClauses, ...f.groupClauses, ...f.attemptClauses];
+      const prevParams  = [iso(prevStart), `${iso(prevEnd)} 23:59:59`, ...f.genderParams, ...f.statusParams, ...f.childParams, ...f.gameParams, ...f.groupParams, ...f.attemptParams];
+      const [[prevKpis]] = await pool.query(`
+        SELECT COUNT(*) AS sessions,
+               ROUND(AVG(${SCORE_PCT_CASE}), 1) AS avgScorePct
+        FROM game_sessions gs ${CHILD_JOIN} ${toWhere(prevClauses)}
+      `, prevParams);
+      trend = {
+        prevSessions:     Number(prevKpis.sessions) || 0,
+        prevAvgScorePct:  prevKpis.avgScorePct != null ? Number(prevKpis.avgScorePct) : null,
+        currSessions:     Number(sessionKpis.totalTestsConducted) || 0,
+        currAvgScorePct:  sessionKpis.avgOverallScorePct != null ? Number(sessionKpis.avgOverallScorePct) : null,
+      };
+    }
+
+    // ── Assemble test-wise analysis + highlights ─────────────────────────────
+    const BUCKET_LABELS = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'];
+    const distByGame = {};
+    for (const row of scoreDistRows) {
+      const arr = distByGame[row.gameKey] || (distByGame[row.gameKey] = [0, 0, 0, 0, 0]);
+      const b = Math.min(4, Math.max(0, Number(row.bucket)));
+      arr[b] = Number(row.count);
+    }
+
+    const testAnalysis = testRows.map(r => {
+      const meta = GAME_META[r.gameKey] || { title: r.gameKey, maxScore: null };
+      const totalAttempts = Number(r.totalAttempts) || 0;
+      return {
+        gameKey: r.gameKey,
+        title: meta.title,
+        tag: meta.tag,
+        color: meta.color,
+        maxScore: meta.maxScore,
+        totalAttempts,
+        avgScoreRaw: Number(r.avgScoreRaw) || 0,
+        maxScoreAchieved: r.maxScoreAchieved != null ? Number(r.maxScoreAchieved) : null,
+        minScoreAchieved: r.minScoreAchieved != null ? Number(r.minScoreAchieved) : null,
+        avgScorePct: r.avgScorePct != null ? Number(r.avgScorePct) : null,
+        completed: Number(r.completed) || 0,
+        completionPct: totalAttempts > 0 ? Math.round((Number(r.completed) / totalAttempts) * 100) : 0,
+        droppedOff: Number(r.droppedOff) || 0,
+        dropOffPct: totalAttempts > 0 ? Math.round((Number(r.droppedOff) / totalAttempts) * 100) : 0,
+        avgDurationMins: Number(r.avgDurationMins) || 0,
+        firstAttempts: Number(r.firstAttempts) || 0,
+        repeatAttempts: Number(r.repeatAttempts) || 0,
+        scoreDist: (distByGame[r.gameKey] || [0, 0, 0, 0, 0]).map((count, i) => ({ label: BUCKET_LABELS[i], count })),
+      };
+    });
+
+    const highlights = {
+      mostScored:    pickExtreme(testAnalysis, 'avgScorePct', 'max'),
+      leastScored:   pickExtreme(testAnalysis, 'avgScorePct', 'min'),
+      mostDifficult: pickExtreme(testAnalysis, 'completionPct', 'min'),
+      easiest:       pickExtreme(testAnalysis, 'completionPct', 'max'),
+      mostFrequent:  pickExtreme(testAnalysis, 'totalAttempts', 'max'),
+      leastFrequent: pickExtreme(testAnalysis, 'totalAttempts', 'min'),
+    };
+
+    // ── Age-wise analysis, enriched with best/worst test per band ───────────
+    const ageGameMap = {};
+    for (const r of ageGameRows) (ageGameMap[r.ageBand] || (ageGameMap[r.ageBand] = [])).push({ gameKey: r.gameKey, avgScorePct: Number(r.avgScorePct) || 0 });
+
+    const ageAnalysis = Object.keys(AGE_MAP).map(band => {
+      const row   = ageRows.find(r => r.ageBand === band);
+      const games = ageGameMap[band] || [];
+      const best  = games.length ? games.reduce((a, b) => (b.avgScorePct > a.avgScorePct ? b : a)) : null;
+      const worst = games.length ? games.reduce((a, b) => (b.avgScorePct < a.avgScorePct ? b : a)) : null;
+      const totalSessions = Number(row?.totalSessions) || 0;
+      return {
+        ageBand: band,
+        childrenAssessed: Number(row?.childrenAssessed) || 0,
+        completedAssessments: Number(row?.completedAssessments) || 0,
+        avgScorePct: row?.avgScorePct != null ? Number(row.avgScorePct) : null,
+        avgDurationMins: row?.avgDurationMins != null ? Number(row.avgDurationMins) : null,
+        overallPerformancePct: row?.avgScorePct != null ? Number(row.avgScorePct) : null,
+        highestScoringTest: best  ? { gameKey: best.gameKey,  title: GAME_META[best.gameKey]?.title  || best.gameKey,  avgScorePct: best.avgScorePct }  : null,
+        lowestScoringTest:  worst ? { gameKey: worst.gameKey, title: GAME_META[worst.gameKey]?.title || worst.gameKey, avgScorePct: worst.avgScorePct } : null,
+        repeatAssessmentRate: totalSessions > 0 ? Math.round((Number(row.repeatSessions) / totalSessions) * 100) : 0,
+      };
+    });
+
+    // ── Gender-wise analysis, enriched with best/worst test per gender ──────
+    const genderGameMap = {};
+    for (const r of genderGameRows) (genderGameMap[r.gender] || (genderGameMap[r.gender] = [])).push({ gameKey: r.gameKey, avgScorePct: Number(r.avgScorePct) || 0 });
+
+    const genderAnalysis = genderRows.map(row => {
+      const games = genderGameMap[row.gender] || [];
+      const best  = games.length ? games.reduce((a, b) => (b.avgScorePct > a.avgScorePct ? b : a)) : null;
+      const worst = games.length ? games.reduce((a, b) => (b.avgScorePct < a.avgScorePct ? b : a)) : null;
+      const totalSessions = Number(row.totalSessions) || 0;
+      return {
+        gender: row.gender,
+        children: Number(row.children) || 0,
+        avgScorePct: row.avgScorePct != null ? Number(row.avgScorePct) : null,
+        avgDurationMins: row.avgDurationMins != null ? Number(row.avgDurationMins) : null,
+        completionRate: row.completionRate != null ? Number(row.completionRate) : 0,
+        bestTest:   best  ? { gameKey: best.gameKey,  title: GAME_META[best.gameKey]?.title  || best.gameKey }  : null,
+        lowestTest: worst ? { gameKey: worst.gameKey, title: GAME_META[worst.gameKey]?.title || worst.gameKey } : null,
+        repeatAssessmentRate: totalSessions > 0 ? Math.round((Number(row.repeatSessions) / totalSessions) * 100) : 0,
+      };
+    });
+
+    // ── Rankings ──────────────────────────────────────────────────────────
+    const byScoreDesc = [...testAnalysis].filter(t => t.avgScorePct != null).sort((a, b) => b.avgScorePct - a.avgScorePct);
+    const byTimeAsc   = [...testAnalysis].filter(t => t.avgDurationMins > 0).sort((a, b) => a.avgDurationMins - b.avgDurationMins);
+    const rankings = {
+      topScoring:    byScoreDesc.slice(0, 5),
+      lowestScoring: [...byScoreDesc].reverse().slice(0, 5),
+      fastest:       byTimeAsc.slice(0, 5),
+      slowest:       [...byTimeAsc].reverse().slice(0, 5),
+    };
+
+    const timeAnalytics = {
+      avgCompletionTimeMins: sessionKpis.avgCompletionTimeMins != null ? Number(sessionKpis.avgCompletionTimeMins) : null,
+      fastestTest: byTimeAsc[0] || null,
+      longestTest: byTimeAsc[byTimeAsc.length - 1] || null,
+      avgDurationPerChildMins: avgDurationPerChildMins != null ? Number(avgDurationPerChildMins) : null,
+      byAgeGroup: ageAnalysis.map(a => ({ ageBand: a.ageBand, avgDurationMins: a.avgDurationMins })),
+      byGender: genderAnalysis.map(g => ({ gender: g.gender, avgDurationMins: g.avgDurationMins })),
+    };
+
+    const insights = buildInsights({ ageAnalysis, genderAnalysis, testAnalysis, highlights, trend });
+
+    res.json({
+      kpis: {
+        totalRegisteredChildren: Number(totalRegisteredChildren) || 0,
+        totalAssessmentsCompleted: Number(sessionKpis.totalAssessmentsCompleted) || 0,
+        totalRepeatAssessments: Number(sessionKpis.totalRepeatAssessments) || 0,
+        totalTestsConducted: Number(sessionKpis.totalTestsConducted) || 0,
+        uniqueChildren: Number(sessionKpis.uniqueChildren) || 0,
+        avgOverallScorePct: sessionKpis.avgOverallScorePct != null ? Number(sessionKpis.avgOverallScorePct) : null,
+        avgCompletionTimeMins: sessionKpis.avgCompletionTimeMins != null ? Number(sessionKpis.avgCompletionTimeMins) : null,
+        genderDist: genderDistRaw.map(r => ({ gender: r.gender, count: Number(r.count) })),
+        ageGroupDist: ageGroupDistRaw.filter(r => r.ageBand).map(r => ({ ageBand: r.ageBand, count: Number(r.count) })),
+      },
+      ageAnalysis,
+      genderAnalysis,
+      testAnalysis,
+      highlights,
+      timeAnalytics,
+      rankings,
+      insights,
+      trend,
+    });
+  } catch (err) {
+    console.error('Analysis overview-v2 error:', err);
+    res.status(500).json({ error: 'Failed to load Overall V2 analytics' });
+  }
+};
