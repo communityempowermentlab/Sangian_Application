@@ -21,6 +21,20 @@ const GAME_META = {
 // (lo-1)th birthday and ends on their hi-th birthday itself.
 const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 
+// Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
+// as a GROUP BY key. Kept in sync manually with AGE_MAP above.
+const AGE_BAND_CASE = `CASE
+  WHEN DATE_ADD(c.dob, INTERVAL 6 YEAR)  < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL 11 YEAR) THEN '7-11'
+  WHEN DATE_ADD(c.dob, INTERVAL 11 YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL 16 YEAR) THEN '12-16'
+  ELSE NULL END`;
+
+// Score as a percentage of that game's own max score — lets Overall V2 compare
+// tests with wildly different point scales (e.g. Bagiya /108 vs Ankganit /26)
+// on one common 0-100 axis instead of averaging raw, non-comparable scores.
+const SCORE_PCT_CASE = `CASE gs.game_name ${
+  Object.entries(GAME_META).map(([key, meta]) => `WHEN '${key}' THEN gs.score / ${meta.maxScore} * 100`).join(' ')
+} ELSE NULL END`;
+
 function parseFilters(req) {
   const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId, attempt } = req.query;
 
@@ -99,9 +113,19 @@ function parseFilters(req) {
   const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
   const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
+  // For age-group distribution: skip age filter so all bands are visible
+  const noAgeClauses = [...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noAgeParams  = [...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
 
-  return { allClauses, allParams, noGenderClauses, noGenderParams, needsChildJoin };
+  return {
+    allClauses, allParams, noGenderClauses, noGenderParams, noAgeClauses, noAgeParams, needsChildJoin,
+    // Raw pieces — used by getOverviewV2 to compose custom clause sets (e.g. children-only
+    // queries with no date scoping, or a shifted date range for period-over-period trend).
+    dateClauses, dateParams, genderClauses, genderParams, statusClauses, statusParams, ageClauses, childClauses, childParams,
+    gameClauses, gameParams, groupClauses, groupParams, attemptClauses, attemptParams,
+  };
 }
 
 function toWhere(clauses) {

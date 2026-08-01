@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
+import { getLanguageIcon } from '../utils/languageIcons';
 
 const AdminLanguageSettingsTab = () => {
     const [languages, setLanguages] = useState([]);
@@ -56,15 +57,32 @@ const AdminLanguageSettingsTab = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '20px' }}>
                 <thead>
                     <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700, width: '40px' }}>#</th>
                         <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Language</th>
                         <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Enabled</th>
                         <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Default</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {languages.map((lang) => (
+                    {languages.map((lang, index) => (
                         <tr key={lang.code} style={{ borderTop: '1px solid #f3f4f6' }}>
-                            <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>{lang.label}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', color: '#9ca3af', fontWeight: 600 }}>{index + 1}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    width: '24px', 
+                                    height: '24px', 
+                                    background: '#f1f5f9', 
+                                    borderRadius: '50%', 
+                                    fontSize: '0.8rem',
+                                    color: '#475569'
+                                }}>
+                                    {getLanguageIcon(lang.code)}
+                                </span>
+                                {lang.label}
+                            </td>
                             <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                                 <input type="checkbox" checked={lang.enabled} onChange={() => toggleEnabled(lang.code)} />
                             </td>

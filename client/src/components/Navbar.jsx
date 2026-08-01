@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
+import { getLanguageIcon } from '../utils/languageIcons';
 
 const Navbar = () => {
     const [currentUser, setCurrentUser] = useState(null);
@@ -42,8 +43,8 @@ const Navbar = () => {
                 </div>
 
                 <div className="nav-right">
-                    <button onClick={() => setShowLangModal(true)} className="btn nav-btn-outline" style={{ border: 'none', background: '#f3f4f6', color: '#374151' }}>
-                        {t('navbar.language')}
+                    <button onClick={() => setShowLangModal(true)} className="btn nav-btn-outline" style={{ border: 'none', background: '#f3f4f6', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>{getLanguageIcon(language)}</span> {t('navbar.language')}
                     </button>
                     {currentUser ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -70,26 +71,65 @@ const Navbar = () => {
 
             {/* Language Selection Modal */}
             {showLangModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-                        <h2 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{t('common.selectLanguage')}</h2>
-                        <h3 style={{ fontSize: '1.1rem', color: '#6b7280', marginBottom: '24px' }}>अपनी पसंदीदा भाषा चुनें</h3>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {availableLanguages.map((lang) => (
-                                <button
-                                    key={lang.shortCode}
-                                    onClick={() => { changeLanguage(lang.shortCode); setShowLangModal(false); }}
-                                    style={{ padding: '12px', fontSize: '1.1rem', background: language === lang.shortCode ? '#2563eb' : '#f3f4f6', color: language === lang.shortCode ? 'white' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontWeight: language === lang.shortCode ? 'bold' : 'normal' }}
-                                >
-                                    {lang.label}
-                                </button>
-                            ))}
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: '#fff', padding: '30px', borderRadius: '20px', width: '90%', maxWidth: '600px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ fontSize: '1.5rem', marginBottom: '4px', fontWeight: 800, color: '#111827' }}>{t('common.selectLanguage')}</h2>
+                            <h3 style={{ fontSize: '1.05rem', color: '#6b7280', fontWeight: 500 }}>अपनी पसंदीदा भाषा चुनें</h3>
                         </div>
 
-                        <button onClick={() => setShowLangModal(false)} style={{ marginTop: '24px', padding: '8px 16px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-                            {t('common.cancel')}
-                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', overflowY: 'auto', padding: '10px 4px', flex: 1 }}>
+                            {availableLanguages.map((lang) => {
+                                const isActive = language === lang.shortCode;
+                                return (
+                                    <button
+                                        key={lang.shortCode}
+                                        onClick={() => { changeLanguage(lang.shortCode); setShowLangModal(false); }}
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '12px',
+                                            padding: '12px 16px', 
+                                            background: isActive ? '#eff6ff' : '#fff', 
+                                            color: isActive ? '#1d4ed8' : '#374151', 
+                                            border: `1.5px solid ${isActive ? '#3b82f6' : '#e5e7eb'}`, 
+                                            borderRadius: '12px', 
+                                            cursor: 'pointer', 
+                                            fontWeight: isActive ? 700 : 500,
+                                            boxShadow: isActive ? '0 4px 12px rgba(59, 130, 246, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                                            transition: 'all 0.2s ease',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        <span style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            background: isActive ? '#3b82f6' : '#f1f5f9',
+                                            color: isActive ? '#fff' : '#64748b',
+                                            fontSize: '1rem',
+                                            fontWeight: 600,
+                                            flexShrink: 0
+                                        }}>
+                                            {getLanguageIcon(lang.shortCode)}
+                                        </span>
+                                        <span style={{ fontSize: '1rem' }}>{lang.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                            <button 
+                                onClick={() => setShowLangModal(false)} 
+                                style={{ padding: '10px 24px', color: '#4b5563', background: '#f3f4f6', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
