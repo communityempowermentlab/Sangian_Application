@@ -317,6 +317,7 @@ const AdminReports = () => {
                                     <th style={{ ...S.th, position: 'sticky', left: 40, zIndex: 2, background: '#f1f5f9', minWidth: 100, borderRight: '1px solid #cbd5e1' }} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
                                     <th style={{ ...S.th, textAlign: 'center' }}>Att. #</th>
+                                    <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('session_id')}>Session ID <SortIcon field="session_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Date <SortIcon field="start_time"/></th>
                                     <th style={S.th} onClick={() => toggleSort('start_time')}>Start Time</th>
                                     <th style={S.th} onClick={() => toggleSort('end_time')}>End Date <SortIcon field="end_time"/></th>
@@ -472,6 +473,7 @@ const AdminReports = () => {
                                                     #{row.child_attempt_no || '1'}
                                                 </span>
                                             </td>
+                                            <td style={{ ...S.td, textAlign: 'center', fontFamily: 'monospace', color: '#475569' }}>{row.session_id}</td>
                                             <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.start_time)}</td>
                                             <td style={{ ...S.td, color: '#64748b' }}>{fmtOnlyTime(row.start_time)}</td>
                                             <td style={{ ...S.td, textTransform: 'uppercase' }}>{fmtOnlyDate(row.end_time)}</td>
