@@ -20,6 +20,7 @@ const { adminRouter: testConfigAdminRoutes, publicRouter: testConfigPublicRoutes
 const { adminRouter: headerConfigAdminRoutes, publicRouter: headerConfigPublicRoutes } = require('./src/routes/headerConfigRoutes');
 const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatchingPublicRoutes } = require('./src/routes/responseMatchingRoutes');
 const { adminRouter: analysisSettingsAdminRoutes } = require('./src/routes/analysisSettingsRoutes');
+const { adminRouter: testGroupsAdminRoutes } = require('./src/routes/testGroupsRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const ticketRoutes      = require('./src/routes/ticketRoutes');
 const helpContentRoutes = require('./src/routes/helpContentRoutes');
@@ -124,6 +125,7 @@ app.use('/api/public/header-config', headerConfigPublicRoutes);
 app.use('/api/admin/response-matching-config', responseMatchingAdminRoutes);
 app.use('/api/public/response-matching-config', responseMatchingPublicRoutes);
 app.use('/api/admin/analysis-settings', analysisSettingsAdminRoutes);
+app.use('/api/admin/test-groups', testGroupsAdminRoutes);
 app.use('/api/contact',         contactRoutes);
 app.use('/api/tickets',         ticketRoutes);
 app.use('/api/help-content',    helpContentRoutes);

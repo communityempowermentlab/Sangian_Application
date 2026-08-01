@@ -1,0 +1,30 @@
+[
+  {
+    "id": "tg_group1",
+    "name": "Group 1",
+    "gameKeys": [
+      "literacy_reading_skill",
+      "numeracy_number_skill_v2",
+      "number_recall_lottery",
+      "working_memory_herpher_v2",
+      "rover_mela"
+    ],
+    "createdAt": "2026-08-01T00:00:00.000Z"
+  },
+  {
+    "id": "tg_group2",
+    "name": "Group 2",
+    "gameKeys": [
+      "literacy_reading_skill",
+      "numeracy_number_skill_v2",
+      "number_recall_lottery",
+      "working_memory_herpher_v2",
+      "rover_mela",
+      "cognitive_flex_chor",
+      "number_recall_lottery_v2",
+      "triangle_rachna",
+      "atlantis_bagiya"
+    ],
+    "createdAt": "2026-08-01T00:00:00.000Z"
+  }
+]

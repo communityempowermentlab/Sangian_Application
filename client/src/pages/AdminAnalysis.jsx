@@ -1054,7 +1054,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
 
 // ── Filter Bar ────────────────────────────────────────────
 
-function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading, groupOptions, catalog = GAME_CATALOG }) {
+function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasChanges, loading, groupOptions, catalog = GAME_CATALOG, testGroups = [] }) {
   const toggle = (key, val) => onChange(prev => ({
     ...prev,
     [key]: prev[key].includes(val) ? prev[key].filter(x => x !== val) : [...prev[key], val],
@@ -1125,6 +1125,33 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
             />
           </>
         )}
+        {(activeTab === 'overall' || activeTab === 'overall-v2') && testGroups.length > 0 && (
+          <>
+            <span className="ana-filter-sep" />
+            <div className="ana-chip-group">
+              <span className="ana-chip-label">Test Group</span>
+              <button
+                className={`ana-chip${pending.gameKeys.length === 0 ? ' active' : ''}`}
+                onClick={() => onChange(p => ({ ...p, gameKeys: [] }))}
+              >
+                All Tests
+              </button>
+              {testGroups.map(g => {
+                const isActive = pending.gameKeys.length === g.gameKeys.length && g.gameKeys.every(k => pending.gameKeys.includes(k));
+                return (
+                  <button key={g.id}
+                    className={`ana-chip${isActive ? ' active' : ''}`}
+                    style={isActive ? { '--chip-color': '#f59e0b' } : {}}
+                    onClick={() => onChange(p => ({ ...p, gameKeys: [...g.gameKeys] }))}
+                    title={g.gameKeys.map(k => catalog.find(c => c.key === k)?.title || k).join(', ')}
+                  >
+                    {g.name} ({g.gameKeys.length})
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="ana-filter-actions">
@@ -1162,6 +1189,7 @@ export default function AdminAnalysis() {
   const [groupOptions,    setGroupOptions]  = useState([]);
   const [testOrder,       setTestOrder]     = useState(null);   // ordered keys from Settings → Test Configuration
   const [excelExportEnabled, setExcelExportEnabled] = useState(true); // Settings → Analysis Dashboard toggle
+  const [testGroups,      setTestGroups]     = useState([]); // Settings → Test Configuration → Test Groups
   const metaFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -1174,6 +1202,9 @@ export default function AdminAnalysis() {
     axiosAdmin.get('/admin/analysis-settings')
       .then(({ data }) => setExcelExportEnabled(data.topChildrenExcelExport !== false))
       .catch(err => console.error('Failed to fetch analysis settings:', err));
+    axiosAdmin.get('/admin/test-groups')
+      .then(({ data }) => setTestGroups(data.groups || []))
+      .catch(err => console.error('Failed to fetch test groups:', err));
   }, []);
 
   // All tests, ordered as configured in Admin Settings → Test Configuration
@@ -1303,6 +1334,7 @@ export default function AdminAnalysis() {
         loading={loading}
         groupOptions={groupOptions}
         catalog={orderedCatalog}
+        testGroups={testGroups}
       />
 
       <div className="ana-layout">
