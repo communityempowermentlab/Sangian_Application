@@ -422,15 +422,93 @@ const ResponseMatchingPanel = () => {
     );
 };
 
+// ── Sub-section: Analysis Dashboard (feature toggles for /admin/analysis) ───────
+const AnalysisSettingsPanel = () => {
+    const [config, setConfig] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get('/admin/analysis-settings');
+            setConfig(res.data);
+        } catch (error) {
+            console.error('Failed to load analysis settings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const toggleExcelExport = async () => {
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/analysis-settings', { topChildrenExcelExport: !config.topChildrenExcelExport });
+            setConfig(res.data.config);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+            console.error('Failed to update analysis settings:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading || !config) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
+    }
+
+    return (
+        <div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                Feature toggles for the Analysis dashboard (<code>/admin/analysis</code>).
+            </div>
+
+            <div style={{ maxWidth: '640px' }}>
+                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem', marginBottom: '4px' }}>
+                    Excel Download — Top Active Children
+                </div>
+                <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: '12px' }}>
+                    When ON, the "Export Excel" button appears above the Top Active Children table on the Analysis
+                    dashboard, letting admins download it (plus a session-wise breakdown) as an .xlsx file.
+                    When OFF, the button is hidden entirely.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ToggleSwitch checked={!!config.topChildrenExcelExport} disabled={saving} onClick={toggleExcelExport} />
+                    <span
+                        onClick={saving ? undefined : toggleExcelExport}
+                        style={{ fontSize: '0.88rem', fontWeight: 600, color: config.topChildrenExcelExport ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+                    >
+                        {config.topChildrenExcelExport ? 'ON — Export Excel button is visible' : 'OFF — Export Excel button is hidden'}
+                    </span>
+                    {saved && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ── Main: Test Configuration (Test Visibility + Global Header Configuration) ────
 const TEST_CONFIG_SUBSECTIONS = [
     { key: 'visibility', label: 'Test Visibility',             icon: '🎮' },
     { key: 'header',     label: 'Global Header Configuration', icon: '🧾' },
     { key: 'matching',   label: 'Response Completion Requirement', icon: '🎯' },
+    { key: 'analysis',   label: 'Analysis Dashboard',          icon: '📊' },
 ];
+
+const SUBSECTION_PANELS = {
+    visibility: TestVisibilityPanel,
+    header:     GlobalHeaderConfigPanel,
+    matching:   ResponseMatchingPanel,
+    analysis:   AnalysisSettingsPanel,
+};
 
 const AdminTestConfigTab = () => {
     const [active, setActive] = useState('visibility');
+    const ActivePanel = SUBSECTION_PANELS[active];
 
     return (
         <div style={{ padding: '24px 28px' }}>
@@ -451,7 +529,7 @@ const AdminTestConfigTab = () => {
                 ))}
             </div>
 
-            {active === 'visibility' ? <TestVisibilityPanel /> : active === 'header' ? <GlobalHeaderConfigPanel /> : <ResponseMatchingPanel />}
+            <ActivePanel />
         </div>
     );
 };
