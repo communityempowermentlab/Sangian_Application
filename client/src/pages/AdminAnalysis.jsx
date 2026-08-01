@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
 import OverviewV2Panel from './AdminAnalysisV2Panel';
+import { downloadElementAsPdf } from '../utils/pdfExportUtils';
 import './AdminAnalysis.css';
 
 // ── Constants ─────────────────────────────────────────────
@@ -658,7 +659,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
             <span>Top Active Children{childrenData.length ? ` (${childrenData.length} loaded)` : ''}</span>
             {excelExportEnabled && childrenData.length > 0 && (
-              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={handleExportChildren} disabled={exportingChildren}>
+              <button className="ana-btn" data-pdf-ignore="true" style={{ fontSize: '12px' }} onClick={handleExportChildren} disabled={exportingChildren}>
                 {exportingChildren ? '⏳ Exporting…' : '📥 Export Excel'}
               </button>
             )}
@@ -706,7 +707,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             </tbody>
           </table>
           {hasMoreChildren && !loadingChildren && childrenData.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '15px' }}>
+            <div style={{ textAlign: 'center', padding: '15px' }} data-pdf-ignore="true">
               <button className="ana-btn" onClick={() => setChildrenPage(p => p + 1)}>Load More</button>
             </div>
           )}
@@ -1305,6 +1306,19 @@ export default function AdminAnalysis() {
     setActiveTab(tab);
   };
 
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const handleDownloadPdf = async () => {
+    setPdfExporting(true);
+    try {
+      const label = activeTab === 'overall' ? 'Platform_Overview' : 'Overall_V2_Executive_Analytics';
+      await downloadElementAsPdf('ana-dashboard-capture', `Sangian_${label}_${todayStr()}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate dashboard PDF:', err);
+    } finally {
+      setPdfExporting(false);
+    }
+  };
+
   const hasChanges = filters ? !filtersEqual(pendingFilters, filters) : false;
   const activeGame = GAME_CATALOG.find(g => g.key === activeTab);
 
@@ -1382,7 +1396,7 @@ export default function AdminAnalysis() {
         </aside>
 
         {/* Right Content Panel */}
-        <main className="ana-right-panel">
+        <main className="ana-right-panel" id="ana-dashboard-capture">
 
           <div className="ana-panel-header">
             <h2 className="ana-panel-title">
@@ -1403,10 +1417,23 @@ export default function AdminAnalysis() {
                 Max Score: <strong>{gameData[activeTab].meta.maxScore}</strong>
               </span>
             )}
-            {loading && <span className="ana-loading-chip">⏳ Loading…</span>}
-            <button className="ana-btn-refresh" onClick={fetchData} title="Refresh" disabled={loading}>
-              🔄
-            </button>
+            {loading && <span className="ana-loading-chip" data-pdf-ignore="true">⏳ Loading…</span>}
+            <div className="ana-panel-actions" data-pdf-ignore="true">
+              {(activeTab === 'overall' || activeTab === 'overall-v2') && (
+                <button
+                  className="ana-btn-pdf"
+                  onClick={handleDownloadPdf}
+                  title="Download this dashboard as a PDF"
+                  disabled={loading || pdfExporting}
+                >
+                  {pdfExporting ? <span className="ana-spinner-sm" /> : '📄'}
+                  {' '}{pdfExporting ? 'Generating…' : 'Download PDF'}
+                </button>
+              )}
+              <button className="ana-btn-refresh" onClick={fetchData} title="Refresh" disabled={loading}>
+                🔄
+              </button>
+            </div>
           </div>
 
           {error && (

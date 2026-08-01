@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { translate } = require('@vitalets/google-translate-api');
+const translate = require('google-translate-api-x');
 
 const TRANSLATIONS_DIR = path.join(__dirname, '..', 'translations');
 const BASE_FILE = path.join(TRANSLATIONS_DIR, 'english.json');
@@ -66,31 +66,50 @@ async function run() {
         const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const flat = flatten(data);
         
+        let batchKeys = [];
+        let batchTexts = [];
         let translatedCount = 0;
         let errorCount = 0;
 
+        // Group into batches of 30 to avoid payload size limits and rate limits
+        const BATCH_SIZE = 30;
+
         for (const [key, val] of Object.entries(flat)) {
             const engVal = engFlat[key];
-            
-            // Check if string needs translation (it matches english and contains letters)
             if (typeof val === 'string' && val === engVal && /[a-zA-Z]/.test(val)) {
-                try {
-                    const result = await translate(val, { to: langCode });
-                    setValueAtPath(data, key, result.text);
+                batchKeys.push(key);
+                batchTexts.push(val);
+            }
+        }
+        
+        if (batchKeys.length === 0) {
+            console.log(`  Already fully translated. Skipping.`);
+            continue;
+        }
+
+        console.log(`  Found ${batchKeys.length} strings to translate...`);
+        
+        for (let i = 0; i < batchKeys.length; i += BATCH_SIZE) {
+            const currentKeys = batchKeys.slice(i, i + BATCH_SIZE);
+            const currentTexts = batchTexts.slice(i, i + BATCH_SIZE);
+            
+            try {
+                const res = await translate(currentTexts, { to: langCode });
+                
+                // If it's a single string it returns an object, if array it returns an array
+                const results = Array.isArray(res) ? res : [res];
+                
+                for (let j = 0; j < currentKeys.length; j++) {
+                    setValueAtPath(data, currentKeys[j], results[j].text);
                     translatedCount++;
-                    
-                    if (translatedCount % 20 === 0) {
-                        console.log(`  Translated ${translatedCount} strings...`);
-                    }
-                    
-                    // Delay to avoid rate limiting
-                    await delay(100);
-                } catch (e) {
-                    console.error(`  Error translating "${val}" for ${langCode}:`, e.message);
-                    errorCount++;
-                    // increase delay if error
-                    await delay(1000);
                 }
+                
+                console.log(`    Batch translated ${translatedCount} / ${batchKeys.length}...`);
+                await delay(2000); // 2 second delay between batches
+            } catch (e) {
+                console.error(`    Error translating batch for ${langCode}:`, e.message);
+                errorCount += currentKeys.length;
+                await delay(5000);
             }
         }
         
