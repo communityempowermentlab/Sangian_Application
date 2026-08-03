@@ -121,6 +121,17 @@ const AdminChildrenList = () => {
     const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
     const groupDropdownRef = useRef(null);
 
+    const [sessionFilterIds, setSessionFilterIds] = useState(() => {
+        try {
+            const stored = sessionStorage.getItem('childrenListFilterIds');
+            if (stored) {
+                sessionStorage.removeItem('childrenListFilterIds');
+                return JSON.parse(stored);
+            }
+        } catch (e) { console.error(e); }
+        return null;
+    });
+
     useEffect(() => {
         const handler = (e) => {
             if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) {
@@ -211,7 +222,12 @@ const AdminChildrenList = () => {
         (exclude === 'hamlets'    || demoFilters.hamlets.length === 0    || demoFilters.hamlets.includes(DIMENSIONS.hamlets(child)))
     );
 
-    const filteredChildren = children.filter(c => matchesSearch(c) && matchesDemo(c, null) && matchesSegment(c));
+    const matchesSessionFilter = (child) => {
+        if (!sessionFilterIds) return true;
+        return sessionFilterIds.includes(child.child_id);
+    };
+
+    const filteredChildren = children.filter(c => matchesSearch(c) && matchesDemo(c, null) && matchesSegment(c) && matchesSessionFilter(c));
 
     const facetCounts = (dim) => {
         const counts = new Map();
@@ -248,12 +264,14 @@ const AdminChildrenList = () => {
     };
 
     const anyFilterActive = kpiSegment !== 'all' || groupFilterIds.length > 0 ||
-        Object.values(demoFilters).some(arr => arr.length > 0);
+        Object.values(demoFilters).some(arr => arr.length > 0) || searchTerm !== '' || sessionFilterIds;
 
     const clearAllFilters = () => {
         setKpiSegment('all');
         setGroupFilterIds([]);
         setDemoFilters({ genders: [], ageBands: [], gramSabhas: [], hamlets: [] });
+        setSearchTerm('');
+        setSessionFilterIds(null);
         setCurrentPage(1);
     };
 
@@ -452,6 +470,11 @@ const AdminChildrenList = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                         <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>Registered Children (Total: {children.length})</h3>
+                        {sessionFilterIds && (
+                            <span style={{ fontSize: '13px', background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                                Showing {sessionFilterIds.length} children from Dashboard
+                            </span>
+                        )}
                         <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>List of all registered children. Search and pagination work on UI data for now.</p>
                     </div>
                     <div className="admin-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

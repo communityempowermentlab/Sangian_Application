@@ -710,9 +710,11 @@ exports.getOverviewV2 = async (req, res) => {
 
     const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
     const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
-    const [[{ totalRegisteredChildren }]] = await pool.query(`
-      SELECT COUNT(*) AS totalRegisteredChildren FROM children c ${toWhere(childOnlyClauses)}
+    const [regChildRows] = await pool.query(`
+      SELECT c.child_id FROM children c ${toWhere(childOnlyClauses)}
     `, childOnlyParams);
+    const totalRegisteredChildren = regChildRows.length;
+    const registeredChildrenIds = regChildRows.map(r => r.child_id);
 
     const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
     const noGenderChildParams  = [...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
@@ -935,6 +937,7 @@ exports.getOverviewV2 = async (req, res) => {
 
     res.json({
       kpis: {
+        registeredChildrenIds,
         totalRegisteredChildren: Number(totalRegisteredChildren) || 0,
         totalAssessmentsCompleted: Number(sessionKpis.totalAssessmentsCompleted) || 0,
         totalRepeatAssessments: Number(sessionKpis.totalRepeatAssessments) || 0,

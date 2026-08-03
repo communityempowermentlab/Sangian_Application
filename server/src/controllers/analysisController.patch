@@ -1,0 +1,24 @@
+--- server/src/controllers/analysisController.js
++++ server/src/controllers/analysisController.js
+@@ -710,10 +710,12 @@
+ 
+     const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+     const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
+-    const [[{ totalRegisteredChildren }]] = await pool.query(`
+-      SELECT COUNT(*) AS totalRegisteredChildren FROM children c ${toWhere(childOnlyClauses)}
++    const [regChildRows] = await pool.query(`
++      SELECT c.child_id FROM children c ${toWhere(childOnlyClauses)}
+     `, childOnlyParams);
++    const totalRegisteredChildren = regChildRows.length;
++    const registeredChildrenIds = regChildRows.map(r => r.child_id);
+ 
+     const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+     const noGenderChildParams  = [...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
+@@ -825,6 +827,7 @@
+ 
+     res.json({
+       kpis: {
++        registeredChildrenIds,
+         totalRegisteredChildren,
+         totalAssessmentsCompleted: Math.round(overallAgg.completedAssessments || 0),
+         totalRepeatAssessments: Math.round(overallAgg.repeatAssessments || 0),

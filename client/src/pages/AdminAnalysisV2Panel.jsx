@@ -1,5 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import './AdminAnalysis.css';
 
 // ── Local formatting + primitives ────────────────────────────────────────
@@ -21,13 +22,21 @@ const GENDER_COLORS = { male: '#3b82f6', female: '#ec4899', other: '#8b5cf6', pr
 const AGE_LABELS    = { '7-11': '7–11 yrs', '12-16': '12–16 yrs' };
 const AGE_COLORS    = { '7-11': '#f59e0b', '12-16': '#0891b2' };
 
-function KpiCard({ icon, label, value, sub, color = '#4f46e5' }) {
+function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick }) {
   return (
-    <div className="ana-kpi-card">
+    <div 
+      className={`ana-kpi-card ${onClick ? 'clickable' : ''}`}
+      onClick={onClick}
+      style={onClick ? { cursor: 'pointer', transition: 'transform 0.1s', ':active': { transform: 'scale(0.98)' } } : {}}
+      title={onClick ? "Click to view these children" : ""}
+    >
       <div className="ana-kpi-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
       <div className="ana-kpi-body">
         <div className="ana-kpi-val" style={{ color }}>{value ?? '—'}</div>
-        <div className="ana-kpi-label">{label}</div>
+        <div className="ana-kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {label}
+          {onClick && <span style={{ fontSize: '0.9em', opacity: 0.6 }}>↗</span>}
+        </div>
         {sub && <div className="ana-kpi-sub">{sub}</div>}
       </div>
     </div>
@@ -219,6 +228,7 @@ function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel }) {
 
 export default function OverviewV2Panel({ data, loading }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
+  const navigate = useNavigate();
 
   if (loading && !data) return (
     <div className="ana-content">
@@ -240,7 +250,18 @@ export default function OverviewV2Panel({ data, loading }) {
     <div className="ana-content anv2">
 
       <div className="ana-kpi-row">
-        <KpiCard icon="👦" label="Registered Children"      value={fmt(kpis.totalRegisteredChildren)} color="#0891b2" />
+        <KpiCard 
+          icon="👦" 
+          label="Registered Children"      
+          value={fmt(kpis.totalRegisteredChildren)} 
+          color="#0891b2" 
+          onClick={() => {
+            if (kpis.registeredChildrenIds && kpis.registeredChildrenIds.length > 0) {
+              sessionStorage.setItem('childrenListFilterIds', JSON.stringify(kpis.registeredChildrenIds));
+              navigate('/admin/children');
+            }
+          }}
+        />
         <KpiCard icon="✅" label="Assessments Completed"    value={fmt(kpis.totalAssessmentsCompleted)} color="#22c55e" />
         <KpiCard icon="🔁" label="Repeat Assessments"       value={fmt(kpis.totalRepeatAssessments)} color="#8b5cf6" />
         <KpiCard icon="🎮" label="Tests Conducted"          value={fmt(kpis.totalTestsConducted)} color="#4f46e5" />
