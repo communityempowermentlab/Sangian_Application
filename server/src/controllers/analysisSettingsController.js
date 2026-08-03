@@ -14,14 +14,15 @@ const getConfig = (req, res) => {
 
 // @desc    Update the Analysis dashboard's feature-toggle settings (partial updates allowed)
 // @route   PUT /api/admin/analysis-settings
-// @body    { topChildrenExcelExport? }
+// @body    { topChildrenExcelExport?, showKpiInfoIcon? }
 // @access  Private (admin)
 const updateConfig = (req, res) => {
     try {
-        const { topChildrenExcelExport } = req.body;
+        const { topChildrenExcelExport, showKpiInfoIcon } = req.body;
         const current = analysisSettingsService.getConfig();
         const next = {
             topChildrenExcelExport: topChildrenExcelExport !== undefined ? Boolean(topChildrenExcelExport) : current.topChildrenExcelExport,
+            showKpiInfoIcon: showKpiInfoIcon !== undefined ? Boolean(showKpiInfoIcon) : current.showKpiInfoIcon,
         };
         const saved = analysisSettingsService.saveConfig(next);
         res.json({ success: true, config: saved });
