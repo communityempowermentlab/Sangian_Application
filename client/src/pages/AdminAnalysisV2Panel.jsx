@@ -319,11 +319,13 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
             name: "Tests Conducted",
             definition: "Total number of test sessions started by eligible children.",
             formula: "Count of all test sessions (irrespective of completion status)",
-            eligibility: [
-              "Child matches the selected Date Range",
-              "Child matches selected Age, Gender, and Group filters"
-            ],
-            example: "If 10 children started 5 games each, Total Tests Conducted = 50"
+            dataSource: "Database: `sangian` | Table: `test_sessions`",
+            filtersApplied: ["Date Range", "Age", "Gender", "Group ID"],
+            inclusionCriteria: ["All started sessions within date range"],
+            exclusionCriteria: ["Deleted or anomalous sessions"],
+            dateRange: "Based on dashboard date picker selection",
+            example: "If 10 children started 2 sessions each today, Total = 20.",
+            eligibility: ["Matches all selected filters"]
           }}
         />
         <KpiCard 
