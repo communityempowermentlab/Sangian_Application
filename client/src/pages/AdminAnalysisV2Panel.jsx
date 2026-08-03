@@ -308,7 +308,6 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
             }
           }}
         />
-        />
         <KpiCard 
           icon="🎮" 
           label="Tests Conducted"          
