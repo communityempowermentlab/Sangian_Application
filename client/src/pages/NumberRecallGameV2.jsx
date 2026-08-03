@@ -501,47 +501,11 @@ const NumberRecallGameV2 = () => {
   };
 
   // ── Splash audio autoplay ──────────────────────────────────
-  // Browsers (esp. iOS Safari/WKWebView, and Chromium under a strict
-  // autoplay policy) block a bare programmatic play() call that isn't
-  // inside a user-gesture handler. Some builds reject the returned promise;
-  // others just leave it pending forever without resolving OR rejecting —
-  // so we can't gate the fallback on that promise settling. Instead we
-  // arm a one-time "play on first interaction" listener unconditionally
-  // alongside the attempt, and disarm it if real autoplay does succeed.
   useEffect(() => {
-    if (isCheckingSession || screen !== 'splash' || showResumeModal || audioFinished) return;
-    const audioEl = audioRef.current;
-    if (!audioEl) return;
-
-    const events = ['pointerdown', 'touchstart', 'keydown'];
-    let armed = true;
-
-    const clearFallbackListeners = () => {
-      events.forEach(evt => document.removeEventListener(evt, playOnFirstInteraction));
-    };
-    const playOnFirstInteraction = () => {
-      if (!armed) return;
-      armed = false;
-      clearFallbackListeners();
-      audioEl.currentTime = 0;
-      audioEl.play().catch(() => {});
-    };
-    const onPlaying = () => {
-      // Real autoplay succeeded — the interaction fallback is no longer needed.
-      armed = false;
-      clearFallbackListeners();
-    };
-
-    audioEl.addEventListener('playing', onPlaying);
-    events.forEach(evt => document.addEventListener(evt, playOnFirstInteraction, { once: true }));
-
-    audioEl.currentTime = 0;
-    audioEl.play().catch(() => {});
-
-    return () => {
-      audioEl.removeEventListener('playing', onPlaying);
-      clearFallbackListeners();
-    };
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => setAudioFinished(true));
+    }
   }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Session timer ──────────────────────────────────────────
