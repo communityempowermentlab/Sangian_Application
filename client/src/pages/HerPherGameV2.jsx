@@ -13,6 +13,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
+import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
 import './HerPherGameV2.css';
 
@@ -1144,7 +1145,7 @@ const HerPherGameV2 = () => {
                     className={`hp-btn hp-btn-primary ${audioFinished ? 'hp-btn-highlight' : ''}`}
                     style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
                     disabled={!audioFinished}
-                    onClick={startNewGame}
+                    onClick={() => { unlockAudioContext(); startNewGame(); }}
                   >
                     {t('game.startNow')}
                   </button>
@@ -1431,7 +1432,7 @@ const HerPherGameV2 = () => {
               >
                 {t('game.restartFresh')}
               </button>
-              <button className="hp-btn hp-btn-primary" onClick={resumeGame}>
+              <button className="hp-btn hp-btn-primary" onClick={() => { unlockAudioContext(); resumeGame(); }}>
                 {t('game.resumeGame')}
               </button>
             </div>

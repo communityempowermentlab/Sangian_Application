@@ -8,6 +8,7 @@ import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
+import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
 import './NumberSkillGame.css';
 
@@ -691,7 +692,7 @@ const NumberSkillGameV2 = () => {
                   className={`ns-btn ns-btn-primary ${audioFinished ? 'ns-btn-highlight' : ''}`}
                   disabled={!audioFinished}
                   style={{ opacity: !audioFinished ? 0.6 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
-                  onClick={() => { startNewGame(); }}
+                  onClick={() => { unlockAudioContext(); startNewGame(); }}
                 >
                   {t('game.startNow')}
                 </button>
@@ -898,7 +899,7 @@ const NumberSkillGameV2 = () => {
             <p>{t('game.progressDesc')}</p>
             <div className="ns-btn-row" style={{ marginTop: '20px', flexWrap: 'nowrap' }}>
               <button className="ns-btn ns-btn-secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
-              <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={resumeGame}>{t('game.resumeGame')}</button>
+              <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => { unlockAudioContext(); resumeGame(); }}>{t('game.resumeGame')}</button>
             </div>
           </div>
         </div>

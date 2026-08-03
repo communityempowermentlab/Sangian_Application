@@ -7,6 +7,7 @@ import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useResponseMatching } from '../contexts/ResponseMatchingContext';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
+import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
 import './NumberRecallGameV2.css';
 
@@ -955,7 +956,7 @@ const NumberRecallGameV2 = () => {
                 <button
                   className={`nr-btn nr-btn-primary ${(!audioFinished || isCheckingSession || !isConfigLoaded) ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
                   disabled={!audioFinished || isCheckingSession || !isConfigLoaded}
-                  onClick={startNewGame}
+                  onClick={() => { unlockAudioContext(); startNewGame(); }}
                 >
                   {t('game.startNow')}
                 </button>
@@ -1183,7 +1184,7 @@ const NumberRecallGameV2 = () => {
               }}>
                 {t('game.restartFresh')}
               </button>
-              <button className="nr-btn nr-btn-primary" onClick={resumeGame}>
+              <button className="nr-btn nr-btn-primary" onClick={() => { unlockAudioContext(); resumeGame(); }}>
                 {t('game.resumeGame')}
               </button>
             </div>

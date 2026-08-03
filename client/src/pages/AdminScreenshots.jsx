@@ -8,13 +8,15 @@ const SERVER_BASE = API_URL.replace(/\/api$/, '');
 const GAMES = [
   { key: 'atlantis_bagiya',        name: 'Bagiya',            nameHi: 'बगिया',          emoji: '🌿' },
   { key: 'number_recall_lottery',  name: 'Lottery Ka Ticket', nameHi: 'लॉटरी का टिकट',  emoji: '🎟️' },
-  { key: 'number_recall_lottery_v2', name: 'Lottery Ka Ticket - Version 2', nameHi: 'लॉटरी का टिकट - Version 2', emoji: '🎟️' },
+  { key: 'number_recall_lottery_v2', name: 'Lottery Ka Ticket - Version 2', nameHi: 'लॉटरी का टिकट - संस्करण 2', emoji: '🎟️' },
   { key: 'rover_mela',             name: 'Chalo Mela Chalen', nameHi: 'चलो मेला चलें',   emoji: '🎡' },
   { key: 'triangle_rachna',        name: 'Rachna',            nameHi: 'रचना',            emoji: '🔷' },
   { key: 'auditory_dhyan',         name: 'Dhyan Kahan Hai',   nameHi: 'ध्यान कहाँ है',  emoji: '👂' },
   { key: 'working_memory_herpher', name: 'Her Pher',          nameHi: 'हेर फेर',          emoji: '🔄' },
+  { key: 'working_memory_herpher_v2', name: 'Her Pher - Version 2', nameHi: 'हेर फेर - संस्करण 2', emoji: '🔄' },
   { key: 'cognitive_flex_chor',    name: 'Chor Machaye Shor', nameHi: 'चोर मचाए शोर',   emoji: '🚔' },
   { key: 'numeracy_number_skill',  name: 'Ankganit',          nameHi: 'अंकगणित',         emoji: '🔢' },
+  { key: 'numeracy_number_skill_v2',  name: 'Ankganit - Version 2', nameHi: 'अंकगणित - संस्करण 2', emoji: '🔢' },
   { key: 'literacy_reading_skill', name: 'Padh ke batao',     nameHi: 'पढ़ के बताओ',     emoji: '📖' },
 ];
 
