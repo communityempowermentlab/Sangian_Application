@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import axiosAdmin from '../services/axiosAdmin';
 import { useGoogleAnalytics } from '../contexts/GoogleAnalyticsContext';
@@ -2149,11 +2150,13 @@ const CONTENT_MAP = {
 };
 
 const AdminSettings = () => {
-    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('adminSettingsTab') || 'google_analytics');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'google_analytics';
 
-    useEffect(() => {
-        localStorage.setItem('adminSettingsTab', activeTab);
-    }, [activeTab]);
+    const setActiveTab = (tab) => {
+        setSearchParams({ tab });
+    };
+
     const active = SETTINGS_MENU.find(m => m.key === activeTab);
 
     return (
