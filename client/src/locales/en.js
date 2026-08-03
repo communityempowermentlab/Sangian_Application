@@ -19,7 +19,8 @@ export const en = {
     "enterReason": "Please enter a reason before stopping.",
     "sessionNotFound": "Session not found. Please refresh and try again.",
     "loading": "Loading…",
-    "pageLoadError": "This page could not be loaded. Please try again later."
+    "pageLoadError": "This page could not be loaded. Please try again later.",
+    "version2": " - Version 2"
   },
   "navbar": {
     "id": "ID",

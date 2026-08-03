@@ -168,7 +168,7 @@ exports.getOverview = async (req, res) => {
         CAST(SUM(gs.status = 'completed') AS UNSIGNED)                AS completedSessions,
         CAST(SUM(gs.status IN ('quit','dropped')) AS UNSIGNED)        AS droppedSessions,
         ROUND(AVG(gs.score), 1)                                        AS avgScore,
-        ROUND(AVG(TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) / 60, 1) AS avgDurationMins,
+        ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 1) AS avgDurationMins,
         ROUND(SUM(gs.status = 'completed') / NULLIF(COUNT(*),0) * 100, 0) AS completionRate
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, allParams);
@@ -182,7 +182,7 @@ exports.getOverview = async (req, res) => {
         CAST(SUM(gs.status = 'completed') AS UNSIGNED)                 AS completed,
         CAST(SUM(gs.status IN ('quit','dropped')) AS UNSIGNED)         AS dropped,
         ROUND(AVG(gs.score), 1)                                         AS avgScore,
-        ROUND(AVG(TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) / 60, 1) AS avgDurationMins
+        ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 1) AS avgDurationMins
       FROM game_sessions gs ${CHILD_JOIN} ${where}
       GROUP BY gs.game_name
       ORDER BY sessions DESC
@@ -260,7 +260,7 @@ exports.getGameAnalytics = async (req, res) => {
         CAST(SUM(gs.status IN ('quit','dropped')) AS UNSIGNED)              AS droppedSessions,
         ROUND(AVG(gs.score), 2)                                              AS avgScore,
         MAX(gs.score)                                                        AS maxScoreAchieved,
-        ROUND(AVG(TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) / 60, 2) AS avgDurationMins,
+        ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 2) AS avgDurationMins,
         ROUND(SUM(gs.status='completed') / NULLIF(COUNT(*),0) * 100, 1)    AS completionRate
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, params);
@@ -369,7 +369,7 @@ exports.getGameAnalytics = async (req, res) => {
              gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
-             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec
+             COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec
       FROM game_sessions gs ${CHILD_JOIN} ${where}
       ORDER BY gs.created_at DESC LIMIT 20
     `, params);
@@ -427,7 +427,7 @@ exports.getGameSessions = async (req, res) => {
              gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
-             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
+             COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec,
              (SELECT COUNT(*) FROM game_sessions g2
               WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
                 AND g2.created_at <= gs.created_at) AS attemptNo,
@@ -466,7 +466,7 @@ exports.getChildrenSessions = async (req, res) => {
              gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
-             TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
+             COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec,
              (SELECT COUNT(*) FROM game_sessions g2
               WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
                 AND g2.created_at <= gs.created_at) AS attemptNo
@@ -541,7 +541,7 @@ exports.getTopChildren = async (req, res) => {
         COUNT(*)                                                        AS testCount,
         CAST(SUM(ga.status = 'completed') AS UNSIGNED)                  AS completed,
         CAST(SUM(ga.score) AS UNSIGNED)                                 AS totalScore,
-        ROUND(SUM(TIMESTAMPDIFF(SECOND, ga.start_time, ga.end_time)) / 60, 1) AS totalTimeMins,
+        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(ga.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(ga.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(ga.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(ga.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, ga.start_time, ga.end_time))) / 60, 1) AS totalTimeMins,
         ROUND(AVG(CASE WHEN ga.game_name = 'atlantis_bagiya' THEN ga.score END), 1) AS score_bagiya,
         ROUND(AVG(CASE WHEN ga.game_name = 'number_recall_lottery' THEN ga.score END), 1) AS score_lottery,
         ROUND(AVG(CASE WHEN ga.game_name = 'number_recall_lottery_v2' THEN ga.score END), 1) AS score_lottery_v2,
@@ -659,7 +659,11 @@ exports.getOverviewV2 = async (req, res) => {
         SELECT gs.id, gs.child_id, gs.game_name, gs.score, gs.status, gs.created_at,
                c.gender, ${AGE_BAND_CASE} AS ageBand,
                ${SCORE_PCT_CASE} AS scorePct,
-               TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time) AS durationSec,
+               COALESCE(
+                 CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END,
+                 CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END,
+                 TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)
+               ) AS durationSec,
                (SELECT COUNT(*) FROM game_sessions g2
                 WHERE g2.child_id = gs.child_id AND g2.game_name = gs.game_name
                   AND g2.created_at <= gs.created_at) AS attemptNo

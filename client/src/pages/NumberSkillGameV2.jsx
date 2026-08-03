@@ -660,7 +660,7 @@ const NumberSkillGameV2 = () => {
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="ns-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="ns-divider"></div>}
           {showGameIcon && <img src="/assets/images/number_skill_v2/number_skill.jpg" alt="Number Skill" className="ns-test-logo" />}
-          {showGameName && <span className="ns-test-title">{t('home.games.numeracy.title')} - Version 2</span>}
+          {showGameName && <span className="ns-test-title">{t('home.games.numeracy.title')}{t('common.version2')}</span>}
         </div>
         <div className="ns-topbar-center">
           {screen === 'game' && currentQuestion && (

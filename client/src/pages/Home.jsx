@@ -69,12 +69,12 @@ const Home = () => {
         {
             id: 2.1,
             gameKey: 'number_recall_lottery_v2',
-            title: 'Lottery Ka Ticket - Version 2',
+            title: t('home.games.lottery.title') + t('common.version2'),
             subtitle: t('home.games.lottery.sub'),
             desc: t('home.games.lottery.desc'),
             startUrl: "/games/number_recall_v2",
             image: getElementImage('number_recall_lottery_v2'),
-            shortTitle: 'Lottery Ka Ticket - Version 2',
+            shortTitle: t('home.games.lottery.title') + t('common.version2'),
             local: t('home.games.lottery.local'),
             tag: t('home.games.lottery.tag'),
             tagClass: "test-tag"
@@ -121,12 +121,12 @@ const Home = () => {
         {
             id: 5.1,
             gameKey: 'working_memory_herpher_v2',
-            title: t('home.games.herpher.title') + " - Version 2 " + t('home.games.herpher.local'),
+            title: t('home.games.herpher.title') + t('common.version2') + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
             startUrl: "/games/her_pher_v2",
             image: getElementImage('working_memory_herpher_v2'),
-            shortTitle: t('home.games.herpher.title') + " - Version 2",
+            shortTitle: t('home.games.herpher.title') + t('common.version2'),
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"
@@ -147,12 +147,12 @@ const Home = () => {
         {
             id: 601,
             gameKey: 'numeracy_number_skill_v2',
-            title: t('home.games.numeracy.title') + " - Version 2",
+            title: t('home.games.numeracy.title') + t('common.version2'),
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
             startUrl: "/games/number_skill_v2",
             image: getElementImage('numeracy_number_skill_v2'),
-            shortTitle: t('home.games.numeracy.title') + " - Version 2",
+            shortTitle: t('home.games.numeracy.title') + t('common.version2'),
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"

@@ -905,7 +905,7 @@ const NumberRecallGameV2 = () => {
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="nr-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="nr-divider"></div>}
           {showGameIcon && <img src="/assets/images/lottery_ka_ticket_V2/lottery_ka_ticket.jpg" alt="Number Recall" className="nr-test-logo" />}
-          {showGameName && <span className="nr-test-title">{t('home.games.lottery.title')} - Version V2</span>}
+          {showGameName && <span className="nr-test-title">{t('home.games.lottery.title')}{t('common.version2')}</span>}
         </div>
 
         <div className="nr-topbar-center">
