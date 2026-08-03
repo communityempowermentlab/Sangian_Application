@@ -298,9 +298,15 @@ export default function OverviewV2Panel({ data, loading }) {
             }
           }}
         />
-        <KpiCard icon="✅" label="Assessments Completed"    value={fmt(kpis.totalAssessmentsCompleted)} color="#22c55e" />
-        <KpiCard icon="🔁" label="Repeat Assessments"       value={fmt(kpis.totalRepeatAssessments)} color="#8b5cf6" />
         <KpiCard icon="🎮" label="Tests Conducted"          value={fmt(kpis.totalTestsConducted)} color="#4f46e5" />
+        <KpiCard 
+          icon="✅" 
+          label="Tests Completed"    
+          value={fmt(kpis.totalAssessmentsCompleted)} 
+          sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalAssessmentsCompleted / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
+          color="#22c55e" 
+        />
+        <KpiCard icon="🔁" label="Repeat Assessments"       value={fmt(kpis.totalRepeatAssessments)} color="#8b5cf6" />
         <KpiCard icon="📊" label="Avg Overall Score"        value={fmtPct(kpis.avgOverallScorePct)} sub="% of max, across all tests" color="#7c3aed" />
         <KpiCard icon="⏱️" label="Avg Completion Time"      value={fmtMins(kpis.avgCompletionTimeMins)} color="#f59e0b" />
       </div>
