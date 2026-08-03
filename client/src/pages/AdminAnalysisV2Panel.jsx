@@ -306,7 +306,13 @@ export default function OverviewV2Panel({ data, loading }) {
           sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalAssessmentsCompleted / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
           color="#22c55e" 
         />
-        <KpiCard icon="🔁" label="Repeat Assessments"       value={fmt(kpis.totalRepeatAssessments)} color="#8b5cf6" />
+        <KpiCard 
+          icon="🔁" 
+          label="Repeat Tests"       
+          value={fmt(kpis.totalRepeatAssessments)} 
+          sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalRepeatAssessments / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
+          color="#8b5cf6" 
+        />
         <KpiCard icon="📊" label="Avg Overall Score"        value={fmtPct(kpis.avgOverallScorePct)} sub="% of max, across all tests" color="#7c3aed" />
         <KpiCard icon="⏱️" label="Avg Completion Time"      value={fmtMins(kpis.avgCompletionTimeMins)} color="#f59e0b" />
       </div>
