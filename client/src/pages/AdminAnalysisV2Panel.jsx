@@ -74,16 +74,28 @@ function DonutChart({ segments = [], size = 110, centerLabel, centerSub }) {
   );
 }
 
-function Legend({ items = [] }) {
+function Legend({ items = [], onItemClick }) {
   return (
     <div className="ana-legend">
-      {items.map((it, i) => (
-        <div key={i} className="ana-legend-item">
-          <span className="ana-legend-dot" style={{ background: it.color }} />
-          <span className="ana-legend-text">{it.label}</span>
-          {it.value != null && <strong>{fmt(it.value)}</strong>}
-        </div>
-      ))}
+      {items.map((it, i) => {
+        const clickable = Boolean(onItemClick && it.onClickData);
+        return (
+          <div 
+            key={i} 
+            className={`ana-legend-item ${clickable ? 'clickable' : ''}`}
+            onClick={clickable ? () => onItemClick(it.onClickData) : undefined}
+            style={clickable ? { cursor: 'pointer', transition: 'transform 0.1s', ':active': { transform: 'scale(0.98)' } } : {}}
+            title={clickable ? "Click to view these children" : ""}
+          >
+            <span className="ana-legend-dot" style={{ background: it.color }} />
+            <span className="ana-legend-text" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {it.label}
+              {clickable && <span style={{ fontSize: '0.9em', opacity: 0.6 }}>↗</span>}
+            </span>
+            {it.value != null && <strong>{fmt(it.value)}</strong>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -243,8 +255,32 @@ export default function OverviewV2Panel({ data, loading }) {
     highlights = {}, timeAnalytics = {}, rankings = {}, insights = [], trend,
   } = data;
 
-  const genderSegs = (kpis.genderDist || []).map(g => ({ label: GENDER_LABELS[g.gender] || g.gender, color: GENDER_COLORS[g.gender] || '#94a3b8', value: g.count }));
-  const ageSegs     = (kpis.ageGroupDist || []).map(a => ({ label: AGE_LABELS[a.ageBand] || a.ageBand, color: AGE_COLORS[a.ageBand] || '#94a3b8', value: a.count }));
+  const genderSegs = (kpis.genderDist || []).map(g => ({ 
+    label: GENDER_LABELS[g.gender] || g.gender, 
+    color: GENDER_COLORS[g.gender] || '#94a3b8', 
+    value: g.count,
+    onClickData: { gender: g.gender }
+  }));
+  
+  const ageSegs = (kpis.ageGroupDist || []).map(a => ({ 
+    label: AGE_LABELS[a.ageBand] || a.ageBand, 
+    color: AGE_COLORS[a.ageBand] || '#94a3b8', 
+    value: a.count,
+    onClickData: { ageBand: a.ageBand }
+  }));
+
+  const handleLegendClick = (data) => {
+    if (kpis.registeredChildrenIds && kpis.registeredChildrenIds.length > 0) {
+      sessionStorage.setItem('childrenListFilterIds', JSON.stringify(kpis.registeredChildrenIds));
+      if (data.gender) {
+        sessionStorage.setItem('childrenListDemoFilters', JSON.stringify({ genders: [data.gender] }));
+      }
+      if (data.ageBand) {
+        sessionStorage.setItem('childrenListDemoFilters', JSON.stringify({ ageBands: [data.ageBand] }));
+      }
+      navigate('/admin/children');
+    }
+  };
 
   return (
     <div className="ana-content anv2">
@@ -275,7 +311,7 @@ export default function OverviewV2Panel({ data, loading }) {
             ? <div className="ana-card-body"><div className="ana-chart-empty">No data</div></div>
             : <div className="ana-donut-row">
                 <DonutChart segments={genderSegs} size={100} centerLabel={fmt(genderSegs.reduce((s, g) => s + g.value, 0))} centerSub="children" />
-                <Legend items={genderSegs} />
+                <Legend items={genderSegs} onItemClick={handleLegendClick} />
               </div>
           }
         </Card>
@@ -284,7 +320,7 @@ export default function OverviewV2Panel({ data, loading }) {
             ? <div className="ana-card-body"><div className="ana-chart-empty">No data</div></div>
             : <div className="ana-donut-row">
                 <DonutChart segments={ageSegs} size={100} centerLabel={fmt(ageSegs.reduce((s, g) => s + g.value, 0))} centerSub="children" />
-                <Legend items={ageSegs} />
+                <Legend items={ageSegs} onItemClick={handleLegendClick} />
               </div>
           }
         </Card>
