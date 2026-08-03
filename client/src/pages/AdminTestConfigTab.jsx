@@ -427,7 +427,7 @@ const AnalysisSettingsPanel = () => {
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
+    const [savedKey, setSavedKey] = useState(null);
 
     const load = async () => {
         setLoading(true);
@@ -448,8 +448,8 @@ const AnalysisSettingsPanel = () => {
         try {
             const res = await axiosAdmin.put('/admin/analysis-settings', { topChildrenExcelExport: !config.topChildrenExcelExport });
             setConfig(res.data.config);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 1800);
+            setSavedKey('excel');
+            setTimeout(() => setSavedKey(null), 1800);
         } catch (error) {
             console.error('Failed to update analysis settings:', error);
         } finally {
@@ -462,8 +462,8 @@ const AnalysisSettingsPanel = () => {
         try {
             const res = await axiosAdmin.put('/admin/analysis-settings', { showKpiInfoIcon: !config.showKpiInfoIcon });
             setConfig(res.data.config);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 1800);
+            setSavedKey('kpi');
+            setTimeout(() => setSavedKey(null), 1800);
         } catch (error) {
             console.error('Failed to update analysis settings:', error);
         } finally {
@@ -498,7 +498,7 @@ const AnalysisSettingsPanel = () => {
                     >
                         {config.topChildrenExcelExport ? 'ON — Export Excel button is visible' : 'OFF — Export Excel button is hidden'}
                     </span>
-                    {saved && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                    {savedKey === 'excel' && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
                 </div>
             </div>
 
@@ -518,7 +518,7 @@ const AnalysisSettingsPanel = () => {
                     >
                         {config.showKpiInfoIcon ? 'ON — Info icons are visible' : 'OFF — Info icons are hidden'}
                     </span>
-                    {saved && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                    {savedKey === 'kpi' && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
                 </div>
             </div>
         </div>
