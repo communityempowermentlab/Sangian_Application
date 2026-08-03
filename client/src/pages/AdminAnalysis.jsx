@@ -1,3 +1,4 @@
+import './AdminAnalysis.css';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
@@ -5,7 +6,7 @@ import axiosAdmin from '../services/axiosAdmin';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
 import OverviewV2Panel from './AdminAnalysisV2Panel';
 import { downloadElementAsPdf } from '../utils/pdfExportUtils';
-import './AdminAnalysis.css';
+import KpiInfoIcon from '../components/KpiInfoIcon';
 
 // ── Constants ─────────────────────────────────────────────
 
@@ -415,23 +416,31 @@ function HBar({ label, value, maxValue, color, badge }) {
   );
 }
 
-function KpiCard({ icon, label, value, sub, color = '#4f46e5' }) {
+function KpiCard({ icon, label, value, sub, color = '#4f46e5', info, showKpiInfoIcon }) {
   return (
     <div className="ana-kpi-card">
       <div className="ana-kpi-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
       <div className="ana-kpi-body">
         <div className="ana-kpi-val" style={{ color }}>{value ?? '—'}</div>
-        <div className="ana-kpi-label">{label}</div>
+        <div className="ana-kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {label}
+          {showKpiInfoIcon && info && <KpiInfoIcon {...info} />}
+        </div>
         {sub && <div className="ana-kpi-sub">{sub}</div>}
       </div>
     </div>
   );
 }
 
-function Card({ title, children, noPad, stretch }) {
+function Card({ title, children, noPad, stretch, info, showKpiInfoIcon }) {
   return (
     <div className={`ana-card${stretch ? ' ana-card--stretch' : ''}`}>
-      {title && <div className="ana-card-title">{title}</div>}
+      {title && (
+        <div className="ana-card-title" style={{ display: 'flex', alignItems: 'center' }}>
+          {title}
+          {showKpiInfoIcon && info && <KpiInfoIcon {...info} />}
+        </div>
+      )}
       <div className={noPad ? '' : 'ana-card-body'}>{children}</div>
     </div>
   );
@@ -443,7 +452,7 @@ function SkeletonCard() {
 
 // ── Overview Panel ────────────────────────────────────────
 
-function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelExportEnabled = true }) {
+function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelExportEnabled = true, showKpiInfoIcon }) {
   const [sortKey, setSortKey] = React.useState('sessions');
   const [sortDir, setSortDir] = React.useState('desc');
   const [childSortKey, setChildSortKey] = React.useState('attempt');
@@ -556,15 +565,87 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
   return (
     <div className="ana-content">
       <div className="ana-kpi-row">
-        <KpiCard icon="🎮" label="Total Sessions"  value={fmt(kpis.totalSessions)}  color="#4f46e5" />
-        <KpiCard icon="👦" label="Unique Children" value={fmt(kpis.uniqueChildren)} color="#0891b2" />
-        <KpiCard icon="✅" label="Completion Rate" value={`${fmt(kpis.completionRate)}%`} sub={`${fmt(kpis.completedSessions)} completed`} color="#22c55e" />
-        <KpiCard icon="📊" label="Avg Score"       value={fmt(kpis.avgScore, 1)} sub="across all tests" color="#7c3aed" />
-        <KpiCard icon="⏱️" label="Avg Duration"    value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} color="#f59e0b" />
+        <KpiCard 
+          icon="🎮" 
+          label="Total Sessions"  
+          value={fmt(kpis.totalSessions)}  
+          color="#4f46e5"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Total Sessions",
+            definition: "Total number of test sessions started by eligible children.",
+            formula: "Count of all test sessions",
+            eligibility: ["Matches all selected filters (Date, Age, Gender, Group)"]
+          }}
+        />
+        <KpiCard 
+          icon="👦" 
+          label="Unique Children" 
+          value={fmt(kpis.uniqueChildren)} 
+          color="#0891b2"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Unique Children",
+            definition: "Total number of distinct children who started at least one test.",
+            formula: "Count of distinct child IDs",
+            eligibility: ["Child has at least one session matching the selected filters"]
+          }}
+        />
+        <KpiCard 
+          icon="✅" 
+          label="Completion Rate" 
+          value={`${fmt(kpis.completionRate)}%`} 
+          sub={`${fmt(kpis.completedSessions)} completed`} 
+          color="#22c55e"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Completion Rate",
+            definition: "Percentage of started sessions that were successfully completed.",
+            formula: "(Completed Sessions ÷ Total Sessions) × 100",
+            eligibility: ["Matches all selected filters"]
+          }}
+        />
+        <KpiCard 
+          icon="📊" 
+          label="Avg Score"       
+          value={fmt(kpis.avgScore, 1)} 
+          sub="across all tests" 
+          color="#7c3aed"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Score",
+            definition: "Average absolute score achieved across all completed tests.",
+            formula: "Total Score Achieved ÷ Number of Completed Sessions",
+            eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        />
+        <KpiCard 
+          icon="⏱️" 
+          label="Avg Duration"    
+          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} 
+          color="#f59e0b"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Duration",
+            definition: "Average active time taken to complete a test session.",
+            formula: "Sum of timerSeconds of completed tests ÷ Number of completed tests",
+            eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        />
       </div>
 
       <div className="ana-grid-2">
-        <Card title="Sessions by Test" stretch>
+        <Card 
+          title="Sessions by Test" 
+          stretch
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Sessions by Test",
+            definition: "Number of test sessions started for each game.",
+            formula: "Count of test sessions grouped by test",
+            eligibility: ["Matches all selected filters"]
+          }}
+        >
           <div className="ana-hbar-list">
             {byGame.length === 0
               ? <div className="ana-chart-empty">No test data for selected filters</div>
@@ -719,7 +800,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
 
 // ── Game Panel ────────────────────────────────────────────
 
-function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
+function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon }) {
   const [sessions,         setSessions]         = React.useState([]);
   const [sessionsPage,     setSessionsPage]     = React.useState(0);
   const [loadingSessions,  setLoadingSessions]  = React.useState(false);
@@ -814,15 +895,86 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
   return (
     <div className="ana-content">
       <div className="ana-kpi-row">
-        <KpiCard icon="🎮" label="Total Sessions"  value={fmt(kpis.totalSessions)}  color={gameMeta.color} />
-        <KpiCard icon="👦" label="Unique Children" value={fmt(kpis.uniqueChildren)} color="#0891b2" />
-        <KpiCard icon="✅" label="Completion Rate" value={`${kpis.completionRate ?? 0}%`} sub={`${fmt(kpis.completedSessions)} sessions`} color="#22c55e" />
-        <KpiCard icon="📊" label="Avg Score"       value={fmt(kpis.avgScore, 1)} sub={`${kpis.avgScorePct ?? 0}% of max (${data.meta?.maxScore})`} color="#7c3aed" />
-        <KpiCard icon="⏱️" label="Avg Duration"    value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} color="#f59e0b" />
+        <KpiCard 
+          icon="🎮" 
+          label="Total Sessions"  
+          value={fmt(kpis.totalSessions)}  
+          color={gameMeta.color} 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Total Sessions",
+            definition: "Total number of test sessions started for this specific game.",
+            formula: "Count of all test sessions",
+            eligibility: ["Matches all selected filters"]
+          }}
+        />
+        <KpiCard 
+          icon="👦" 
+          label="Unique Children" 
+          value={fmt(kpis.uniqueChildren)} 
+          color="#0891b2" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Unique Children",
+            definition: "Total number of distinct children who started this game.",
+            formula: "Count of distinct child IDs",
+            eligibility: ["Child has at least one session matching the selected filters"]
+          }}
+        />
+        <KpiCard 
+          icon="✅" 
+          label="Completion Rate" 
+          value={`${kpis.completionRate ?? 0}%`} 
+          sub={`${fmt(kpis.completedSessions)} sessions`} 
+          color="#22c55e" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Completion Rate",
+            definition: "Percentage of started sessions that were successfully completed.",
+            formula: "(Completed Sessions ÷ Total Sessions) × 100",
+            eligibility: ["Matches all selected filters"]
+          }}
+        />
+        <KpiCard 
+          icon="📊" 
+          label="Avg Score"       
+          value={fmt(kpis.avgScore, 1)} 
+          sub={`${kpis.avgScorePct ?? 0}% of max (${data.meta?.maxScore})`} 
+          color="#7c3aed" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Score",
+            definition: `Average score achieved by children on ${gameMeta.title}.`,
+            formula: "Total Score Achieved ÷ Number of Completed Sessions",
+            eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        />
+        <KpiCard 
+          icon="⏱️" 
+          label="Avg Duration"    
+          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} 
+          color="#f59e0b" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Duration",
+            definition: "Average active time taken to complete this game.",
+            formula: "Sum of timerSeconds of completed tests ÷ Number of completed tests",
+            eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        />
       </div>
 
       <div className="ana-grid-3">
-        <Card title="Score Distribution">
+        <Card 
+          title="Score Distribution"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Score Distribution",
+            definition: "Count of sessions falling into different percentage score buckets.",
+            formula: "Grouped by buckets (e.g. 90-100%, 80-89%)",
+            eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        >
           <div className="ana-hbar-list">
             {totalScored === 0
               ? <div className="ana-chart-empty">No scored sessions for selected filters</div>
@@ -839,7 +991,16 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
           </div>
         </Card>
 
-        <Card title="Session Status">
+        <Card 
+          title="Session Status"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Session Status",
+            definition: "Breakdown of sessions by their final status.",
+            formula: "Count of sessions grouped by Status (completed, quit, etc.)",
+            eligibility: ["Matches all selected filters"]
+          }}
+        >
           {statusSegs.length === 0
             ? <div className="ana-card-body"><div className="ana-chart-empty">No data</div></div>
             : <div className="ana-donut-row">
@@ -849,7 +1010,16 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters }) {
           }
         </Card>
 
-        <Card title="Gender Breakdown">
+        <Card 
+          title="Gender Breakdown"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Gender Breakdown",
+            definition: "Distribution of test sessions by gender.",
+            formula: "Count of test sessions grouped by gender",
+            eligibility: ["Matches all selected filters"]
+          }}
+        >
           <div className="ana-hbar-list">
             {genderBreakdown.length === 0
               ? <div className="ana-chart-empty">No data</div>
@@ -1190,6 +1360,7 @@ export default function AdminAnalysis() {
   const [groupOptions,    setGroupOptions]  = useState([]);
   const [testOrder,       setTestOrder]     = useState(null);   // ordered keys from Settings → Test Configuration
   const [excelExportEnabled, setExcelExportEnabled] = useState(true); // Settings → Analysis Dashboard toggle
+  const [showKpiInfoIcon, setShowKpiInfoIcon] = useState(false); // Settings → Analysis Dashboard toggle
   const [testGroups,      setTestGroups]     = useState([]); // Settings → Test Configuration → Test Groups
   const metaFetchedRef = useRef(false);
 
@@ -1201,7 +1372,10 @@ export default function AdminAnalysis() {
       .then(({ data }) => setTestOrder((data.tests || []).map(t => t.key)))
       .catch(err => console.error('Failed to fetch test config order:', err));
     axiosAdmin.get('/admin/analysis-settings')
-      .then(({ data }) => setExcelExportEnabled(data.topChildrenExcelExport !== false))
+      .then(({ data }) => {
+        setExcelExportEnabled(data.topChildrenExcelExport !== false);
+        setShowKpiInfoIcon(data.showKpiInfoIcon === true);
+      })
       .catch(err => console.error('Failed to fetch analysis settings:', err));
     axiosAdmin.get('/admin/test-groups')
       .then(({ data }) => setTestGroups(data.groups || []))
@@ -1444,10 +1618,11 @@ export default function AdminAnalysis() {
           )}
 
           {activeTab === 'overall'
-            ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} />
+            ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} showKpiInfoIcon={showKpiInfoIcon} />
             : activeTab === 'overall-v2'
-            ? <OverviewV2Panel data={overviewV2Data} loading={loading} />
+            ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} />
             : <GamePanel
+                showKpiInfoIcon={showKpiInfoIcon}
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
                 gameKey={activeTab}
                 data={gameData[activeTab]}

@@ -457,6 +457,20 @@ const AnalysisSettingsPanel = () => {
         }
     };
 
+    const toggleKpiInfoIcon = async () => {
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/analysis-settings', { showKpiInfoIcon: !config.showKpiInfoIcon });
+            setConfig(res.data.config);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1800);
+        } catch (error) {
+            console.error('Failed to update analysis settings:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading || !config) {
         return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
     }
@@ -483,6 +497,26 @@ const AnalysisSettingsPanel = () => {
                         style={{ fontSize: '0.88rem', fontWeight: 600, color: config.topChildrenExcelExport ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
                     >
                         {config.topChildrenExcelExport ? 'ON — Export Excel button is visible' : 'OFF — Export Excel button is hidden'}
+                    </span>
+                    {saved && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                </div>
+            </div>
+
+            <div style={{ maxWidth: '640px', marginTop: '30px' }}>
+                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem', marginBottom: '4px' }}>
+                    Show KPI Information Icon
+                </div>
+                <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: '12px' }}>
+                    When ON, a settings/information (⚙️) icon appears next to every important KPI, metric, and calculated value on the Analysis dashboard. Clicking it shows a detailed explanation of how that value is calculated.
+                    When OFF, these icons are hidden.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ToggleSwitch checked={!!config.showKpiInfoIcon} disabled={saving} onClick={toggleKpiInfoIcon} />
+                    <span
+                        onClick={saving ? undefined : toggleKpiInfoIcon}
+                        style={{ fontSize: '0.88rem', fontWeight: 600, color: config.showKpiInfoIcon ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+                    >
+                        {config.showKpiInfoIcon ? 'ON — Info icons are visible' : 'OFF — Info icons are hidden'}
                     </span>
                     {saved && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
                 </div>

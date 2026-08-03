@@ -3,7 +3,10 @@ const path = require('path');
 
 const CONFIG_FILE = path.join(__dirname, '..', '..', 'config', 'analysis-settings.json');
 
-const DEFAULTS = { topChildrenExcelExport: true };
+const DEFAULTS = { 
+    topChildrenExcelExport: true,
+    showKpiInfoIcon: false
+};
 
 const getConfig = () => {
     if (!fs.existsSync(CONFIG_FILE)) return { ...DEFAULTS };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import KpiInfoIcon from '../components/KpiInfoIcon';
 import './AdminAnalysis.css';
 
 // ── Local formatting + primitives ────────────────────────────────────────
@@ -22,7 +23,7 @@ const GENDER_COLORS = { male: '#3b82f6', female: '#ec4899', other: '#8b5cf6', pr
 const AGE_LABELS    = { '7-11': '7–11 yrs', '12-16': '12–16 yrs' };
 const AGE_COLORS    = { '7-11': '#f59e0b', '12-16': '#0891b2' };
 
-function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick }) {
+function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick, info, showKpiInfoIcon }) {
   return (
     <div 
       className={`ana-kpi-card ${onClick ? 'clickable' : ''}`}
@@ -35,6 +36,7 @@ function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick }) {
         <div className="ana-kpi-val" style={{ color }}>{value ?? '—'}</div>
         <div className="ana-kpi-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {label}
+          {showKpiInfoIcon && info && <KpiInfoIcon {...info} />}
           {onClick && <span style={{ fontSize: '0.9em', opacity: 0.6 }}>↗</span>}
         </div>
         {sub && <div className="ana-kpi-sub">{sub}</div>}
@@ -43,10 +45,15 @@ function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick }) {
   );
 }
 
-function Card({ title, children, noPad }) {
+function Card({ title, children, noPad, info, showKpiInfoIcon }) {
   return (
     <div className="ana-card">
-      {title && <div className="ana-card-title">{title}</div>}
+      {title && (
+        <div className="ana-card-title" style={{ display: 'flex', alignItems: 'center' }}>
+          {title}
+          {showKpiInfoIcon && info && <KpiInfoIcon {...info} />}
+        </div>
+      )}
       <div className={noPad ? '' : 'ana-card-body'}>{children}</div>
     </div>
   );
@@ -115,12 +122,15 @@ function InsightsList({ insights }) {
   );
 }
 
-function HighlightCard({ icon, label, test, valueKey, valueFmt, color }) {
+function HighlightCard({ icon, label, test, valueKey, valueFmt, color, info, showKpiInfoIcon }) {
   return (
     <div className="anv2-highlight-card">
       <div className="anv2-highlight-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
       <div className="anv2-highlight-body">
-        <div className="anv2-highlight-label">{label}</div>
+        <div className="anv2-highlight-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {label}
+          {showKpiInfoIcon && info && <KpiInfoIcon {...info} />}
+        </div>
         <div className="anv2-highlight-test">{test ? test.title : '—'}</div>
         {test && <div className="anv2-highlight-val" style={{ color }}>{valueFmt(test[valueKey])}</div>}
       </div>
@@ -217,9 +227,9 @@ function ScoreDistModal({ test, onClose }) {
   );
 }
 
-function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel }) {
+function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel, info, showKpiInfoIcon }) {
   return (
-    <Card title={title}>
+    <Card title={title} info={info} showKpiInfoIcon={showKpiInfoIcon}>
       {!rows.length
         ? <div className="ana-chart-empty">{emptyLabel || 'No data for selected filters'}</div>
         : <ol className="anv2-rank-list">
@@ -238,7 +248,7 @@ function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel }) {
 
 // ── Main Panel ────────────────────────────────────────────
 
-export default function OverviewV2Panel({ data, loading }) {
+export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
   const navigate = useNavigate();
 
@@ -298,13 +308,40 @@ export default function OverviewV2Panel({ data, loading }) {
             }
           }}
         />
-        <KpiCard icon="🎮" label="Tests Conducted"          value={fmt(kpis.totalTestsConducted)} color="#4f46e5" />
+        />
+        <KpiCard 
+          icon="🎮" 
+          label="Tests Conducted"          
+          value={fmt(kpis.totalTestsConducted)} 
+          color="#4f46e5"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Tests Conducted",
+            definition: "Total number of test sessions started by eligible children.",
+            formula: "Count of all test sessions (irrespective of completion status)",
+            eligibility: [
+              "Child matches the selected Date Range",
+              "Child matches selected Age, Gender, and Group filters"
+            ],
+            example: "If 10 children started 5 games each, Total Tests Conducted = 50"
+          }}
+        />
         <KpiCard 
           icon="✅" 
           label="Tests Completed"    
           value={fmt(kpis.totalAssessmentsCompleted)} 
           sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalAssessmentsCompleted / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
           color="#22c55e" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Tests Completed",
+            definition: "Total number of test sessions that were successfully finished by the child.",
+            formula: "Count of test sessions where status is 'completed'",
+            eligibility: [
+              "Child matches the selected Date Range",
+              "Child matches selected Age, Gender, and Group filters"
+            ]
+          }}
         />
         <KpiCard 
           icon="🔁" 
@@ -312,13 +349,72 @@ export default function OverviewV2Panel({ data, loading }) {
           value={fmt(kpis.totalRepeatAssessments)} 
           sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalRepeatAssessments / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
           color="#8b5cf6" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Repeat Tests",
+            definition: "Number of tests played by children who had already played that specific test before.",
+            formula: "Count of test sessions where attemptNo >= 2",
+            eligibility: [
+              "Child matches the selected Date Range",
+              "Child matches selected Age, Gender, and Group filters"
+            ]
+          }}
         />
-        <KpiCard icon="📊" label="Avg Overall Score"        value={fmtPct(kpis.avgOverallScorePct)} sub="% of max, across all tests" color="#7c3aed" />
-        <KpiCard icon="⏱️" label="Avg Completion Time"      value={fmtMins(kpis.avgCompletionTimeMins)} color="#f59e0b" />
+        <KpiCard 
+          icon="📊" 
+          label="Avg Overall Score"        
+          value={fmtPct(kpis.avgOverallScorePct)} 
+          sub="% of max, across all tests" 
+          color="#7c3aed" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Overall Score",
+            definition: "Average score percentage achieved across all eligible completed tests.",
+            formula: "(Total Score Achieved ÷ Total Maximum Possible Score) × 100",
+            eligibility: [
+              "Only COMPLETED test sessions are included",
+              "Child matches selected filters"
+            ],
+            example: [
+              "Test 1: 8/10",
+              "Test 2: 15/20",
+              "Calculation: (23 / 30) × 100 = 76.7%"
+            ]
+          }}
+        />
+        <KpiCard 
+          icon="⏱️" 
+          label="Avg Completion Time"      
+          value={fmtMins(kpis.avgCompletionTimeMins)} 
+          color="#f59e0b" 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Average Completion Time",
+            definition: "Average active time taken to complete a single test session.",
+            formula: "Sum of timerSeconds of all completed tests ÷ Number of completed tests",
+            eligibility: [
+              "Only COMPLETED test sessions are included",
+              "Paused time is NOT included (timer is paused in-game)"
+            ],
+            notes: "This represents active play time per game."
+          }}
+        />
       </div>
 
       <div className="ana-grid-2">
-        <Card title="Male vs Female Distribution">
+        <Card 
+          title="Male vs Female Distribution"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Gender-wise Performance",
+            definition: "Distribution of unique children by gender.",
+            formula: "Count of distinct children grouped by gender",
+            eligibility: [
+              "Child has at least one test session in the selected filters",
+              "Matches age and group filters"
+            ]
+          }}
+        >
           {genderSegs.length === 0
             ? <div className="ana-card-body"><div className="ana-chart-empty">No data</div></div>
             : <div className="ana-donut-row">
@@ -327,7 +423,20 @@ export default function OverviewV2Panel({ data, loading }) {
               </div>
           }
         </Card>
-        <Card title="Age Group Distribution (7–11 & 12–16)">
+        <Card 
+          title="Age Group Distribution (7–11 & 12–16)"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Age-wise Analysis",
+            definition: "Distribution of unique children based on their age bracket at the time of the test.",
+            formula: "Count of distinct children grouped by Age Band (7-11 or 12-16)",
+            eligibility: [
+              "Child has at least one test session in the selected filters",
+              "Matches gender and group filters"
+            ],
+            notes: "Age is dynamically calculated based on the child's Date of Birth at the time the data was generated."
+          }}
+        >
           {ageSegs.length === 0
             ? <div className="ana-card-body"><div className="ana-chart-empty">No data</div></div>
             : <div className="ana-donut-row">
@@ -347,7 +456,17 @@ export default function OverviewV2Panel({ data, loading }) {
         )}
       </Card>
 
-      <Card title="Age-wise Performance Analysis" noPad>
+      <Card 
+        title="Age-wise Performance Analysis" 
+        noPad 
+        showKpiInfoIcon={showKpiInfoIcon}
+        info={{
+          name: "Age-wise Performance",
+          definition: "Performance metrics grouped by age band.",
+          formula: "Data grouped by computed Age Band at the time of session generation",
+          eligibility: ["Matches all selected filters"]
+        }}
+      >
         <div className="ana-table-wrap">
           <table className="ana-table ana-table-bordered">
             <thead><tr>
@@ -376,16 +495,80 @@ export default function OverviewV2Panel({ data, loading }) {
 
       <Card title="Test Highlights">
         <div className="anv2-highlight-grid">
-          <HighlightCard icon="🏆" label="Most Scored Test"          test={highlights.mostScored}    valueKey="avgScorePct"  valueFmt={fmtPct}                          color="#22c55e" />
-          <HighlightCard icon="📉" label="Least Scored Test"         test={highlights.leastScored}   valueKey="avgScorePct"  valueFmt={fmtPct}                          color="#ef4444" />
-          <HighlightCard icon="🧗" label="Most Difficult Test"       test={highlights.mostDifficult} valueKey="completionPct" valueFmt={v => `${v}% completion`}        color="#f59e0b" />
-          <HighlightCard icon="✅" label="Easiest Test"               test={highlights.easiest}       valueKey="completionPct" valueFmt={v => `${v}% completion`}        color="#22c55e" />
-          <HighlightCard icon="🔥" label="Most Frequently Played"    test={highlights.mostFrequent}  valueKey="totalAttempts" valueFmt={v => `${fmt(v)} attempt${v === 1 ? '' : 's'}`} color="#4f46e5" />
-          <HighlightCard icon="💤" label="Least Frequently Played"   test={highlights.leastFrequent} valueKey="totalAttempts" valueFmt={v => `${fmt(v)} attempt${v === 1 ? '' : 's'}`} color="#94a3b8" />
+          <HighlightCard 
+            icon="🏆" 
+            label="Most Scored Test"          
+            test={highlights.mostScored}    
+            valueKey="avgScorePct"  
+            valueFmt={fmtPct}                          
+            color="#22c55e" 
+            showKpiInfoIcon={showKpiInfoIcon}
+            info={{
+              name: "Most Scored Test",
+              definition: "The test with the highest average score percentage among all tests.",
+              formula: "Max(Average Score Percentage)",
+              eligibility: ["Requires at least one completed test session"]
+            }}
+          />
+          <HighlightCard 
+            icon="⚠️" 
+            label="Highest Drop-off Rate"     
+            test={highlights.highestDrop}   
+            valueKey="dropOffPct"   
+            valueFmt={v => `${v}%`}                    
+            color="#ef4444" 
+            showKpiInfoIcon={showKpiInfoIcon}
+            info={{
+              name: "Highest Drop-off Rate",
+              definition: "The test that has the highest percentage of incomplete sessions.",
+              formula: "(Incomplete Sessions ÷ Total Sessions) × 100",
+              eligibility: ["Requires at least one started test session"]
+            }}
+          />
+          <HighlightCard 
+            icon="⏱️" 
+            label="Longest Avg Duration"      
+            test={highlights.longestTest}   
+            valueKey="avgDurationMins" 
+            valueFmt={fmtMins}                      
+            color="#f59e0b" 
+            showKpiInfoIcon={showKpiInfoIcon}
+            info={{
+              name: "Longest Average Duration",
+              definition: "The test that takes children the longest time to complete on average.",
+              formula: "Max(Average Completion Time in Minutes)",
+              eligibility: ["Only COMPLETED test sessions are included"]
+            }}
+          />
+          <HighlightCard 
+            icon="🔁" 
+            label="Most Repeated Test"        
+            test={highlights.mostRepeated}  
+            valueKey="repeatAttempts" 
+            valueFmt={fmt}                          
+            color="#8b5cf6" 
+            showKpiInfoIcon={showKpiInfoIcon}
+            info={{
+              name: "Most Repeated Test",
+              definition: "The test with the highest number of repeat attempts (2nd attempt or higher).",
+              formula: "Max(Count of sessions with attemptNo >= 2)",
+              eligibility: ["Requires at least one repeat attempt"]
+            }}
+          />
         </div>
       </Card>
 
-      <Card title="Test-wise Performance Analysis" noPad>
+      <Card 
+        title="Test-wise Performance Analysis" 
+        noPad
+        showKpiInfoIcon={showKpiInfoIcon}
+        info={{
+          name: "Test-wise Performance",
+          definition: "Detailed metrics for each individual game.",
+          formula: "Data grouped by gameKey",
+          eligibility: ["Matches all selected filters"]
+        }}
+      >
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead><tr>
@@ -414,7 +597,17 @@ export default function OverviewV2Panel({ data, loading }) {
         </div>
       </Card>
 
-      <Card title="Gender-wise Performance" noPad>
+      <Card 
+        title="Gender-wise Performance" 
+        noPad
+        showKpiInfoIcon={showKpiInfoIcon}
+        info={{
+          name: "Gender-wise Performance",
+          definition: "Performance metrics grouped by gender.",
+          formula: "Data grouped by Gender",
+          eligibility: ["Matches all selected filters"]
+        }}
+      >
         <div className="ana-table-wrap">
           <table className="ana-table ana-table-bordered">
             <thead><tr><th>Gender</th><th>Children</th><th>Avg Score</th><th>Avg Time</th><th>Completion Rate</th><th>Best Test</th><th>Lowest Test</th><th>Repeat %</th></tr></thead>
@@ -453,13 +646,46 @@ export default function OverviewV2Panel({ data, loading }) {
         </div>
       </Card>
 
-      <div className="ana-grid-2">
-        <RankList title="🏅 Top Scoring Tests"    rows={rankings.topScoring}    valueKey="avgScorePct"   valueFmt={fmtPct} />
-        <RankList title="⚠️ Lowest Scoring Tests" rows={rankings.lowestScoring} valueKey="avgScorePct"   valueFmt={fmtPct} />
-      </div>
-      <div className="ana-grid-2">
-        <RankList title="⚡ Fastest Tests" rows={rankings.fastest} valueKey="avgDurationMins" valueFmt={fmtMins} />
-        <RankList title="🐢 Slowest Tests" rows={rankings.slowest} valueKey="avgDurationMins" valueFmt={fmtMins} />
+      <div className="ana-grid-3">
+        <RankList 
+          title="Top 5 by Score" 
+          rows={rankings.topByScore} 
+          valueKey="avgScorePct" 
+          valueFmt={fmtPct} 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Top 5 Tests by Score",
+            definition: "The top 5 tests ordered by highest average score percentage.",
+            formula: "Sorted by (Average Score Percentage) DESC",
+            eligibility: ["Only COMPLETED test sessions are included"]
+          }}
+        />
+        <RankList 
+          title="Top 5 by Completion" 
+          rows={rankings.topByCompletion} 
+          valueKey="completionPct" 
+          valueFmt={v => `${v}%`} 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Top 5 Tests by Completion",
+            definition: "The top 5 tests ordered by highest completion rate.",
+            formula: "Sorted by ((Completed Sessions ÷ Total Sessions) × 100) DESC",
+            eligibility: ["All test sessions"]
+          }}
+        />
+        <RankList 
+          title="Top 5 by Sessions" 
+          rows={rankings.topBySessions} 
+          valueKey="totalAttempts" 
+          valueFmt={fmt} 
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Top 5 Tests by Sessions",
+            definition: "The top 5 tests ordered by total number of sessions started.",
+            formula: "Sorted by (Total Sessions Count) DESC",
+            eligibility: ["All test sessions"]
+          }}
+        />
       </div>
 
       {selectedTest && <ScoreDistModal test={selectedTest} onClose={() => setSelectedTest(null)} />}

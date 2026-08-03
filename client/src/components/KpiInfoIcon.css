@@ -1,0 +1,103 @@
+.kpi-info-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    cursor: pointer;
+}
+
+.kpi-info-icon {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    transition: color 0.2s;
+    user-select: none;
+}
+
+.kpi-info-icon:hover {
+    color: #4b5563;
+}
+
+.kpi-info-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    width: 280px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 12px 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s, margin-bottom 0.2s;
+    font-family: inherit;
+    color: #374151;
+    text-align: left;
+    pointer-events: none;
+}
+
+.kpi-info-icon-wrapper:hover .kpi-info-popover {
+    opacity: 1;
+    visibility: visible;
+    margin-bottom: 12px;
+}
+
+.kpi-info-popover::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+}
+
+.kpi-info-popover::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 1px;
+    border-width: 7px;
+    border-style: solid;
+    border-color: #e5e7eb transparent transparent transparent;
+}
+
+.kpi-info-section {
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.kpi-info-section:last-child {
+    margin-bottom: 0;
+}
+
+.kpi-info-label {
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-info-text {
+    color: #4b5563;
+}
+
+.kpi-info-list {
+    margin: 4px 0 0 0;
+    padding-left: 16px;
+    list-style-type: disc;
+}
+
+.kpi-info-list li {
+    margin-bottom: 2px;
+}
