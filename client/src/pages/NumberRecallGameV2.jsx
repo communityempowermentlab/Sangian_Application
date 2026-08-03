@@ -892,7 +892,9 @@ const NumberRecallGameV2 = () => {
   const totalTimeMs = combinedScores.reduce((acc, s) => acc + (s.duration_ms || 0) * 1000, 0);
   const avgTimeMs = attempted > 0 ? (totalTimeMs / attempted) : 0;
   
-  if (!childData || isCheckingSession || !isConfigLoaded) return <div className="nr-loading">Loading / Syncing...</div>;
+  if ((!childData || isCheckingSession || !isConfigLoaded) && screen !== 'splash') {
+    return <div className="nr-loading">Loading / Syncing...</div>;
+  }
 
   const currentQ = questions[questionIndex];
 
@@ -951,8 +953,8 @@ const NumberRecallGameV2 = () => {
               <img src={`${IMAGE_PATH}/lottery_ka_ticket.jpg`} alt="Lottery Ka Ticket" className="nr-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
               <div className="nr-splash-btn-overlay">
                 <button
-                  className={`nr-btn nr-btn-primary ${!audioFinished ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
-                  disabled={!audioFinished}
+                  className={`nr-btn nr-btn-primary ${(!audioFinished || isCheckingSession || !isConfigLoaded) ? 'nr-btn-disabled' : 'nr-btn-highlight'}`}
+                  disabled={!audioFinished || isCheckingSession || !isConfigLoaded}
                   onClick={startNewGame}
                 >
                   {t('game.startNow')}
