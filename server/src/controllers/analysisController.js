@@ -97,6 +97,16 @@ function parseFilters(req) {
   if (gameKeys.length === 1)    { gameClauses.push('gs.game_name = ?');    gameParams.push(gameKeys[0]); }
   else if (gameKeys.length > 1) { gameClauses.push('gs.game_name IN (?)'); gameParams.push(gameKeys); }
 
+  // Cohort restriction: Only include children who have played ALL selected games
+  const cGameIntersectionClauses = [], cGameIntersectionParams = [];
+  if (gameKeys.length > 0) {
+    const clause = `(SELECT child_id FROM game_sessions WHERE game_name IN (?) GROUP BY child_id HAVING COUNT(DISTINCT game_name) = ?)`;
+    childClauses.push(`gs.child_id IN ${clause}`);
+    childParams.push(gameKeys, gameKeys.length);
+    cGameIntersectionClauses.push(`c.child_id IN ${clause}`);
+    cGameIntersectionParams.push(gameKeys, gameKeys.length);
+  }
+
   // Group filter — a child can belong to multiple groups, so this is an EXISTS
   // subquery rather than a join (a plain join would multiply session rows for
   // children in more than one selected group).
@@ -125,6 +135,7 @@ function parseFilters(req) {
     // queries with no date scoping, or a shifted date range for period-over-period trend).
     dateClauses, dateParams, genderClauses, genderParams, statusClauses, statusParams, ageClauses, childClauses, childParams,
     gameClauses, gameParams, groupClauses, groupParams, attemptClauses, attemptParams,
+    cGameIntersectionClauses, cGameIntersectionParams
   };
 }
 
@@ -697,22 +708,22 @@ exports.getOverviewV2 = async (req, res) => {
       childSearchParams.push(cid, `%${cid}%`);
     }
 
-    const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
-    const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams];
+    const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [[{ totalRegisteredChildren }]] = await pool.query(`
       SELECT COUNT(*) AS totalRegisteredChildren FROM children c ${toWhere(childOnlyClauses)}
     `, childOnlyParams);
 
-    const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
-    const noGenderChildParams  = [...childSearchParams, ...f.groupParams];
+    const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noGenderChildParams  = [...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [genderDistRaw] = await pool.query(`
       SELECT COALESCE(c.gender, 'unknown') AS gender, COUNT(*) AS count
       FROM children c ${toWhere(noGenderChildClauses)}
       GROUP BY c.gender
     `, noGenderChildParams);
 
-    const noAgeChildClauses = [...f.genderClauses, ...childSearchClauses, ...f.groupClauses];
-    const noAgeChildParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams];
+    const noAgeChildClauses = [...f.genderClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noAgeChildParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [ageGroupDistRaw] = await pool.query(`
       SELECT ${AGE_BAND_CASE} AS ageBand, COUNT(*) AS count
       FROM children c ${toWhere(noAgeChildClauses)}
