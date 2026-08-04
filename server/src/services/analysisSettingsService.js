@@ -3,9 +3,10 @@ const path = require('path');
 
 const CONFIG_FILE = path.join(__dirname, '..', '..', 'config', 'analysis-settings.json');
 
-const DEFAULTS = { 
+const DEFAULTS = {
     topChildrenExcelExport: true,
-    showKpiInfoIcon: false
+    showKpiInfoIcon: false,
+    gameCsvExport: true
 };
 
 const getConfig = () => {

@@ -276,10 +276,26 @@ exports.getGameHistory = async (req, res) => {
 //     falling back to timerSeconds for games that don't save a dedicated screentime field)
 exports.getReportOverview = async (req, res) => {
     try {
-        const [sessions] = await pool.query(`
-            SELECT game_name, child_id, status, score, saved_state
-            FROM game_sessions
-        `);
+        const { groupId } = req.query;
+        const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
+
+        let queryStr = `
+            SELECT gs.game_name, gs.child_id, gs.status, gs.score, gs.saved_state
+            FROM game_sessions gs
+        `;
+        const queryParams = [];
+        if (groupIds.length > 0) {
+            queryStr += `
+                WHERE EXISTS (
+                    SELECT 1 FROM children c
+                    JOIN child_group_members cgm ON cgm.children_id = c.id
+                    WHERE c.child_id = gs.child_id AND cgm.group_id IN (?)
+                )
+            `;
+            queryParams.push(groupIds);
+        }
+
+        const [sessions] = await pool.query(queryStr, queryParams);
 
         const buckets = {};
         for (const row of sessions) {
@@ -342,7 +358,8 @@ exports.getReportOverview = async (req, res) => {
 exports.getReportDetail = async (req, res) => {
     try {
         const { gameName } = req.params;
-        const { child_id } = req.query;
+        const { child_id, groupId } = req.query;
+        const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
 
         let gameFilter = [gameName];
         if (['rover_mela', 'chalo_mela_chale', 'Chalo Mela Chale'].includes(gameName)) {
@@ -390,7 +407,12 @@ exports.getReportDetail = async (req, res) => {
             queryStr += ' AND gs.child_id = ?';
             queryParams.push(child_id);
         }
-        
+
+        if (groupIds.length > 0) {
+            queryStr += ' AND EXISTS (SELECT 1 FROM child_group_members cgm WHERE cgm.children_id = c.id AND cgm.group_id IN (?))';
+            queryParams.push(groupIds);
+        }
+
         queryStr += ' ORDER BY gs.start_time ASC';
 
         const [rows] = await pool.query(queryStr, queryParams);

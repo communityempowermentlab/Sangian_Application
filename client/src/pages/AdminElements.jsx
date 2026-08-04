@@ -8,18 +8,11 @@ import AdminElementPositionManager from './AdminElementPositionManager';
 import AdminAnkganitV2Config from './AdminAnkganitV2Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 
-const LANGUAGES = [
-    { code: 'en', name: 'English' },
-    { code: 'hi', name: 'Hindi' },
-    { code: 'mr', name: 'Marathi' },
-    { code: 'te', name: 'Telugu' },
-    { code: 'kn', name: 'Kannada' }
-];
-
 export default function AdminElements() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [tests, setTests] = useState([]);
-    
+    const [languages, setLanguages] = useState([]);
+
     // Compute activeTest directly from URL or fallback
     const activeTest = searchParams.get('test') || (tests.length > 0 ? tests[0].key : null);
     
@@ -36,6 +29,7 @@ export default function AdminElements() {
 
     useEffect(() => {
         loadTests();
+        loadLanguages();
     }, []);
 
     useEffect(() => {
@@ -62,6 +56,17 @@ export default function AdminElements() {
         } catch (error) {
             console.error('Failed to load tests:', error);
             showToast('Failed to load tests', 'error');
+        }
+    };
+
+    const loadLanguages = async () => {
+        try {
+            const res = await axiosAdmin.get('/admin/translations/languages');
+            const langArray = (res.data.languages || []).map((l) => ({ code: l.shortCode, name: l.label }));
+            setLanguages(langArray);
+        } catch (error) {
+            console.error('Failed to load languages:', error);
+            showToast('Failed to load languages', 'error');
         }
     };
 
@@ -133,12 +138,15 @@ export default function AdminElements() {
                 <h3>Tests</h3>
                 <ul className="elements-test-list">
                     {tests.map(test => (
-                        <li 
-                            key={test.key} 
+                        <li
+                            key={test.key}
                             className={`elements-test-item ${activeTest === test.key ? 'active' : ''}`}
                             onClick={() => setActiveTest(test.key)}
                         >
-                            {test.title}
+                            <span className="elements-test-item-title">{test.title}</span>
+                            <span className={`elements-test-status ${test.enabled ? 'is-active' : 'is-inactive'}`}>
+                                {test.enabled ? 'Active' : 'Inactive'}
+                            </span>
                         </li>
                     ))}
                 </ul>
@@ -155,7 +163,7 @@ export default function AdminElements() {
                         <p>Loading...</p>
                     ) : (
                         <div className="elements-grid">
-                        {LANGUAGES.map(lang => {
+                        {languages.map(lang => {
                             const element = getElementForLang(lang.code);
                             return (
                                 <div key={lang.code} className="element-card">

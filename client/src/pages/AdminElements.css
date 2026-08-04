@@ -34,6 +34,36 @@
     border-bottom: 1px solid #f1f5f9;
     color: #475569;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.elements-test-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elements-test-status {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.elements-test-status.is-active {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.elements-test-status.is-inactive {
+    background: #fef2f2;
+    color: #dc2626;
 }
 
 .elements-test-item:hover {

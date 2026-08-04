@@ -250,7 +250,36 @@ function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel, info, show
 
 export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
+  const [testSortKey, setTestSortKey] = React.useState('totalAttempts');
+  const [testSortDir, setTestSortDir] = React.useState('desc');
   const navigate = useNavigate();
+
+  function handleTestSort(key) {
+    if (testSortKey === key) setTestSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setTestSortKey(key); setTestSortDir(key === 'title' ? 'asc' : 'desc'); }
+  }
+
+  const TEST_SORT_FIELDS = {
+    title:            t => (t.title || t.gameKey || '').toLowerCase(),
+    totalAttempts:    t => Number(t.totalAttempts) || 0,
+    avgScorePct:      t => Number(t.avgScorePct) || 0,
+    maxScoreAchieved: t => Number(t.maxScoreAchieved) || 0,
+    minScoreAchieved: t => Number(t.minScoreAchieved) || 0,
+    completionPct:    t => Number(t.completionPct) || 0,
+    dropOffPct:       t => Number(t.dropOffPct) || 0,
+    avgDurationMins:  t => Number(t.avgDurationMins) || 0,
+    firstAttempts:    t => Number(t.firstAttempts) || 0,
+  };
+
+  function TestSortTh({ label, sortId, title }) {
+    const active = testSortKey === sortId;
+    return (
+      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleTestSort(sortId)} title={title}>
+        {label}
+        <span className="ana-sort-icon">{active ? (testSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+      </th>
+    );
+  }
 
   if (loading && !data) return (
     <div className="ana-content">
@@ -264,6 +293,12 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
     kpis = {}, ageAnalysis = [], genderAnalysis = [], testAnalysis = [],
     highlights = {}, timeAnalytics = {}, rankings = {}, insights = [], trend,
   } = data;
+
+  const sortedTestAnalysis = [...testAnalysis].sort((a, b) => {
+    const fn = TEST_SORT_FIELDS[testSortKey] || TEST_SORT_FIELDS.totalAttempts;
+    const av = fn(a), bv = fn(b);
+    return testSortDir === 'asc' ? (av > bv ? 1 : av < bv ? -1 : 0) : (av < bv ? 1 : av > bv ? -1 : 0);
+  });
 
   const genderSegs = (kpis.genderDist || []).map(g => ({ 
     label: GENDER_LABELS[g.gender] || g.gender, 
@@ -573,12 +608,19 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
         <div className="ana-table-wrap">
           <table className="ana-table">
             <thead><tr>
-              <th>Test</th><th>Attempts</th><th>Avg Score</th><th>Max</th><th>Min</th>
+              <TestSortTh label="Test" sortId="title" />
+              <TestSortTh label="Attempts" sortId="totalAttempts" />
+              <TestSortTh label="Avg Score" sortId="avgScorePct" />
+              <TestSortTh label="Max" sortId="maxScoreAchieved" />
+              <TestSortTh label="Min" sortId="minScoreAchieved" />
               <th title="Share of scores in each 0–100% band, relative to that test's own max">Score Distribution</th>
-              <th>Compl.%</th><th>Drop-off%</th><th>Avg Time</th><th>1st / Repeat</th>
+              <TestSortTh label="Compl.%" sortId="completionPct" />
+              <TestSortTh label="Drop-off%" sortId="dropOffPct" />
+              <TestSortTh label="Avg Time" sortId="avgDurationMins" />
+              <TestSortTh label="1st / Repeat" sortId="firstAttempts" title="Sorted by 1st-attempt count" />
             </tr></thead>
             <tbody>
-              {testAnalysis.map(t => (
+              {sortedTestAnalysis.map(t => (
                 <tr key={t.gameKey}>
                   <td><span className="ana-game-chip" style={{ background: `${t.color}1a`, color: t.color }}>{t.title}</span></td>
                   <td>{fmt(t.totalAttempts)}</td>

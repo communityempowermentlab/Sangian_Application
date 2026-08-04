@@ -1092,6 +1092,23 @@ const initDb = async () => {
       }
     }
 
+    // Create child_profile_edit_logs table for tracking admin edits to child profiles
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS child_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        children_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (children_id) REFERENCES children(id) ON DELETE CASCADE
+      )
+    `);
+
     connection.release();
     console.log('Database tables verified/created');
   } catch (error) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 
 const CATEGORY_COLORS = {
@@ -471,6 +472,20 @@ const AnalysisSettingsPanel = () => {
         }
     };
 
+    const toggleGameCsvExport = async () => {
+        setSaving(true);
+        try {
+            const res = await axiosAdmin.put('/admin/analysis-settings', { gameCsvExport: !config.gameCsvExport });
+            setConfig(res.data.config);
+            setSavedKey('csv');
+            setTimeout(() => setSavedKey(null), 1800);
+        } catch (error) {
+            console.error('Failed to update analysis settings:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading || !config) {
         return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
     }
@@ -519,6 +534,27 @@ const AnalysisSettingsPanel = () => {
                         {config.showKpiInfoIcon ? 'ON — Info icons are visible' : 'OFF — Info icons are hidden'}
                     </span>
                     {savedKey === 'kpi' && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                </div>
+            </div>
+
+            <div style={{ maxWidth: '640px', marginTop: '30px' }}>
+                <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.88rem', marginBottom: '4px' }}>
+                    CSV Download — Test Sessions
+                </div>
+                <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: '12px' }}>
+                    When ON, the "Export CSV" button appears above the Recent Sessions table on every individual
+                    test's Analysis page, letting admins download its session data as a .csv file.
+                    When OFF, the button is hidden on every test.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ToggleSwitch checked={!!config.gameCsvExport} disabled={saving} onClick={toggleGameCsvExport} />
+                    <span
+                        onClick={saving ? undefined : toggleGameCsvExport}
+                        style={{ fontSize: '0.88rem', fontWeight: 600, color: config.gameCsvExport ? '#111827' : '#6b7280', cursor: saving ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+                    >
+                        {config.gameCsvExport ? 'ON — Export CSV button is visible' : 'OFF — Export CSV button is hidden'}
+                    </span>
+                    {savedKey === 'csv' && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
                 </div>
             </div>
         </div>
@@ -725,8 +761,17 @@ const SUBSECTION_PANELS = {
 };
 
 const AdminTestConfigTab = () => {
-    const [active, setActive] = useState('visibility');
-    const ActivePanel = SUBSECTION_PANELS[active];
+    const [searchParams, setSearchParams] = useSearchParams();
+    const active = searchParams.get('sub') || 'visibility';
+    const ActivePanel = SUBSECTION_PANELS[active] || SUBSECTION_PANELS.visibility;
+
+    const setActive = (key) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.set('sub', key);
+            return next;
+        });
+    };
 
     return (
         <div style={{ padding: '24px 28px' }}>

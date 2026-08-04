@@ -800,7 +800,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
 
 // ── Game Panel ────────────────────────────────────────────
 
-function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon }) {
+function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon, csvExportEnabled = true }) {
   const [sessions,         setSessions]         = React.useState([]);
   const [sessionsPage,     setSessionsPage]     = React.useState(0);
   const [loadingSessions,  setLoadingSessions]  = React.useState(false);
@@ -866,7 +866,10 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon 
     attemptBuckets = {},
   } = data;
 
-  const scoreEntries   = scoreDist ? Object.entries(scoreDist) : [];
+  // scoreDist is an ordered array of [label, count] pairs from the API — not a
+  // plain object, since JS would otherwise reorder pure-integer-looking keys
+  // (e.g. "21") ahead of range keys (e.g. "1-10"), scrambling bucket order.
+  const scoreEntries   = scoreDist || [];
   const maxScoreCount  = Math.max(...scoreEntries.map(([, v]) => Number(v) || 0), 1);
   const totalScored    = scoreEntries.reduce((s, [, v]) => s + (Number(v) || 0), 0);
 
@@ -895,24 +898,11 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon 
   return (
     <div className="ana-content">
       <div className="ana-kpi-row">
-        <KpiCard 
-          icon="🎮" 
-          label="Total Sessions"  
-          value={fmt(kpis.totalSessions)}  
-          color={gameMeta.color} 
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Total Sessions",
-            definition: "Total number of test sessions started for this specific game.",
-            formula: "Count of all test sessions",
-            eligibility: ["Matches all selected filters"]
-          }}
-        />
-        <KpiCard 
-          icon="👦" 
-          label="Unique Children" 
-          value={fmt(kpis.uniqueChildren)} 
-          color="#0891b2" 
+        <KpiCard
+          icon="👦"
+          label="Unique Children"
+          value={fmt(kpis.uniqueChildren)}
+          color="#0891b2"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Unique Children",
@@ -921,12 +911,25 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon 
             eligibility: ["Child has at least one session matching the selected filters"]
           }}
         />
-        <KpiCard 
-          icon="✅" 
-          label="Completion Rate" 
-          value={`${kpis.completionRate ?? 0}%`} 
-          sub={`${fmt(kpis.completedSessions)} sessions`} 
-          color="#22c55e" 
+        <KpiCard
+          icon="🎮"
+          label="Total Tests"
+          value={fmt(kpis.totalSessions)}
+          color={gameMeta.color}
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Total Tests",
+            definition: "Total number of test sessions started for this specific game.",
+            formula: "Count of all test sessions",
+            eligibility: ["Matches all selected filters"]
+          }}
+        />
+        <KpiCard
+          icon="✅"
+          label="Completion Rate"
+          value={`${kpis.completionRate ?? 0}%`}
+          sub={`${fmt(kpis.completedSessions)} Tests`}
+          color="#22c55e"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Completion Rate",
@@ -1111,7 +1114,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon 
         title={
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
             <span>Recent Sessions{sessions.length ? ` (${sessions.length} loaded)` : ''}</span>
-            {sessions.length > 0 && (
+            {csvExportEnabled && sessions.length > 0 && (
               <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => exportSessionsCSV(sessions, gameMeta, maxGameScore)}>
                 📥 Export CSV
               </button>
@@ -1361,6 +1364,7 @@ export default function AdminAnalysis() {
   const [testOrder,       setTestOrder]     = useState(null);   // ordered keys from Settings → Test Configuration
   const [excelExportEnabled, setExcelExportEnabled] = useState(true); // Settings → Analysis Dashboard toggle
   const [showKpiInfoIcon, setShowKpiInfoIcon] = useState(false); // Settings → Analysis Dashboard toggle
+  const [csvExportEnabled, setCsvExportEnabled] = useState(true); // Settings → Analysis Dashboard toggle
   const [testGroups,      setTestGroups]     = useState([]); // Settings → Test Configuration → Test Groups
   const metaFetchedRef = useRef(false);
 
@@ -1375,6 +1379,7 @@ export default function AdminAnalysis() {
       .then(({ data }) => {
         setExcelExportEnabled(data.topChildrenExcelExport !== false);
         setShowKpiInfoIcon(data.showKpiInfoIcon === true);
+        setCsvExportEnabled(data.gameCsvExport !== false);
       })
       .catch(err => console.error('Failed to fetch analysis settings:', err));
     axiosAdmin.get('/admin/test-groups')
@@ -1623,6 +1628,7 @@ export default function AdminAnalysis() {
             ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} />
             : <GamePanel
                 showKpiInfoIcon={showKpiInfoIcon}
+                csvExportEnabled={csvExportEnabled}
                 gameMeta={activeGame || { title: activeTab, icon: '🎮', color: '#4f46e5', tag: '' }}
                 gameKey={activeTab}
                 data={gameData[activeTab]}

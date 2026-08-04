@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
@@ -21,6 +21,15 @@ const statusBadge = (status) => {
         }}>{s.label}</span>
     );
 };
+
+const testStatusBadge = (enabled) => (
+    <span style={{
+        background: enabled ? '#f0fdf4' : '#fef2f2', color: enabled ? '#16a34a' : '#dc2626',
+        padding: '2px 10px', borderRadius: '999px',
+        fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em',
+        whiteSpace: 'nowrap'
+    }}>{enabled ? 'Active' : 'Inactive'}</span>
+);
 
 // ─── Format Helpers ────────────────────────────────────────────────────────
 // Now imported from reportExportUtils when needed, except for UI formatters:
@@ -64,6 +73,57 @@ const AdminReports = () => {
     // Filter state
     const [filterStatus, setFilterStatus] = useState(null);
 
+    // Group filter — child groups, e.g. "Main Group" / "Testing Group" (Settings → Groups)
+    const [groupOptions, setGroupOptions] = useState([]);
+    const groupParam = searchParams.get('group') || '';
+    const selectedGroupIds = groupParam ? groupParam.split(',') : [];
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/child-groups')
+            .then(res => setGroupOptions((res.data || []).filter(g => g.status === 'active')))
+            .catch(err => console.error('Failed to fetch child groups:', err));
+    }, []);
+
+    // Test order + enabled/disabled state — from Settings → Test Configuration → Test Visibility,
+    // so the Reports card order and status badges always match that page.
+    const [testConfig, setTestConfig] = useState([]);
+
+    useEffect(() => {
+        axiosAdmin.get('/admin/test-config')
+            .then(({ data }) => setTestConfig(data.tests || []))
+            .catch(err => console.error('Failed to fetch test config:', err));
+    }, []);
+
+    const orderedCatalog = useMemo(() => {
+        if (!testConfig.length) return GAME_CATALOG;
+        const pos = new Map(testConfig.map((t, i) => [t.key, i]));
+        return [...GAME_CATALOG].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
+    }, [testConfig]);
+
+    const isTestEnabled = useCallback((key) => {
+        const t = testConfig.find(t => t.key === key);
+        return t ? t.enabled : true;
+    }, [testConfig]);
+
+    const toggleGroupFilter = useCallback((groupId) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            const current = (next.get('group') || '').split(',').filter(Boolean);
+            const updated = current.includes(groupId) ? current.filter(x => x !== groupId) : [...current, groupId];
+            if (updated.length) next.set('group', updated.join(','));
+            else next.delete('group');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const clearGroupFilter = useCallback(() => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.delete('group');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
     // Reading Skill Expansion state
     const [expandedRows, setExpandedRows] = useState({}); // { sessionId: boolean }
 
@@ -74,10 +134,11 @@ const AdminReports = () => {
     const [hpDataModal, setHpDataModal] = useState({ show: false, rowData: null });
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
-    const fetchOverview = useCallback(async () => {
+    const fetchOverview = useCallback(async (groupIds) => {
         setLoadingOv(true);
         try {
-            const res = await axiosAdmin.get('/games/reports/overview');
+            const params = groupIds && groupIds.length ? { groupId: groupIds.join(',') } : {};
+            const res = await axiosAdmin.get('/games/reports/overview', { params });
             setOverview(res.data.data || []);
         } catch (e) {
             console.error(e);
@@ -86,7 +147,7 @@ const AdminReports = () => {
         }
     }, []);
 
-    useEffect(() => { fetchOverview(); }, [fetchOverview]);
+    useEffect(() => { fetchOverview(selectedGroupIds); }, [fetchOverview, groupParam]);
 
     // ── Apply a game selection (or null) to the local view state ──────────────
     // This is the ONLY place that writes activeGame/detail, and it's driven purely
@@ -94,7 +155,7 @@ const AdminReports = () => {
     // directly from click handlers. That keeps the URL as the single source of
     // truth and avoids a race between local state and router state landing in
     // different render ticks.
-    const showGame = useCallback(async (game) => {
+    const showGame = useCallback(async (game, groupIds) => {
         setActiveGame(game);
         setFilterStatus(null);
         if (!game) {
@@ -106,7 +167,8 @@ const AdminReports = () => {
         }
         setLoadingDt(true);
         try {
-            const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`);
+            const params = groupIds && groupIds.length ? { groupId: groupIds.join(',') } : {};
+            const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`, { params });
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
         } catch (e) {
             console.error(e);
@@ -118,11 +180,19 @@ const AdminReports = () => {
 
     // ── User-facing actions: just update the URL; the effect below applies it ──
     const openGame = useCallback((game) => {
-        setSearchParams({ game: game.key }, { replace: true });
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.set('game', game.key);
+            return next;
+        }, { replace: true });
     }, [setSearchParams]);
 
     const closeDetail = useCallback(() => {
-        setSearchParams({}, { replace: true });
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.delete('game');
+            return next;
+        }, { replace: true });
     }, [setSearchParams]);
 
     // ── Single source of truth: apply whatever the `?game=` URL param says ─────
@@ -133,7 +203,7 @@ const AdminReports = () => {
     useEffect(() => {
         const gameKey = searchParams.get('game');
         const game = gameKey ? GAME_CATALOG.find(g => g.key === gameKey) : null;
-        showGame(game || null);
+        showGame(game || null, selectedGroupIds);
     }, [searchParams, showGame]);
 
     // ── Merge overview DB data with catalog ───────────────────────────────────
@@ -227,6 +297,41 @@ const AdminReports = () => {
         }),
         topBar:    { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 4 },
         exportBtn: { background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
+        // Group filter (pill chips)
+        groupFilterWrap:  { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 20 },
+        groupFilterLabel: { fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', marginRight: 3 },
+        groupChip: (active) => ({
+            height: 28, padding: '0 14px', borderRadius: 20,
+            border: active ? '1.5px solid #4f46e5' : '1.5px solid #e2e8f0',
+            background: active ? '#4f46e5' : '#fff',
+            color: active ? '#fff' : '#475569',
+            fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+            transition: 'all 0.14s', whiteSpace: 'nowrap',
+        }),
+        groupFilterSep: { display: 'inline-block', width: 1, height: 20, background: '#e2e8f0', margin: '0 4px' },
+    };
+
+    // ── Group filter bar (shared between overview and detail views) ───────────
+    const GroupFilterBar = () => {
+        if (groupOptions.length === 0) return null;
+        return (
+            <div style={S.groupFilterWrap}>
+                <span style={S.groupFilterLabel}>Group</span>
+                <button style={S.groupChip(selectedGroupIds.length === 0)} onClick={clearGroupFilter}>
+                    All Children
+                </button>
+                <span style={S.groupFilterSep} />
+                {groupOptions.map(g => (
+                    <button
+                        key={g.id}
+                        style={S.groupChip(selectedGroupIds.includes(String(g.id)))}
+                        onClick={() => toggleGroupFilter(String(g.id))}
+                    >
+                        {g.name}
+                    </button>
+                ))}
+            </div>
+        );
     };
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -252,7 +357,10 @@ const AdminReports = () => {
                     <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
                         {activeGame.icon} {activeGame.title}
                     </span>
+                    {testStatusBadge(isTestEnabled(activeGame.key))}
                 </div>
+
+                <GroupFilterBar />
 
                 <div style={S.topBar}>
                     <div style={{ flex: 1 }}>
@@ -841,11 +949,13 @@ const AdminReports = () => {
             <div style={S.pageTitle}>📈 Reports</div>
             <div style={S.pageSub}>Click a test card to view detailed attempt data.</div>
 
+            <GroupFilterBar />
+
             {loadingOv ? (
                 <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>Loading overview…</div>
             ) : (
                 <div style={S.grid}>
-                    {GAME_CATALOG.map(game => {
+                    {orderedCatalog.map(game => {
                         const s = getStats(game.key);
                         return (
                             <div
@@ -855,9 +965,12 @@ const AdminReports = () => {
                                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)'; }}
                                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                                    <span style={{ fontSize: '2rem', lineHeight: 1 }}>{game.icon}</span>
-                                    <span style={S.cardTitle}>{game.title}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                        <span style={{ fontSize: '2rem', lineHeight: 1 }}>{game.icon}</span>
+                                        <span style={S.cardTitle}>{game.title}</span>
+                                    </div>
+                                    {testStatusBadge(isTestEnabled(game.key))}
                                 </div>
 
                                 <div style={S.kpiRow}>

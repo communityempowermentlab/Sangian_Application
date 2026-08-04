@@ -15,6 +15,50 @@ const GAME_META = {
   cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
 };
 
+// Score-distribution buckets for games whose scoring rubric doesn't map cleanly
+// onto 5 equal-width buckets (e.g. Padh ke Batao's 0-22 reading levels). Games
+// not listed here fall back to the generic 5-equal-bucket split below.
+const CUSTOM_SCORE_BUCKETS = {
+  literacy_reading_skill: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 10 },
+    { lo: 11, hi: 18 },
+    { lo: 19, hi: 20 },
+    { lo: 21, hi: 21 },
+    { lo: 22, hi: null }, // open-ended — catches any score at/above the max
+  ],
+  numeracy_number_skill_v2: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 8 },
+    { lo: 9,  hi: 18 },
+    { lo: 19, hi: 26 },
+    { lo: 27, hi: null }, // open-ended — catches any score at/above the max (30)
+  ],
+  numeracy_number_skill: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 10 },
+    { lo: 11, hi: 20 },
+    { lo: 21, hi: 24 },
+    { lo: 25, hi: null }, // open-ended — catches any score at/above the max (26)
+  ],
+};
+
+// Resolves a game's score-distribution buckets — its CUSTOM_SCORE_BUCKETS
+// entry if one exists, else 5 equal-width buckets over its maxScore — and
+// attaches the display label each bucket should use.
+function buildBucketDefs(gameKey, maxScore) {
+  const customBuckets = CUSTOM_SCORE_BUCKETS[gameKey];
+  const bucketSize    = Math.ceil(maxScore / 5);
+  const raw = customBuckets || Array.from({ length: 5 }, (_, i) => ({
+    lo: i * bucketSize,
+    hi: i === 4 ? null : (i + 1) * bucketSize - 1,
+  }));
+  return raw.map(({ lo, hi }) => {
+    const effectiveHi = hi === null ? maxScore : hi;
+    return { lo, hi, label: lo === effectiveHi ? `${lo}` : `${lo}-${effectiveHi}` };
+  });
+}
+
 // Age group label → [lo, hi] (registration range is 7–16). Boundaries are
 // exact-day, not calendar "completed years": band "lo-hi" covers
 // (dob + (lo-1) years, dob + hi years] — starts the day after the child's
@@ -281,21 +325,23 @@ exports.getGameAnalytics = async (req, res) => {
     // score and the real ability spread lives in dropped/quit sessions'
     // partial scores. In-progress/paused sessions are excluded (their score is
     // still changing) unless the admin explicitly filters by status.
-    const bucketSize  = Math.ceil(meta.maxScore / 5);
-    const bucketCases = Array.from({ length: 5 }, (_, i) => {
-      const lo = i * bucketSize;
-      const hi = Math.min((i + 1) * bucketSize - 1, meta.maxScore);
-      // last bucket is open-ended so scores above the configured max still count
-      const cond = i === 4 ? `gs.score >= ${lo}` : `gs.score BETWEEN ${lo} AND ${hi}`;
-      return `CAST(SUM(${cond}) AS UNSIGNED) AS \`${lo}-${hi}\``;
+    const bucketDefs  = buildBucketDefs(gameKey, meta.maxScore);
+    const bucketCases = bucketDefs.map(({ lo, hi, label }) => {
+      // open-ended top bucket so scores at/above the configured max still count
+      const cond = hi === null ? `gs.score >= ${lo}` : `gs.score BETWEEN ${lo} AND ${hi}`;
+      return `CAST(SUM(${cond}) AS UNSIGNED) AS \`${label}\``;
     }).join(', ');
 
     const distClauses = [...clauses, 'gs.score IS NOT NULL'];
     if (!req.query.status) distClauses.push("gs.status IN ('completed','dropped','quit')");
-    const [[scoreDist]] = await pool.query(`
+    const [[scoreDistRaw]] = await pool.query(`
       SELECT ${bucketCases}
       FROM game_sessions gs ${CHILD_JOIN} ${toWhere(distClauses)}
     `, params);
+    // Re-assert bucket order explicitly — plain-integer-looking keys (e.g. "0",
+    // "21") get reordered ahead of range keys (e.g. "1-10") by JS object key
+    // sort semantics, which would scramble the display order of custom buckets.
+    const scoreDist = bucketDefs.map(({ label }) => [label, Number(scoreDistRaw[label]) || 0]);
 
     // Quit reasons
     const qrWhere = toWhere([...clauses, "gs.quit_reason IS NOT NULL AND gs.quit_reason != ''"]);
@@ -860,6 +906,27 @@ exports.getOverviewV2 = async (req, res) => {
         scoreDist: (distByGame[r.gameKey] || [0, 0, 0, 0, 0]).map((count, i) => ({ label: BUCKET_LABELS[i], count })),
       };
     });
+
+    // Games with CUSTOM_SCORE_BUCKETS get their raw-score buckets here too,
+    // overriding the generic percentage buckets above — same buckets as that
+    // game's own Analysis page, so both views agree.
+    for (const gameKey of Object.keys(CUSTOM_SCORE_BUCKETS)) {
+      const entry = testAnalysis.find(t => t.gameKey === gameKey);
+      const meta  = GAME_META[gameKey];
+      if (!entry || !meta) continue;
+
+      const bucketDefs  = buildBucketDefs(gameKey, meta.maxScore);
+      const bucketCases = bucketDefs.map(({ lo, hi, label }) =>
+        `CAST(SUM(${hi === null ? `score >= ${lo}` : `score BETWEEN ${lo} AND ${hi}`}) AS UNSIGNED) AS \`${label}\``
+      ).join(', ');
+
+      const [[distRaw]] = await pool.query(`
+        ${sdSQL}
+        SELECT ${bucketCases} FROM sd WHERE game_name = ? AND score IS NOT NULL
+      `, [...f.allParams, gameKey]);
+
+      entry.scoreDist = bucketDefs.map(({ label }) => ({ label, count: Number(distRaw[label]) || 0 }));
+    }
 
     const highlights = {
       mostScored:    pickExtreme(testAnalysis, 'avgScorePct', 'max'),
