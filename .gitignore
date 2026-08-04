@@ -59,3 +59,11 @@ server/.vscode/
 
 # Uploads
 server/uploads/
+
+# Admin-editable runtime config (changed live via /admin/settings — don't track,
+# so a deploy pull never conflicts with or overwrites the live server's values)
+server/config/analysis-settings.json
+server/config/element-positions.json
+server/config/header-config.json
+server/config/test-config.json
+server/translations/language-settings.json
