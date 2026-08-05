@@ -1045,13 +1045,14 @@ exports.getOverviewV2 = async (req, res) => {
     });
 
     // ── Rankings ──────────────────────────────────────────────────────────
-    const byScoreDesc = [...testAnalysis].filter(t => t.avgScorePct != null).sort((a, b) => b.avgScorePct - a.avgScorePct);
-    const byTimeAsc   = [...testAnalysis].filter(t => t.avgDurationMins > 0).sort((a, b) => a.avgDurationMins - b.avgDurationMins);
+    const byScoreDesc      = [...testAnalysis].filter(t => t.avgScorePct != null).sort((a, b) => b.avgScorePct - a.avgScorePct);
+    const byCompletionDesc = [...testAnalysis].sort((a, b) => b.completionPct - a.completionPct);
+    const bySessionsDesc   = [...testAnalysis].sort((a, b) => b.totalAttempts - a.totalAttempts);
+    const byTimeAsc         = [...testAnalysis].filter(t => t.avgDurationMins > 0).sort((a, b) => a.avgDurationMins - b.avgDurationMins);
     const rankings = {
-      topScoring:    byScoreDesc.slice(0, 5),
-      lowestScoring: [...byScoreDesc].reverse().slice(0, 5),
-      fastest:       byTimeAsc.slice(0, 5),
-      slowest:       [...byTimeAsc].reverse().slice(0, 5),
+      topByScore:      byScoreDesc.slice(0, 5),
+      topByCompletion: byCompletionDesc.slice(0, 5),
+      topBySessions:   bySessionsDesc.slice(0, 5),
     };
 
     const timeAnalytics = {
