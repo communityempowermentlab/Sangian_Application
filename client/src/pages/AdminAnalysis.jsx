@@ -12,10 +12,10 @@ import KpiInfoIcon from '../components/KpiInfoIcon';
 
 // Per-game max scores (V2 games are config-driven: Lottery V2 = 23 questions, Ankganit V2 = 30)
 const GAME_MAX_SCORES = {
-  atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 23,
-  rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 25,
+  atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 22,
+  rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 16,
   numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
-  cognitive_flex_chor: 87, triangle_rachna: 48,
+  cognitive_flex_chor: 57, triangle_rachna: 48,
 };
 
 // Game key → per-game average-score field / sort key returned by /analysis/top-children
@@ -400,11 +400,11 @@ function Legend({ items = [] }) {
   );
 }
 
-function HBar({ label, value, maxValue, color, badge }) {
+function HBar({ label, value, maxValue, color, badge, labelWidth }) {
   const pct = maxValue > 0 ? Math.min(Math.round((value / maxValue) * 100), 100) : 0;
   return (
     <div className="ana-hbar-row">
-      <div className="ana-hbar-label">{label}</div>
+      <div className="ana-hbar-label" style={labelWidth ? { flex: `0 0 ${labelWidth}px` } : undefined}>{label}</div>
       <div className="ana-hbar-track">
         <div className="ana-hbar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
@@ -984,6 +984,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
               : <>
                   {scoreEntries.map(([range, count]) => (
                     <HBar key={range} label={range} value={Number(count)} maxValue={maxScoreCount} color={gameMeta.color}
+                      labelWidth={56}
                       badge={`${Math.round((Number(count) / totalScored) * 100)}%`} />
                   ))}
                   <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>

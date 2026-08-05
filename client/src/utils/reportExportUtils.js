@@ -11,7 +11,7 @@ export const GAME_CATALOG = [
     { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: '',                color: '#dc2626' },
-    { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: 'Construction',     color: '#ef4444' },
+    { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: '',     color: '#ef4444' },
 ];
 
 // ─── Format Helpers ────────────────────────────────────────────────────────

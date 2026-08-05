@@ -4,15 +4,15 @@ const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
   numeracy_number_skill:    { title: 'Ankganit',            tag: 'Numeracy',         color: '#7c3aed', maxScore: 26 },
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
-  number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 23 },
+  number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
   numeracy_number_skill_v2: { title: 'Ankganit - Version 2', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
   atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
   working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
-  working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
+  working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 16 },
   auditory_dhyan:           { title: 'Dhyan Kahan Hai',    tag: 'Listening Focus',  color: '#8b5cf6', maxScore: 33 },
   triangle_rachna:          { title: 'Rachna',              tag: 'Spatial Reasoning',color: '#ef4444', maxScore: 48 },
   rover_mela:               { title: 'Chalo Mela Chalen',  tag: 'Spatial Planning', color: '#10b981', maxScore: 44 },
-  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 87 },
+  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 57 },
 };
 
 // Score-distribution buckets for games whose scoring rubric doesn't map cleanly
@@ -40,6 +40,69 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 11, hi: 20 },
     { lo: 21, hi: 24 },
     { lo: 25, hi: null }, // open-ended — catches any score at/above the max (26)
+  ],
+  number_recall_lottery: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 6 },
+    { lo: 7,  hi: 12 },
+    { lo: 13, hi: 18 },
+    { lo: 19, hi: null }, // open-ended — catches any score at/above the max (22)
+  ],
+  number_recall_lottery_v2: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 6 },
+    { lo: 7,  hi: 12 },
+    { lo: 13, hi: 18 },
+    { lo: 19, hi: null }, // open-ended — catches any score at/above the max (22)
+  ],
+  working_memory_herpher: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 4 },
+    { lo: 5,  hi: 13 },
+    { lo: 14, hi: null }, // open-ended — catches any score at/above the max (25)
+  ],
+  working_memory_herpher_v2: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 4 },
+    { lo: 5,  hi: 8 },
+    { lo: 9,  hi: 12 },
+    { lo: 13, hi: null }, // open-ended — catches any score at/above the max (16)
+  ],
+  rover_mela: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 10 },
+    { lo: 11, hi: 24 },
+    { lo: 25, hi: 34 },
+    { lo: 35, hi: null }, // open-ended — catches any score at/above the max (44)
+  ],
+  cognitive_flex_chor: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 17 },
+    { lo: 18, hi: 28 },
+    { lo: 29, hi: 42 },
+    { lo: 43, hi: null }, // open-ended — catches any score at/above the max (57)
+  ],
+  atlantis_bagiya: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 22 },
+    { lo: 23, hi: 40 },
+    { lo: 41, hi: 58 },
+    { lo: 59, hi: 84 },
+    { lo: 85, hi: null }, // open-ended — catches any score at/above the max (108)
+  ],
+  triangle_rachna: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 12 },
+    { lo: 13, hi: 24 },
+    { lo: 25, hi: 36 },
+    { lo: 37, hi: null }, // open-ended — catches any score at/above the max (48)
+  ],
+  auditory_dhyan: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 4 },
+    { lo: 5,  hi: 9 },
+    { lo: 10, hi: 18 },
+    { lo: 19, hi: null }, // open-ended — catches any score at/above the max (33)
   ],
 };
 
