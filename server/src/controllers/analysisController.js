@@ -998,6 +998,9 @@ exports.getOverviewV2 = async (req, res) => {
       easiest:       pickExtreme(testAnalysis, 'completionPct', 'max'),
       mostFrequent:  pickExtreme(testAnalysis, 'totalAttempts', 'max'),
       leastFrequent: pickExtreme(testAnalysis, 'totalAttempts', 'min'),
+      highestDrop:   pickExtreme(testAnalysis, 'dropOffPct', 'max'),
+      longestTest:   pickExtreme(testAnalysis, 'avgDurationMins', 'max'),
+      mostRepeated:  pickExtreme(testAnalysis, 'repeatAttempts', 'max'),
     };
 
     // ── Age-wise analysis, enriched with best/worst test per band ───────────
