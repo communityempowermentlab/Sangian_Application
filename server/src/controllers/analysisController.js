@@ -128,6 +128,10 @@ function buildBucketDefs(gameKey, maxScore) {
 // (lo-1)th birthday and ends on their hi-th birthday itself.
 const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 
+// Games whose saved_state.allScores[] entries carry a per-question `category`
+// tag (item1..item8) — only these support the question-category breakdown.
+const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_memory_herpher_v2']);
+
 // Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
 // as a GROUP BY key. Kept in sync manually with AGE_MAP above.
 const AGE_BAND_CASE = `CASE
@@ -483,6 +487,51 @@ exports.getGameAnalytics = async (req, res) => {
       else                     attemptBuckets['10+']++;
     }
 
+    // Question-category breakdown (item1..item8) — only for games that tag
+    // each saved_state.allScores[] entry with a `category`. Ranked easiest to
+    // hardest by avg score; item0 (unscored sample question) is excluded.
+    let categoryBreakdown = [];
+    if (CATEGORY_BREAKDOWN_GAMES.has(gameKey)) {
+      const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      const [catRows] = await pool.query(`
+        SELECT
+          jt.category                                                             AS category,
+          COUNT(*)                                                                AS attempts,
+          ROUND(AVG(jt.score), 2)                                                 AS avgScore,
+          ROUND(AVG(jt.correctCount), 2)                                          AS avgCorrectCount,
+          ROUND(AVG(jt.timeTaken), 2)                                             AS avgTimeTakenSec,
+          ROUND(SUM(JSON_LENGTH(jt.missedImages)) / NULLIF(SUM(JSON_LENGTH(jt.expectedImages)), 0) * 100, 1) AS missRatePct,
+          ROUND(SUM(JSON_LENGTH(jt.missedImages) = 0 AND JSON_LENGTH(jt.incorrectSelections) = 0) / COUNT(*) * 100, 1) AS perfectRatePct
+        FROM game_sessions gs ${CHILD_JOIN},
+        JSON_TABLE(gs.saved_state, '$.allScores[*]' COLUMNS (
+          category NVARCHAR(50) PATH '$.category',
+          score INT PATH '$.score',
+          correctCount INT PATH '$.correctCount',
+          timeTaken DECIMAL(10,2) PATH '$.timeTaken',
+          expectedImages JSON PATH '$.expectedImages',
+          missedImages JSON PATH '$.missedImages',
+          incorrectSelections JSON PATH '$.incorrectSelections'
+        )) AS jt
+        ${catWhere} AND jt.category IS NOT NULL AND jt.category != 'item0'
+        GROUP BY jt.category
+        ORDER BY AVG(jt.score) DESC
+      `, params);
+
+      // Difficulty tier — thirds by rank (easiest/hardest thirds, remainder moderate)
+      const n = catRows.length;
+      const tierSize = Math.ceil(n / 3);
+      categoryBreakdown = catRows.map((row, i) => ({
+        ...row,
+        avgScore: Number(row.avgScore),
+        avgCorrectCount: Number(row.avgCorrectCount),
+        avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
+        missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,
+        perfectRatePct: row.perfectRatePct != null ? Number(row.perfectRatePct) : null,
+        rank: i + 1,
+        difficulty: i < tierSize ? 'Easy' : i >= n - tierSize ? 'Hard' : 'Moderate',
+      }));
+    }
+
     // Recent 20 sessions
     const [recentSessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName,
@@ -510,6 +559,7 @@ exports.getGameAnalytics = async (req, res) => {
       assessmentDist: { q1: q1Dist, q2: q2Dist, q3: q3Dist, q4: q4Dist },
       behaviorFreq,
       attemptBuckets,
+      categoryBreakdown,
       recentSessions,
     });
   } catch (err) {

@@ -41,6 +41,14 @@ const STATUS_COLORS = {
 
 const GENDER_COLORS  = { male: '#3b82f6', female: '#ec4899', other: '#8b5cf6', prefer_not_to_say: '#94a3b8', unknown: '#cbd5e1' };
 const GENDER_LABELS  = { male: 'Male', female: 'Female', other: 'Other', prefer_not_to_say: 'Prefer not to say', unknown: 'Unknown' };
+const DIFFICULTY_COLORS = { Easy: '#22c55e', Moderate: '#f59e0b', Hard: '#ef4444' };
+
+// Display-only labels for Her Pher question categories — purely cosmetic,
+// not stored anywhere; falls back to the raw category key if unmapped.
+const CATEGORY_NAMES = {
+  item1: 'Fruits', item2: 'Vegetables', item3: 'Sports', item4: 'Cloth',
+  item5: 'Kitchen', item6: 'Household', item7: 'Animal', item8: 'Transport',
+};
 
 const STATUS_CHIP_OPTIONS = [
   { key: 'completed',   label: 'Completed',   color: '#22c55e' },
@@ -863,7 +871,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const {
     kpis, scoreDist, quitReasons = [], genderBreakdown = [],
     dailyTrend = [], assessmentDist = {}, behaviorFreq = {},
-    attemptBuckets = {},
+    attemptBuckets = {}, categoryBreakdown = [],
   } = data;
 
   // scoreDist is an ordered array of [label, count] pairs from the API — not a
@@ -894,6 +902,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const maxBehavior     = Math.max(...behaviorEntries.map(([, v]) => v), 1);
   const attemptEntries  = Object.entries(attemptBuckets);
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
+  const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
 
   return (
     <div className="ana-content">
@@ -1104,6 +1113,70 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
               <tbody>
                 {quitReasons.map(r => (
                   <tr key={r.quit_reason}><td>{r.quit_reason || 'Not specified'}</td><td>{fmt(r.count)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {categoryBreakdown.length > 0 && (
+        <Card
+          title="Question Category Breakdown"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Question Category Breakdown",
+            definition: "Per-question performance across the game's question categories, ranked from easiest to hardest.",
+            formula: "Avg Score = mean per-question score. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
+            eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher)"]
+          }}
+          noPad
+        >
+          <div className="ana-table-wrap">
+            <table className="ana-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Category</th>
+                  <th>Cat-Name</th>
+                  <th>Difficulty</th>
+                  <th>Avg Score</th>
+                  <th>Avg Correct</th>
+                  <th>Miss Rate</th>
+                  <th>Perfect Rate</th>
+                  <th>Avg Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoryBreakdown.map(row => (
+                  <tr key={row.category}>
+                    <td><span className="ana-rank">{row.rank}</span></td>
+                    <td style={{ fontWeight: 600 }}>{row.category}</td>
+                    <td>{CATEGORY_NAMES[row.category] || '—'}</td>
+                    <td>
+                      <span
+                        className="ana-status-pill"
+                        style={{ background: `${DIFFICULTY_COLORS[row.difficulty]}22`, color: DIFFICULTY_COLORS[row.difficulty] }}
+                      >
+                        {row.difficulty}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="ana-hbar-track" style={{ width: '64px' }}>
+                          <div
+                            className="ana-hbar-fill"
+                            style={{ width: `${Math.round((row.avgScore / maxCategoryScore) * 100)}%`, background: gameMeta.color }}
+                          />
+                        </div>
+                        <span>{fmt(row.avgScore, 2)}</span>
+                      </div>
+                    </td>
+                    <td>{fmt(row.avgCorrectCount, 2)}</td>
+                    <td>{row.missRatePct != null ? `${row.missRatePct}%` : '—'}</td>
+                    <td>{row.perfectRatePct != null ? `${row.perfectRatePct}%` : '—'}</td>
+                    <td>{row.avgTimeTakenSec != null ? `${fmt(row.avgTimeTakenSec, 1)}s` : '—'}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
