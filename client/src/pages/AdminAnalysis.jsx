@@ -1147,6 +1147,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Avg Score
+                      {showKpiInfoIcon && (
                       <KpiInfoIcon
                         name="Avg Score (per category)"
                         definition="The average number of POINTS children earned on this question category, across every session matching your current filters (date range, group, age group, gender, status, attempt number). This is NOT a percentage of correct answers — see Important Notes below."
@@ -1160,12 +1161,13 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                         ]}
                         notes="Score ≠ accuracy: the game awards points in coarse tiers, not proportionally to correct clicks. E.g. on V2's Item 1 (10 images), getting 10/10, 9/10, or 8/10 correct all earn the same 2 points — only 7/10 drops to 1 point, and 6/10 or below scores 0. So a child scoring 8/10 and a child scoring 10/10 can show identical Avg Scores here. For the actual % of images matched correctly, see the 'Accuracy %' column instead — that's a true percentage. Max points per category also isn't the same for every game: it's a flat 2 for every category on V2, but ranges 2–4 on V1 depending on the question (later questions are worth more). Attempt counts naturally shrink for later categories — children who quit or got auto-stopped earlier in the sequence never reach them — so compare averages alongside the attempt/reach count, not in isolation."
                       />
+                      )}
                     </span>
                   </th>
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Avg Correct
-                      {showChildrenReachedCol && (
+                      {showKpiInfoIcon && showChildrenReachedCol && (
                         <KpiInfoIcon
                           name="Avg Correct (per category)"
                           definition="The average number of distinct images children correctly matched on this category, out of that question's expected set — pooled across every session matching your current filters. This is a raw match count, not a score or a percentage."
@@ -1184,6 +1186,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Accuracy %
+                      {showKpiInfoIcon && (
                       <KpiInfoIcon
                         name="Accuracy % (per category)"
                         definition="What share of the images children were actually expected to find on this category, they correctly matched — pooled across every session matching your current filters. This is a plain accuracy percentage, unlike Avg Score (which is the game's own tiered point score, not a percentage)."
@@ -1197,12 +1200,13 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                         ]}
                         notes="This is the same number as 100% − Miss Rate (both are derived from correct vs. expected images), so the two columns should always agree."
                       />
+                      )}
                     </span>
                   </th>
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Miss Rate
-                      {showChildrenReachedCol && (
+                      {showKpiInfoIcon && showChildrenReachedCol && (
                         <KpiInfoIcon
                           name="Miss Rate (per category)"
                           definition="What share of the images children were expected to find on this category, they never matched at all — pooled across every session matching your current filters. This is the exact mirror of Accuracy %: Miss Rate = 100% − Accuracy %, always."
@@ -1222,7 +1226,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Perfect Rate
-                      {showChildrenReachedCol && (
+                      {showKpiInfoIcon && showChildrenReachedCol && (
                         <KpiInfoIcon
                           name="Perfect Rate (per category)"
                           definition="What share of the SESSIONS that reached this category had a completely flawless run — zero missed images AND zero duplicate/incorrect clicks. Unlike Miss Rate and Accuracy %, this counts whole sessions, not individual images."
