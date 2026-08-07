@@ -1154,8 +1154,9 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                         dataSource="game_sessions.saved_state.allScores[] — one JSON entry per scored question, unnested and grouped by category"
                         example={[
                           "Illustrative only — not this page's live numbers:",
-                          "If 70 sessions (matching whatever filters are applied) reached a category, and their scores summed to 102.9,",
-                          "Avg Score = 102.9 ÷ 70 = 1.47",
+                          "5 sessions reach this category and score 2, 1, 2, 0, 2 (each score is always a whole number).",
+                          "Sum = 2+1+2+0+2 = 7. Count = 5.",
+                          "Avg Score = 7 ÷ 5 = 1.40",
                         ]}
                         notes="Max points per category isn't the same for every game: it's a flat 2 for every category on V2, but ranges 2–4 on V1 depending on the question (later questions are worth more). Attempt counts naturally shrink for later categories — children who quit or got auto-stopped earlier in the sequence never reach them — so compare averages alongside the attempt/reach count, not in isolation."
                       />
