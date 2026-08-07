@@ -1149,7 +1149,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       Avg Score
                       <KpiInfoIcon
                         name="Avg Score (per category)"
-                        definition="The average number of points children earned on this question category, across every session matching your current filters (date range, group, age group, gender, status, attempt number)."
+                        definition="The average number of POINTS children earned on this question category, across every session matching your current filters (date range, group, age group, gender, status, attempt number). This is NOT a percentage of correct answers — see Important Notes below."
                         formula="Avg Score = (sum of the score each session earned on this category) ÷ (number of sessions that reached & completed this category). Each session contributes at most one score per category — the practice round (item0) is always excluded, and a session only counts toward a category if it actually got that far before ending (whether finished, quit, or auto-stopped)."
                         dataSource="game_sessions.saved_state.allScores[] — one JSON entry per scored question, unnested and grouped by category"
                         example={[
@@ -1158,11 +1158,29 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                           "Sum = 2+1+2+0+2 = 7. Count = 5.",
                           "Avg Score = 7 ÷ 5 = 1.40",
                         ]}
-                        notes="Max points per category isn't the same for every game: it's a flat 2 for every category on V2, but ranges 2–4 on V1 depending on the question (later questions are worth more). Attempt counts naturally shrink for later categories — children who quit or got auto-stopped earlier in the sequence never reach them — so compare averages alongside the attempt/reach count, not in isolation."
+                        notes="Score ≠ accuracy: the game awards points in coarse tiers, not proportionally to correct clicks. E.g. on V2's Item 1 (10 images), getting 10/10, 9/10, or 8/10 correct all earn the same 2 points — only 7/10 drops to 1 point, and 6/10 or below scores 0. So a child scoring 8/10 and a child scoring 10/10 can show identical Avg Scores here. For the actual % of images matched correctly, see the 'Accuracy %' column instead — that's a true percentage. Max points per category also isn't the same for every game: it's a flat 2 for every category on V2, but ranges 2–4 on V1 depending on the question (later questions are worth more). Attempt counts naturally shrink for later categories — children who quit or got auto-stopped earlier in the sequence never reach them — so compare averages alongside the attempt/reach count, not in isolation."
                       />
                     </span>
                   </th>
                   <th>Avg Correct</th>
+                  <th>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Accuracy %
+                      <KpiInfoIcon
+                        name="Accuracy % (per category)"
+                        definition="What share of the images children were actually expected to find on this category, they correctly matched — pooled across every session matching your current filters. This is a plain accuracy percentage, unlike Avg Score (which is the game's own tiered point score, not a percentage)."
+                        formula="Accuracy % = (sum of correctCount across every session that reached this category) ÷ (sum of each of those sessions' expected-image count) × 100. Using each session's own expected-image count (rather than a single fixed number) keeps this correct even though the max images per category differs — e.g. 6 on V1's easiest question vs 14 on V3's hardest."
+                        dataSource="game_sessions.saved_state.allScores[].correctCount and .expectedImages[] — summed, then divided, across all reaching sessions"
+                        example={[
+                          "Illustrative only — not this page's live numbers:",
+                          "3 sessions reach a 10-image category and get 8, 9, and 6 correct.",
+                          "Total correct = 8+9+6 = 23. Total possible = 3 × 10 = 30.",
+                          "Accuracy % = 23 ÷ 30 × 100 = 76.7%",
+                        ]}
+                        notes="This is the same number as 100% − Miss Rate (both are derived from correct vs. expected images), so the two columns should always agree."
+                      />
+                    </span>
+                  </th>
                   <th>Miss Rate</th>
                   <th>Perfect Rate</th>
                   <th>Avg Time</th>
@@ -1195,6 +1213,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       </div>
                     </td>
                     <td>{fmt(row.avgCorrectCount, 2)}</td>
+                    <td>{row.accuracyPct != null ? `${row.accuracyPct}%` : '—'}</td>
                     <td>{row.missRatePct != null ? `${row.missRatePct}%` : '—'}</td>
                     <td>{row.perfectRatePct != null ? `${row.perfectRatePct}%` : '—'}</td>
                     <td>{row.avgTimeTakenSec != null ? `${fmt(row.avgTimeTakenSec, 1)}s` : '—'}</td>

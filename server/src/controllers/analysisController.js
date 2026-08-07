@@ -507,6 +507,7 @@ exports.getGameAnalytics = async (req, res) => {
           ROUND(AVG(jt.score), 2)                                                 AS avgScore,
           ROUND(AVG(jt.correctCount), 2)                                          AS avgCorrectCount,
           ROUND(AVG(jt.timeTaken), 2)                                             AS avgTimeTakenSec,
+          ROUND(SUM(jt.correctCount) / NULLIF(SUM(JSON_LENGTH(jt.expectedImages)), 0) * 100, 1) AS accuracyPct,
           ROUND(SUM(JSON_LENGTH(jt.missedImages)) / NULLIF(SUM(JSON_LENGTH(jt.expectedImages)), 0) * 100, 1) AS missRatePct,
           ROUND(SUM(JSON_LENGTH(jt.missedImages) = 0 AND JSON_LENGTH(jt.incorrectSelections) = 0) / COUNT(*) * 100, 1) AS perfectRatePct
         FROM game_sessions gs ${CHILD_JOIN},
@@ -533,6 +534,7 @@ exports.getGameAnalytics = async (req, res) => {
         avgScore: Number(row.avgScore),
         avgCorrectCount: Number(row.avgCorrectCount),
         avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
+        accuracyPct: row.accuracyPct != null ? Number(row.accuracyPct) : null,
         missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,
         perfectRatePct: row.perfectRatePct != null ? Number(row.perfectRatePct) : null,
         rank: i + 1,
