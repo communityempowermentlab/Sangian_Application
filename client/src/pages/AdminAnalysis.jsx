@@ -1199,8 +1199,45 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       />
                     </span>
                   </th>
-                  <th>Miss Rate</th>
-                  <th>Perfect Rate</th>
+                  <th>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Miss Rate
+                      {showChildrenReachedCol && (
+                        <KpiInfoIcon
+                          name="Miss Rate (per category)"
+                          definition="What share of the images children were expected to find on this category, they never matched at all — pooled across every session matching your current filters. This is the exact mirror of Accuracy %: Miss Rate = 100% − Accuracy %, always."
+                          formula="Miss Rate = (sum of missed-image counts across every session that reached this category) ÷ (sum of each of those sessions' expected-image count) × 100."
+                          dataSource="game_sessions.saved_state.allScores[].missedImages[] and .expectedImages[] — summed, then divided, across all reaching sessions"
+                          example={[
+                            "Illustrative only — not this page's live numbers:",
+                            "5 sessions reach a 10-image category with missed counts: 0, 1, 0, 2, 0.",
+                            "Total missed = 0+1+0+2+0 = 3. Total expected = 5 × 10 = 50.",
+                            "Miss Rate = 3 ÷ 50 × 100 = 6.0%",
+                          ]}
+                          notes="This is an image-level rate, not a session-level one — a session that missed just 1 of 10 images barely moves this number, even though it wasn't a perfect run. See Perfect Rate for the session-level view."
+                        />
+                      )}
+                    </span>
+                  </th>
+                  <th>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Perfect Rate
+                      {showChildrenReachedCol && (
+                        <KpiInfoIcon
+                          name="Perfect Rate (per category)"
+                          definition="What share of the SESSIONS that reached this category had a completely flawless run — zero missed images AND zero duplicate/incorrect clicks. Unlike Miss Rate and Accuracy %, this counts whole sessions, not individual images."
+                          formula="Perfect Rate = (count of sessions with 0 missed images AND 0 incorrect selections) ÷ (count of sessions that reached this category) × 100."
+                          dataSource="game_sessions.saved_state.allScores[].missedImages[] and .incorrectSelections[] — one pass/fail flag per session, then counted"
+                          example={[
+                            "Illustrative only — not this page's live numbers:",
+                            "5 sessions reach a category; 2 have 0 missed and 0 duplicates, 3 don't.",
+                            "Perfect Rate = 2 ÷ 5 × 100 = 40.0%",
+                          ]}
+                          notes="A session that gets 9 out of 10 images right still counts as a zero here, even though it barely affects Miss Rate — that's why Perfect Rate is often much lower than (100% − Miss Rate) would suggest."
+                        />
+                      )}
+                    </span>
+                  </th>
                   <th>Avg Time</th>
                 </tr>
               </thead>
