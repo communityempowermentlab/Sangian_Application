@@ -14,6 +14,7 @@ const GAMES = [
   { key: 'auditory_dhyan',         name: 'Dhyan Kahan Hai',   nameHi: 'ध्यान कहाँ है',  emoji: '👂' },
   { key: 'working_memory_herpher', name: 'Her Pher',          nameHi: 'हेर फेर',          emoji: '🔄' },
   { key: 'working_memory_herpher_v2', name: 'Her Pher - Version 2', nameHi: 'हेर फेर - संस्करण 2', emoji: '🔄' },
+  { key: 'working_memory_herpher_v3', name: 'Her Pher - Version 3', nameHi: 'हेर फेर - संस्करण 3', emoji: '🔄' },
   { key: 'cognitive_flex_chor',    name: 'Chor Machaye Shor', nameHi: 'चोर मचाए शोर',   emoji: '🚔' },
   { key: 'numeracy_number_skill',  name: 'Ankganit',          nameHi: 'अंकगणित',         emoji: '🔢' },
   { key: 'numeracy_number_skill_v2',  name: 'Ankganit - Version 2', nameHi: 'अंकगणित - संस्करण 2', emoji: '🔢' },

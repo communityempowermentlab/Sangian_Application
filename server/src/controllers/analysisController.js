@@ -9,6 +9,7 @@ const GAME_META = {
   atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
   working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
   working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 16 },
+  working_memory_herpher_v3:   { title: 'Her Pher - Version 3',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
   auditory_dhyan:           { title: 'Dhyan Kahan Hai',    tag: 'Listening Focus',  color: '#8b5cf6', maxScore: 33 },
   triangle_rachna:          { title: 'Rachna',              tag: 'Spatial Reasoning',color: '#ef4444', maxScore: 48 },
   rover_mela:               { title: 'Chalo Mela Chalen',  tag: 'Spatial Planning', color: '#10b981', maxScore: 44 },
@@ -67,6 +68,12 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 5,  hi: 8 },
     { lo: 9,  hi: 12 },
     { lo: 13, hi: null }, // open-ended — catches any score at/above the max (16)
+  ],
+  working_memory_herpher_v3: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 4 },
+    { lo: 5,  hi: 13 },
+    { lo: 14, hi: null }, // open-ended — catches any score at/above the max (25)
   ],
   rover_mela: [
     { lo: 0,  hi: 0 },
@@ -522,6 +529,7 @@ exports.getGameAnalytics = async (req, res) => {
       const tierSize = Math.ceil(n / 3);
       categoryBreakdown = catRows.map((row, i) => ({
         ...row,
+        attempts: Number(row.attempts),
         avgScore: Number(row.avgScore),
         avgCorrectCount: Number(row.avgCorrectCount),
         avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
@@ -689,6 +697,7 @@ exports.getTopChildren = async (req, res) => {
       dhyan:       'score_dhyan',
       herpher:     'score_herpher',
       herpher_v2:  'score_herpher_v2',
+      herpher_v3:  'score_herpher_v3',
       ankganit:    'score_ankganit',
       ankganit_v2: 'score_ankganit_v2',
       reading:     'score_reading',
@@ -719,6 +728,7 @@ exports.getTopChildren = async (req, res) => {
         ROUND(AVG(CASE WHEN ga.game_name = 'auditory_dhyan' THEN ga.score END), 1) AS score_dhyan,
         ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher' THEN ga.score END), 1) AS score_herpher,
         ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher_v2' THEN ga.score END), 1) AS score_herpher_v2,
+        ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher_v3' THEN ga.score END), 1) AS score_herpher_v3,
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill' THEN ga.score END), 1) AS score_ankganit,
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill_v2' THEN ga.score END), 1) AS score_ankganit_v2,
         ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill' THEN ga.score END), 1) AS score_reading,

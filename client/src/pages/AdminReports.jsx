@@ -390,13 +390,13 @@ const AdminReports = () => {
                                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ef4444' }}>{s.quit_count ?? 0}</div>
                                 </div>
                                 <div
-                                    style={{ ...S.kpi(filterStatus === 'dropped'), ...(['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? { cursor: 'not-allowed', opacity: 0.5 } : {}) }}
-                                    onClick={() => !['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) && setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}
-                                    title={['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? 'No dropout rule for Her Pher' : undefined}
+                                    style={{ ...S.kpi(filterStatus === 'dropped'), ...(['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) ? { cursor: 'not-allowed', opacity: 0.5 } : {}) }}
+                                    onClick={() => !['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) && setFilterStatus(filterStatus === 'dropped' ? null : 'dropped')}
+                                    title={['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) ? 'No dropout rule for Her Pher' : undefined}
                                 >
-                                    <div style={{ fontSize: '0.65rem', color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '#94a3b8' : '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '#94a3b8' : '#dc2626' }}>
-                                        {['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame.key) ? '—' : (s.dropped_count ?? 0)}
+                                    <div style={{ fontSize: '0.65rem', color: ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) ? '#94a3b8' : '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Dropped</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) ? '#94a3b8' : '#dc2626' }}>
+                                        {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame.key) ? '—' : (s.dropped_count ?? 0)}
                                     </div>
                                 </div>
                                 <div style={S.kpi(filterStatus === 'paused')} onClick={() => setFilterStatus(filterStatus === 'paused' ? null : 'paused')}>
@@ -445,7 +445,7 @@ const AdminReports = () => {
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#fef3c7' }}>Q{q} Playtime(s)</th>
                                             </React.Fragment>
                                         ))
-                                    ) : ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) ? (
+                                    ) : ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame?.key) ? (
                                         [1,2,3,4,5,6,7,8].map(q => (
                                             <React.Fragment key={`hph-${q}`}>
                                                 <th style={{ ...S.th, textAlign: 'center', background: '#e2e8f0', minWidth: 60 }}>Q{q} Total Images</th>
@@ -544,9 +544,9 @@ const AdminReports = () => {
                                     )}
                                     
                                     <th style={{ ...S.th, textAlign: 'center' }} onClick={() => toggleSort('score')}>
-                                        {['working_memory_herpher', 'working_memory_herpher_v2', 'auditory_dhyan'].includes(activeGame?.key) ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
+                                        {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3', 'auditory_dhyan'].includes(activeGame?.key) ? 'Total Score' : 'Score Summary'} <SortIcon field="score"/>
                                     </th>
-                                    {['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) && (
+                                    {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame?.key) && (
                                         <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe' }}>Match Analysis</th>
                                     )}
                                     <th style={{ ...S.th, textAlign: 'center' }}>Status</th>
@@ -564,7 +564,7 @@ const AdminReports = () => {
                                 {sortedRows.map((row, i) => {
                                     const isRover = activeGame?.key === 'rover_mela' || activeGame?.title?.includes('Chalo Mela');
                                     const isChor = activeGame?.key === 'cognitive_flex_chor' || activeGame?.title?.includes('Chor Machaye');
-                                    const isHerPher = activeGame?.key === 'working_memory_herpher' || activeGame?.key === 'working_memory_herpher_v2';
+                                    const isHerPher = activeGame?.key === 'working_memory_herpher' || activeGame?.key === 'working_memory_herpher_v2' || activeGame?.key === 'working_memory_herpher_v3';
                                     
                                     return (
                                         <React.Fragment key={row.session_id}>
@@ -611,7 +611,7 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : ['working_memory_herpher', 'working_memory_herpher_v2'].includes(activeGame?.key) ? (
+                                            ) : ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(activeGame?.key) ? (
                                                 [2,3,4,5,6,7,8,9].map((qId, i) => {
                                                     const qs = row.question_scores;
                                                     const total = qs[`q${qId}_total`];
@@ -747,7 +747,7 @@ const AdminReports = () => {
                                             )}
                                             
                                             <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
-                                                {['working_memory_herpher', 'working_memory_herpher_v2', 'auditory_dhyan'].includes(activeGame?.key)
+                                                {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3', 'auditory_dhyan'].includes(activeGame?.key)
                                                     ? (row.score ?? '—')
                                                     : (
                                                         <>
@@ -996,12 +996,12 @@ const AdminReports = () => {
                                     </div>
                                     <div
                                         style={S.kpi(false)}
-                                        title={['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? 'No dropout rule for Her Pher' : undefined}
+                                        title={['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(game.key) ? 'No dropout rule for Her Pher' : undefined}
                                     >
-                                        <div style={{ ...S.kpiVal, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '#cbd5e1' : '#dc2626' }}>
-                                            {['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '—' : (s.dropped_count ?? 0)}
+                                        <div style={{ ...S.kpiVal, color: ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(game.key) ? '#cbd5e1' : '#dc2626' }}>
+                                            {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(game.key) ? '—' : (s.dropped_count ?? 0)}
                                         </div>
-                                        <div style={{ ...S.kpiLbl, color: ['working_memory_herpher', 'working_memory_herpher_v2'].includes(game.key) ? '#cbd5e1' : undefined }}>Dropped</div>
+                                        <div style={{ ...S.kpiLbl, color: ['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3'].includes(game.key) ? '#cbd5e1' : undefined }}>Dropped</div>
                                     </div>
                                     <div style={S.kpi(false)}>
                                         <div style={{ ...S.kpiVal, color: '#854d0e' }}>{s.paused ?? 0}</div>

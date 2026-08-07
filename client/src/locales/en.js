@@ -20,7 +20,8 @@ export const en = {
     "sessionNotFound": "Session not found. Please refresh and try again.",
     "loading": "Loading…",
     "pageLoadError": "This page could not be loaded. Please try again later.",
-    "version2": " - Version 2"
+    "version2": " - Version 2",
+    "version3": " - Version 3"
   },
   "navbar": {
     "id": "ID",

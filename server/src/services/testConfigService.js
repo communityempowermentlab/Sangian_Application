@@ -12,6 +12,7 @@ const GAMES_REGISTRY = [
     { key: 'number_recall_lottery_v2', title: 'Lottery Ka Ticket - Version 2', category: 'Memory Test'   },
     { key: 'working_memory_herpher', title: 'Her Pher',          category: 'Memory Test'   },
     { key: 'working_memory_herpher_v2', title: 'Her Pher - Version 2',          category: 'Memory Test'   },
+    { key: 'working_memory_herpher_v3', title: 'Her Pher - Version 3',          category: 'Memory Test'   },
     { key: 'rover_mela',             title: 'Chalo Mela Chalen', category: 'Cognitive Test' },
     { key: 'triangle_rachna',        title: 'Rachna',            category: 'Cognitive Test' },
     { key: 'cognitive_flex_chor',    title: 'Chor Machaye Shor', category: 'Cognitive Test' },

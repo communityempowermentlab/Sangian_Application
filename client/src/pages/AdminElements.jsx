@@ -8,6 +8,20 @@ import AdminElementPositionManager from './AdminElementPositionManager';
 import AdminAnkganitV2Config from './AdminAnkganitV2Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 
+// Her Pher V3 uses a fixed item-wise image count per category (unlike V1/V2's
+// uniform caps) — see HerPherElements.jsx's default CATEGORIES for the shape.
+const HERPHER_V3_CATEGORIES = [
+    { id: 'item0', label: 'Item 0 - Practice (Tools)', min: 6,  max: 6 },
+    { id: 'item1', label: 'Item 1 - Fruits',           min: 7,  max: 7 },
+    { id: 'item2', label: 'Item 2 - Vegetables',       min: 8,  max: 8 },
+    { id: 'item3', label: 'Item 3 - Sports',           min: 9,  max: 9 },
+    { id: 'item4', label: 'Item 4 - Clothes',          min: 10, max: 10 },
+    { id: 'item5', label: 'Item 5 - Kitchen',          min: 11, max: 11 },
+    { id: 'item6', label: 'Item 6 - Household',        min: 12, max: 12 },
+    { id: 'item7', label: 'Item 7 - Animals',          min: 13, max: 13 },
+    { id: 'item8', label: 'Item 8 - Transport',        min: 14, max: 14 },
+];
+
 export default function AdminElements() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [tests, setTests] = useState([]);
@@ -73,8 +87,8 @@ export default function AdminElements() {
     const loadElements = async (testId) => {
         setLoading(true);
         try {
-            const url = (testId === 'working_memory_herpher' || testId === 'working_memory_herpher_v2') 
-                ? `/admin/elements?test_id=${testId}` 
+            const url = (testId === 'working_memory_herpher' || testId === 'working_memory_herpher_v2' || testId === 'working_memory_herpher_v3')
+                ? `/admin/elements?test_id=${testId}`
                 : `/admin/elements?test_id=${testId}&asset_type=splash_screen`;
             const res = await axiosAdmin.get(url);
             if (res.data.success) {
@@ -205,13 +219,14 @@ export default function AdminElements() {
                 )}
                 </div>
 
-                {(activeTest === 'working_memory_herpher' || activeTest === 'working_memory_herpher_v2') && (
+                {(activeTest === 'working_memory_herpher' || activeTest === 'working_memory_herpher_v2' || activeTest === 'working_memory_herpher_v3') && (
                     <>
                         <HerPherElements
                             elements={elements}
                             loadElements={loadElements}
                             showToast={showToast}
                             gameKey={activeTest}
+                            categories={activeTest === 'working_memory_herpher_v3' ? HERPHER_V3_CATEGORIES : undefined}
                         />
                         <div className="elements-section">
                             <h3>Screen-wise Element Positioning</h3>
@@ -219,10 +234,16 @@ export default function AdminElements() {
                                 Drag and drop to fine-tune where elements appear on each response screen,
                                 without a code deployment.
                             </p>
-                            <AdminElementPositionManager 
+                            <AdminElementPositionManager
                                 gameKey={activeTest}
-                                screenNums={activeTest === 'working_memory_herpher_v2' ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5, 6, 7, 8, 9]}
-                                screenCounts={activeTest === 'working_memory_herpher_v2' ? { 0: 10, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10 } : { 1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 6: 11, 7: 12, 8: 13, 9: 13 }}
+                                screenNums={(activeTest === 'working_memory_herpher_v2' || activeTest === 'working_memory_herpher_v3') ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5, 6, 7, 8, 9]}
+                                screenCounts={
+                                    activeTest === 'working_memory_herpher_v3'
+                                        ? { 0: 6, 1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12, 7: 13, 8: 14 }
+                                        : activeTest === 'working_memory_herpher_v2'
+                                        ? { 0: 10, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10 }
+                                        : { 1: 6, 2: 7, 3: 8, 4: 9, 5: 10, 6: 11, 7: 12, 8: 13, 9: 13 }
+                                }
                                 aspectW={1024}
                                 aspectH={620}
                             />

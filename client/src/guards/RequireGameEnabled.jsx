@@ -11,6 +11,7 @@ const PATH_TO_GAME_KEY = {
     '/games/number_recall_v2':  'number_recall_lottery_v2',
     '/games/her_pher':          'working_memory_herpher',
     '/games/her_pher_v2':       'working_memory_herpher_v2',
+    '/games/her_pher_v3':       'working_memory_herpher_v3',
     '/games/dhyan_kahan_hai':   'auditory_dhyan',
     '/games/rachna':            'triangle_rachna',
     '/games/bagiya':            'atlantis_bagiya',

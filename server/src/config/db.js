@@ -1034,6 +1034,7 @@ const initDb = async () => {
       'auditory_dhyan': { path: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg', name: 'dhyan_kahan_hai.jpg' },
       'working_memory_herpher': { path: '/assets/images/her_pher/her_pher.jpg', name: 'her_pher.jpg' },
       'working_memory_herpher_v2': { path: '/assets/images/her_pher_v2/her_pher_v2.jpg', name: 'her_pher_v2.jpg' },
+      'working_memory_herpher_v3': { path: '/assets/images/her_pher_v3/her_pher_v3.jpg', name: 'her_pher_v3.jpg' },
       'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
       'numeracy_number_skill_v2': { path: '/assets/images/number_skill_v2/number_skill.jpg', name: 'number_skill.jpg' },
       'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
@@ -1080,6 +1081,23 @@ const initDb = async () => {
     allSeeds.push({
       test_id: 'working_memory_herpher_v2',
       seeds: hpSeeds
+    });
+
+    const hpV3Seeds = [];
+    // Her Pher V3 uses a fixed item-wise image count per category (unlike V1/V2's
+    // uniform 10) — see HerPherElements.jsx's HERPHER_V3_CATEGORIES for the caps
+    // that must stay in sync with these counts. Seeded from its own
+    // her_pher_v3/items asset folder (see hpSeeds above for the cap rule).
+    const hpV3CategoryCounts = { item0: 6, item1: 7, item2: 8, item3: 9, item4: 10, item5: 11, item6: 12, item7: 13, item8: 14 };
+    for (const [type, count] of Object.entries(hpV3CategoryCounts)) {
+      for (let i = 1; i <= count; i++) {
+        hpV3Seeds.push({ lang: 'all', path: `/assets/images/her_pher_v3/items/${type}/${i}.png`, name: `${i}.png`, type });
+      }
+    }
+
+    allSeeds.push({
+      test_id: 'working_memory_herpher_v3',
+      seeds: hpV3Seeds
     });
 
     for (const test of allSeeds) {

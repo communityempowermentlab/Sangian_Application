@@ -12,6 +12,7 @@ const GAME_LABELS = {
     'atlantis_bagiya': 'Bagiya',
     'working_memory_herpher': 'Her Pher',
     'working_memory_herpher_v2': 'Her Pher V2',
+    'working_memory_herpher_v3': 'Her Pher V3',
     'auditory_dhyan': 'Dhyan Kahan Hai',
     'triangle_rachna': 'Rachna',
     'rover_mela': 'Chalo Mela Chalen',

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
     { id: 'item0', label: 'Item 0 - Practice (Tools)', min: 10, max: 10 },
     { id: 'item1', label: 'Item 1 - Fruits', min: 10, max: 10 },
     { id: 'item2', label: 'Item 2 - Vegetables', min: 10, max: 10 },
@@ -14,7 +14,8 @@ const CATEGORIES = [
     { id: 'item8', label: 'Item 8 - Transport', min: 10, max: 10 }
 ];
 
-export default function HerPherElements({ elements, loadElements, showToast, gameKey = 'working_memory_herpher' }) {
+export default function HerPherElements({ elements, loadElements, showToast, gameKey = 'working_memory_herpher', categories = DEFAULT_CATEGORIES }) {
+    const CATEGORIES = categories;
     const [uploading, setUploading] = useState(null);
     const fileRefs = useRef({});
 

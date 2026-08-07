@@ -14,6 +14,7 @@ import KpiInfoIcon from '../components/KpiInfoIcon';
 const GAME_MAX_SCORES = {
   atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 22,
   rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 16,
+  working_memory_herpher_v3: 25,
   numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
   cognitive_flex_chor: 57, triangle_rachna: 48,
 };
@@ -27,6 +28,7 @@ const CHILD_SCORE_COLS = {
   auditory_dhyan:            { field: 'score_dhyan',       sortId: 'dhyan' },
   working_memory_herpher:    { field: 'score_herpher',     sortId: 'herpher' },
   working_memory_herpher_v2: { field: 'score_herpher_v2',  sortId: 'herpher_v2' },
+  working_memory_herpher_v3: { field: 'score_herpher_v3',  sortId: 'herpher_v3' },
   numeracy_number_skill:     { field: 'score_ankganit',    sortId: 'ankganit' },
   numeracy_number_skill_v2:  { field: 'score_ankganit_v2', sortId: 'ankganit_v2' },
   literacy_reading_skill:    { field: 'score_reading',     sortId: 'reading' },
@@ -903,6 +905,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const attemptEntries  = Object.entries(attemptBuckets);
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
+  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2';
 
   return (
     <div className="ana-content">
@@ -1127,7 +1130,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           info={{
             name: "Question Category Breakdown",
             definition: "Per-question performance across the game's question categories, ranked from easiest to hardest.",
-            formula: "Avg Score = mean per-question score. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
+            formula: "Children Reached = number of sessions (matching all filters) that completed this question — naturally decreases for later questions since some children quit or auto-stop before reaching them. Avg Score = mean per-question score across those sessions. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
             eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher)"]
           }}
           noPad
@@ -1139,6 +1142,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>Rank</th>
                   <th>Category</th>
                   <th>Cat-Name</th>
+                  {showChildrenReachedCol && <th>Children Reached</th>}
                   <th>Difficulty</th>
                   <th>Avg Score</th>
                   <th>Avg Correct</th>
@@ -1153,6 +1157,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                     <td><span className="ana-rank">{row.rank}</span></td>
                     <td style={{ fontWeight: 600 }}>{row.category}</td>
                     <td>{CATEGORY_NAMES[row.category] || '—'}</td>
+                    {showChildrenReachedCol && <td style={{ fontWeight: 600 }}>{fmt(row.attempts)}</td>}
                     <td>
                       <span
                         className="ana-status-pill"

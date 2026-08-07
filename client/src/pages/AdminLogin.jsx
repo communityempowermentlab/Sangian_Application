@@ -10,6 +10,7 @@ const GAMES = [
     { icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6', img: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
     { icon: '🔄', title: 'Her Pher',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
     { icon: '🔄', title: 'Her Pher V2',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
+    { icon: '🔄', title: 'Her Pher V3',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
     { icon: '🔢', title: 'Ankganit',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
     { icon: '📖', title: 'Padh ke batao',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
     { icon: '⚡', title: 'Chor Machaye Shor',       tag: '',                 color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
