@@ -1144,7 +1144,22 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>Cat-Name</th>
                   {showChildrenReachedCol && <th>Children Reached</th>}
                   <th>Difficulty</th>
-                  <th>Avg Score</th>
+                  <th>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Avg Score
+                      <KpiInfoIcon
+                        name="Avg Score (per category)"
+                        definition="The average number of points children earned on this question category, across every session matching your current filters (date range, group, age group, gender, status, attempt number)."
+                        formula="Avg Score = (sum of the score each session earned on this category) ÷ (number of sessions that reached & completed this category). Each session contributes at most one score per category — the practice round (item0) is always excluded, and a session only counts toward a category if it actually got that far before ending (whether finished, quit, or auto-stopped)."
+                        dataSource="game_sessions.saved_state.allScores[] — one JSON entry per scored question, unnested and grouped by category"
+                        example={[
+                          "Item 1 (Fruits): 70 sessions reached it, scores sum to 102.9",
+                          "Avg Score = 102.9 ÷ 70 = 1.47",
+                        ]}
+                        notes="Max points per category isn't the same for every game: it's a flat 2 for every category on V2, but ranges 2–4 on V1 depending on the question (later questions are worth more). Attempt counts naturally shrink for later categories — children who quit or got auto-stopped earlier in the sequence never reach them — so compare averages alongside the attempt/reach count, not in isolation."
+                      />
+                    </span>
+                  </th>
                   <th>Avg Correct</th>
                   <th>Miss Rate</th>
                   <th>Perfect Rate</th>
