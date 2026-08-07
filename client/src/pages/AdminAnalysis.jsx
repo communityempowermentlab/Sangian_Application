@@ -1162,7 +1162,25 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       />
                     </span>
                   </th>
-                  <th>Avg Correct</th>
+                  <th>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Avg Correct
+                      {showChildrenReachedCol && (
+                        <KpiInfoIcon
+                          name="Avg Correct (per category)"
+                          definition="The average number of distinct images children correctly matched on this category, out of that question's expected set — pooled across every session matching your current filters. This is a raw match count, not a score or a percentage."
+                          formula="Avg Correct = AVG(correctCount) = (sum of every reaching session's correctCount) ÷ (count of those sessions). correctCount is always a whole number, so the sum going into this average is always a whole number too — only the final average can come out fractional."
+                          dataSource="game_sessions.saved_state.allScores[].correctCount — one whole-number value per session, averaged per category"
+                          example={[
+                            "Illustrative only — not this page's live numbers:",
+                            "70 sessions reach a category; correctCount sum = 542 (a whole number).",
+                            "Avg Correct = 542 ÷ 70 = 7.74",
+                          ]}
+                          notes="Avg Correct ÷ that question's expected-image count = the same figure as Accuracy %, just expressed as a raw count instead of a percentage."
+                        />
+                      )}
+                    </span>
+                  </th>
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Accuracy %
