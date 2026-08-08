@@ -400,7 +400,7 @@ const TriangleRachnaGame = () => {
   const sessionTimerRef    = useRef(null);
   const sessionElapsedRef  = useRef(0);
   const timerRef           = useRef(null);
-  const audioRef        = useRef(null);
+  const audioSplashRef  = useRef(null);
   const workspaceRef    = useRef(null);
   const dragItemRef     = useRef(null); // { sourceItem }
   const itemDragRef     = useRef(null); // { id, startX, startY, origX, origY }
@@ -524,10 +524,13 @@ const TriangleRachnaGame = () => {
     }).replace(/am|pm/g, match => match.toUpperCase());
   };
 
-  // Splash audio disabled as requested
+  // ── Splash audio autoplay ──────────────────────────────────────
   useEffect(() => {
-    setAudioFinished(true);
-  }, [screen]);
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished) {
+      audioSplashRef.current.currentTime = 0;
+      audioSplashRef.current.play().catch(() => setAudioFinished(true));
+    }
+  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
 
   // ── Timer Reset ──────────────────────────────────────────────
   useEffect(() => {
@@ -1082,10 +1085,24 @@ const TriangleRachnaGame = () => {
         <img src={`${IMAGE_PATH}/rachna.jpg`} alt="Rachna" className="rg-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
         <div className="rg-splash-btn-overlay">
           <button
-            className="rg-btn rg-btn-primary rg-btn-highlight"
+            className={`rg-btn rg-btn-primary ${audioFinished ? 'rg-btn-highlight' : ''}`}
+            style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
+            disabled={!audioFinished}
             onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
           >
             {`▶ ${t('game.startNow')}`}
+          </button>
+          <button
+            className="rg-btn rg-btn-secondary"
+            onClick={() => {
+              if (audioSplashRef.current) {
+                setAudioFinished(false);
+                audioSplashRef.current.currentTime = 0;
+                audioSplashRef.current.play().catch(() => setAudioFinished(true));
+              }
+            }}
+          >
+            {t('game.replayAudio')}
           </button>
         </div>
       </div>
@@ -1567,7 +1584,7 @@ const TriangleRachnaGame = () => {
 
   return (
     <div className="rg-root">
-      <div className="rg-app">
+      <div className={`rg-app${screen === 'splash' ? ' rg-app-splash' : ''}`}>
         {/* Topbar */}
         <header className="rg-topbar" style={{ position: 'relative' }}>
           <div className="rg-brand">
@@ -1611,6 +1628,17 @@ const TriangleRachnaGame = () => {
           {screen === 'score'  && renderScore()}
         </main>
       </div>
+
+      {/* ── Splash Audio ── */}
+      {!isCheckingSession && (
+        <audio
+          ref={audioSplashRef}
+          src={`${AUDIO_PATH}/splash.wav`}
+          preload="auto"
+          onEnded={() => setAudioFinished(true)}
+          onError={() => setAudioFinished(true)}
+        />
+      )}
 
       {showQuitModal && renderQuitModal()}
       {showAssessmentModal && renderAssessmentModal()}

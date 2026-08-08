@@ -40,6 +40,12 @@
   height: 100dvh;
 }
 
+.rg-app.rg-app-splash {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 /* ─── Topbar ───────────────────────────────────────────────── */
 .rg-topbar {
   padding: 14px 24px;
