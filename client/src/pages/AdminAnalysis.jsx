@@ -61,6 +61,15 @@ const CATEGORY_NAMES = {
   question24: 'Item 21', question25: 'Item 22', question26: 'Item 23', question27: 'Item 24',
 };
 
+// Rachna's target-image filename doesn't always match the question key —
+// question11/12 reuse the teaching_question11/12 art (see getTargetImageName
+// in TriangleRachnaGame.jsx, which this mirrors).
+function getRachnaTargetImage(category) {
+  if (category === 'question11') return '/assets/images/rachna/teaching_question11.png';
+  if (category === 'question12') return '/assets/images/rachna/teaching_question12.png';
+  return `/assets/images/rachna/${category}.png`;
+}
+
 const STATUS_CHIP_OPTIONS = [
   { key: 'completed',   label: 'Completed',   color: '#22c55e' },
   { key: 'in_progress', label: 'In Progress', color: '#4f46e5' },
@@ -915,6 +924,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
   const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'triangle_rachna';
+  const showTargetImageCol = gameKey === 'triangle_rachna';
   // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
   // image-matching mechanic (correctCount/missedImages/incorrectSelections)
   // that only Her Pher V2 has — Rachna's own columns are always '—', so its
@@ -1164,6 +1174,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>Rank</th>
                   <th>Category</th>
                   <th>Cat-Name</th>
+                  {showTargetImageCol && <th>Target Image</th>}
                   {showChildrenReachedCol && <th>Children Reached</th>}
                   <th>Difficulty</th>
                   <th>
@@ -1281,6 +1292,18 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                     <td><span className="ana-rank">{row.rank}</span></td>
                     <td style={{ fontWeight: 600 }}>{row.category}</td>
                     <td>{CATEGORY_NAMES[row.category] || '—'}</td>
+                    {showTargetImageCol && (
+                      <td>
+                        <a href={getRachnaTargetImage(row.category)} target="_blank" rel="noreferrer">
+                          <img
+                            src={getRachnaTargetImage(row.category)}
+                            alt={CATEGORY_NAMES[row.category] || row.category}
+                            style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'zoom-in' }}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </a>
+                      </td>
+                    )}
                     {showChildrenReachedCol && <td style={{ fontWeight: 600 }}>{fmt(row.attempts)}</td>}
                     <td>
                       <span
