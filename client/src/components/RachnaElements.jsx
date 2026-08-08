@@ -224,7 +224,6 @@ const RachnaElements = () => {
                       <span className="rachna-el-key">{key}</span>
                     </div>
                     {isCustom && <span className="rachna-el-badge">Customized</span>}
-                    {!isActive && <span className="rachna-el-badge inactive">Inactive</span>}
                     {isProtected ? (
                       <span className="rachna-el-toggle protected" title="Triggers the drop-rule — can't be deactivated">🔒 Required</span>
                     ) : (
