@@ -122,6 +122,71 @@ const initDb = async () => {
       )
     `);
 
+    // Staff Management module — a second, restricted login identity distinct
+    // from `admins` (kept as a separate table, not a role column on `admins`,
+    // so the existing admin table/queries stay completely untouched).
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        mobile VARCHAR(20) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        permissions JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Mirrors admin_login_sessions exactly (same columns/semantics), scoped
+    // to staff — reuses the same capture/duration-calc logic server-side.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff_login_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        staff_id INT,
+        status ENUM('success', 'failed') NOT NULL DEFAULT 'success',
+        login_time DATETIME,
+        logout_time DATETIME,
+        session_duration INT,
+        logout_status ENUM('normal', 'force_logout') NULL,
+        ip_address VARCHAR(45),
+        device_type VARCHAR(50),
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        location VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Generalized audit log for staff actions — same actor-capture
+    // convention as child_profile_edit_logs (denormalized actor name +
+    // server-captured IP), generalized to module/action/description instead
+    // of field-diff specific.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS staff_activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        staff_id INT,
+        staff_name VARCHAR(255),
+        module VARCHAR(100) NOT NULL,
+        action_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        menu_name VARCHAR(100),
+        page_name VARCHAR(150),
+        record_id VARCHAR(100),
+        record_name VARCHAR(255),
+        metadata JSON,
+        ip_address VARCHAR(45),
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        device_type VARCHAR(50),
+        session_id INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL
+      )
+    `);
+
     // Seed default admin
     const [adminRows] = await connection.query('SELECT id FROM admins WHERE email = ?', ['admin@sangian.com']);
     if (adminRows.length === 0) {
@@ -1031,6 +1096,42 @@ const initDb = async () => {
     try {
       await connection.query('ALTER TABLE test_elements MODIFY file_path VARCHAR(500) NULL');
     } catch (e) { console.error('Failed to relax test_elements.file_path nullability:', e.message); }
+
+    // Staff Login History — distinguishes an admin-initiated forced end of a
+    // still-active session from a normal explicit logout. Left NULL for a
+    // normal logout (the existing UPDATE in logoutAdmin never sets this
+    // column); "Session Expired" (token outlived without any logout call)
+    // is derived at query time from login_time/JWT-expiry rather than
+    // stored, since it depends on the current time, not a fixed event.
+    try {
+      await connection.query("ALTER TABLE staff_login_sessions ADD COLUMN logout_status ENUM('normal','force_logout') NULL AFTER session_duration");
+    } catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error('Failed to add staff_login_sessions.logout_status:', e.message); }
+
+    // Staff Activity History — widened from a plain description string so
+    // the admin-only Log History page can filter/display which menu/page an
+    // action happened on, which record it touched, what device made the
+    // request, and which login session it belongs to (correlates back to
+    // staff_login_sessions without a hard FK, since a session can be quite
+    // old by the time its activities are reviewed).
+    const activityLogCols = [
+      ["ALTER TABLE staff_activity_logs ADD COLUMN menu_name VARCHAR(100) NULL AFTER description",  'staff_activity_logs.menu_name'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN page_name VARCHAR(150) NULL AFTER menu_name",     'staff_activity_logs.page_name'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN record_id VARCHAR(100) NULL AFTER page_name",     'staff_activity_logs.record_id'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN record_name VARCHAR(255) NULL AFTER record_id",   'staff_activity_logs.record_name'],
+      // Flexible payload for per-action-type detail (before/after values on
+      // an edit, filters/date-range/format on a report download) — one JSON
+      // column instead of a growing set of narrow nullable columns that
+      // would only ever apply to some action types.
+      ["ALTER TABLE staff_activity_logs ADD COLUMN metadata JSON NULL AFTER record_name",            'staff_activity_logs.metadata'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN browser VARCHAR(50) NULL AFTER ip_address",       'staff_activity_logs.browser'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN os VARCHAR(50) NULL AFTER browser",               'staff_activity_logs.os'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN device_type VARCHAR(50) NULL AFTER os",           'staff_activity_logs.device_type'],
+      ["ALTER TABLE staff_activity_logs ADD COLUMN session_id INT NULL AFTER device_type",           'staff_activity_logs.session_id'],
+    ];
+    for (const [sql, label] of activityLogCols) {
+      try { await connection.query(sql); }
+      catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.warn(`Migration warning (${label}):`, e.message); }
+    }
 
     // Seed existing splash screens for all games to preserve backward compatibility
     const allSeeds = [

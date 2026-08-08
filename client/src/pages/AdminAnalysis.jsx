@@ -7,6 +7,7 @@ import { GAME_CATALOG } from '../utils/reportExportUtils';
 import OverviewV2Panel from './AdminAnalysisV2Panel';
 import { downloadElementAsPdf } from '../utils/pdfExportUtils';
 import KpiInfoIcon from '../components/KpiInfoIcon';
+import { logReportDownload } from '../utils/logActivity';
 
 // ── Constants ─────────────────────────────────────────────
 
@@ -657,6 +658,11 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
     setExportingChildren(true);
     try {
       await exportChildrenExcel(childrenData, catalog, filters);
+      logReportDownload({
+        module: 'analysis', menuName: 'Analysis', pageName: 'Children Overview',
+        reportName: 'Children Overview', reportType: 'children', format: 'Excel',
+        filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
+      });
     } finally {
       setExportingChildren(false);
     }
@@ -1326,31 +1332,52 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <button
                     className="ana-btn"
                     style={{ fontSize: '12px' }}
-                    onClick={() => exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
-                      showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
-                    })}
+                    onClick={() => {
+                      exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
+                        showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
+                      });
+                      logReportDownload({
+                        module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
+                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'Excel',
+                        filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
+                      });
+                    }}
                   >
                     📥 Export Excel
                   </button>
                   <button
                     className="ana-btn"
                     style={{ fontSize: '12px' }}
-                    onClick={() => exportElementAsImage(
-                      'category-breakdown-table',
-                      `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
-                      buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
-                    )}
+                    onClick={() => {
+                      exportElementAsImage(
+                        'category-breakdown-table',
+                        `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
+                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                      );
+                      logReportDownload({
+                        module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
+                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'Image',
+                        filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
+                      });
+                    }}
                   >
                     🖼️ Export Image
                   </button>
                   <button
                     className="ana-btn"
                     style={{ fontSize: '12px' }}
-                    onClick={() => exportElementAsPDF(
-                      'category-breakdown-table',
-                      `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
-                      buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
-                    )}
+                    onClick={() => {
+                      exportElementAsPDF(
+                        'category-breakdown-table',
+                        `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
+                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                      );
+                      logReportDownload({
+                        module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
+                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'PDF',
+                        filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
+                      });
+                    }}
                   >
                     📄 Export PDF
                   </button>
@@ -1546,7 +1573,14 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
             <span>Recent Sessions{sessions.length ? ` (${sessions.length} loaded)` : ''}</span>
             {csvExportEnabled && sessions.length > 0 && (
-              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => exportSessionsCSV(sessions, gameMeta, maxGameScore)}>
+              <button className="ana-btn" style={{ fontSize: '12px' }} onClick={() => {
+                exportSessionsCSV(sessions, gameMeta, maxGameScore);
+                logReportDownload({
+                  module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Recent Sessions`,
+                  reportName: 'Recent Sessions', reportType: gameMeta.key, format: 'CSV',
+                  filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
+                });
+              }}>
                 📥 Export CSV
               </button>
             )}

@@ -52,6 +52,17 @@ const AdminLogin = () => {
             localStorage.setItem('adminToken',     res.data.token);
             localStorage.setItem('adminSessionId', res.data.sessionId);
             localStorage.setItem('adminUser',      JSON.stringify(res.data.admin));
+            // Staff Management: the same login determines admin vs staff
+            // server-side (res.data.admin.role). Staff logins additionally
+            // carry their granted menu permissions, used by AdminLayout to
+            // filter the nav and by RequireStaffPermission to gate routes.
+            // Always set (or clear) this key so a staff session's grants
+            // never linger into a later admin session on the same browser.
+            if (res.data.admin?.role === 'staff') {
+                localStorage.setItem('staffPermissions', JSON.stringify(res.data.permissions || []));
+            } else {
+                localStorage.removeItem('staffPermissions');
+            }
             window.location.href = '/admin/dashboard';
         } catch (err) {
             setErrors(prev => ({

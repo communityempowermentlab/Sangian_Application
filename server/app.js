@@ -28,9 +28,20 @@ const { adminRouter: elementsAdminRoutes, publicRouter: elementsPublicRoutes } =
 const { adminRouter: elementPositionAdminRoutes, publicRouter: elementPositionPublicRoutes } = require('./src/routes/elementPositionRoutes');
 const { adminRouter: ankganitV2AdminRoutes, publicRouter: ankganitV2PublicRoutes } = require('./src/routes/ankganitV2ConfigRoutes');
 const numberRecallV2ConfigRoutes = require('./src/routes/numberRecallV2ConfigRoutes');
+const staffRoutes = require('./src/routes/staffRoutes');
+const requireModuleAccess = require('./src/middleware/requireModuleAccess');
 
 const helmet  = require('helmet');
 const app = express();
+
+// Trust the first hop (Apache's ProxyPass sits in front of this process in
+// production — see /etc/apache2/sites-available/sangian-le-ssl.conf) so
+// Express's own req.ip resolves from X-Forwarded-For instead of the proxy's
+// loopback address. request-ip (used for session/activity IP capture)
+// already reads X-Forwarded-For directly and doesn't depend on this, but a
+// couple of other controllers use req.ip as a fallback — this makes that
+// correct too, and costs nothing when there's no proxy (local dev).
+app.set('trust proxy', true);
 
 // Security Headers
 app.use(helmet({
@@ -106,17 +117,22 @@ app.use('/api/users', userRoutes);
 app.use('/api/children', childRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/admin', adminRoutes);
+// staffRoutes gates each route internally (requireModuleAccess('staff') on
+// the staff-management endpoints, plain adminAuth on the /me/* self-service
+// ones) — not gated again here, since that would block a staff member from
+// viewing their own profile if they don't hold the 'staff' menu grant.
+app.use('/api/admin/staff', staffRoutes);
 app.use('/api/games', gameRoutes);
-app.use('/api/docs', docsRoutes);
+app.use('/api/docs', requireModuleAccess('docs'), docsRoutes);
 app.use('/api/analytics',       analyticsRoutes);
 app.use('/api/crash-analytics', crashAnalyticsRoutes);
 app.use('/api/errors',          crashLogRoutes);
 app.use('/api/testing',         testingRoutes);
 app.use('/api/screenshots',     screenshotRoutes);
-app.use('/api/analysis',        analysisRoutes);
+app.use('/api/analysis',        requireModuleAccess('analysis'), analysisRoutes);
 app.use('/api/cms',             cmsAdminRoutes);
 app.use('/api/public/cms',      cmsPublicRoutes);
-app.use('/api/admin/translations', translationsAdminRoutes);
+app.use('/api/admin/translations', requireModuleAccess('multilingual'), translationsAdminRoutes);
 app.use('/api/public/translations', translationsPublicRoutes);
 app.use('/api/admin/test-config', testConfigAdminRoutes);
 app.use('/api/public/test-config', testConfigPublicRoutes);
@@ -129,7 +145,7 @@ app.use('/api/admin/test-groups', testGroupsAdminRoutes);
 app.use('/api/contact',         contactRoutes);
 app.use('/api/tickets',         ticketRoutes);
 app.use('/api/help-content',    helpContentRoutes);
-app.use('/api/admin/elements',  elementsAdminRoutes);
+app.use('/api/admin/elements',  requireModuleAccess('elements'), elementsAdminRoutes);
 app.use('/api/public/elements', elementsPublicRoutes);
 app.use('/api/admin/element-positions',  elementPositionAdminRoutes);
 app.use('/api/public/element-positions', elementPositionPublicRoutes);

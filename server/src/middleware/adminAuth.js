@@ -14,7 +14,12 @@ const adminAuth = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
 
-        if (decoded.role !== 'admin') {
+        // 'staff' is a second, restricted login identity (Staff Management
+        // module) — accepted here so staff share the same auth pipeline as
+        // admins, but staff get NO elevated access from this alone: every
+        // existing route this guards was already admin-only, and per-module
+        // access for staff is enforced separately by requireModuleAccess.
+        if (decoded.role !== 'admin' && decoded.role !== 'staff') {
             return res.status(403).json({ success: false, message: 'Forbidden: Admin access required.' });
         }
 

@@ -21,6 +21,7 @@ const clearAdminSession = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminSessionId');
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('staffPermissions');
 };
 
 /**

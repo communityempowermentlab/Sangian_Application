@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal } from '../utils/reportExportUtils';
+import { logReportDownload } from '../utils/logActivity';
 
 const statusBadge = (status) => {
     const map = {
@@ -259,6 +260,12 @@ const AdminReports = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = `${activeGame?.key}_report.csv`; a.click();
+
+        logReportDownload({
+            module: 'reports', menuName: 'Reports', pageName: activeGame?.title || activeGame?.key,
+            reportName: `${activeGame?.title || activeGame?.key} Report`, reportType: activeGame?.key, format: 'CSV',
+            filters: { status: filterStatus, groupIds: selectedGroupIds, sortField, sortDir },
+        });
     };
 
 

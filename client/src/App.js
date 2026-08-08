@@ -50,6 +50,15 @@ import HelpPage from './pages/HelpPage';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
 import RequireGameEnabled from './guards/RequireGameEnabled';
+import RequireStaffPermission from './guards/RequireStaffPermission';
+import RequireAdminOnly from './guards/RequireAdminOnly';
+import AdminStaffList from './pages/AdminStaffList';
+import AdminStaffAdd from './pages/AdminStaffAdd';
+import AdminStaffEdit from './pages/AdminStaffEdit';
+import AdminStaffProfile from './pages/AdminStaffProfile';
+import AdminStaffActivityLog from './pages/AdminStaffActivityLog';
+import AdminStaffAttendance from './pages/AdminStaffAttendance';
+import AdminStaffLoginHistory from './pages/AdminStaffLoginHistory';
 
 import { LanguageProvider } from './contexts/LanguageContext';
 import { HeaderConfigProvider } from './contexts/HeaderConfigContext';
@@ -204,26 +213,73 @@ function App() {
                         <Route element={<RequireAdminAuth />}>
                             <Route path="/admin" element={<AdminLayout />}>
                                 <Route index element={<Navigate to="dashboard" replace />} />
-                                <Route path="dashboard"              element={<AdminDashboard />} />
-                                <Route path="children"               element={<AdminChildrenList />} />
-                                <Route path="children/add"           element={<AdminChildAdd />} />
-                                <Route path="children/edit/:id"      element={<AdminChildEdit />} />
-                                <Route path="children/scoreboard/:childId" element={<AdminChildScoreboard />} />
-                                <Route path="assessors"              element={<AdminAssessorsList />} />
-                                <Route path="assessors/add"          element={<AdminAssessorAdd />} />
-                                <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
-                                <Route path="child-groups"           element={<AdminChildGroupsList />} />
-                                <Route path="child-groups/add"       element={<AdminChildGroupAdd />} />
-                                <Route path="child-groups/edit/:id"  element={<AdminChildGroupEdit />} />
-                                <Route path="analysis"               element={<AdminAnalysis />} />
-                                <Route path="reports"                element={<AdminReports />} />
-                                <Route path="docs"                   element={<AdminDocs />} />
+
+                                {/* screenshots has no nav link (pre-existing — reachable only
+                                    by direct URL) and profile is self-service; neither needs
+                                    a module-permission gate. Everything else below is wrapped
+                                    per-menu so a staff account without that grant sees a clean
+                                    "Access Restricted" message instead of a broken page full
+                                    of failed API calls (the real enforcement is server-side
+                                    either way — this is UX polish, see RequireStaffPermission). */}
                                 <Route path="screenshots"            element={<AdminScreenshots />} />
-                                <Route path="meta"                   element={<AdminMeta />} />
-                                <Route path="help-support"           element={<AdminHelpSupport />} />
-                                <Route path="settings"               element={<AdminSettings />} />
-                                <Route path="elements"               element={<AdminElements />} />
-                                <Route path="multilingual"           element={<AdminMultilingual />} />
+                                <Route path="staff/profile"          element={<AdminStaffProfile />} />
+
+                                <Route element={<RequireStaffPermission moduleKey="dashboard" />}>
+                                    <Route path="dashboard"              element={<AdminDashboard />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="children" />}>
+                                    <Route path="children"               element={<AdminChildrenList />} />
+                                    <Route path="children/add"           element={<AdminChildAdd />} />
+                                    <Route path="children/edit/:id"      element={<AdminChildEdit />} />
+                                    <Route path="children/scoreboard/:childId" element={<AdminChildScoreboard />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="assessors" />}>
+                                    <Route path="assessors"              element={<AdminAssessorsList />} />
+                                    <Route path="assessors/add"          element={<AdminAssessorAdd />} />
+                                    <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="child-groups" />}>
+                                    <Route path="child-groups"           element={<AdminChildGroupsList />} />
+                                    <Route path="child-groups/add"       element={<AdminChildGroupAdd />} />
+                                    <Route path="child-groups/edit/:id"  element={<AdminChildGroupEdit />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="analysis" />}>
+                                    <Route path="analysis"               element={<AdminAnalysis />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="reports" />}>
+                                    <Route path="reports"                element={<AdminReports />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="docs" />}>
+                                    <Route path="docs"                   element={<AdminDocs />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="meta" />}>
+                                    <Route path="meta"                   element={<AdminMeta />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="help-support" />}>
+                                    <Route path="help-support"           element={<AdminHelpSupport />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="settings" />}>
+                                    <Route path="settings"               element={<AdminSettings />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="elements" />}>
+                                    <Route path="elements"               element={<AdminElements />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="multilingual" />}>
+                                    <Route path="multilingual"           element={<AdminMultilingual />} />
+                                </Route>
+                                <Route element={<RequireStaffPermission moduleKey="staff" />}>
+                                    <Route path="staff"                  element={<AdminStaffList />} />
+                                    <Route path="staff/add"              element={<AdminStaffAdd />} />
+                                    <Route path="staff/edit/:id"         element={<AdminStaffEdit />} />
+                                    <Route path="staff/attendance"       element={<AdminStaffAttendance />} />
+                                </Route>
+                                {/* Staff Log History (Login History + Activity History) — always
+                                    administrator-only, never gated by the 'staff' module grant
+                                    (see RequireAdminOnly). */}
+                                <Route element={<RequireAdminOnly />}>
+                                    <Route path="staff/activity-log"      element={<AdminStaffActivityLog />} />
+                                    <Route path="staff/:id/log-history"   element={<AdminStaffLoginHistory />} />
+                                </Route>
 
                             </Route>
                         </Route>

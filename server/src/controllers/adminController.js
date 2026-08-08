@@ -1,22 +1,13 @@
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const UAParser = require('ua-parser-js');
 const requestIp = require('request-ip');
 const axios = require('axios');
+const { logStaffActivity } = require('../utils/logStaffActivity');
+const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
 
 // Basic JWT Secret for now. Ideally this goes in .env
 const JWT_SECRET = process.env.JWT_SECRET || 'sangian-super-secret-key-123';
-
-// Helper to get basic browser/os/device data
-const parseUserAgent = (userAgent) => {
-    const parser = new UAParser(userAgent);
-    return {
-        browser: parser.getBrowser().name || 'Unknown',
-        os: parser.getOS().name || 'Unknown',
-        deviceType: parser.getDevice().type || 'Desktop'
-    };
-};
 
 // Helper to get approximate location based on IP
 const getLocationFromIp = async (ip) => {
@@ -48,48 +39,101 @@ const loginAdmin = async (req, res) => {
         // Get client info
         const userAgent = req.headers['user-agent'];
         const { browser, os, deviceType } = parseUserAgent(userAgent);
-        const ip = requestIp.getClientIp(req) || 'Unknown';
+        const ip = normalizeIp(requestIp.getClientIp(req)) || 'Unknown';
         const location = await getLocationFromIp(ip);
 
-        // Fetch admin
+        // Fetch admin — existing path, unchanged
         const [rows] = await pool.query('SELECT * FROM admins WHERE email = ?', [email.trim()]);
 
-        // Auth Failed
-        if (rows.length === 0 || !(await bcrypt.compare(password, rows[0].password_hash))) {
-            // Log failed attempt if it corresponds to an actual admin email or just raw generic
-            const adminId = rows.length > 0 ? rows[0].id : null;
-            await pool.query(`
-        INSERT INTO admin_login_sessions 
-        (admin_id, status, login_time, ip_address, device_type, browser, os, location)
-        VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?)
-      `, [adminId, ip, deviceType, browser, os, location]);
+        if (rows.length > 0 && await bcrypt.compare(password, rows[0].password_hash)) {
+            const admin = rows[0];
 
-            return res.status(401).json({ message: 'Invalid email or password.' });
-        }
-
-        const admin = rows[0];
-
-        // Auth Success - Log Session
-        const loginTime = new Date();
-        const [sessionResult] = await pool.query(`
-      INSERT INTO admin_login_sessions 
+            const loginTime = new Date();
+            const [sessionResult] = await pool.query(`
+      INSERT INTO admin_login_sessions
       (admin_id, status, login_time, ip_address, device_type, browser, os, location)
       VALUES (?, 'success', ?, ?, ?, ?, ?, ?)
     `, [admin.id, loginTime, ip, deviceType, browser, os, location]);
 
-        // Generate JWT
-        const token = jwt.sign({ id: admin.id, email: admin.email, role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+            const token = jwt.sign({ id: admin.id, email: admin.email, role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
 
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            sessionId: sessionResult.insertId,
-            admin: {
-                id: admin.id,
-                name: admin.name,
-                email: admin.email
+            return res.status(200).json({
+                message: 'Login successful',
+                token,
+                sessionId: sessionResult.insertId,
+                admin: {
+                    id: admin.id,
+                    name: admin.name,
+                    email: admin.email,
+                    role: 'admin'
+                }
+            });
+        }
+
+        // Not an admin (or wrong password) — try Staff Management's `staff`
+        // table before failing. Same login page auto-determines the role.
+        const [staffRows] = await pool.query('SELECT * FROM staff WHERE email = ?', [email.trim()]);
+
+        if (staffRows.length > 0 && await bcrypt.compare(password, staffRows[0].password_hash)) {
+            const staff = staffRows[0];
+
+            if (staff.status !== 'active') {
+                return res.status(403).json({ message: 'Your staff account is inactive. Contact your administrator.' });
             }
-        });
+
+            const loginTime = new Date();
+            const [sessionResult] = await pool.query(`
+      INSERT INTO staff_login_sessions
+      (staff_id, status, login_time, ip_address, device_type, browser, os, location)
+      VALUES (?, 'success', ?, ?, ?, ?, ?, ?)
+    `, [staff.id, loginTime, ip, deviceType, browser, os, location]);
+
+            const token = jwt.sign({ id: staff.id, email: staff.email, name: staff.name, role: 'staff' }, JWT_SECRET, { expiresIn: '12h' });
+
+            await logStaffActivity({
+                staffId: staff.id, staffName: staff.name, module: 'auth', actionType: 'login',
+                description: 'Staff logged in', req,
+                menuName: 'Login', pageName: 'Login Page', sessionId: sessionResult.insertId,
+            });
+
+            return res.status(200).json({
+                message: 'Login successful',
+                token,
+                sessionId: sessionResult.insertId,
+                admin: {
+                    id: staff.id,
+                    name: staff.name,
+                    email: staff.email,
+                    role: 'staff'
+                },
+                permissions: Array.isArray(staff.permissions) ? staff.permissions : [],
+            });
+        }
+
+        // Neither admin nor staff matched — log the failed attempt against
+        // whichever table the email actually belongs to (same behavior as
+        // before for admin emails; extended analogously for staff emails).
+        if (rows.length > 0) {
+            await pool.query(`
+        INSERT INTO admin_login_sessions
+        (admin_id, status, login_time, ip_address, device_type, browser, os, location)
+        VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?)
+      `, [rows[0].id, ip, deviceType, browser, os, location]);
+        } else if (staffRows.length > 0) {
+            await pool.query(`
+        INSERT INTO staff_login_sessions
+        (staff_id, status, login_time, ip_address, device_type, browser, os, location)
+        VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?)
+      `, [staffRows[0].id, ip, deviceType, browser, os, location]);
+        } else {
+            await pool.query(`
+        INSERT INTO admin_login_sessions
+        (admin_id, status, login_time, ip_address, device_type, browser, os, location)
+        VALUES (NULL, 'failed', NOW(), ?, ?, ?, ?, ?)
+      `, [ip, deviceType, browser, os, location]);
+        }
+
+        return res.status(401).json({ message: 'Invalid email or password.' });
 
     } catch (error) {
         console.error('Admin Login Error:', error);
@@ -105,9 +149,14 @@ const logoutAdmin = async (req, res) => {
         const { sessionId } = req.params;
         if (!sessionId) return res.status(400).json({ message: 'Session ID is required.' });
 
+        // req.admin is set by adminAuth on this route — role tells us which
+        // session table this sessionId belongs to. Admin path is unchanged.
+        const isStaff = req.admin?.role === 'staff';
+        const table = isStaff ? 'staff_login_sessions' : 'admin_login_sessions';
+
         const query = `
-      UPDATE admin_login_sessions 
-      SET 
+      UPDATE ${table}
+      SET
         logout_time = NOW(),
         session_duration = TIMESTAMPDIFF(SECOND, login_time, NOW())
       WHERE id = ? AND status = 'success' AND logout_time IS NULL
@@ -116,6 +165,14 @@ const logoutAdmin = async (req, res) => {
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Active admin session not found or already ended.' });
+        }
+
+        if (isStaff) {
+            await logStaffActivity({
+                staffId: req.admin.id, staffName: req.admin.name, module: 'auth', actionType: 'logout',
+                description: 'Staff logged out', req,
+                menuName: 'Login', pageName: 'Login Page', sessionId: Number(sessionId) || null,
+            });
         }
 
         res.status(200).json({ message: 'Admin session ended successfully' });

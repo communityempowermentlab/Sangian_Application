@@ -10,12 +10,27 @@ const helpContentController = require('../controllers/helpContentController');
 const smtpController       = require('../controllers/smtpController');
 const ticketSettingsController = require('../controllers/ticketSettingsController');
 const adminAuth            = require('../middleware/adminAuth');
+const { requireModuleAccessByPath } = require('../middleware/requireModuleAccess');
 const { upload }           = require('../middleware/upload');
 const { ticketUpload }     = require('../middleware/ticketUpload');
 const { adminLogoUpload }  = require('../middleware/adminLogoUpload');
 
 // ── Public routes (no auth required) ─────────────────────────────────────────
 router.post('/login', adminController.loginAdmin);
+
+// This router bundles several distinct menus (children/assessors/child-groups/
+// dashboard) alongside cross-cutting endpoints (profile, logout, contact,
+// tickets, help-content, smtp) that aren't tied to one specific menu — so
+// gating happens once here, resolved per-request by path prefix, rather
+// than per individual route below. Admins always pass through unaffected;
+// unmapped paths (profile/logout/contact-*/etc) still require adminAuth
+// via their own route below, just aren't menu-permission-gated.
+router.use(requireModuleAccessByPath([
+    ['/children',     'children'],
+    ['/assessors',    'assessors'],
+    ['/child-groups', 'child-groups'],
+    ['/dashboard',    'dashboard'],
+]));
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 router.get('/dashboard/stats',         adminAuth, adminController.getDashboardStats);

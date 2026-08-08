@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { AdminNotificationProvider, useAdminNotification } from '../contexts/AdminNotificationContext';
 import { getAdminLogoUrl } from '../services/photoUtils';
+import { canSeeModule, isStaffSession } from '../utils/staffPermissions';
 
 const isTokenValid = () => {
     const token = localStorage.getItem('adminToken');
@@ -19,6 +20,37 @@ const getAdminUser = () => {
     try { return JSON.parse(localStorage.getItem('adminUser') || '{}'); }
     catch { return {}; }
 };
+
+// Friendly page names for the "menu accessed / page visited" activity trail
+// (see the log-page-view effect below) — ordered specific-to-general, same
+// convention as the activeGroup resolver just below it.
+const PAGE_LABELS = [
+    [/^\/admin\/dashboard/, 'Dashboard'],
+    [/^\/admin\/children\/add/, 'Add Child'],
+    [/^\/admin\/children\/edit/, 'Edit Child'],
+    [/^\/admin\/children\/scoreboard/, 'Child Scoreboard'],
+    [/^\/admin\/children/, 'Children List'],
+    [/^\/admin\/assessors\/add/, 'Add Assessor'],
+    [/^\/admin\/assessors\/edit/, 'Edit Assessor'],
+    [/^\/admin\/assessors/, 'Assessors List'],
+    [/^\/admin\/child-groups\/add/, 'Add Child Group'],
+    [/^\/admin\/child-groups\/edit/, 'Edit Child Group'],
+    [/^\/admin\/child-groups/, 'Child Groups List'],
+    [/^\/admin\/analysis/, 'Analysis'],
+    [/^\/admin\/reports/, 'Reports'],
+    [/^\/admin\/docs/, 'Docs'],
+    [/^\/admin\/meta/, 'Meta'],
+    [/^\/admin\/help-support/, 'Support'],
+    [/^\/admin\/multilingual/, 'Multilingual'],
+    [/^\/admin\/elements/, 'Elements'],
+    [/^\/admin\/staff\/add/, 'Add Staff'],
+    [/^\/admin\/staff\/edit/, 'Edit Staff'],
+    [/^\/admin\/staff\/attendance/, 'Staff Attendance'],
+    [/^\/admin\/staff\/profile/, 'My Profile'],
+    [/^\/admin\/staff/, 'Staff List'],
+    [/^\/admin\/settings/, 'Settings'],
+];
+const getPageLabel = (pathname) => (PAGE_LABELS.find(([re]) => re.test(pathname)) || [null, pathname])[1];
 
 const AdminLayoutInner = () => {
     const [time, setTime] = useState(new Date().toLocaleTimeString());
@@ -41,11 +73,12 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/help-support')  ? 'help-support' :
         location.pathname.includes('/admin/multilingual')  ? 'multilingual' :
         location.pathname.includes('/admin/elements')      ? 'elements'     :
+        location.pathname.includes('/admin/staff')          ? 'staff'        :
         location.pathname.includes('/admin/ankganit-v2-config') ? 'ankganit-v2-config' :
         location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
 
-    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors' || activeGroup === 'child-groups';
+    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors' || activeGroup === 'child-groups' || activeGroup === 'staff';
     const appVersion = 'v1.0.0';
 
     // Sync profile from localStorage when updated by profile settings page
@@ -55,12 +88,26 @@ const AdminLayoutInner = () => {
         return () => window.removeEventListener('adminProfileUpdated', onProfileUpdated);
     }, []);
 
+    // "Menu accessed / page visited" activity trail — staff sessions only
+    // (an admin's own navigation isn't what this audit trail is for). One
+    // fire-and-forget call per route change; errors are swallowed since a
+    // tracking call must never block or break navigation.
+    useEffect(() => {
+        if (!isStaffSession()) return;
+        axiosAdmin.post('/admin/staff/log-page-view', {
+            module: activeGroup,
+            menuName: activeGroup.charAt(0).toUpperCase() + activeGroup.slice(1),
+            pageName: getPageLabel(location.pathname),
+        }).catch(() => {});
+    }, [location.pathname, activeGroup]);
+
     // Guard: verify token on every route change
     useEffect(() => {
         if (!isTokenValid()) {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminSessionId');
             localStorage.removeItem('adminUser');
+            localStorage.removeItem('staffPermissions');
             navigate('/admin/login', { replace: true });
         }
     }, [location.pathname, navigate]);
@@ -72,6 +119,7 @@ const AdminLayoutInner = () => {
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('adminSessionId');
                 localStorage.removeItem('adminUser');
+                localStorage.removeItem('staffPermissions');
                 navigate('/admin/login', { replace: true });
             }
         }, 60_000);
@@ -107,6 +155,7 @@ const AdminLayoutInner = () => {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminSessionId');
             localStorage.removeItem('adminUser');
+            localStorage.removeItem('staffPermissions');
             navigate('/admin/login');
         }
     };
@@ -147,14 +196,19 @@ const AdminLayoutInner = () => {
                 {/* Menu Bar */}
                 <nav className="admin-menu-bar">
                     <div className="admin-menus">
-                        <Link
-                            to="/admin/dashboard"
-                            className={`admin-menu-item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
-                        >
-                            📊 Dashboard
-                        </Link>
+                        {canSeeModule('dashboard') && (
+                            <Link
+                                to="/admin/dashboard"
+                                className={`admin-menu-item ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}
+                            >
+                                📊 Dashboard
+                            </Link>
+                        )}
 
-                        {/* Users dropdown */}
+                        {/* Users dropdown — hidden entirely for a staff account with none
+                            of children/assessors/child-groups/staff granted; individual
+                            items inside are filtered the same way for a partial grant. */}
+                        {(canSeeModule('children') || canSeeModule('assessors') || canSeeModule('child-groups') || canSeeModule('staff')) && (
                         <div className="admin-menu-dropdown" ref={usersRef}>
                             <button
                                 className={`admin-menu-item admin-menu-item--btn ${isUsersActive ? 'active' : ''}`}
@@ -164,93 +218,123 @@ const AdminLayoutInner = () => {
                             </button>
                             {usersOpen && (
                                 <div className="admin-dropdown-panel">
-                                    <Link
-                                        to="/admin/children"
-                                        className={`admin-dropdown-item ${activeGroup === 'children' ? 'active' : ''}`}
-                                        onClick={() => setUsersOpen(false)}
-                                    >
-                                        👶 Children
-                                    </Link>
-                                    <Link
-                                        to="/admin/assessors"
-                                        className={`admin-dropdown-item ${activeGroup === 'assessors' ? 'active' : ''}`}
-                                        onClick={() => setUsersOpen(false)}
-                                    >
-                                        🧑‍🏫 Assessors
-                                    </Link>
-                                    <Link
-                                        to="/admin/child-groups"
-                                        className={`admin-dropdown-item ${activeGroup === 'child-groups' ? 'active' : ''}`}
-                                        onClick={() => setUsersOpen(false)}
-                                    >
-                                        🗂️ Child Groups
-                                    </Link>
+                                    {canSeeModule('children') && (
+                                        <Link
+                                            to="/admin/children"
+                                            className={`admin-dropdown-item ${activeGroup === 'children' ? 'active' : ''}`}
+                                            onClick={() => setUsersOpen(false)}
+                                        >
+                                            👶 Children
+                                        </Link>
+                                    )}
+                                    {canSeeModule('assessors') && (
+                                        <Link
+                                            to="/admin/assessors"
+                                            className={`admin-dropdown-item ${activeGroup === 'assessors' ? 'active' : ''}`}
+                                            onClick={() => setUsersOpen(false)}
+                                        >
+                                            🧑‍🏫 Assessors
+                                        </Link>
+                                    )}
+                                    {canSeeModule('child-groups') && (
+                                        <Link
+                                            to="/admin/child-groups"
+                                            className={`admin-dropdown-item ${activeGroup === 'child-groups' ? 'active' : ''}`}
+                                            onClick={() => setUsersOpen(false)}
+                                        >
+                                            🗂️ Child Groups
+                                        </Link>
+                                    )}
+                                    {canSeeModule('staff') && (
+                                        <Link
+                                            to="/admin/staff"
+                                            className={`admin-dropdown-item ${activeGroup === 'staff' ? 'active' : ''}`}
+                                            onClick={() => setUsersOpen(false)}
+                                        >
+                                            🧑‍💼 Staff
+                                        </Link>
+                                    )}
                                 </div>
                             )}
                         </div>
+                        )}
 
-                        <Link
-                            to="/admin/reports"
-                            className={`admin-menu-item ${activeGroup === 'reports' ? 'active' : ''}`}
-                        >
-                            📈 Reports
-                        </Link>
-                        <Link
-                            to="/admin/analysis"
-                            className={`admin-menu-item ${activeGroup === 'analysis' ? 'active' : ''}`}
-                        >
-                            🔬 Analysis
-                        </Link>
-                        <Link
-                            to="/admin/docs"
-                            className={`admin-menu-item ${activeGroup === 'docs' ? 'active' : ''}`}
-                        >
-                            📄 Docs
-                        </Link>
+                        {canSeeModule('reports') && (
+                            <Link
+                                to="/admin/reports"
+                                className={`admin-menu-item ${activeGroup === 'reports' ? 'active' : ''}`}
+                            >
+                                📈 Reports
+                            </Link>
+                        )}
+                        {canSeeModule('analysis') && (
+                            <Link
+                                to="/admin/analysis"
+                                className={`admin-menu-item ${activeGroup === 'analysis' ? 'active' : ''}`}
+                            >
+                                🔬 Analysis
+                            </Link>
+                        )}
+                        {canSeeModule('docs') && (
+                            <Link
+                                to="/admin/docs"
+                                className={`admin-menu-item ${activeGroup === 'docs' ? 'active' : ''}`}
+                            >
+                                📄 Docs
+                            </Link>
+                        )}
 
                         {/* Meta tab — badge shows unread contact messages */}
-                        <Link
-                            to="/admin/meta"
-                            className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'meta' ? 'active' : ''}`}
-                        >
-                            🗂️ Meta
-                            {newMessageCount > 0 && (
-                                <span className="admin-nav-badge">{newMessageCount > 99 ? '99+' : newMessageCount}</span>
-                            )}
-                        </Link>
+                        {canSeeModule('meta') && (
+                            <Link
+                                to="/admin/meta"
+                                className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'meta' ? 'active' : ''}`}
+                            >
+                                🗂️ Meta
+                                {newMessageCount > 0 && (
+                                    <span className="admin-nav-badge">{newMessageCount > 99 ? '99+' : newMessageCount}</span>
+                                )}
+                            </Link>
+                        )}
 
-                        <Link
-                            to="/admin/help-support"
-                            className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'help-support' ? 'active' : ''}`}
-                        >
-                            🎫 Support
-                            {activeTicketCount > 0 && (
-                                <span className="admin-nav-badge">{activeTicketCount > 99 ? '99+' : activeTicketCount}</span>
-                            )}
-                        </Link>
+                        {canSeeModule('help-support') && (
+                            <Link
+                                to="/admin/help-support"
+                                className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'help-support' ? 'active' : ''}`}
+                            >
+                                🎫 Support
+                                {activeTicketCount > 0 && (
+                                    <span className="admin-nav-badge">{activeTicketCount > 99 ? '99+' : activeTicketCount}</span>
+                                )}
+                            </Link>
+                        )}
 
-                        <Link
-                            to="/admin/multilingual"
-                            className={`admin-menu-item ${activeGroup === 'multilingual' ? 'active' : ''}`}
-                        >
-                            🌐 Multilingual
-                        </Link>
+                        {canSeeModule('multilingual') && (
+                            <Link
+                                to="/admin/multilingual"
+                                className={`admin-menu-item ${activeGroup === 'multilingual' ? 'active' : ''}`}
+                            >
+                                🌐 Multilingual
+                            </Link>
+                        )}
 
-                        <Link
-                            to="/admin/elements"
-                            className={`admin-menu-item ${activeGroup === 'elements' ? 'active' : ''}`}
-                        >
-                            🧩 Elements
-                        </Link>
+                        {canSeeModule('elements') && (
+                            <Link
+                                to="/admin/elements"
+                                className={`admin-menu-item ${activeGroup === 'elements' ? 'active' : ''}`}
+                            >
+                                🧩 Elements
+                            </Link>
+                        )}
 
-
-
-                        <Link
-                            to="/admin/settings"
-                            className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}
-                        >
-                            ⚙️ Settings
-                        </Link>
+                        {canSeeModule('settings') && (
+                            <Link
+                                to="/admin/settings"
+                                className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}
+                            >
+                                ⚙️ Settings
+                            </Link>
+                        )}
                     </div>
                 </nav>
 
