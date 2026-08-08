@@ -914,7 +914,12 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const attemptEntries  = Object.entries(attemptBuckets);
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
-  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2';
+  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'triangle_rachna';
+  // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
+  // image-matching mechanic (correctCount/missedImages/incorrectSelections)
+  // that only Her Pher V2 has — Rachna's own columns are always '—', so its
+  // Children Reached column shouldn't also turn on those unrelated icons.
+  const showHerPherV2InfoIcons = gameKey === 'working_memory_herpher_v2';
 
   return (
     <div className="ana-content">
@@ -1176,7 +1181,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Avg Correct
-                      {showKpiInfoIcon && showChildrenReachedCol && (
+                      {showKpiInfoIcon && showHerPherV2InfoIcons && (
                         <KpiInfoIcon
                           name="Avg Correct (per category)"
                           definition="The average number of distinct images children correctly matched on this category, out of that question's expected set — pooled across every session matching your current filters. This is a raw match count, not a score or a percentage."
@@ -1215,7 +1220,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Miss Rate
-                      {showKpiInfoIcon && showChildrenReachedCol && (
+                      {showKpiInfoIcon && showHerPherV2InfoIcons && (
                         <KpiInfoIcon
                           name="Miss Rate (per category)"
                           definition="What share of the images children were expected to find on this category, they never matched at all — pooled across every session matching your current filters. This is the exact mirror of Accuracy %: Miss Rate = 100% − Accuracy %, always."
@@ -1235,7 +1240,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Perfect Rate
-                      {showKpiInfoIcon && showChildrenReachedCol && (
+                      {showKpiInfoIcon && showHerPherV2InfoIcons && (
                         <KpiInfoIcon
                           name="Perfect Rate (per category)"
                           definition="What share of the SESSIONS that reached this category had a completely flawless run — zero missed images AND zero duplicate/incorrect clicks. Unlike Miss Rate and Accuracy %, this counts whole sessions, not individual images."
