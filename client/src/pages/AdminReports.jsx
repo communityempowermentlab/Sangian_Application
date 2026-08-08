@@ -36,7 +36,17 @@ const testStatusBadge = (enabled) => (
 
 const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const fmtOnlyDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const fmtOnlyTime = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '—';
+// 24-hour HH:MM:SS — built manually rather than via toLocaleTimeString so the
+// format is exact regardless of locale/environment (Attempt Log's Start/End
+// Time columns and their CSV export, per explicit request).
+const fmtOnlyTime = (d) => {
+    if (!d) return '—';
+    const dt = new Date(d);
+    const hh = String(dt.getHours()).padStart(2, '0');
+    const mm = String(dt.getMinutes()).padStart(2, '0');
+    const ss = String(dt.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+};
 
 const fmtSecs = (v) => {
     if (v == null) return '—';
