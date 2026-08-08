@@ -50,6 +50,15 @@ const DIFFICULTY_COLORS = { Easy: '#22c55e', Moderate: '#f59e0b', Hard: '#ef4444
 const CATEGORY_NAMES = {
   item1: 'Fruits', item2: 'Vegetables', item3: 'Sports', item4: 'Cloth',
   item5: 'Kitchen', item6: 'Household', item7: 'Animal', item8: 'Transport',
+  // Rachna tags each scored question with its own in-game key (question3..
+  // question27) — labelled here as "Item N" to match the ordinal shown to
+  // the child in-game (getQuestionTitle in TriangleRachnaGame.jsx).
+  question3: 'Item 1',   question4: 'Item 2',   question6: 'Item 3',   question7: 'Item 4',
+  question8: 'Item 5',   question9: 'Item 6',   question10: 'Item 7',  question11: 'Item 8',
+  question12: 'Item 9',  question13: 'Item 10', question14: 'Item 11', question15: 'Item 12',
+  question16: 'Item 13', question17: 'Item 14', question18: 'Item 15', question19: 'Item 16',
+  question20: 'Item 17', question21: 'Item 18', question22: 'Item 19', question23: 'Item 20',
+  question24: 'Item 21', question25: 'Item 22', question26: 'Item 23', question27: 'Item 24',
 };
 
 const STATUS_CHIP_OPTIONS = [
@@ -1131,7 +1140,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             name: "Question Category Breakdown",
             definition: "Per-question performance across the game's question categories, ranked from easiest to hardest.",
             formula: "Children Reached = number of sessions (matching all filters) that completed this question — naturally decreases for later questions since some children quit or auto-stop before reaching them. Avg Score = mean per-question score across those sessions. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
-            eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher)"]
+            eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher, Rachna)"]
           }}
           noPad
         >

@@ -136,8 +136,12 @@ function buildBucketDefs(gameKey, maxScore) {
 const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 
 // Games whose saved_state.allScores[] entries carry a per-question `category`
-// tag (item1..item8) — only these support the question-category breakdown.
-const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_memory_herpher_v2']);
+// tag — only these support the question-category breakdown. Her Pher tags
+// item1..item8 (image-matching questions); Rachna tags its own question keys
+// (question3..question27) and has no correctCount/expectedImages/missedImages/
+// incorrectSelections fields, so those columns come back NULL for it — the
+// frontend already renders NULL as '—'.
+const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_memory_herpher_v2', 'triangle_rachna']);
 
 // Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
 // as a GROUP BY key. Kept in sync manually with AGE_MAP above.
@@ -502,7 +506,7 @@ exports.getGameAnalytics = async (req, res) => {
       const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
       const [catRows] = await pool.query(`
         SELECT
-          jt.category                                                             AS category,
+          COALESCE(jt.category, jt.qId)                                           AS category,
           COUNT(*)                                                                AS attempts,
           ROUND(AVG(jt.score), 2)                                                 AS avgScore,
           ROUND(AVG(jt.correctCount), 2)                                          AS avgCorrectCount,
@@ -513,6 +517,7 @@ exports.getGameAnalytics = async (req, res) => {
         FROM game_sessions gs ${CHILD_JOIN},
         JSON_TABLE(gs.saved_state, '$.allScores[*]' COLUMNS (
           category NVARCHAR(50) PATH '$.category',
+          qId NVARCHAR(50) PATH '$.qId',
           score INT PATH '$.score',
           correctCount INT PATH '$.correctCount',
           timeTaken DECIMAL(10,2) PATH '$.timeTaken',
@@ -520,8 +525,8 @@ exports.getGameAnalytics = async (req, res) => {
           missedImages JSON PATH '$.missedImages',
           incorrectSelections JSON PATH '$.incorrectSelections'
         )) AS jt
-        ${catWhere} AND jt.category IS NOT NULL AND jt.category != 'item0'
-        GROUP BY jt.category
+        ${catWhere} AND COALESCE(jt.category, jt.qId) IS NOT NULL AND COALESCE(jt.category, jt.qId) != 'item0'
+        GROUP BY COALESCE(jt.category, jt.qId)
         ORDER BY AVG(jt.score) DESC
       `, params);
 
@@ -532,7 +537,7 @@ exports.getGameAnalytics = async (req, res) => {
         ...row,
         attempts: Number(row.attempts),
         avgScore: Number(row.avgScore),
-        avgCorrectCount: Number(row.avgCorrectCount),
+        avgCorrectCount: row.avgCorrectCount != null ? Number(row.avgCorrectCount) : null,
         avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
         accuracyPct: row.accuracyPct != null ? Number(row.accuracyPct) : null,
         missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,

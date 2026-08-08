@@ -659,7 +659,7 @@ const TriangleRachnaGame = () => {
   const saveProgress = useCallback((scores, times, totalSc, status = 'in_progress') => {
     if (!sessionIdRef.current) return;
     const allScores = Object.entries(scores).map(([k, sc]) => ({
-      qId: k, score: sc, timeTaken: times[k] || 0,
+      qId: k, category: k, score: sc, timeTaken: times[k] || 0,
     }));
     const screentime = sessionElapsedRef.current || 0;
     axios.put(`${API_URL}/games/sessions/update/${sessionIdRef.current}`, {
