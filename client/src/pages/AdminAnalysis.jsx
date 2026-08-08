@@ -1162,7 +1162,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           info={{
             name: "Question Category Breakdown",
             definition: "Per-question performance across the game's question categories, ranked from easiest to hardest.",
-            formula: "Children Reached = number of sessions (matching all filters) that completed this question — naturally decreases for later questions since some children quit or auto-stop before reaching them. Avg Score = mean per-question score across those sessions. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
+            formula: "Children Reached = number of sessions (matching all filters) that completed this question — naturally decreases for later questions since some children quit or auto-stop before reaching them. % Reached = Children Reached ÷ Total Tests (the game's total session count for the same filters) × 100. Avg Score = mean per-question score across those sessions. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
             eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher, Rachna)"]
           }}
           noPad
@@ -1176,6 +1176,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <th>Cat-Name</th>
                   {showTargetImageCol && <th>Target Image</th>}
                   {showChildrenReachedCol && <th>Children Reached</th>}
+                  {showChildrenReachedCol && <th>% Reached</th>}
                   <th>Difficulty</th>
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -1305,6 +1306,9 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       </td>
                     )}
                     {showChildrenReachedCol && <td style={{ fontWeight: 600 }}>{fmt(row.attempts)}</td>}
+                    {showChildrenReachedCol && (
+                      <td>{kpis.totalSessions > 0 ? `${((row.attempts / kpis.totalSessions) * 100).toFixed(1)}%` : '—'}</td>
+                    )}
                     <td>
                       <span
                         className="ana-status-pill"
