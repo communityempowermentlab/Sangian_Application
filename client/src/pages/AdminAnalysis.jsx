@@ -920,6 +920,14 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   // that only Her Pher V2 has — Rachna's own columns are always '—', so its
   // Children Reached column shouldn't also turn on those unrelated icons.
   const showHerPherV2InfoIcons = gameKey === 'working_memory_herpher_v2';
+  // Avg Correct/Accuracy/Miss Rate/Perfect Rate only mean anything for games
+  // whose allScores[] entries carry correctCount/expectedImages/etc (Her
+  // Pher's image-matching mechanic) — data-driven so it hides itself for any
+  // future category-breakdown game (like Rachna) that doesn't have it,
+  // instead of hardcoding a gameKey list that can go stale.
+  const showCorrectnessMetrics = categoryBreakdown.some(r =>
+    r.avgCorrectCount != null || r.accuracyPct != null || r.missRatePct != null || r.perfectRatePct != null
+  );
 
   return (
     <div className="ana-content">
@@ -1178,6 +1186,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       )}
                     </span>
                   </th>
+                  {showCorrectnessMetrics && (
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Avg Correct
@@ -1197,6 +1206,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       )}
                     </span>
                   </th>
+                  )}
+                  {showCorrectnessMetrics && (
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Accuracy %
@@ -1217,6 +1228,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       )}
                     </span>
                   </th>
+                  )}
+                  {showCorrectnessMetrics && (
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Miss Rate
@@ -1237,6 +1250,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       )}
                     </span>
                   </th>
+                  )}
+                  {showCorrectnessMetrics && (
                   <th>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Perfect Rate
@@ -1256,6 +1271,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       )}
                     </span>
                   </th>
+                  )}
                   <th>Avg Time</th>
                 </tr>
               </thead>
@@ -1285,10 +1301,10 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                         <span>{fmt(row.avgScore, 2)}</span>
                       </div>
                     </td>
-                    <td>{fmt(row.avgCorrectCount, 2)}</td>
-                    <td>{row.accuracyPct != null ? `${row.accuracyPct}%` : '—'}</td>
-                    <td>{row.missRatePct != null ? `${row.missRatePct}%` : '—'}</td>
-                    <td>{row.perfectRatePct != null ? `${row.perfectRatePct}%` : '—'}</td>
+                    {showCorrectnessMetrics && <td>{fmt(row.avgCorrectCount, 2)}</td>}
+                    {showCorrectnessMetrics && <td>{row.accuracyPct != null ? `${row.accuracyPct}%` : '—'}</td>}
+                    {showCorrectnessMetrics && <td>{row.missRatePct != null ? `${row.missRatePct}%` : '—'}</td>}
+                    {showCorrectnessMetrics && <td>{row.perfectRatePct != null ? `${row.perfectRatePct}%` : '—'}</td>}
                     <td>{row.avgTimeTakenSec != null ? `${fmt(row.avgTimeTakenSec, 1)}s` : '—'}</td>
                   </tr>
                 ))}
