@@ -226,7 +226,7 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
 // element — the live table sits in a horizontally-scrolling container
 // (.ana-table-wrap { overflow-x: auto }), so capturing it in place would
 // crop to whatever's currently scrolled into view instead of every column.
-async function captureElementCanvas(elementId) {
+async function captureElementCanvas(elementId, headerLines = []) {
   const element = document.getElementById(elementId);
   if (!element) return null;
   const html2canvas = (await import('html2canvas')).default;
@@ -247,7 +247,24 @@ async function captureElementCanvas(elementId) {
     `width:${Math.max(element.scrollWidth, element.offsetWidth)}px`,
     'background:#ffffff', 'padding:16px',
     'z-index:-9999', 'pointer-events:none',
+    'font-family:system-ui,-apple-system,sans-serif',
   ].join(';');
+
+  // Search-parameter header — so a downloaded file is self-describing about
+  // which date range/group/filters produced it, without needing the browser
+  // tab it came from.
+  if (headerLines.length > 0) {
+    const header = document.createElement('div');
+    header.style.cssText = 'margin-bottom:14px;padding-bottom:12px;border-bottom:2px solid #e2e8f0;';
+    header.innerHTML = headerLines.map((line, i) => {
+      const size = i === 0 ? '16px' : '12.5px';
+      const weight = i === 0 ? '700' : '500';
+      const color = i === 0 ? '#0f172a' : '#475569';
+      return `<div style="font-size:${size};font-weight:${weight};color:${color};margin-bottom:3px;">${line}</div>`;
+    }).join('');
+    wrapper.appendChild(header);
+  }
+
   wrapper.appendChild(clone);
   document.body.appendChild(wrapper);
 
@@ -263,8 +280,8 @@ async function captureElementCanvas(elementId) {
   return canvas;
 }
 
-async function exportElementAsImage(elementId, filenameBase) {
-  const canvas = await captureElementCanvas(elementId);
+async function exportElementAsImage(elementId, filenameBase, headerLines = []) {
+  const canvas = await captureElementCanvas(elementId, headerLines);
   if (!canvas) return;
   const link = document.createElement('a');
   link.href = canvas.toDataURL('image/png');
@@ -274,8 +291,8 @@ async function exportElementAsImage(elementId, filenameBase) {
   document.body.removeChild(link);
 }
 
-async function exportElementAsPDF(elementId, filenameBase) {
-  const canvas = await captureElementCanvas(elementId);
+async function exportElementAsPDF(elementId, filenameBase, headerLines = []) {
+  const canvas = await captureElementCanvas(elementId, headerLines);
   if (!canvas) return;
   const { jsPDF } = await import('jspdf');
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
@@ -400,6 +417,41 @@ function filtersFromSearchParams(sp, dateDefaults) {
     ageGroups: splitList('ageGroup'),
     attempts:  splitList('attempt'),
   };
+}
+
+// Human-readable filter summary for the Image/PDF exports — a downloaded
+// file should be self-describing about which search parameters produced it,
+// since it can end up shared or archived away from the browser tab it came
+// from. Returns an array of lines (title, filter summary, generated-at).
+function buildFilterSummaryLines(title, filters, groupOptions = []) {
+  const dateRange = filters?.startDate && filters?.endDate
+    ? `${filters.startDate} to ${filters.endDate}`
+    : 'All time';
+  const groupLabel = (filters?.groupIds || [])
+    .map(id => groupOptions.find(g => String(g.id) === String(id))?.name)
+    .filter(Boolean).join(', ') || 'All';
+  const genderLabel = (filters?.genders || []).map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ') || 'All';
+  const ageLabel = (filters?.ageGroups || []).join(', ') || 'All';
+  const statusLabel = (filters?.statuses || [])
+    .map(s => STATUS_CHIP_OPTIONS.find(o => o.key === s)?.label || s).join(', ') || 'All';
+  const attemptLabel = (filters?.attempts || [])
+    .map(a => ATTEMPT_CHIP_OPTIONS.find(o => o.key === a)?.label || a).join(', ') || 'All';
+
+  const parts = [
+    `Date Range: ${dateRange}`,
+    `Group: ${groupLabel}`,
+    `Gender: ${genderLabel}`,
+    `Age: ${ageLabel}`,
+    `Status: ${statusLabel}`,
+    `Attempt: ${attemptLabel}`,
+  ];
+  if (filters?.childId?.trim()) parts.push(`Child ID: ${filters.childId.trim()}`);
+
+  const generatedAt = new Date().toLocaleString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+  }).replace(/am|pm/g, m => m.toUpperCase());
+
+  return [title, parts.join('   •   '), `Generated: ${generatedAt}`];
 }
 
 // ── Primitive chart / UI components ──────────────────────
@@ -937,7 +989,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
 
 // ── Game Panel ────────────────────────────────────────────
 
-function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon, csvExportEnabled = true }) {
+function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon, csvExportEnabled = true, groupOptions = [] }) {
   const [sessions,         setSessions]         = React.useState([]);
   const [sessionsPage,     setSessionsPage]     = React.useState(0);
   const [loadingSessions,  setLoadingSessions]  = React.useState(false);
@@ -1283,14 +1335,22 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <button
                     className="ana-btn"
                     style={{ fontSize: '12px' }}
-                    onClick={() => exportElementAsImage('category-breakdown-table', `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`)}
+                    onClick={() => exportElementAsImage(
+                      'category-breakdown-table',
+                      `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
+                      buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                    )}
                   >
                     🖼️ Export Image
                   </button>
                   <button
                     className="ana-btn"
                     style={{ fontSize: '12px' }}
-                    onClick={() => exportElementAsPDF('category-breakdown-table', `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`)}
+                    onClick={() => exportElementAsPDF(
+                      'category-breakdown-table',
+                      `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
+                      buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                    )}
                   >
                     📄 Export PDF
                   </button>
@@ -2005,6 +2065,7 @@ export default function AdminAnalysis() {
                 data={gameData[activeTab]}
                 loading={loading}
                 filters={filters}
+                groupOptions={groupOptions}
               />
           }
         </main>
