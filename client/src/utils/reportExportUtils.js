@@ -17,18 +17,7 @@ export const GAME_CATALOG = [
 
 // ─── Format Helpers ────────────────────────────────────────────────────────
 export const fmtOnlyDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-// 24-hour HH:MM:SS — built manually rather than via toLocaleTimeString so the
-// CSV export matches the on-screen Attempt Log's Start/End Time columns
-// (AdminReports.jsx has its own identical copy) exactly, regardless of
-// locale/environment.
-export const fmtOnlyTime = (d) => {
-    if (!d) return '—';
-    const dt = new Date(d);
-    const hh = String(dt.getHours()).padStart(2, '0');
-    const mm = String(dt.getMinutes()).padStart(2, '0');
-    const ss = String(dt.getSeconds()).padStart(2, '0');
-    return `${hh}:${mm}:${ss}`;
-};
+export const fmtOnlyTime = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '—';
 
 export const fmtSecs = (v) => {
     if (v == null) return '—';
