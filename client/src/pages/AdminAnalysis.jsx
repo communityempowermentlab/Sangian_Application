@@ -221,6 +221,74 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
   XLSX.writeFile(wb, `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown.xlsx`);
 }
 
+// Renders elementId to a canvas for the image/PDF export buttons below.
+// Captures a clone in an off-screen, unclipped wrapper rather than the live
+// element — the live table sits in a horizontally-scrolling container
+// (.ana-table-wrap { overflow-x: auto }), so capturing it in place would
+// crop to whatever's currently scrolled into view instead of every column.
+async function captureElementCanvas(elementId) {
+  const element = document.getElementById(elementId);
+  if (!element) return null;
+  const html2canvas = (await import('html2canvas')).default;
+
+  const originalNodes = element.querySelectorAll('*');
+  const clone = element.cloneNode(true);
+  const cloneNodes = clone.querySelectorAll('*');
+  cloneNodes.forEach((node, i) => {
+    const cs = window.getComputedStyle(originalNodes[i]);
+    if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+    if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
+  });
+  clone.style.overflowX = 'visible';
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = [
+    'position:fixed', 'top:-99999px', 'left:0',
+    `width:${Math.max(element.scrollWidth, element.offsetWidth)}px`,
+    'background:#ffffff', 'padding:16px',
+    'z-index:-9999', 'pointer-events:none',
+  ].join(';');
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  const canvas = await html2canvas(wrapper, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    windowWidth: wrapper.scrollWidth,
+    windowHeight: wrapper.scrollHeight,
+  });
+
+  document.body.removeChild(wrapper);
+  return canvas;
+}
+
+async function exportElementAsImage(elementId, filenameBase) {
+  const canvas = await captureElementCanvas(elementId);
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = `${filenameBase}.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+async function exportElementAsPDF(elementId, filenameBase) {
+  const canvas = await captureElementCanvas(elementId);
+  if (!canvas) return;
+  const { jsPDF } = await import('jspdf');
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  // Landscape, page sized to the table's own aspect ratio — these tables
+  // run wide (many columns), so a fixed-aspect page would either crop
+  // columns or leave large margins.
+  const pdfWidth  = 297;
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  const pdf = new jsPDF('l', 'mm', [pdfWidth, pdfHeight]);
+  pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+  pdf.save(`${filenameBase}.pdf`);
+}
+
 async function exportChildrenExcel(children, catalog, filters) {
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
@@ -1202,15 +1270,31 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
               <span>Question Category Breakdown</span>
               {csvExportEnabled && (
-                <button
-                  className="ana-btn"
-                  style={{ fontSize: '12px' }}
-                  onClick={() => exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
-                    showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
-                  })}
-                >
-                  📥 Export Excel
-                </button>
+                <span style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="ana-btn"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
+                      showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
+                    })}
+                  >
+                    📥 Export Excel
+                  </button>
+                  <button
+                    className="ana-btn"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => exportElementAsImage('category-breakdown-table', `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`)}
+                  >
+                    🖼️ Export Image
+                  </button>
+                  <button
+                    className="ana-btn"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => exportElementAsPDF('category-breakdown-table', `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`)}
+                  >
+                    📄 Export PDF
+                  </button>
+                </span>
               )}
             </span>
           }
@@ -1223,7 +1307,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           }}
           noPad
         >
-          <div className="ana-table-wrap">
+          <div className="ana-table-wrap" id="category-breakdown-table">
             <table className="ana-table">
               <thead>
                 <tr>
