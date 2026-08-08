@@ -180,6 +180,47 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   URL.revokeObjectURL(url);
 }
 
+// Mirrors exactly the columns the on-screen Question Category Breakdown
+// table shows for this game (see the flags computed in GamePanel) so the
+// export never claims data the table itself hides.
+async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSessions, cols) {
+  const { showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics } = cols;
+  const XLSX = await import('xlsx');
+
+  const headers = [
+    'Rank', 'Category', 'Cat-Name',
+    ...(showTargetImageCol ? ['Target Image URL'] : []),
+    ...(showChildrenReachedCol ? ['Children Reached', '% Reached'] : []),
+    'Difficulty', 'Avg Score',
+    ...(showCorrectnessMetrics ? ['Avg Correct', 'Accuracy %', 'Miss Rate %', 'Perfect Rate %'] : []),
+    'Avg Time (sec)',
+  ];
+  const rows = categoryBreakdown.map(row => [
+    row.rank,
+    row.category,
+    CATEGORY_NAMES[row.category] || '—',
+    ...(showTargetImageCol ? [`${window.location.origin}${getRachnaTargetImage(row.category)}`] : []),
+    ...(showChildrenReachedCol ? [
+      row.attempts,
+      totalSessions > 0 ? Number(((row.attempts / totalSessions) * 100).toFixed(1)) : '',
+    ] : []),
+    row.difficulty,
+    row.avgScore,
+    ...(showCorrectnessMetrics ? [
+      row.avgCorrectCount ?? '',
+      row.accuracyPct ?? '',
+      row.missRatePct ?? '',
+      row.perfectRatePct ?? '',
+    ] : []),
+    row.avgTimeTakenSec ?? '',
+  ]);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Category Breakdown');
+  XLSX.writeFile(wb, `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown.xlsx`);
+}
+
 async function exportChildrenExcel(children, catalog, filters) {
   const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
@@ -1157,7 +1198,22 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
 
       {categoryBreakdown.length > 0 && (
         <Card
-          title="Question Category Breakdown"
+          title={
+            <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+              <span>Question Category Breakdown</span>
+              {csvExportEnabled && (
+                <button
+                  className="ana-btn"
+                  style={{ fontSize: '12px' }}
+                  onClick={() => exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
+                    showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
+                  })}
+                >
+                  📥 Export Excel
+                </button>
+              )}
+            </span>
+          }
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Question Category Breakdown",
