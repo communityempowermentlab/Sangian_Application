@@ -964,8 +964,9 @@ const initDb = async () => {
         test_id     VARCHAR(100) NOT NULL,
         asset_type  VARCHAR(50)  NOT NULL,
         language    VARCHAR(10)  NOT NULL,
-        file_name   VARCHAR(255) NOT NULL,
-        file_path   VARCHAR(500) NOT NULL,
+        file_name   VARCHAR(255) NOT NULL DEFAULT '',
+        file_path   VARCHAR(500) NULL,
+        config      JSON         NULL,
         is_active   TINYINT(1)   DEFAULT 1,
         created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
         updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1012,6 +1013,24 @@ const initDb = async () => {
     try {
       await connection.query('ALTER TABLE test_elements ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER file_path');
     } catch (e) {}
+
+    // Structured JSON config per element (e.g. Rachna's per-question shape
+    // composition) — additive to the file-upload columns, not a replacement.
+    // file_path relaxes to nullable so a config-only row (no image ever
+    // uploaded for that question) can exist. file_name stays NOT NULL — it's
+    // part of the unique key, and MySQL treats every NULL as distinct there,
+    // which would silently defeat the ON DUPLICATE KEY UPDATE upsert for
+    // config-only rows (verified this against a live table before deciding
+    // against nullable file_name); config-only rows use '' instead.
+    try {
+      await connection.query('ALTER TABLE test_elements ADD COLUMN config JSON NULL AFTER file_path');
+    } catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error('Failed to add test_elements.config:', e.message); }
+    try {
+      await connection.query("ALTER TABLE test_elements MODIFY file_name VARCHAR(255) NOT NULL DEFAULT ''");
+    } catch (e) { console.error('Failed to default test_elements.file_name:', e.message); }
+    try {
+      await connection.query('ALTER TABLE test_elements MODIFY file_path VARCHAR(500) NULL');
+    } catch (e) { console.error('Failed to relax test_elements.file_path nullability:', e.message); }
 
     // Seed existing splash screens for all games to preserve backward compatibility
     const allSeeds = [

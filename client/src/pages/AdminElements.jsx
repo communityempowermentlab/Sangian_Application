@@ -7,6 +7,7 @@ import HerPherElements from '../components/HerPherElements';
 import AdminElementPositionManager from './AdminElementPositionManager';
 import AdminAnkganitV2Config from './AdminAnkganitV2Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
+import RachnaElements from '../components/RachnaElements';
 
 // Her Pher V3 uses a fixed item-wise image count per category (unlike V1/V2's
 // uniform caps) — see HerPherElements.jsx's default CATEGORIES for the shape.
@@ -282,6 +283,12 @@ export default function AdminElements() {
                 {activeTest === 'number_recall_lottery_v2' && (
                     <div className="elements-section">
                         <AdminNumberRecallV2Config />
+                    </div>
+                )}
+
+                {activeTest === 'triangle_rachna' && (
+                    <div className="elements-section">
+                        <RachnaElements />
                     </div>
                 )}
             </div>

@@ -30,6 +30,7 @@ const adminRouter = express.Router();
 adminRouter.use(adminAuth);
 adminRouter.get('/', ctrl.getElements);
 adminRouter.post('/upload', upload.single('file'), ctrl.uploadElement);
+adminRouter.put('/config', ctrl.updateElementConfig);
 adminRouter.delete('/:id', ctrl.deleteElement);
 adminRouter.put('/:id/status', ctrl.toggleElementStatus);
 
