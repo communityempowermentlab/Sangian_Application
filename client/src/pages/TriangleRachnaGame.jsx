@@ -124,6 +124,16 @@ const TriangleRachnaGame = () => {
   const getTargetImageSrc = (key) => elementOverrides[key]?.file_path
     ? `${SERVER_BASE}${elementOverrides[key].file_path}`
     : `${IMAGE_PATH}/${getTargetImageName(key)}.png`;
+  const isQuestionActive = (key) => elementOverrides[key]?.config?.active !== false;
+  // Walks the (unchanged) next-pointer chain forward from fromKey, skipping
+  // any admin-deactivated question, until it lands on an active one or the
+  // chain runs out. Question order/timers/scoring themselves never move —
+  // this only redirects which key gets shown next.
+  const nextActiveKey = (fromKey) => {
+    let k = fromKey;
+    while (k && !isQuestionActive(k)) k = QUESTIONS[k]?.next ?? null;
+    return k;
+  };
 
   const toggleRecording = (target) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -413,6 +423,12 @@ const TriangleRachnaGame = () => {
       const sum2 = q1_q12.reduce((acc, k) => acc + (newScores[k] || 0), 0);
       if (sum2 <= 6) nextKey = null; // Drop test
     }
+
+    // Skip any admin-deactivated question(s) — after the milestone checks
+    // above, which take priority: a drop-test null must stay null, never
+    // get "resolved" into some later active question.
+    if (nextKey) nextKey = nextActiveKey(nextKey);
+
     if (!nextKey) {
       saveProgress(newScores, newTimes, newTotal, 'completed');
       setShowAssessmentModal(false);
@@ -423,7 +439,7 @@ const TriangleRachnaGame = () => {
       setShowAssessmentModal(false);
       setQAnswers({ q1: null, q2: null, q3: null });
     }
-  }, [currentKey, questionScores, questionTimes, totalScore, saveProgress]);
+  }, [currentKey, questionScores, questionTimes, totalScore, saveProgress, elementOverrides]);
 
   const handleDone = useCallback((autoSubmit = false) => {
     clearInterval(timerRef.current);
@@ -635,7 +651,7 @@ const TriangleRachnaGame = () => {
     let nextUnanswered = SCORED_QUESTIONS[0];
     for (let i = 0; i < SCORED_QUESTIONS.length; i++) {
         const k = SCORED_QUESTIONS[i];
-        if (scDict[k] === undefined) {
+        if (scDict[k] === undefined && isQuestionActive(k)) {
             nextUnanswered = k;
             break;
         }
@@ -800,7 +816,7 @@ const TriangleRachnaGame = () => {
             className={`rg-btn rg-btn-primary ${audioFinished ? 'rg-btn-highlight' : ''}`}
             style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
             disabled={!audioFinished}
-            onClick={() => { startSession(); setScreen('game'); setCurrentKey('sampleA'); }}
+            onClick={() => { startSession(); setScreen('game'); setCurrentKey(nextActiveKey('sampleA') || 'sampleA'); }}
           >
             {`▶ ${t('game.startNow')}`}
           </button>

@@ -170,6 +170,15 @@ const updateElementConfig = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
+        // question10/question15 carry Rachna's hardcoded early-exit drop-rule
+        // (cumulative-score check keyed to those exact question keys in
+        // proceedToNext) — deactivating either would silently disable that
+        // safeguard, so it's blocked here as well as in the admin UI.
+        const RACHNA_PROTECTED_KEYS = new Set(['question10', 'question15']);
+        if (test_id === 'triangle_rachna' && RACHNA_PROTECTED_KEYS.has(asset_type) && config?.active === false) {
+            return res.status(400).json({ success: false, message: 'This question triggers the drop-rule and cannot be deactivated' });
+        }
+
         const [existing] = await pool.query(
             'SELECT id FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?',
             [test_id, asset_type, language]

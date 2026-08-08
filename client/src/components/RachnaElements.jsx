@@ -31,6 +31,12 @@ const SHAPE_OPTIONS = ['circle', 'square', 'diamond', 'triangle-up', 'triangle-d
 const SIZE_OPTIONS = ['large', 'small'];
 const ORIENTATION_OPTIONS = ['BL', 'BR', 'UL', 'UR'];
 
+// Carries the game's hardcoded early-exit drop-rule (cumulative-score check
+// in TriangleRachnaGame.jsx's proceedToNext, keyed to these exact question
+// keys) — deactivating either would silently disable that safeguard, so
+// their toggle is locked here (and rejected server-side too).
+const PROTECTED_KEYS = new Set(['question10', 'question15']);
+
 const GROUPS = [
   { label: 'Sample Questions', keys: SAMPLE_QS },
   { label: 'Teaching Questions', keys: TEACHING_QS },
@@ -119,8 +125,9 @@ const RachnaElements = () => {
         ...(s.shape === 'right-triangle' ? { orientation: s.orientation } : {}),
         ...(s.scale !== '' && s.scale != null ? { scale: Number(s.scale) } : {}),
       }));
+      const existingConfig = elementsByKey[key]?.config || {};
       await axiosAdmin.put('/admin/elements/config', {
-        test_id: TEST_ID, asset_type: key, language: LANGUAGE, config: { sources },
+        test_id: TEST_ID, asset_type: key, language: LANGUAGE, config: { ...existingConfig, sources },
       });
       showToast('Shapes saved');
       await loadElements();
@@ -129,6 +136,23 @@ const RachnaElements = () => {
       showToast('Failed to save shapes', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const toggleActive = async (key) => {
+    if (PROTECTED_KEYS.has(key)) return;
+    const existingConfig = elementsByKey[key]?.config || {};
+    const wasInactive = existingConfig.active === false;
+    try {
+      await axiosAdmin.put('/admin/elements/config', {
+        test_id: TEST_ID, asset_type: key, language: LANGUAGE,
+        config: { ...existingConfig, active: wasInactive },
+      });
+      showToast(wasInactive ? 'Question re-activated' : 'Question deactivated — will be skipped in the game');
+      await loadElements();
+    } catch (error) {
+      console.error('Failed to toggle active state:', error);
+      showToast(error?.response?.data?.message || 'Failed to update', 'error');
     }
   };
 
@@ -186,18 +210,33 @@ const RachnaElements = () => {
           <h4>{group.label}</h4>
           <div className="rachna-el-list">
             {group.keys.map(key => {
-              const isCustom = !!elementsByKey[key];
+              const config = elementsByKey[key]?.config;
+              const isCustom = !!config?.sources || !!elementsByKey[key]?.file_path;
+              const isActive = config?.active !== false;
+              const isProtected = PROTECTED_KEYS.has(key);
               const isExpanded = expandedKey === key;
               return (
-                <div key={key} className={`rachna-el-row ${isExpanded ? 'expanded' : ''}`}>
-                  <div className="rachna-el-row-header" onClick={() => toggleExpand(key)}>
-                    <img src={getImageUrl(key)} alt={key} className="rachna-el-thumb" onError={e => { e.target.style.visibility = 'hidden'; }} />
-                    <div className="rachna-el-row-title">
+                <div key={key} className={`rachna-el-row ${isExpanded ? 'expanded' : ''} ${!isActive ? 'inactive' : ''}`}>
+                  <div className="rachna-el-row-header">
+                    <img src={getImageUrl(key)} alt={key} className="rachna-el-thumb" onClick={() => toggleExpand(key)} onError={e => { e.target.style.visibility = 'hidden'; }} />
+                    <div className="rachna-el-row-title" onClick={() => toggleExpand(key)}>
                       <strong>{getQuestionTitle(key)}</strong>
                       <span className="rachna-el-key">{key}</span>
                     </div>
                     {isCustom && <span className="rachna-el-badge">Customized</span>}
-                    <span className="rachna-el-chevron">{isExpanded ? '▲' : '▼'}</span>
+                    {!isActive && <span className="rachna-el-badge inactive">Inactive</span>}
+                    {isProtected ? (
+                      <span className="rachna-el-toggle protected" title="Triggers the drop-rule — can't be deactivated">🔒 Required</span>
+                    ) : (
+                      <button
+                        className={`rachna-el-toggle ${isActive ? 'active' : 'inactive'}`}
+                        onClick={() => toggleActive(key)}
+                        title={isActive ? 'Deactivate — skip this question in the game' : 'Re-activate this question'}
+                      >
+                        {isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    )}
+                    <span className="rachna-el-chevron" onClick={() => toggleExpand(key)}>{isExpanded ? '▲' : '▼'}</span>
                   </div>
 
                   {isExpanded && (
@@ -275,7 +314,7 @@ const RachnaElements = () => {
                         </div>
                       </div>
 
-                      {isCustom && (
+                      {!!elementsByKey[key] && (
                         <button className="rachna-el-reset-btn" onClick={() => resetQuestion(key)}>
                           ↺ Reset this question to default
                         </button>
