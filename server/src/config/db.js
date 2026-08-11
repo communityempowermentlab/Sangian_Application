@@ -1158,6 +1158,7 @@ const initDb = async () => {
       'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
       'numeracy_number_skill_v2': { path: '/assets/images/number_skill_v2/number_skill.jpg', name: 'number_skill.jpg' },
       'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
+      'literacy_reading_skill_v2': { path: '/assets/images/reading_skill_v2/reading_skill_v2.jpg', name: 'reading_skill_v2.jpg' },
       'cognitive_flex_chor': { path: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg', name: 'chor_machaye_shor.jpg' },
       'triangle_rachna': { path: '/assets/images/rachna/rachna.jpg', name: 'rachna.jpg' }
     };

@@ -36,6 +36,7 @@ const GAME_CATALOG = [
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher V3',           color: '#0891b2', image: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
     { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',           color: '#4f46e5', image: '/assets/images/number_skill/number_skill.jpg' },
     { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke batao',      color: '#059669', image: '/assets/images/reading_skill/reading_skill.jpg' },
+    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2', color: '#059669', image: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
     { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor',  color: '#dc2626', image: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
     { key: 'triangle_rachna',        icon: '🔺', title: 'Rachna',             color: '#e11d48', image: '/assets/images/rachna/rachna.jpg' },
 ];
@@ -170,6 +171,20 @@ const GAME_INTRO_DEFAULTS = {
         },
         hi: {
             skill:       'बुनियादी साक्षरता और पठन कौशल',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की बुनियादी पढ़ने की क्षमता का आकलन करना है।',
+            description: 'इस गतिविधि में बच्चे अक्षरों, शब्दों और छोटे वाक्यों को पढ़ते हैं। यह बच्चे की पढ़ने और समझने की क्षमता को जानने में मदद करता है।',
+            guidance:    'ध्यान से देखो और जो दिखे उसे पढ़ो। जल्दी मत करो। तुम एक अच्छे पाठक हो!',
+        },
+    },
+    literacy_reading_skill_v2: {
+        en: {
+            skill:       'Foundational Literacy & Reading Comprehension - Version 2',
+            objective:   'This test assesses the child\'s foundational literacy-related academic ability, particularly letter recognition, word reading, and reading simple connected text with understanding.',
+            description: 'Read letters, words, and simple sentences carefully. This activity helps evaluate reading ability, understanding, and language development.',
+            guidance:    'Look carefully and read what you see. Take your time. You are a wonderful reader!',
+        },
+        hi: {
+            skill:       'बुनियादी साक्षरता और पठन कौशल - संस्करण 2',
             objective:   'इस टेस्ट का उद्देश्य बच्चे की बुनियादी पढ़ने की क्षमता का आकलन करना है।',
             description: 'इस गतिविधि में बच्चे अक्षरों, शब्दों और छोटे वाक्यों को पढ़ते हैं। यह बच्चे की पढ़ने और समझने की क्षमता को जानने में मदद करता है।',
             guidance:    'ध्यान से देखो और जो दिखे उसे पढ़ो। जल्दी मत करो। तुम एक अच्छे पाठक हो!',
@@ -2532,6 +2547,7 @@ const AUDIO_FOLDERS = {
     working_memory_herpher_v3: 'her_pher_v3',
     numeracy_number_skill:  'number_skill',
     literacy_reading_skill: 'reading_skill',
+    literacy_reading_skill_v2: 'reading_skill_v2',
     cognitive_flex_chor:    'chor_machaye_shor',
     triangle_rachna:        'rachna',
 };
@@ -2554,6 +2570,11 @@ const AUDIO_CATALOG = {
         ]},
     ],
     literacy_reading_skill: [
+        { group: 'Splash & Instruction', groupIcon: '🎵', items: [
+            { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers reading test instructions. "Start Now" button is disabled until this audio finishes.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion.' },
+        ]},
+    ],
+    literacy_reading_skill_v2: [
         { group: 'Splash & Instruction', groupIcon: '🎵', items: [
             { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers reading test instructions. "Start Now" button is disabled until this audio finishes.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion.' },
         ]},
@@ -3056,6 +3077,7 @@ const STATUS_META = {
 const GAME_DISPLAY = {
     numeracy_number_skill:  'Ankganit',
     literacy_reading_skill: 'Padh ke batao',
+    literacy_reading_skill_v2: 'Padh ke batao - Version 2',
     number_recall_lottery:  'Lottery Ka Ticket',
     number_recall_lottery_v2:  'Lottery Ka Ticket - Version 2',
     atlantis_bagiya:        'Bagiya',
@@ -3852,6 +3874,7 @@ const GAME_FILE_MAP = {
     working_memory_herpher_v3: 'HerPherGameV3.jsx',
     numeracy_number_skill:  'NumberSkillGame.jsx',
     literacy_reading_skill: 'ReadingSkillGame.jsx',
+    literacy_reading_skill_v2: 'ReadingSkillGameV2.jsx',
     cognitive_flex_chor:    'ChorMachayeShorGame.jsx',
     triangle_rachna:        'TriangleRachnaGame.jsx',
 };
@@ -4860,6 +4883,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'numeracy_number_skill'  ? NUMERACY_DEFAULT :
                                 selectedGame.key === 'literacy_reading_skill' ? LITERACY_DEFAULT  :
+                                selectedGame.key === 'literacy_reading_skill_v2' ? LITERACY_DEFAULT  :
                                 selectedGame.key === 'number_recall_lottery_v2' ? '' :
                                 `# ${selectedGame.title} — Technical Documentation 2013\n\nLegacy documentation for **${selectedGame.title}**.\n\nClick **Edit** to add historical documentation.`
                             }

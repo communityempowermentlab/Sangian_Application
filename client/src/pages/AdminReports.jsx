@@ -508,7 +508,7 @@ const AdminReports = () => {
                                                 </React.Fragment>
                                             );
                                         })
-                                    ) : activeGame?.key === 'literacy_reading_skill' ? (
+                                    ) : ['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key) ? (
                                         <>
                                             {detail?.columns?.map((c, idx) => {
                                                 const qNum = idx + 1;
@@ -708,7 +708,7 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : activeGame?.key === 'literacy_reading_skill' ? (
+                                            ) : ['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key) ? (
                                                 <>
                                                     {detail?.columns?.map((c, idx) => {
                                                         const qNum = idx + 1;

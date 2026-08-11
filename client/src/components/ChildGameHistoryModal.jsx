@@ -4,6 +4,7 @@ import { API_URL } from '../services/api';
 
 const GAME_LABELS = {
     'literacy_reading_skill': 'Padh ke batao',
+    'literacy_reading_skill_v2': 'Padh ke batao - Version 2',
     'numeracy_number_skill': 'Ankganit',
     'number_recall_lottery': 'Lottery Ka Ticket',
     'number_recall_lottery_v2': 'Lottery Ka Ticket - Version 2',

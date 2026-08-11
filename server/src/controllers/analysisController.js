@@ -2,6 +2,7 @@ const { pool } = require('../config/db');
 
 const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
+  literacy_reading_skill_v2: { title: 'Padh ke Batao - Version 2', tag: 'Literacy', color: '#059669', maxScore: 4 },
   numeracy_number_skill:    { title: 'Ankganit',            tag: 'Numeracy',         color: '#7c3aed', maxScore: 26 },
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
   number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
@@ -27,6 +28,15 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 19, hi: 20 },
     { lo: 21, hi: 21 },
     { lo: 22, hi: null }, // open-ended — catches any score at/above the max
+  ],
+  // ASER adaptive flow: score is an ordinal reading level, not a point count —
+  // one discrete bucket per level (0=Beginner, 1=Letter, 2=Word, 3=Paragraph, 4=Story).
+  literacy_reading_skill_v2: [
+    { lo: 0, hi: 0 },
+    { lo: 1, hi: 1 },
+    { lo: 2, hi: 2 },
+    { lo: 3, hi: 3 },
+    { lo: 4, hi: null }, // open-ended — catches any score at/above the max (Story)
   ],
   numeracy_number_skill_v2: [
     { lo: 0,  hi: 0 },
@@ -739,6 +749,7 @@ exports.getTopChildren = async (req, res) => {
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill' THEN ga.score END), 1) AS score_ankganit,
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill_v2' THEN ga.score END), 1) AS score_ankganit_v2,
         ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill' THEN ga.score END), 1) AS score_reading,
+        ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill_v2' THEN ga.score END), 1) AS score_reading_v2,
         ROUND(AVG(CASE WHEN ga.game_name = 'cognitive_flex_chor' THEN ga.score END), 1) AS score_chor,
         ROUND(AVG(CASE WHEN ga.game_name = 'triangle_rachna' THEN ga.score END), 1) AS score_rachna,
         DATE_FORMAT(MAX(ga.created_at), '%Y-%m-%d %H:%i') AS lastPlayed

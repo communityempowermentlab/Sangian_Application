@@ -55,6 +55,7 @@ const normalizeGameName = (name) => {
     if (['Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game'].includes(name)) return 'rover_mela';
     if (['chor_machaye_shor', 'cognitive_flex_chor'].includes(name)) return 'cognitive_flex_chor';
     if (['literacy_reading_skill', 'reading_skill', 'Padh ke batao'].includes(name)) return 'literacy_reading_skill';
+    if (['literacy_reading_skill_v2', 'Padh ke batao - Version 2'].includes(name)) return 'literacy_reading_skill_v2';
     if (['numeracy_number_skill', 'Ankganit'].includes(name)) return 'numeracy_number_skill';
     if (['working_memory_herpher', 'Her Pher'].includes(name)) return 'working_memory_herpher';
     if (['working_memory_herpher_v2', 'Her Pher - Version 2'].includes(name)) return 'working_memory_herpher_v2';
@@ -493,7 +494,7 @@ exports.getReportDetail = async (req, res) => {
                         questionScores[`${key}_ass_q3`] = td.qAnswers?.q3 ? td.qAnswers.q3.toUpperCase() : '—';
                     }
 
-                    if (['literacy_reading_skill', 'reading_skill'].includes(gameName)) {
+                    if (['literacy_reading_skill', 'reading_skill', 'literacy_reading_skill_v2'].includes(gameName)) {
                         // Look for assessment data in multiple potential locations for robustness
                         let ans = s.ssrAnswers || s.midTestAnswers || (parsedState.questionDetails?.[qid]?.ssrAnswers) || (parsedState.questionDetails?.[qid]?.qAnswers) || (parsedState.questionDetails?.[qid]);
                         
@@ -723,6 +724,7 @@ exports.getGameSummaries = async (req, res) => {
                     WHEN game_name IN ('Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game') THEN 'rover_mela'
                     WHEN game_name IN ('chor_machaye_shor', 'cognitive_flex_chor') THEN 'cognitive_flex_chor'
                     WHEN game_name IN ('literacy_reading_skill', 'reading_skill', 'Padh ke batao') THEN 'literacy_reading_skill'
+                    WHEN game_name IN ('literacy_reading_skill_v2', 'Padh ke batao - Version 2') THEN 'literacy_reading_skill_v2'
                     WHEN game_name IN ('numeracy_number_skill', 'Ankganit') THEN 'numeracy_number_skill'
                     WHEN game_name IN ('working_memory_herpher', 'Her Pher') THEN 'working_memory_herpher'
                     WHEN game_name IN ('working_memory_herpher_v2', 'Her Pher - Version 2') THEN 'working_memory_herpher_v2'

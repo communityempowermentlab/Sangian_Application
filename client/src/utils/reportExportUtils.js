@@ -11,6 +11,7 @@ export const GAME_CATALOG = [
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: '',                 color: '#7c3aed' },
     { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },
+    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2', local: '', tag: '', color: '#059669' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: '',                color: '#dc2626' },
     { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: '',     color: '#ef4444' },
 ];
@@ -82,7 +83,7 @@ export const generateReportData = (activeGame, detail) => {
             qHeaders.push(`${colLabel} Match Tgt?`);
             qHeaders.push(`${colLabel} Time(s)`);
         });
-    } else if (activeGame?.key === 'literacy_reading_skill') {
+    } else if (['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key)) {
         detail.columns.forEach((c, idx) => {
             const colLabel = `Q${idx + 1}`;
             qHeaders.push(`${colLabel} Score`);
@@ -203,7 +204,7 @@ export const generateReportData = (activeGame, detail) => {
                     qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : ''
                 );
             });
-        } else if (activeGame?.key === 'literacy_reading_skill') {
+        } else if (['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key)) {
             detail?.columns?.forEach(c => {
                 const qs = r.question_scores || {};
                 rowArr.push(qs[c] ?? '', qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');

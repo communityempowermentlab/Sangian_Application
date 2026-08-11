@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 
 const GAME_LABELS = {
     'literacy_reading_skill': 'Padh ke batao',
+    'literacy_reading_skill_v2': 'Padh ke batao - Version 2',
     'numeracy_number_skill': 'Ankganit',
     'numeracy_number_skill_v2': 'Ankganit V2',
     'number_recall_lottery': 'Lottery Ka Ticket',
@@ -39,7 +40,7 @@ function parseQuitReason(gameName, quitReason) {
         }
     }
 
-    if (gameName === 'literacy_reading_skill') {
+    if (gameName === 'literacy_reading_skill' || gameName === 'literacy_reading_skill_v2') {
         let m = quitReason.match(/^(Single Letter|Double Letter) Drop: (\d+)\/(\d+) correct \(minimum (\d+) required\)\.?$/i);
         if (m) {
             const [, category, got, total, min] = m;

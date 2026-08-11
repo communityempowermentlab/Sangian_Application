@@ -157,6 +157,7 @@ export const ROUTE_SEO = {
     '/games/her_pher_v3':       { title: `Her Pher V3 | ${SITE_NAME}`,         robots: 'noindex,follow', jsonLd: null },
     '/games/number_skill':      { title: `Ankganit | ${SITE_NAME}`,            robots: 'noindex,follow', jsonLd: null },
     '/games/reading_skill':     { title: `Padh ke batao | ${SITE_NAME}`,       robots: 'noindex,follow', jsonLd: null },
+    '/games/reading_skill_v2':  { title: `Padh ke batao V2 | ${SITE_NAME}`,    robots: 'noindex,follow', jsonLd: null },
     '/games/rachna':            { title: `Rachna | ${SITE_NAME}`,              robots: 'noindex,follow', jsonLd: null },
     '/games/chor_machaye_shor': { title: `Chor Machaye Shor | ${SITE_NAME}`,   robots: 'noindex,follow', jsonLd: null },
 };

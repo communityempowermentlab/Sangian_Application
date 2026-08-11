@@ -34,6 +34,7 @@ const Home = () => {
             'numeracy_number_skill': '/assets/images/number_skill/number_skill.jpg',
             'numeracy_number_skill_v2': '/assets/images/number_skill_v2/number_skill.jpg',
             'literacy_reading_skill': '/assets/images/reading_skill/reading_skill.jpg',
+            'literacy_reading_skill_v2': '/assets/images/reading_skill_v2/reading_skill_v2.jpg',
             'cognitive_flex_chor': '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg',
             'triangle_rachna': '/assets/images/rachna/rachna.jpg'
         };
@@ -180,6 +181,19 @@ const Home = () => {
             startUrl: "/games/reading_skill",
             image: getElementImage('literacy_reading_skill'),
             shortTitle: t('home.games.literacy.title'),
+            local: t('home.games.literacy.local'),
+            tag: t('home.games.literacy.tag'),
+            tagClass: "test-tag test-tag-academic"
+        },
+        {
+            id: 701,
+            gameKey: 'literacy_reading_skill_v2',
+            title: t('home.games.literacy.title') + t('common.version2'),
+            subtitle: t('home.games.literacy.sub'),
+            desc: t('home.games.literacy.desc'),
+            startUrl: "/games/reading_skill_v2",
+            image: getElementImage('literacy_reading_skill_v2'),
+            shortTitle: t('home.games.literacy.title') + t('common.version2'),
             local: t('home.games.literacy.local'),
             tag: t('home.games.literacy.tag'),
             tagClass: "test-tag test-tag-academic"

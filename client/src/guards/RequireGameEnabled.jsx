@@ -7,6 +7,7 @@ import { API_URL } from '../services/api';
 const PATH_TO_GAME_KEY = {
     '/games/number_skill':      'numeracy_number_skill',
     '/games/reading_skill':     'literacy_reading_skill',
+    '/games/reading_skill_v2':  'literacy_reading_skill_v2',
     '/games/number_recall':     'number_recall_lottery',
     '/games/number_recall_v2':  'number_recall_lottery_v2',
     '/games/her_pher':          'working_memory_herpher',
