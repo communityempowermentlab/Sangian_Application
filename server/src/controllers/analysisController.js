@@ -148,11 +148,13 @@ function buildBucketDefs(gameKey, maxScore) {
   });
 }
 
-// Age bands — one per registration year (7–16). Boundaries are exact-day, not
-// calendar "completed years": band "N" covers (dob + (N-1) years, dob + N years]
-// — starts the day after the child's (N-1)th birthday and ends on their Nth
-// birthday itself. AGE_YEARS is the single source of truth AGE_MAP and
-// AGE_BAND_CASE are both derived from, so they can't drift out of sync.
+// Age bands — one per registration year (7–16), using the same "completed
+// years" convention as TIMESTAMPDIFF(YEAR, dob, CURDATE()) (used for the
+// displayed age elsewhere) — band "N" covers [dob + N years, dob + (N+1) years),
+// i.e. from the child's Nth birthday through the day before their (N+1)th, so
+// the filter buckets and the displayed age always agree. AGE_YEARS is the
+// single source of truth AGE_MAP and AGE_BAND_CASE are both derived from, so
+// they can't drift out of sync.
 const AGE_YEARS = Array.from({ length: 10 }, (_, i) => 7 + i); // [7, 8, ..., 16]
 const AGE_MAP = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, [y, y]]));
 
@@ -168,7 +170,7 @@ const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_mem
 // as a GROUP BY key — generated from AGE_YEARS so it can't drift out of sync.
 const AGE_BAND_CASE = `CASE
   ${AGE_YEARS.map(y =>
-    `WHEN DATE_ADD(c.dob, INTERVAL ${y - 1} YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL ${y} YEAR) THEN '${y}'`
+    `WHEN DATE_ADD(c.dob, INTERVAL ${y} YEAR) <= CURDATE() AND CURDATE() < DATE_ADD(c.dob, INTERVAL ${y + 1} YEAR) THEN '${y}'`
   ).join('\n  ')}
   ELSE NULL END`;
 
@@ -219,13 +221,17 @@ function parseFilters(req) {
   if (statuses.length === 1)    { statusClauses.push('gs.status = ?');     statusParams.push(statuses[0]); }
   else if (statuses.length > 1) { statusClauses.push('gs.status IN (?)'); statusParams.push(statuses); }
 
-  // Age groups build a single OR condition — no extra params (values embedded as integers)
+  // Age groups build a single OR condition — no extra params (values embedded as integers).
+  // Matches TIMESTAMPDIFF(YEAR, dob, CURDATE())'s standard "completed years" convention
+  // (same one used for the displayed age elsewhere) — band N covers the child's Nth
+  // birthday through the day before their (N+1)th, so the filter and the displayed
+  // age always agree.
   const ageClauses = [];
   if (ageGroups.length > 0) {
     const conditions = ageGroups
       .map(ag => AGE_MAP[ag])
       .filter(Boolean)
-      .map(([lo, hi]) => `(DATE_ADD(c.dob, INTERVAL ${lo - 1} YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL ${hi} YEAR))`);
+      .map(([lo, hi]) => `(DATE_ADD(c.dob, INTERVAL ${lo} YEAR) <= CURDATE() AND CURDATE() < DATE_ADD(c.dob, INTERVAL ${hi + 1} YEAR))`);
     if (conditions.length) ageClauses.push(`(${conditions.join(' OR ')})`);
   }
 

@@ -42,9 +42,10 @@ const completionPct = (child) =>
     child.total_sessions > 0 ? Math.round((child.completed_sessions / child.total_sessions) * 100) : null;
 
 // Age bands — one per registration year (7–16), matching the Admin Analysis
-// Age filter. Boundaries are exact-day, not calendar "completed years": band
-// "N" covers (dob + (N-1) years, dob + N years] — starts the day after the
-// child's (N-1)th birthday and ends on their Nth birthday itself.
+// Age filter. Uses the same "completed years" convention as
+// TIMESTAMPDIFF(YEAR, dob, CURDATE()) (the standard age shown elsewhere in the
+// app): band "N" covers [dob + N years, dob + (N+1) years) — from the child's
+// Nth birthday through the day before their (N+1)th.
 const AGE_YEARS = Array.from({ length: 10 }, (_, i) => 7 + i); // [7, 8, ..., 16]
 const AGE_BAND_ORDER = ['Under 7', ...AGE_YEARS.map(String), '17+', 'Unknown'];
 
@@ -58,9 +59,9 @@ const ageBandOf = (child) => {
     if (!child.dob) return 'Unknown';
     const dobDate = new Date(child.dob);
     const today = new Date();
-    if (today <= addYears(dobDate, 6)) return 'Under 7';
+    if (today < addYears(dobDate, 7)) return 'Under 7';
     for (const y of AGE_YEARS) {
-        if (today <= addYears(dobDate, y)) return `${y}`;
+        if (today < addYears(dobDate, y + 1)) return `${y}`;
     }
     return '17+';
 };
