@@ -7,6 +7,7 @@ const GAME_META = {
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
   number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
   numeracy_number_skill_v2: { title: 'Ankganit - Version 2', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
+  numeracy_number_skill_v3: { title: 'Ankganit - Version 3', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
   atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
   working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
   working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 16 },
@@ -39,6 +40,13 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 4, hi: null }, // open-ended — catches any score at/above the max (Story)
   ],
   numeracy_number_skill_v2: [
+    { lo: 0,  hi: 0 },
+    { lo: 1,  hi: 8 },
+    { lo: 9,  hi: 18 },
+    { lo: 19, hi: 26 },
+    { lo: 27, hi: null }, // open-ended — catches any score at/above the max (30)
+  ],
+  numeracy_number_skill_v3: [
     { lo: 0,  hi: 0 },
     { lo: 1,  hi: 8 },
     { lo: 9,  hi: 18 },
@@ -748,6 +756,7 @@ exports.getTopChildren = async (req, res) => {
         ROUND(AVG(CASE WHEN ga.game_name = 'working_memory_herpher_v3' THEN ga.score END), 1) AS score_herpher_v3,
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill' THEN ga.score END), 1) AS score_ankganit,
         ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill_v2' THEN ga.score END), 1) AS score_ankganit_v2,
+        ROUND(AVG(CASE WHEN ga.game_name = 'numeracy_number_skill_v3' THEN ga.score END), 1) AS score_ankganit_v3,
         ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill' THEN ga.score END), 1) AS score_reading,
         ROUND(AVG(CASE WHEN ga.game_name = 'literacy_reading_skill_v2' THEN ga.score END), 1) AS score_reading_v2,
         ROUND(AVG(CASE WHEN ga.game_name = 'cognitive_flex_chor' THEN ga.score END), 1) AS score_chor,

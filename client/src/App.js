@@ -17,6 +17,7 @@ import AdminChildEdit from './pages/AdminChildEdit';
 import AdminChildScoreboard from './pages/AdminChildScoreboard';
 import NumberSkillGame from './pages/NumberSkillGame';
 import NumberSkillGameV2 from './pages/NumberSkillGameV2';
+import NumberSkillGameV3 from './pages/NumberSkillGameV3';
 import ReadingSkillGame from './pages/ReadingSkillGame';
 import ReadingSkillGameV2 from './pages/ReadingSkillGameV2';
 import NumberRecallGame from './pages/NumberRecallGame';
@@ -193,6 +194,7 @@ function App() {
                             <Route element={<RequireGameEnabled />}>
                                 <Route path="/games/number_skill"      element={<NumberSkillGame />} />
                                 <Route path="/games/number_skill_v2"   element={<NumberSkillGameV2 />} />
+                                <Route path="/games/number_skill_v3"   element={<NumberSkillGameV3 />} />
                                 <Route path="/games/reading_skill"     element={<ReadingSkillGame />} />
                                 <Route path="/games/reading_skill_v2"  element={<ReadingSkillGameV2 />} />
                                 <Route path="/games/number_recall"     element={<NumberRecallGame />} />

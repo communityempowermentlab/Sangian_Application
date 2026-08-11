@@ -27,6 +27,7 @@ const helpContentRoutes = require('./src/routes/helpContentRoutes');
 const { adminRouter: elementsAdminRoutes, publicRouter: elementsPublicRoutes } = require('./src/routes/elementsRoutes');
 const { adminRouter: elementPositionAdminRoutes, publicRouter: elementPositionPublicRoutes } = require('./src/routes/elementPositionRoutes');
 const { adminRouter: ankganitV2AdminRoutes, publicRouter: ankganitV2PublicRoutes } = require('./src/routes/ankganitV2ConfigRoutes');
+const { adminRouter: ankganitV3AdminRoutes, publicRouter: ankganitV3PublicRoutes } = require('./src/routes/ankganitV3ConfigRoutes');
 const numberRecallV2ConfigRoutes = require('./src/routes/numberRecallV2ConfigRoutes');
 const staffRoutes = require('./src/routes/staffRoutes');
 const requireModuleAccess = require('./src/middleware/requireModuleAccess');
@@ -151,6 +152,8 @@ app.use('/api/admin/element-positions',  elementPositionAdminRoutes);
 app.use('/api/public/element-positions', elementPositionPublicRoutes);
 app.use('/api/admin/ankganit-v2', ankganitV2AdminRoutes);
 app.use('/api/public/ankganit-v2', ankganitV2PublicRoutes);
+app.use('/api/admin/ankganit-v3', ankganitV3AdminRoutes);
+app.use('/api/public/ankganit-v3', ankganitV3PublicRoutes);
 app.use('/api', numberRecallV2ConfigRoutes);
 
 // Root endpoint

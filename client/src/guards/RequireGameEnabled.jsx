@@ -6,6 +6,7 @@ import { API_URL } from '../services/api';
 // Maps each /games/:slug route to the canonical game_key used by Test Configuration.
 const PATH_TO_GAME_KEY = {
     '/games/number_skill':      'numeracy_number_skill',
+    '/games/number_skill_v3':   'numeracy_number_skill_v3',
     '/games/reading_skill':     'literacy_reading_skill',
     '/games/reading_skill_v2':  'literacy_reading_skill_v2',
     '/games/number_recall':     'number_recall_lottery',

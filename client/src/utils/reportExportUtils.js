@@ -10,6 +10,7 @@ export const GAME_CATALOG = [
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher - Version 3', local: '', tag: '', color: '#0891b2' },
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: '',                 color: '#7c3aed' },
     { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
+    { key: 'numeracy_number_skill_v3',  icon: '🔢', title: 'Ankganit - Version 3', local: '', tag: '', color: '#7c3aed' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },
     { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2', local: '', tag: '', color: '#059669' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: '',                color: '#dc2626' },
@@ -137,7 +138,7 @@ export const generateReportData = (activeGame, detail) => {
                 const colLabel = c.toUpperCase();
                 qHeaders.push(colLabel);
                 qHeaders.push(`${colLabel} Time(s)`);
-                if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') {
+                if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2' && activeGame?.key !== 'numeracy_number_skill_v3') {
                     qHeaders.push(`${colLabel} Replays`);
                 }
             });
@@ -264,7 +265,7 @@ export const generateReportData = (activeGame, detail) => {
                     const qs = r.question_scores || {};
                     rowArr.push(qs[c] ?? '');
                     rowArr.push(qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');
-                    if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') {
+                    if (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2' && activeGame?.key !== 'numeracy_number_skill_v3') {
                         rowArr.push(qs[`${c}_replays`] ?? '');
                     }
                 });

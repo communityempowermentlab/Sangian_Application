@@ -16,7 +16,7 @@ const GAME_MAX_SCORES = {
   atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 22,
   rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 16,
   working_memory_herpher_v3: 25,
-  numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
+  numeracy_number_skill: 26, numeracy_number_skill_v2: 30, numeracy_number_skill_v3: 30, literacy_reading_skill: 22,
   literacy_reading_skill_v2: 4, // ASER adaptive flow: ordinal reading level 0-4 (Beginner..Story), not a point score
   cognitive_flex_chor: 57, triangle_rachna: 48,
 };
@@ -33,6 +33,7 @@ const CHILD_SCORE_COLS = {
   working_memory_herpher_v3: { field: 'score_herpher_v3',  sortId: 'herpher_v3' },
   numeracy_number_skill:     { field: 'score_ankganit',    sortId: 'ankganit' },
   numeracy_number_skill_v2:  { field: 'score_ankganit_v2', sortId: 'ankganit_v2' },
+  numeracy_number_skill_v3:  { field: 'score_ankganit_v3', sortId: 'ankganit_v3' },
   literacy_reading_skill:    { field: 'score_reading',     sortId: 'reading' },
   literacy_reading_skill_v2: { field: 'score_reading_v2',  sortId: 'reading_v2' },
   cognitive_flex_chor:       { field: 'score_chor',        sortId: 'chor' },

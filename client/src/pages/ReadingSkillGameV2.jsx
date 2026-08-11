@@ -16,7 +16,63 @@ const CONFIG = {
 
 // ASER 2014 Manual — Hindi toolkit content (Std I paragraph, Std II story,
 // letter bank, word bank). Adaptive flow below replaces V1's fixed 22-question walk.
-const ASSESSMENT_CRITERIA = ['skipWords', 'pronunciation', 'neededHelp'];
+
+// Paragraph and Story assessment questions — intentionally hardcoded (not
+// translation keys) so this stays scoped to V2 only, matching V2's established
+// convention for other new V2-only screen copy.
+const PARAGRAPH_ASSESSMENT_QUESTIONS = [
+  'Did the child read the paragraph like a string of words, rather than sentences?',
+  'Did the child read the paragraph haltingly and stop very often?',
+  'Did the child make more than 3 mistakes while reading the paragraph?'
+];
+const STORY_ASSESSMENT_QUESTIONS = [
+  'Did the child read the story like a string of words, rather than sentences?',
+  'Did the child read the story haltingly and stop very often?',
+  'Did the child make more than 3 mistakes while reading the story?'
+];
+
+// Worked examples shown behind the ⓘ hint icon for each question above —
+// helps the assessor pick Yes/No quickly and consistently.
+const PARAGRAPH_ASSESSMENT_HINTS = [
+  [
+    { description: 'If the child reads each word separately —', example: 'राम... स्कूल... जाता... है...', answer: 'No' },
+    { description: 'If the child reads naturally as a sentence —', example: 'राम स्कूल जाता है।', answer: 'Yes' },
+  ],
+  [
+    { description: 'If the child reads with frequent pauses or stops —', example: 'राम... [pause]... स्कूल... [long pause]... जाता है...', answer: 'Yes' },
+    { description: 'If the child reads continuously and smoothly, with normal pauses —', example: 'राम स्कूल जाता है।', answer: 'No' },
+  ],
+  [
+    { description: 'If the child makes more than 3 mistakes while reading the paragraph —', example: null, answer: 'Yes' },
+    { description: 'If the child makes 0–3 mistakes while reading the paragraph —', example: null, answer: 'No' },
+  ],
+];
+const STORY_ASSESSMENT_HINTS = [
+  [
+    { description: 'If the child reads each word separately —', example: 'राम... स्कूल... जाता... है...', answer: 'No' },
+    { description: 'If the child reads naturally as a sentence —', example: 'राम स्कूल जाता है।', answer: 'Yes' },
+  ],
+  [
+    { description: 'If the child reads with frequent pauses or stops —', example: 'राम... [pause]... स्कूल... [long pause]... जाता है...', answer: 'Yes' },
+    { description: 'If the child reads continuously and smoothly, with normal pauses —', example: 'राम स्कूल जाता है।', answer: 'No' },
+  ],
+  [
+    { description: 'If the child makes more than 3 mistakes while reading the story —', example: null, answer: 'Yes' },
+    { description: 'If the child makes 0–3 mistakes while reading the story —', example: null, answer: 'No' },
+  ],
+];
+
+// Lookup by pendingAssessTarget — 'paragraph' and 'paragraph_retry' share the same set.
+const ASSESSMENT_QUESTION_SETS = {
+  paragraph: PARAGRAPH_ASSESSMENT_QUESTIONS,
+  paragraph_retry: PARAGRAPH_ASSESSMENT_QUESTIONS,
+  story: STORY_ASSESSMENT_QUESTIONS,
+};
+const ASSESSMENT_HINT_SETS = {
+  paragraph: PARAGRAPH_ASSESSMENT_HINTS,
+  paragraph_retry: PARAGRAPH_ASSESSMENT_HINTS,
+  story: STORY_ASSESSMENT_HINTS,
+};
 
 const LETTERS_BANK = ['ल', 'प', 'स', 'क', 'ग', 'ड', 'ब', 'म', 'ट', 'झ'];
 const WORDS_BANK = ['लाल', 'दूध', 'पैर', 'तेल', 'किला', 'मोर', 'जूता', 'कुल', 'पानी', 'मौका'];
@@ -90,6 +146,7 @@ const ReadingSkillGameV2 = () => {
   // Mid-test Assessment Modal (reused verbatim for Paragraph/Story evaluation)
   const [showMidTestModal, setShowMidTestModal] = useState(false);
   const [midTestAnswers, setMidTestAnswers] = useState({});
+  const [expandedHint, setExpandedHint] = useState(null); // index of the open ⓘ hint panel, or null
 
   // Final Assessment Form State
   const [assessment, setAssessment] = useState({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
@@ -485,6 +542,7 @@ const ReadingSkillGameV2 = () => {
   const handleDoneReading = (target) => {
     setPendingAssessTarget(target);
     setMidTestAnswers({});
+    setExpandedHint(null);
     setShowMidTestModal(true);
   };
 
@@ -523,6 +581,9 @@ const ReadingSkillGameV2 = () => {
       finalizeAssessment(pass ? 'Story' : 'Paragraph', newPath, { storyResult: result });
     }
   };
+
+  const assessmentQuestionTexts = ASSESSMENT_QUESTION_SETS[pendingAssessTarget] || PARAGRAPH_ASSESSMENT_QUESTIONS;
+  const currentAssessmentHints = ASSESSMENT_HINT_SETS[pendingAssessTarget] || null;
 
   const isWordsFixedRetry = stage === 'words' && wordsSource === 'afterLetters';
   const markingBank = stage === 'letters'
@@ -699,7 +760,7 @@ const ReadingSkillGameV2 = () => {
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="rs-divider"></div>}
           {showGameIcon && <img src="/assets/images/reading_skill_v2/reading_skill_v2.jpg" alt="Reading Skill" className="rs-test-logo" />}
-          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}</span>}
+          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}{t('common.version2')}</span>}
         </div>
         <div className="rs-topbar-center">
           {screen === 'game' && (
@@ -949,31 +1010,62 @@ const ReadingSkillGameV2 = () => {
             </div>
 
             <div className="rs-assessment-criteria" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {ASSESSMENT_CRITERIA.map((criterion, index) => (
-                <div key={index} className={`rs-criterion-row ${midTestAnswers[index] ? 'complete' : ''}`}>
-                  <div className="rs-criterion-text">{t(`game.readingCriteria.${criterion}`)}</div>
-                  <div className="rs-criterion-buttons">
-                    <button
-                      className={`rs-criterion-btn rs-btn-yes ${midTestAnswers[index] === 'yes' ? 'selected' : ''}`}
-                      onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'yes'})}
-                    >
-                      {t('game.yesLabel')}
-                    </button>
-                    <button
-                      className={`rs-criterion-btn rs-btn-no ${midTestAnswers[index] === 'no' ? 'selected' : ''}`}
-                      onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'no'})}
-                    >
-                      {t('game.noLabel')}
-                    </button>
+              {assessmentQuestionTexts.map((questionText, index) => {
+                const hintExamples = currentAssessmentHints ? currentAssessmentHints[index] : null;
+                const isHintOpen = expandedHint === index;
+                return (
+                  <div key={index} className={`rs-criterion-row ${midTestAnswers[index] ? 'complete' : ''}`}>
+                    <div className="rs-criterion-text-row">
+                      <div className="rs-criterion-text">{questionText}</div>
+                      {hintExamples && (
+                        <button
+                          type="button"
+                          className={`rs-hint-btn ${isHintOpen ? 'active' : ''}`}
+                          aria-label="Show examples"
+                          onClick={() => setExpandedHint(isHintOpen ? null : index)}
+                        >
+                          ⓘ
+                        </button>
+                      )}
+                    </div>
+
+                    {hintExamples && isHintOpen && (
+                      <div className="rs-hint-panel">
+                        {hintExamples.map((ex, exIdx) => (
+                          <div key={exIdx} className="rs-hint-example">
+                            <div className="rs-hint-desc">{ex.description}</div>
+                            {ex.example && <div className="rs-hint-quote">“{ex.example}”</div>}
+                            <div className={`rs-hint-answer ${ex.answer === 'Yes' ? 'is-yes' : 'is-no'}`}>
+                              → Select {ex.answer}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="rs-criterion-buttons">
+                      <button
+                        className={`rs-criterion-btn rs-btn-yes ${midTestAnswers[index] === 'yes' ? 'selected' : ''}`}
+                        onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'yes'})}
+                      >
+                        {t('game.yesLabel')}
+                      </button>
+                      <button
+                        className={`rs-criterion-btn rs-btn-no ${midTestAnswers[index] === 'no' ? 'selected' : ''}`}
+                        onClick={() => setMidTestAnswers({...midTestAnswers, [index]: 'no'})}
+                      >
+                        {t('game.noLabel')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="rs-modal-footer" style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
               <button
                 className="rs-btn rs-btn-primary"
-                disabled={Object.keys(midTestAnswers).length !== ASSESSMENT_CRITERIA.length}
+                disabled={Object.keys(midTestAnswers).length !== assessmentQuestionTexts.length}
                 onClick={handleMidTestAssessmentComplete}
               >
                 {t('game.finishAssessment')}

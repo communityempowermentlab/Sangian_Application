@@ -6,6 +6,7 @@ import './AdminElements.css';
 import HerPherElements from '../components/HerPherElements';
 import AdminElementPositionManager from './AdminElementPositionManager';
 import AdminAnkganitV2Config from './AdminAnkganitV2Config';
+import AdminAnkganitV3Config from './AdminAnkganitV3Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 import RachnaElements from '../components/RachnaElements';
 
@@ -277,6 +278,12 @@ export default function AdminElements() {
                 {activeTest === 'numeracy_number_skill_v2' && (
                     <div className="elements-section">
                         <AdminAnkganitV2Config />
+                    </div>
+                )}
+
+                {activeTest === 'numeracy_number_skill_v3' && (
+                    <div className="elements-section">
+                        <AdminAnkganitV3Config />
                     </div>
                 )}
 

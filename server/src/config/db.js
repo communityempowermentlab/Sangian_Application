@@ -385,6 +385,93 @@ const initDb = async () => {
       );
     }
 
+    // ── Ankganit Version 3 (independent clone of V2 — own tables, own FK scope) ─
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ankganit_v3_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        minimum_correct INT DEFAULT 0,
+        evaluation_type ENUM('manual', 'auto_subtraction', 'auto_division') NOT NULL DEFAULT 'manual',
+        display_order INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ankganit_v3_questions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category_id INT NOT NULL,
+        text VARCHAR(255) NOT NULL,
+        title VARCHAR(255),
+        correct_answer INT,
+        remainder INT,
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES ankganit_v3_categories(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Seed Ankganit V3 data if empty (same content as V2 — independent copy)
+    const [catRowsV3] = await connection.query('SELECT COUNT(*) as count FROM ankganit_v3_categories');
+    if (catRowsV3[0].count === 0) {
+      await connection.query(`
+        INSERT INTO ankganit_v3_categories (id, name, minimum_correct, evaluation_type, display_order) VALUES
+        (1, 'Number Recognition (1–9)', 4, 'manual', 1),
+        (2, 'Number Recognition (11–99)', 5, 'manual', 2),
+        (3, 'Two-Digit Subtraction', 4, 'auto_subtraction', 3),
+        (4, 'One-Digit Divisor (Three-Digit Dividend)', 2, 'auto_division', 4)
+      `);
+
+      const v3Questions = [
+        // Category 1: 8 questions
+        [1, 'Identify number 3', '3', 3, null, 1],
+        [1, 'Identify number 7', '7', 7, null, 2],
+        [1, 'Identify number 1', '1', 1, null, 3],
+        [1, 'Identify number 4', '4', 4, null, 4],
+        [1, 'Identify number 8', '8', 8, null, 5],
+        [1, 'Identify number 9', '9', 9, null, 6],
+        [1, 'Identify number 5', '5', 5, null, 7],
+        [1, 'Identify number 2', '2', 2, null, 8],
+
+        // Category 2: 10 questions
+        [2, 'Identify number 65', '65', 65, null, 1],
+        [2, 'Identify number 38', '38', 38, null, 2],
+        [2, 'Identify number 92', '92', 92, null, 3],
+        [2, 'Identify number 23', '23', 23, null, 4],
+        [2, 'Identify number 47', '47', 47, null, 5],
+        [2, 'Identify number 72', '72', 72, null, 6],
+        [2, 'Identify number 56', '56', 56, null, 7],
+        [2, 'Identify number 87', '87', 87, null, 8],
+        [2, 'Identify number 29', '29', 29, null, 9],
+        [2, 'Identify number 11', '11', 11, null, 10],
+
+        // Category 3: 8 questions
+        [3, '51 - 35', '51,35', 16, null, 1],
+        [3, '67 - 48', '67,48', 19, null, 2],
+        [3, '84 - 49', '84,49', 35, null, 3],
+        [3, '73 - 36', '73,36', 37, null, 4],
+        [3, '56 - 37', '56,37', 19, null, 5],
+        [3, '31 - 13', '31,13', 18, null, 6],
+        [3, '45 - 18', '45,18', 27, null, 7],
+        [3, '43 - 24', '43,24', 19, null, 8],
+
+        // Category 4: 4 questions
+        [4, '918 ÷ 7', '918,7', 131, 1, 1],
+        [4, '769 ÷ 6', '769,6', 128, 1, 2],
+        [4, '987 ÷ 8', '987,8', 123, 3, 3],
+        [4, '513 ÷ 4', '513,4', 128, 1, 4]
+      ];
+
+      await connection.query(
+        'INSERT INTO ankganit_v3_questions (category_id, text, title, correct_answer, remainder, display_order) VALUES ?',
+        [v3Questions]
+      );
+    }
+
     // ── Automated Testing ──────────────────────────────────────────────────────
     
     // ── Number Recall V2 (Lottery Ka Ticket - V2) ──────────────────────────────
@@ -1157,6 +1244,7 @@ const initDb = async () => {
       'working_memory_herpher_v3': { path: '/assets/images/her_pher_v3/her_pher_v3.jpg', name: 'her_pher_v3.jpg' },
       'numeracy_number_skill': { path: '/assets/images/number_skill/number_skill.jpg', name: 'number_skill.jpg' },
       'numeracy_number_skill_v2': { path: '/assets/images/number_skill_v2/number_skill.jpg', name: 'number_skill.jpg' },
+      'numeracy_number_skill_v3': { path: '/assets/images/number_skill_v3/number_skill.jpg', name: 'number_skill.jpg' },
       'literacy_reading_skill': { path: '/assets/images/reading_skill/reading_skill.jpg', name: 'reading_skill.jpg' },
       'literacy_reading_skill_v2': { path: '/assets/images/reading_skill_v2/reading_skill_v2.jpg', name: 'reading_skill_v2.jpg' },
       'cognitive_flex_chor': { path: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg', name: 'chor_machaye_shor.jpg' },

@@ -542,7 +542,7 @@ const AdminReports = () => {
                                                             <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>ITEM REPLAYS</th>
                                                             <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>RESP REPLAYS</th>
                                                         </>
-                                                    ) : (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') ? (
+                                                    ) : (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2' && activeGame?.key !== 'numeracy_number_skill_v3') ? (
                                                         <th style={{ ...S.th, textAlign: 'center', background: bg, minWidth: 52 }}>REPLAYS</th>
                                                     ) : null}
                                                 </React.Fragment>
@@ -745,7 +745,7 @@ const AdminReports = () => {
                                                                     <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_item_replays`] ?? '—'}</td>
                                                                     <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
                                                                 </>
-                                                            ) : (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2') ? (
+                                                            ) : (activeGame?.key !== 'numeracy_number_skill' && activeGame?.key !== 'numeracy_number_skill_v2' && activeGame?.key !== 'numeracy_number_skill_v3') ? (
                                                                 <td style={{ ...S.tdCenter, color: '#6d28d9' }}>{row.question_scores[`${c}_replays`] ?? '—'}</td>
                                                             ) : null}
                                                         </React.Fragment>

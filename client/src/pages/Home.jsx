@@ -33,6 +33,7 @@ const Home = () => {
             'working_memory_herpher_v3': '/assets/images/her_pher_v3/her_pher_v3.jpg',
             'numeracy_number_skill': '/assets/images/number_skill/number_skill.jpg',
             'numeracy_number_skill_v2': '/assets/images/number_skill_v2/number_skill.jpg',
+            'numeracy_number_skill_v3': '/assets/images/number_skill_v3/number_skill.jpg',
             'literacy_reading_skill': '/assets/images/reading_skill/reading_skill.jpg',
             'literacy_reading_skill_v2': '/assets/images/reading_skill_v2/reading_skill_v2.jpg',
             'cognitive_flex_chor': '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg',
@@ -168,6 +169,19 @@ const Home = () => {
             startUrl: "/games/number_skill_v2",
             image: getElementImage('numeracy_number_skill_v2'),
             shortTitle: t('home.games.numeracy.title') + t('common.version2'),
+            local: t('home.games.numeracy.local'),
+            tag: t('home.games.numeracy.tag'),
+            tagClass: "test-tag test-tag-academic"
+        },
+        {
+            id: 602,
+            gameKey: 'numeracy_number_skill_v3',
+            title: t('home.games.numeracy.title') + t('common.version3'),
+            subtitle: t('home.games.numeracy.sub'),
+            desc: t('home.games.numeracy.desc'),
+            startUrl: "/games/number_skill_v3",
+            image: getElementImage('numeracy_number_skill_v3'),
+            shortTitle: t('home.games.numeracy.title') + t('common.version3'),
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"

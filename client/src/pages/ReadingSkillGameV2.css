@@ -513,8 +513,61 @@
   margin-bottom: 12px;
 }
 .rs-criterion-row.complete { border-color: #10b981; }
-.rs-criterion-text { font-weight: 600; margin-bottom: 12px; font-size: 0.95rem; }
+.rs-criterion-text { font-weight: 600; font-size: 0.95rem; }
+.rs-criterion-text-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .rs-criterion-buttons { display: flex; gap: 12px; }
+
+/* ── Assessment hint (ⓘ) — worked examples for a question, shown on demand ─── */
+.rs-hint-btn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.rs-hint-btn:hover { background: #cbd5e1; }
+.rs-hint-btn.active { background: var(--primary); color: white; transform: rotate(180deg); }
+
+.rs-hint-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: -2px 0 14px;
+  padding: 12px 14px;
+  background: white;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 10px;
+  animation: rsHintFadeIn 0.15s ease;
+}
+@keyframes rsHintFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rs-hint-example { padding-bottom: 8px; }
+.rs-hint-example:not(:last-child) { border-bottom: 1px solid #f1f5f9; }
+.rs-hint-desc { font-size: 0.85rem; color: #475569; margin-bottom: 4px; }
+.rs-hint-quote {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #1e293b;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+.rs-hint-answer { font-size: 0.8rem; font-weight: 700; }
+.rs-hint-answer.is-yes { color: #dc2626; }
+.rs-hint-answer.is-no { color: #059669; }
 .rs-criterion-btn {
   flex: 1;
   padding: 10px 20px;

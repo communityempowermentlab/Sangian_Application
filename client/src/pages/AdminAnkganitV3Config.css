@@ -1,0 +1,67 @@
+.ankganit-config-container {
+    margin-top: 20px;
+}
+
+.edit-cat-form label {
+    font-size: 0.9rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.admin-btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #4a5568;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.admin-btn-icon:hover {
+    background-color: #edf2f7;
+}
+
+.badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-blue {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.badge-gray {
+    background-color: #edf2f7;
+    color: #4a5568;
+}
+
+.admin-input,
+.admin-select {
+    padding: 10px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1f2937;
+    background-color: #fafafa;
+    transition: all 0.2s ease-in-out;
+    outline: none;
+}
+
+.admin-input:focus,
+.admin-select:focus {
+    border-color: #9ca3af;
+    background-color: #ffffff;
+}
+
+.admin-table input.admin-input {
+    width: 100%;
+    box-sizing: border-box;
+}
