@@ -497,6 +497,17 @@
   flex: 0 0 120px;
 }
 
+.ana-hbar-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  color: #94a3b8;
+  cursor: help;
+  font-size: 11px;
+}
+.ana-hbar-hint:hover { color: var(--accent, #4f46e5); }
+
 .ana-hbar-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
 
 .ana-hbar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }

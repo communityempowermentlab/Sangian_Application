@@ -20,8 +20,17 @@ const fmtMins = (n) => (n == null ? '—' : `${fmt(n, 1)} min`);
 
 const GENDER_LABELS = { male: 'Male', female: 'Female', other: 'Other', prefer_not_to_say: 'Prefer not to say', unknown: 'Unknown' };
 const GENDER_COLORS = { male: '#3b82f6', female: '#ec4899', other: '#8b5cf6', prefer_not_to_say: '#94a3b8', unknown: '#cbd5e1' };
-const AGE_LABELS    = { '7-11': '7–11 yrs', '12-16': '12–16 yrs' };
-const AGE_COLORS    = { '7-11': '#f59e0b', '12-16': '#0891b2' };
+// One entry per registration year (7-16), matching the Age filter's single-year
+// bands. Colors step through a single-hue ordinal ramp (light→dark = young→old)
+// rather than 10 unrelated hues — distinct categorical colors don't scale past
+// ~8 series, and age is inherently ordered, so a light-to-dark sweep is both the
+// visually correct encoding and the only one that stays legible at this count.
+// Every use of these colors (donut, legend, table) always pairs the color with
+// a text label, so identity is never carried by color alone.
+const AGE_YEARS  = Array.from({ length: 10 }, (_, i) => 7 + i);
+const AGE_RAMP   = ['#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b'];
+const AGE_LABELS = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, `${y} yrs`]));
+const AGE_COLORS = Object.fromEntries(AGE_YEARS.map((y, i) => [`${y}`, AGE_RAMP[i]]));
 
 function KpiCard({ icon, label, value, sub, color = '#4f46e5', onClick, info, showKpiInfoIcon }) {
   return (

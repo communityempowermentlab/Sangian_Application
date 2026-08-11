@@ -94,10 +94,13 @@ const ASSESS_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#
 
 const EMPTY_FILTERS = { startDate: '', endDate: '', genders: [], statuses: [], childId: '', gameKeys: [], groupIds: [], ageGroups: [], attempts: [] };
 
-const AGE_CHIP_OPTIONS = [
-  { key: '7-11',  label: '7-11 yrs',  color: '#f59e0b' },
-  { key: '12-16', label: '12-16 yrs', color: '#f59e0b' },
-];
+// One chip per registration year (7-16) — each covers exactly one completed
+// year of age (see AGE_YEARS/AGE_MAP in analysisController.js for the exact
+// day-boundary definition this mirrors).
+const AGE_CHIP_OPTIONS = Array.from({ length: 10 }, (_, i) => {
+  const year = 7 + i;
+  return { key: `${year}`, label: `${year}y`, color: '#f59e0b' };
+});
 
 // Attempt number is per-test (the Nth time a child played that specific
 // test) — same meaning as the "Attempt" column on Top Active Children and
@@ -593,11 +596,14 @@ function Legend({ items = [] }) {
   );
 }
 
-function HBar({ label, value, maxValue, color, badge, labelWidth }) {
+function HBar({ label, value, maxValue, color, badge, labelWidth, title }) {
   const pct = maxValue > 0 ? Math.min(Math.round((value / maxValue) * 100), 100) : 0;
   return (
     <div className="ana-hbar-row">
-      <div className="ana-hbar-label" style={labelWidth ? { flex: `0 0 ${labelWidth}px` } : undefined}>{label}</div>
+      <div className="ana-hbar-label" style={labelWidth ? { flex: `0 0 ${labelWidth}px` } : undefined}>
+        {label}
+        {title && <span className="ana-hbar-hint" title={title}>ⓘ</span>}
+      </div>
       <div className="ana-hbar-track">
         <div className="ana-hbar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
@@ -1064,10 +1070,13 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
     attemptBuckets = {}, categoryBreakdown = [],
   } = data;
 
-  // scoreDist is an ordered array of [label, count] pairs from the API — not a
-  // plain object, since JS would otherwise reorder pure-integer-looking keys
-  // (e.g. "21") ahead of range keys (e.g. "1-10"), scrambling bucket order.
+  // scoreDist is an ordered array of [label, count, description?] tuples from the
+  // API — not a plain object, since JS would otherwise reorder pure-integer-looking
+  // keys (e.g. "21") ahead of range keys (e.g. "1-10"), scrambling bucket order.
   const scoreEntries   = scoreDist || [];
+  // Named-level games (e.g. Padh ke Batao V2's Beginner/Letters/Word/.../Story) get
+  // a wider label column so the level name doesn't wrap/clip like a bare number would.
+  const scoreHasNamedLevels = scoreEntries.some(([label]) => isNaN(Number(label)));
   const maxScoreCount  = Math.max(...scoreEntries.map(([, v]) => Number(v) || 0), 1);
   const totalScored    = scoreEntries.reduce((s, [, v]) => s + (Number(v) || 0), 0);
 
@@ -1182,8 +1191,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
       </div>
 
       <div className="ana-grid-3">
-        <Card 
-          title="Score Distribution"
+        <Card
+          title={gameKey === 'literacy_reading_skill_v2' ? 'Level Wise Distribution' : 'Score Distribution'}
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Score Distribution",
@@ -1196,9 +1205,10 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             {totalScored === 0
               ? <div className="ana-chart-empty">No scored sessions for selected filters</div>
               : <>
-                  {scoreEntries.map(([range, count]) => (
+                  {scoreEntries.map(([range, count, description]) => (
                     <HBar key={range} label={range} value={Number(count)} maxValue={maxScoreCount} color={gameMeta.color}
-                      labelWidth={56}
+                      labelWidth={scoreHasNamedLevels ? 92 : 56}
+                      title={description}
                       badge={`${Math.round((Number(count) / totalScored) * 100)}%`} />
                   ))}
                   <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>

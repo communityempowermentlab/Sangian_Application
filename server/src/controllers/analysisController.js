@@ -33,11 +33,11 @@ const CUSTOM_SCORE_BUCKETS = {
   // ASER adaptive flow: score is an ordinal reading level, not a point count —
   // one discrete bucket per level (0=Beginner, 1=Letter, 2=Word, 3=Paragraph, 4=Story).
   literacy_reading_skill_v2: [
-    { lo: 0, hi: 0 },
-    { lo: 1, hi: 1 },
-    { lo: 2, hi: 2 },
-    { lo: 3, hi: 3 },
-    { lo: 4, hi: null }, // open-ended — catches any score at/above the max (Story)
+    { lo: 0, hi: 0,    label: 'Beginner',  description: 'Unable to identify letters consistently.' },
+    { lo: 1, hi: 1,    label: 'Letters',   description: 'Can recognize and read individual letters.' },
+    { lo: 2, hi: 2,    label: 'Words',     description: 'Can read simple words accurately.' },
+    { lo: 3, hi: 3,    label: 'Paragraph', description: 'Can read a short paragraph with understanding.' },
+    { lo: 4, hi: null, label: 'Story',     description: 'Can read a complete story fluently and accurately.' }, // open-ended — catches any score at/above the max
   ],
   numeracy_number_skill_v2: [
     { lo: 0,  hi: 0 },
@@ -141,17 +141,20 @@ function buildBucketDefs(gameKey, maxScore) {
     lo: i * bucketSize,
     hi: i === 4 ? null : (i + 1) * bucketSize - 1,
   }));
-  return raw.map(({ lo, hi }) => {
+  return raw.map(({ lo, hi, label: customLabel, description }) => {
     const effectiveHi = hi === null ? maxScore : hi;
-    return { lo, hi, label: lo === effectiveHi ? `${lo}` : `${lo}-${effectiveHi}` };
+    const label = customLabel || (lo === effectiveHi ? `${lo}` : `${lo}-${effectiveHi}`);
+    return { lo, hi, label, description: description || null };
   });
 }
 
-// Age group label → [lo, hi] (registration range is 7–16). Boundaries are
-// exact-day, not calendar "completed years": band "lo-hi" covers
-// (dob + (lo-1) years, dob + hi years] — starts the day after the child's
-// (lo-1)th birthday and ends on their hi-th birthday itself.
-const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
+// Age bands — one per registration year (7–16). Boundaries are exact-day, not
+// calendar "completed years": band "N" covers (dob + (N-1) years, dob + N years]
+// — starts the day after the child's (N-1)th birthday and ends on their Nth
+// birthday itself. AGE_YEARS is the single source of truth AGE_MAP and
+// AGE_BAND_CASE are both derived from, so they can't drift out of sync.
+const AGE_YEARS = Array.from({ length: 10 }, (_, i) => 7 + i); // [7, 8, ..., 16]
+const AGE_MAP = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, [y, y]]));
 
 // Games whose saved_state.allScores[] entries carry a per-question `category`
 // tag — only these support the question-category breakdown. Her Pher tags
@@ -162,10 +165,11 @@ const AGE_MAP = { '7-11': [7, 11], '12-16': [12, 16] };
 const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_memory_herpher_v2', 'triangle_rachna']);
 
 // Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
-// as a GROUP BY key. Kept in sync manually with AGE_MAP above.
+// as a GROUP BY key — generated from AGE_YEARS so it can't drift out of sync.
 const AGE_BAND_CASE = `CASE
-  WHEN DATE_ADD(c.dob, INTERVAL 6 YEAR)  < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL 11 YEAR) THEN '7-11'
-  WHEN DATE_ADD(c.dob, INTERVAL 11 YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL 16 YEAR) THEN '12-16'
+  ${AGE_YEARS.map(y =>
+    `WHEN DATE_ADD(c.dob, INTERVAL ${y - 1} YEAR) < CURDATE() AND CURDATE() <= DATE_ADD(c.dob, INTERVAL ${y} YEAR) THEN '${y}'`
+  ).join('\n  ')}
   ELSE NULL END`;
 
 // Score as a percentage of that game's own max score — lets Overall V2 compare
@@ -437,7 +441,7 @@ exports.getGameAnalytics = async (req, res) => {
     // Re-assert bucket order explicitly — plain-integer-looking keys (e.g. "0",
     // "21") get reordered ahead of range keys (e.g. "1-10") by JS object key
     // sort semantics, which would scramble the display order of custom buckets.
-    const scoreDist = bucketDefs.map(({ label }) => [label, Number(scoreDistRaw[label]) || 0]);
+    const scoreDist = bucketDefs.map(({ label, description }) => [label, Number(scoreDistRaw[label]) || 0, description]);
 
     // Quit reasons
     const qrWhere = toWhere([...clauses, "gs.quit_reason IS NOT NULL AND gs.quit_reason != ''"]);
