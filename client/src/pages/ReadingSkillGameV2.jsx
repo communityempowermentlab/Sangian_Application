@@ -122,6 +122,9 @@ const ReadingSkillGameV2 = () => {
   const [selectedWords, setSelectedWords] = useState([]); // first Word attempt: [{ text, correct }]
   const [selectedWordsRetry, setSelectedWordsRetry] = useState([]); // Word retry (after Letters pass)
   const [selectedLetters, setSelectedLetters] = useState([]);
+  const [wordsTimeTaken, setWordsTimeTaken] = useState(null); // seconds spent marking each stage — Report's Duration column
+  const [wordsRetryTimeTaken, setWordsRetryTimeTaken] = useState(null);
+  const [lettersTimeTaken, setLettersTimeTaken] = useState(null);
   const [paragraphResult, setParagraphResult] = useState(null); // { pass, ssrAnswers, timeTaken }
   const [paragraphRetryResult, setParagraphRetryResult] = useState(null);
   const [storyResult, setStoryResult] = useState(null);
@@ -283,6 +286,9 @@ const ReadingSkillGameV2 = () => {
     setSelectedWords(saved.selectedWords || []);
     setSelectedWordsRetry(saved.selectedWordsRetry || []);
     setSelectedLetters(saved.selectedLetters || []);
+    setWordsTimeTaken(saved.wordsTimeTaken ?? null);
+    setWordsRetryTimeTaken(saved.wordsRetryTimeTaken ?? null);
+    setLettersTimeTaken(saved.lettersTimeTaken ?? null);
     setParagraphResult(saved.paragraphResult || null);
     setParagraphRetryResult(saved.paragraphRetryResult || null);
     setStoryResult(saved.storyResult || null);
@@ -305,6 +311,9 @@ const ReadingSkillGameV2 = () => {
     setSelectedWords([]);
     setSelectedWordsRetry([]);
     setSelectedLetters([]);
+    setWordsTimeTaken(null);
+    setWordsRetryTimeTaken(null);
+    setLettersTimeTaken(null);
     setParagraphResult(null);
     setParagraphRetryResult(null);
     setStoryResult(null);
@@ -404,6 +413,7 @@ const ReadingSkillGameV2 = () => {
   const buildSavedState = (extra = {}) => ({
     stage, selectedParagraphIndex, wordsSource,
     selectedWords, selectedWordsRetry, selectedLetters,
+    wordsTimeTaken, wordsRetryTimeTaken, lettersTimeTaken,
     paragraphResult, paragraphRetryResult, storyResult,
     path, finalLevel, finalScore,
     timerSeconds, qTimer, pauses,
@@ -623,10 +633,12 @@ const ReadingSkillGameV2 = () => {
       .map(text => ({ text, correct: marks[text] === 'correct' }));
     const correctCount = items.filter(i => i.correct).length;
     const pass = correctCount >= 4;
+    const timeTaken = qTimer;
 
     if (stage === 'words') {
       const isRetry = wordsSource === 'afterLetters';
-      if (isRetry) setSelectedWordsRetry(items); else setSelectedWords(items);
+      if (isRetry) { setSelectedWordsRetry(items); setWordsRetryTimeTaken(timeTaken); }
+      else { setSelectedWords(items); setWordsTimeTaken(timeTaken); }
       const stageName = isRetry ? 'words_retry' : 'words';
       const newPath = [...path, stageName];
       setPath(newPath);
@@ -642,10 +654,11 @@ const ReadingSkillGameV2 = () => {
         setSelectedTexts([]);
         setQTimer(0);
       } else {
-        finalizeAssessment('Letter', newPath, { selectedWordsRetry: items });
+        finalizeAssessment('Letter', newPath, { selectedWordsRetry: items, wordsRetryTimeTaken: timeTaken });
       }
     } else if (stage === 'letters') {
       setSelectedLetters(items);
+      setLettersTimeTaken(timeTaken);
       const newPath = [...path, 'letters'];
       setPath(newPath);
 
@@ -656,7 +669,7 @@ const ReadingSkillGameV2 = () => {
         setSelectedTexts([]);
         setQTimer(0);
       } else {
-        finalizeAssessment('Beginner', newPath, { selectedLetters: items });
+        finalizeAssessment('Beginner', newPath, { selectedLetters: items, lettersTimeTaken: timeTaken });
       }
     }
   };
@@ -760,12 +773,15 @@ const ReadingSkillGameV2 = () => {
     else if (stageName === 'words') {
       detail = selectedWords.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
       pass = selectedWords.filter(w => w.correct).length >= 4;
+      duration = wordsTimeTaken;
     } else if (stageName === 'words_retry') {
       detail = selectedWordsRetry.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
       pass = selectedWordsRetry.filter(w => w.correct).length >= 4;
+      duration = wordsRetryTimeTaken;
     } else if (stageName === 'letters') {
       detail = selectedLetters.map(l => `${l.text}${l.correct ? '✓' : '✗'}`).join('  ');
       pass = selectedLetters.filter(l => l.correct).length >= 4;
+      duration = lettersTimeTaken;
     }
     return (
       <tr key={idx}>
@@ -778,6 +794,7 @@ const ReadingSkillGameV2 = () => {
   };
 
   const headerScoreDisplay = finalScore != null ? finalScore : path.length;
+  const maxLevelScore = Math.max(...Object.values(LEVELS));
 
   return (
     <div className="rs-app rs-app-v2">
@@ -900,41 +917,49 @@ const ReadingSkillGameV2 = () => {
             </div>
 
             <div className="rs-mark-grid">
-              {markingBank.map((text) => {
-                const isSelected = isWordsFixedRetry || selectedTexts.includes(text);
-                const isCapLocked = !isSelected && !isWordsFixedRetry && selectedTexts.length >= 5;
-                const isMarked = text in marks;
-                return (
-                  <div
-                    key={text}
-                    className={`rs-mark-tile ${isSelected ? 'rs-mark-tile-selected' : ''} ${isCapLocked ? 'rs-mark-tile-locked' : ''} ${isMarked ? 'rs-mark-tile-marked' : ''}`}
-                    onClick={() => toggleTileSelection(text)}
-                    style={{ cursor: (isWordsFixedRetry || isMarked) ? 'default' : 'pointer' }}
-                  >
-                    <div className={`rs-mark-tile-text ${stage === 'letters' ? 'rs-mark-tile-text-letter' : ''}`}>{text}</div>
-                    {/* Neutral toggle — same styling either way so the child gets no
-                        colour/label cue about which option means correct vs incorrect;
-                        only the assessor needs to know which is which. Stays switchable
-                        after marking (mis-tap recovery) — only the tile itself locks. */}
-                    <div className={`rs-mark-toggle-row ${isSelected ? 'visible' : ''}`}>
-                      <button
-                        aria-label="Mark as correct"
-                        className={`rs-mark-toggle-btn ${marks[text] === 'correct' ? 'active' : ''}`}
-                        onClick={(e) => { e.stopPropagation(); markTile(text, true); }}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        aria-label="Mark as incorrect"
-                        className={`rs-mark-toggle-btn ${marks[text] === 'incorrect' ? 'active' : ''}`}
-                        onClick={(e) => { e.stopPropagation(); markTile(text, false); }}
-                      >
-                        ✗
-                      </button>
-                    </div>
+              {/* Full 10-item Word/Letter banks lay out 4 / 2 / 4 per row (row 2
+                  centered); anything else (e.g. the 5-item fixed Word retry bank)
+                  falls back to a single centered row. */}
+              {(markingBank.length === 10 ? [markingBank.slice(0, 4), markingBank.slice(4, 6), markingBank.slice(6, 10)] : [markingBank])
+                .map((row, rowIdx) => (
+                  <div className="rs-mark-row" key={rowIdx}>
+                    {row.map((text) => {
+                      const isSelected = isWordsFixedRetry || selectedTexts.includes(text);
+                      const isCapLocked = !isSelected && !isWordsFixedRetry && selectedTexts.length >= 5;
+                      const isMarked = text in marks;
+                      return (
+                        <div
+                          key={text}
+                          className={`rs-mark-tile ${isSelected ? 'rs-mark-tile-selected' : ''} ${isCapLocked ? 'rs-mark-tile-locked' : ''} ${isMarked ? 'rs-mark-tile-marked' : ''}`}
+                          onClick={() => toggleTileSelection(text)}
+                          style={{ cursor: (isWordsFixedRetry || isMarked) ? 'default' : 'pointer' }}
+                        >
+                          <div className={`rs-mark-tile-text ${stage === 'letters' ? 'rs-mark-tile-text-letter' : ''}`}>{text}</div>
+                          {/* Neutral toggle — same styling either way so the child gets no
+                              colour/label cue about which option means correct vs incorrect;
+                              only the assessor needs to know which is which. Stays switchable
+                              after marking (mis-tap recovery) — only the tile itself locks. */}
+                          <div className={`rs-mark-toggle-row ${isSelected ? 'visible' : ''}`}>
+                            <button
+                              aria-label="Mark as correct"
+                              className={`rs-mark-toggle-btn ${marks[text] === 'correct' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markTile(text, true); }}
+                            >
+                              ✓
+                            </button>
+                            <button
+                              aria-label="Mark as incorrect"
+                              className={`rs-mark-toggle-btn ${marks[text] === 'incorrect' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markTile(text, false); }}
+                            >
+                              ✗
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                ))}
             </div>
 
             <div className="rs-response-buttons">
@@ -978,6 +1003,14 @@ const ReadingSkillGameV2 = () => {
                         {i < path.length - 1 && <span className="rs-path-arrow">→</span>}
                       </React.Fragment>
                     ))}
+                  </div>
+                  <div className="rs-chips" style={{ justifyContent: 'center', marginTop: 14 }}>
+                    <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>
+                      🏆 Score: {finalScore ?? '—'} / {maxLevelScore}
+                    </span>
+                    <span className="rs-chip" style={{ color: '#374151', background: '#f3f4f6', border: '1px solid #d1d5db' }}>
+                      ⏱ Game Time: {formatTime(timerSeconds)}
+                    </span>
                   </div>
                 </div>
               )}

@@ -921,16 +921,28 @@
 .rs-paragraph-card.dimmed { opacity: 0.4; filter: grayscale(0.7); }
 
 /* ─── ASER Word/Letter marking grid (V2 adaptive flow) ──────────────────── */
+/* Rows instead of a flat grid so the 10-item Word/Letter banks can lay out
+   4 / 2 / 4 (row 2 centered) — see the markingBank chunking in the JSX. */
 .rs-mark-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   width: 100%;
   max-width: 1200px;
   margin: 16px auto;
 }
+.rs-mark-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+/* Percentage basis (not a fixed px) so 4 tiles + 3 gaps always sum to exactly
+   100% of the row at any viewport width — row 2's 2 tiles share the same
+   per-tile width and simply center with space either side. */
+.rs-mark-row .rs-mark-tile { flex: 0 0 calc((100% - 48px) / 4); }
 @media (max-width: 680px) {
-  .rs-mark-grid { grid-template-columns: repeat(2, 1fr); }
+  .rs-mark-row { flex-wrap: wrap; }
+  .rs-mark-row .rs-mark-tile { flex-basis: 45%; }
 }
 .rs-mark-tile {
   box-sizing: border-box;
