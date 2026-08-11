@@ -289,8 +289,7 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: auto; /* anchors the primary action (Done Reading / Finish Assessment) to the bottom of the screen */
-  padding-top: 20px;
+  margin-top: 20px;
   flex-wrap: wrap;
 }
 
@@ -946,7 +945,10 @@
   transition: border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
 }
 .rs-mark-tile:not(.rs-mark-tile-locked):hover { border-color: #c7d2fe; }
-.rs-mark-tile-text { font-size: 2.6rem; font-weight: 800; text-align: center; color: #1e293b; line-height: 1.2; }
+.rs-mark-tile-text { font-size: 3.4rem; font-weight: 800; text-align: center; color: #1e293b; line-height: 1.2; }
+/* Letters are single glyphs — pushed even larger than Words so they're
+   unmistakably clear for early readers. */
+.rs-mark-tile-text-letter { font-size: 5rem; }
 
 /* Toggle row is always present (fixed height) so tiles never resize/jank on
    selection — just hidden until the tile is picked. */
@@ -986,6 +988,9 @@
 .rs-mark-tile-selected { border-color: #4f46e5; background: #eef2ff; }
 /* Tile un-picked but the 5-item cap is already reached — not selectable */
 .rs-mark-tile-locked { opacity: 0.4; filter: grayscale(0.6); pointer-events: none; }
+/* Tile already marked Correct/Incorrect — locked in, can no longer be
+   unselected (Yes/No itself stays switchable via the toggle buttons above). */
+.rs-mark-tile-marked:hover { border-color: #4f46e5; }
 
 /* ─── Final reading-level summary (V2 adaptive flow) ─────────────────────── */
 .rs-level-badge {
@@ -998,3 +1003,51 @@
 .rs-level-badge .level-name { font-size: 2rem; font-weight: 800; }
 .rs-path-trail { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 16px 0 0; }
 .rs-path-arrow { color: #94a3b8; font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V2-ONLY OVERRIDES — scoped under .rs-app-v2 (V2's root element carries this
+   class in addition to the shared .rs-app).
+
+   IMPORTANT: this file was cloned from ReadingSkillGame.css and reuses the
+   exact same "rs-*" class names. Since both V1 and V2 routes are bundled into
+   ONE stylesheet, an unscoped change to a shared class name here would apply
+   to V1's elements too whenever V1 happens to be mounted — either because a
+   later-in-bundle value wins the cascade (silently changing V1's behavior:
+   this happened with .rs-response-buttons' margin-top before this section
+   existed), or, if the property is merely omitted here, V1's own value simply
+   persists everywhere and this rule has no effect at all (this happened with
+   .rs-question-card's align-items). Every rule below is deliberately scoped
+   under `.rs-app-v2` — extra specificity guarantees it wins for V2 only, and
+   it can never match anything inside V1's DOM (V1's root never has this
+   class), regardless of import/bundle order. Do not "simplify" these back to
+   bare selectors. ─────────────────────────────────────────────────────── */
+
+.rs-app-v2 .rs-main {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Story screen (the only content .rs-question-card renders in V2 — see
+   ReadingSkillGameV2.jsx's fitStoryText): a real-device report showed some
+   tablets have no vertical scroll gesture available, so the Story text can't
+   rely on overflow-y:auto to reach the end. Instead, JS shrinks the font
+   in fitStoryText() until the text's natural height fits the card, so
+   nothing ever overflows in the first place. `overflow: hidden` here is a
+   belt-and-suspenders backstop for the first paint before that effect runs
+   (useLayoutEffect fires pre-paint, so this should rarely if ever be
+   visible) and for the floor-font-size edge case on unusually short cards.
+   `margin: auto 0` on .rs-question-content keeps it vertically centered
+   for this now-always-fitting content, same as it does on shorter screens
+   (paragraph/words/letters use their own separate elements, unaffected). */
+.rs-app-v2 .rs-question-content {
+  margin: auto 0;
+}
+.rs-app-v2 .rs-question-card {
+  overflow: hidden;
+}
+
+/* Anchors the primary action (Done Reading / Finish Assessment) to the
+   bottom of the screen instead of trailing right after the content. */
+.rs-app-v2 .rs-response-buttons {
+  margin-top: auto;
+  padding-top: 20px;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
@@ -83,6 +83,9 @@ const PARAGRAPHS = [
   'नीतू के घर में गाय है। उसका रंग सफेद है। गाय हरी घास खाती है। वह बहुत दूध देती है।'
 ];
 const STORY_TEXT = 'सावन का महीना था। आसमान में बहुत काले-काले बादल छाए थे। ठंडी-ठंडी हवा चल रही थी। मुझे झूला झूलने का मन किया। बड़े भैया एक मोटी सी रस्सी लेकर बाहर आए। भैया ने रस्सी को पेड़ से लटकाकर झूला बनाया। सब ने मिलकर खूब झूला झूला। बाकी बच्चे भी आकर मज़े से झूलने लगे। झूलते-झूलते रात हो गई।';
+// Story font shrinks within this range to always fit the card without scrolling (see fitStoryText).
+const STORY_MAX_FONT = 66;
+const STORY_MIN_FONT = 24;
 
 const LEVELS = { Beginner: 0, Letter: 1, Word: 2, Paragraph: 3, Story: 4 };
 const STAGE_LABELS = {
@@ -599,13 +602,8 @@ const ReadingSkillGameV2 = () => {
     if (isWordsFixedRetry) return; // pre-selected — not a free pick
     const isSelected = selectedTexts.includes(text);
     if (isSelected) {
+      if (text in marks) return; // locked — already marked Correct/Incorrect, can't unselect
       setSelectedTexts(prev => prev.filter(t => t !== text));
-      setMarks(prev => {
-        if (!(text in prev)) return prev;
-        const next = { ...prev };
-        delete next[text];
-        return next;
-      });
     } else {
       if (selectedTexts.length >= 5) return; // cap reached
       setSelectedTexts(prev => [...prev, text]);
@@ -613,16 +611,10 @@ const ReadingSkillGameV2 = () => {
   };
 
   const markTile = (text, correct) => {
-    setMarks(prev => {
-      const next = { ...prev };
-      const value = correct ? 'correct' : 'incorrect';
-      if (next[text] === value) {
-        delete next[text]; // tap again to unmark
-        return next;
-      }
-      next[text] = value;
-      return next;
-    });
+    // The tile itself locks (see toggleTileSelection) so it can't be unselected once
+    // marked, but the Yes/No value stays switchable in case of a mis-tap — it just
+    // can never go back to "unmarked".
+    setMarks(prev => ({ ...prev, [text]: correct ? 'correct' : 'incorrect' }));
   };
 
   const handleMarkingContinue = () => {
@@ -716,8 +708,42 @@ const ReadingSkillGameV2 = () => {
     }
   };
 
-  const storyTextStyle = { fontSize: 66, padding: 10 };
   const selectedParagraphText = selectedParagraphIndex != null ? PARAGRAPHS[selectedParagraphIndex] : null;
+
+  // ── Story screen: shrink-to-fit font sizing ─────────────────────────────
+  // The story is fixed content but the visible card height varies by device,
+  // so instead of scrolling to reach the end (real-device complaint: no
+  // vertical scroll on some tablets), the font shrinks in 1px steps from the
+  // default size until the text fits the card with no overflow at all.
+  const storyCardRef = useRef(null);
+  const storyTextRef = useRef(null);
+  const [storyFontSize, setStoryFontSize] = useState(STORY_MAX_FONT);
+
+  const fitStoryText = () => {
+    const card = storyCardRef.current;
+    const textEl = storyTextRef.current;
+    if (!card || !textEl) return;
+    let size = STORY_MAX_FONT;
+    textEl.style.fontSize = size + 'px';
+    textEl.style.lineHeight = (size + 20) + 'px';
+    while (card.scrollHeight > card.clientHeight && size > STORY_MIN_FONT) {
+      size -= 1;
+      textEl.style.fontSize = size + 'px';
+      textEl.style.lineHeight = (size + 20) + 'px';
+    }
+    setStoryFontSize(size);
+  };
+
+  useLayoutEffect(() => {
+    if (!(screen === 'game' && stage === 'story')) return;
+    fitStoryText();
+    window.addEventListener('resize', fitStoryText);
+    window.addEventListener('orientationchange', fitStoryText);
+    return () => {
+      window.removeEventListener('resize', fitStoryText);
+      window.removeEventListener('orientationchange', fitStoryText);
+    };
+  }, [screen, stage]);
 
   const renderPassBadge = (pass) => (
     <span style={{
@@ -754,7 +780,7 @@ const ReadingSkillGameV2 = () => {
   const headerScoreDisplay = finalScore != null ? finalScore : path.length;
 
   return (
-    <div className="rs-app">
+    <div className="rs-app rs-app-v2">
       <header className="rs-topbar">
         <div className="rs-brand">
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />}
@@ -809,13 +835,17 @@ const ReadingSkillGameV2 = () => {
 
         {screen === 'game' && stage === 'story' && (
           <div className="rs-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="rs-card rs-question-card">
+            <div className="rs-card rs-question-card" ref={storyCardRef}>
               <div className="rs-question-content">
-                <div style={{
-                  ...storyTextStyle,
-                  lineHeight: (storyTextStyle.fontSize + 20) + 'px',
-                  textAlign: 'justify'
-                }}>
+                <div
+                  ref={storyTextRef}
+                  style={{
+                    fontSize: storyFontSize,
+                    padding: 10,
+                    lineHeight: (storyFontSize + 20) + 'px',
+                    textAlign: 'justify'
+                  }}
+                >
                   {STORY_TEXT}
                 </div>
               </div>
@@ -873,17 +903,19 @@ const ReadingSkillGameV2 = () => {
               {markingBank.map((text) => {
                 const isSelected = isWordsFixedRetry || selectedTexts.includes(text);
                 const isCapLocked = !isSelected && !isWordsFixedRetry && selectedTexts.length >= 5;
+                const isMarked = text in marks;
                 return (
                   <div
                     key={text}
-                    className={`rs-mark-tile ${isSelected ? 'rs-mark-tile-selected' : ''} ${isCapLocked ? 'rs-mark-tile-locked' : ''}`}
+                    className={`rs-mark-tile ${isSelected ? 'rs-mark-tile-selected' : ''} ${isCapLocked ? 'rs-mark-tile-locked' : ''} ${isMarked ? 'rs-mark-tile-marked' : ''}`}
                     onClick={() => toggleTileSelection(text)}
-                    style={{ cursor: isWordsFixedRetry ? 'default' : 'pointer' }}
+                    style={{ cursor: (isWordsFixedRetry || isMarked) ? 'default' : 'pointer' }}
                   >
-                    <div className="rs-mark-tile-text">{text}</div>
+                    <div className={`rs-mark-tile-text ${stage === 'letters' ? 'rs-mark-tile-text-letter' : ''}`}>{text}</div>
                     {/* Neutral toggle — same styling either way so the child gets no
                         colour/label cue about which option means correct vs incorrect;
-                        only the assessor needs to know which is which. */}
+                        only the assessor needs to know which is which. Stays switchable
+                        after marking (mis-tap recovery) — only the tile itself locks. */}
                     <div className={`rs-mark-toggle-row ${isSelected ? 'visible' : ''}`}>
                       <button
                         aria-label="Mark as correct"
