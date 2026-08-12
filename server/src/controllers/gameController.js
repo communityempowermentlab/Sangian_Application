@@ -28,6 +28,26 @@ const parseSavedState = (raw) => {
 // and the dashboard's Average Game Time KPI — keep all three wired through this function so
 // they can't drift apart again.
 const computeActualGameTime = (parsedState, gameName) => {
+    // literacy_reading_skill_v2 doesn't record allScores/itemResults — it's an adaptive
+    // ASER-style stage walk (Paragraph/Words/Letters[/Retry]/Story), each stage's active time
+    // saved under its own key instead. Sum those directly, mirroring the client's
+    // getStageResult() in ReadingSkillGameV2.jsx, so Duration reflects actual stage time
+    // instead of falling through to the continuous timerSeconds (which would make it equal
+    // to Screentime for every session).
+    if (gameName === 'literacy_reading_skill_v2') {
+        const stageDurations = [
+            parsedState?.paragraphResult?.timeTaken,
+            parsedState?.paragraphRetryResult?.timeTaken,
+            parsedState?.storyResult?.timeTaken,
+            parsedState?.wordsTimeTaken,
+            parsedState?.wordsRetryTimeTaken,
+            parsedState?.lettersTimeTaken,
+        ];
+        const stageTime = stageDurations.reduce((sum, v) => sum + (Number(v) || 0), 0);
+        if (stageTime > 0) return stageTime;
+        return parsedState?.timerSeconds || 0;
+    }
+
     // Teaching-question entries (e.g. number_recall_lottery[/_v2]) are stored separately
     // in saved_state.teachingScores but scored like standard questions — fold them in here
     // so Duration/avg-game-time stay consistent with the client's combined total.

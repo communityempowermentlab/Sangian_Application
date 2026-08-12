@@ -131,6 +131,7 @@ const ReadingSkillGameV2 = () => {
   const [path, setPath] = useState([]); // ordered list of stage names completed
   const [finalLevel, setFinalLevel] = useState(null);
   const [finalScore, setFinalScore] = useState(null);
+  const [finalGameTime, setFinalGameTime] = useState(null); // timerSeconds snapshot at test completion — "Game Time" chip stops here, unlike Screentime which keeps running through the assessment
   const [pendingAssessTarget, setPendingAssessTarget] = useState('paragraph');
 
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -295,6 +296,7 @@ const ReadingSkillGameV2 = () => {
     setPath(saved.path || []);
     setFinalLevel(saved.finalLevel || null);
     setFinalScore(saved.finalScore ?? null);
+    setFinalGameTime(saved.finalGameTime ?? null);
     setTimerSeconds(saved.timerSeconds || 0);
     setQTimer(saved.qTimer || 0);
     setPauses(saved.pauses || []);
@@ -320,6 +322,7 @@ const ReadingSkillGameV2 = () => {
     setPath([]);
     setFinalLevel(null);
     setFinalScore(null);
+    setFinalGameTime(null);
     setPendingAssessTarget('paragraph');
     setTimerSeconds(0);
     setQTimer(0);
@@ -415,7 +418,7 @@ const ReadingSkillGameV2 = () => {
     selectedWords, selectedWordsRetry, selectedLetters,
     wordsTimeTaken, wordsRetryTimeTaken, lettersTimeTaken,
     paragraphResult, paragraphRetryResult, storyResult,
-    path, finalLevel, finalScore,
+    path, finalLevel, finalScore, finalGameTime,
     timerSeconds, qTimer, pauses,
     ...extra
   });
@@ -526,12 +529,14 @@ const ReadingSkillGameV2 = () => {
     const score = LEVELS[level];
     setFinalLevel(level);
     setFinalScore(score);
+    setFinalGameTime(timerSeconds);
     setScreen('score');
     if (gameSessionId) {
       const payload = buildSavedState({
         path: pathArg,
         finalLevel: level,
         finalScore: score,
+        finalGameTime: timerSeconds,
         retries: {
           wordsRetried: pathArg.includes('words_retry'),
           paragraphRetried: pathArg.includes('paragraph_retry')
@@ -599,12 +604,14 @@ const ReadingSkillGameV2 = () => {
   const currentAssessmentHints = ASSESSMENT_HINT_SETS[pendingAssessTarget] || null;
 
   const isWordsFixedRetry = stage === 'words' && wordsSource === 'afterLetters';
-  const markingBank = stage === 'letters'
-    ? LETTERS_BANK
-    : (isWordsFixedRetry ? selectedWords.map(w => w.text) : WORDS_BANK);
-  // The fixed Word-retry bank is already "the selected 5" — nothing left to pick.
-  // Otherwise the assessor picks up to 5 tiles first; only picked tiles get Correct/Incorrect.
-  const effectiveSelected = isWordsFixedRetry ? markingBank : selectedTexts;
+  // Word retry still shows the full 10-word bank (so the child sees every option again),
+  // but only the 5 words picked the first time round are highlighted/markable — everything
+  // else here keys off fixedRetryTexts instead of markingBank's length.
+  const markingBank = stage === 'letters' ? LETTERS_BANK : WORDS_BANK;
+  const fixedRetryTexts = isWordsFixedRetry ? new Set(selectedWords.map(w => w.text)) : null;
+  // Word retry: only the pre-picked 5 need marking. Otherwise the assessor picks up to 5
+  // tiles first; only picked tiles get Correct/Incorrect.
+  const effectiveSelected = isWordsFixedRetry ? selectedWords.map(w => w.text) : selectedTexts;
   const markedCount = effectiveSelected.filter(text => text in marks).length;
   const canContinueMarking = effectiveSelected.length === 5 && markedCount === 5;
 
@@ -765,24 +772,26 @@ const ReadingSkillGameV2 = () => {
     }}>{pass ? 'Pass' : 'Fail'}</span>
   );
 
+  // Single source of truth for a stage's pass/fail + time spent — shared by the
+  // per-stage table rows and the सही/गलत/सटीकता summary card below.
+  const getStageResult = (stageName) => {
+    if (stageName === 'paragraph') return { pass: paragraphResult?.pass, duration: paragraphResult?.timeTaken };
+    if (stageName === 'paragraph_retry') return { pass: paragraphRetryResult?.pass, duration: paragraphRetryResult?.timeTaken };
+    if (stageName === 'story') return { pass: storyResult?.pass, duration: storyResult?.timeTaken };
+    if (stageName === 'words') return { pass: selectedWords.filter(w => w.correct).length >= 4, duration: wordsTimeTaken };
+    if (stageName === 'words_retry') return { pass: selectedWordsRetry.filter(w => w.correct).length >= 4, duration: wordsRetryTimeTaken };
+    if (stageName === 'letters') return { pass: selectedLetters.filter(l => l.correct).length >= 4, duration: lettersTimeTaken };
+    return { pass: undefined, duration: null };
+  };
+
   const renderStageRow = (stageName, idx) => {
-    let detail = '—', pass, duration = null;
-    if (stageName === 'paragraph') { detail = selectedParagraphText || '—'; pass = paragraphResult?.pass; duration = paragraphResult?.timeTaken; }
-    else if (stageName === 'paragraph_retry') { detail = selectedParagraphText || '—'; pass = paragraphRetryResult?.pass; duration = paragraphRetryResult?.timeTaken; }
-    else if (stageName === 'story') { detail = STORY_TEXT; pass = storyResult?.pass; duration = storyResult?.timeTaken; }
-    else if (stageName === 'words') {
-      detail = selectedWords.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
-      pass = selectedWords.filter(w => w.correct).length >= 4;
-      duration = wordsTimeTaken;
-    } else if (stageName === 'words_retry') {
-      detail = selectedWordsRetry.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
-      pass = selectedWordsRetry.filter(w => w.correct).length >= 4;
-      duration = wordsRetryTimeTaken;
-    } else if (stageName === 'letters') {
-      detail = selectedLetters.map(l => `${l.text}${l.correct ? '✓' : '✗'}`).join('  ');
-      pass = selectedLetters.filter(l => l.correct).length >= 4;
-      duration = lettersTimeTaken;
-    }
+    let detail = '—';
+    if (stageName === 'paragraph' || stageName === 'paragraph_retry') detail = selectedParagraphText || '—';
+    else if (stageName === 'story') detail = STORY_TEXT;
+    else if (stageName === 'words') detail = selectedWords.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
+    else if (stageName === 'words_retry') detail = selectedWordsRetry.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
+    else if (stageName === 'letters') detail = selectedLetters.map(l => `${l.text}${l.correct ? '✓' : '✗'}`).join('  ');
+    const { pass, duration } = getStageResult(stageName);
     return (
       <tr key={idx}>
         <td>{STAGE_LABELS[stageName] || stageName}</td>
@@ -795,6 +804,15 @@ const ReadingSkillGameV2 = () => {
 
   const headerScoreDisplay = finalScore != null ? finalScore : path.length;
   const maxLevelScore = Math.max(...Object.values(LEVELS));
+
+  // Total/average time spent across stages actually attempted (path)
+  const stageStats = path.reduce((acc, stageName) => {
+    const { duration } = getStageResult(stageName);
+    acc.duration += (duration || 0);
+    return acc;
+  }, { duration: 0 });
+  const stagesAttempted = path.length;
+  const avgStageDuration = stagesAttempted > 0 ? Math.round(stageStats.duration / stagesAttempted) : 0;
 
   return (
     <div className="rs-app rs-app-v2">
@@ -924,7 +942,7 @@ const ReadingSkillGameV2 = () => {
                 .map((row, rowIdx) => (
                   <div className="rs-mark-row" key={rowIdx}>
                     {row.map((text) => {
-                      const isSelected = isWordsFixedRetry || selectedTexts.includes(text);
+                      const isSelected = isWordsFixedRetry ? fixedRetryTexts.has(text) : selectedTexts.includes(text);
                       const isCapLocked = !isSelected && !isWordsFixedRetry && selectedTexts.length >= 5;
                       const isMarked = text in marks;
                       return (
@@ -991,28 +1009,39 @@ const ReadingSkillGameV2 = () => {
 
             <div className="rs-card rs-result-card">
               {finalLevel && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-                  <div className="rs-level-badge">
-                    <span className="level-label">Final Reading Level</span>
-                    <span className="level-name">{finalLevel}</span>
+                <>
+                  <div className="rs-score-top">
+                    <div className="rs-score-dial-container">
+                      <div className="rs-score-dial-big">{finalScore ?? 0}</div>
+                      <div className="rs-score-dial-small">/ {maxLevelScore}</div>
+                    </div>
+                    <div className="rs-metric-grid">
+                      <div className="rs-metric-box">
+                        <label>Final Reading Level</label>
+                        <div className="metric-val">{finalLevel}</div>
+                      </div>
+                      <div className="rs-metric-box">
+                        <label>Duration</label>
+                        <div className="metric-val">{fmtDuration(stageStats.duration)}</div>
+                      </div>
+                      <div className="rs-metric-box">
+                        <label>औसत समय/सवाल</label>
+                        <div className="metric-val">{fmtDuration(avgStageDuration)}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="rs-path-trail">
-                    {path.map((p, i) => (
-                      <React.Fragment key={i}>
-                        <span className="rs-chip">{STAGE_LABELS[p] || p}</span>
-                        {i < path.length - 1 && <span className="rs-path-arrow">→</span>}
-                      </React.Fragment>
-                    ))}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+                    <div className="rs-path-trail">
+                      {path.map((p, i) => (
+                        <React.Fragment key={i}>
+                          <span className="rs-chip">{STAGE_LABELS[p] || p}</span>
+                          {i < path.length - 1 && <span className="rs-path-arrow">→</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
-                  <div className="rs-chips" style={{ justifyContent: 'center', marginTop: 14 }}>
-                    <span className="rs-chip" style={{ color: '#fff', background: '#4f46e5', border: '1px solid #4338ca' }}>
-                      🏆 Score: {finalScore ?? '—'} / {maxLevelScore}
-                    </span>
-                    <span className="rs-chip" style={{ color: '#374151', background: '#f3f4f6', border: '1px solid #d1d5db' }}>
-                      ⏱ Game Time: {formatTime(timerSeconds)}
-                    </span>
-                  </div>
-                </div>
+                </>
               )}
 
               <div className="rs-table-container" style={{ marginTop: '0', boxShadow: 'none', border: '1px solid #e2e8f0' }}>
