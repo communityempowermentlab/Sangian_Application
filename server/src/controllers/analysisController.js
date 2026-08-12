@@ -7,7 +7,7 @@ const GAME_META = {
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
   number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
   numeracy_number_skill_v2: { title: 'Ankganit - Version 2', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
-  numeracy_number_skill_v3: { title: 'Ankganit - Version 3', tag: 'Numeracy',       color: '#7c3aed', maxScore: 30 },
+  numeracy_number_skill_v3: { title: 'Ankganit - Version 3', tag: 'Numeracy',       color: '#7c3aed', maxScore: 4 },
   atlantis_bagiya:          { title: 'Bagiya',              tag: 'Visual Memory',    color: '#6366f1', maxScore: 108 },
   working_memory_herpher:   { title: 'Her Pher',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 25 },
   working_memory_herpher_v2:   { title: 'Her Pher - Version 2',            tag: 'Dynamic Memory',   color: '#0891b2', maxScore: 16 },
@@ -46,12 +46,14 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 19, hi: 26 },
     { lo: 27, hi: null }, // open-ended — catches any score at/above the max (30)
   ],
+  // ASER adaptive flow: score is an ordinal outcome level, not a point count —
+  // one discrete bucket per level (0=Beginner .. 4=Division).
   numeracy_number_skill_v3: [
-    { lo: 0,  hi: 0 },
-    { lo: 1,  hi: 8 },
-    { lo: 9,  hi: 18 },
-    { lo: 19, hi: 26 },
-    { lo: 27, hi: null }, // open-ended — catches any score at/above the max (30)
+    { lo: 0, hi: 0,    label: 'Beginner',                  description: 'Could not correctly identify at least 4 of 5 selected single-digit numbers.' },
+    { lo: 1, hi: 1,    label: 'Number Recognition (1–9)',   description: 'Correctly identified 4 or 5 of the selected single-digit numbers.' },
+    { lo: 2, hi: 2,    label: 'Number Recognition (11–99)', description: 'Correctly identified 4 or 5 of the selected two-digit numbers.' },
+    { lo: 3, hi: 3,    label: 'Subtraction',                description: 'Solved both administered two-digit subtraction problems correctly.' },
+    { lo: 4, hi: null, label: 'Division',                   description: 'Correctly solved the administered division problem (quotient and remainder).' }, // open-ended — catches any score at/above the max
   ],
   numeracy_number_skill: [
     { lo: 0,  hi: 0 },

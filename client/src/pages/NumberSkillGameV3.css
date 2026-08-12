@@ -1,0 +1,141 @@
+/* Ankganit V3 — ASER adaptive decision tree.
+   New classes only: subtraction pair-select cards, Number Recognition
+   tile-marking grid, and the results-screen path trail. Base app chrome
+   (ns-app, ns-modal, ns-btn, ns-card, numpad, etc.) stays in the shared
+   NumberSkillGame.css, imported alongside this file — untouched here so
+   V1/V2 are unaffected. Palette matches that shared file (indigo/blue
+   primary, #e2e8f0 borders) for visual consistency. */
+
+.ns3-instruction {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 4px 0 16px;
+}
+
+/* Subtraction pair-select — two candidate problems, tap to pick which
+   becomes Question 1 (modeled on ReadingSkillGameV2's paragraph picker). */
+.ns3-pair-options {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0 auto 24px;
+  max-width: 900px;
+}
+/* Division question select — all available problems, two per row, tap to
+   pick one. Reuses .ns3-pair-card for the individual question cards. */
+.ns3-division-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 24px;
+  margin: 0 auto 24px;
+  max-width: 900px;
+}
+.ns3-division-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  flex: 1;
+}
+/* Fills the available screen height/width instead of hugging the top. */
+.ns3-division-grid-large {
+  max-width: 1200px;
+  flex: 1;
+}
+.ns3-division-card {
+  max-width: 560px;
+  padding: 32px;
+  justify-content: center;
+}
+
+.ns3-pair-card {
+  flex: 1 1 320px;
+  max-width: 400px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.ns3-pair-card:hover { border-color: #c7d2fe; }
+.ns3-pair-card.selected { border-color: #4f46e5; background: #eef2ff; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15); }
+.ns3-pair-card-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+/* Number Recognition tile-marking grid — full bank shown, up to 5
+   selectable/markable, the rest displayed plainly (not locked/greyed).
+   Directly modeled on ReadingSkillGameV2's .rs-mark-grid pattern. */
+.ns3-mark-grid { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1200px; margin: 16px auto; }
+.ns3-mark-row { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.ns3-mark-row .ns3-mark-tile { flex: 0 0 calc((100% - 48px) / 4); }
+@media (max-width: 680px) {
+  .ns3-mark-row .ns3-mark-tile { flex-basis: 45%; }
+}
+.ns3-mark-tile {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 20px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.ns3-mark-tile:hover { border-color: #c7d2fe; }
+.ns3-mark-tile-text { font-size: 3rem; font-weight: 800; text-align: center; color: #1e293b; line-height: 1.2; }
+.ns3-mark-tile-selected { border-color: #4f46e5; background: #eef2ff; }
+
+.ns3-mark-toggle-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  height: 44px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.ns3-mark-toggle-row.visible { visibility: visible; opacity: 1; }
+.ns3-mark-toggle-btn {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.ns3-mark-toggle-btn:hover { border-color: #a5b4fc; }
+.ns3-mark-toggle-btn.active { border-color: #4f46e5; background: #eef2ff; color: #4f46e5; }
+
+/* Results-screen navigation-path breadcrumb trail. */
+.ns3-path-trail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+.ns3-path-arrow { color: #94a3b8; font-weight: 700; }
+
+@media (max-width: 680px) {
+  .ns3-mark-tile-text { font-size: 2.2rem; }
+  .ns3-pair-options { flex-direction: column; align-items: stretch; }
+}

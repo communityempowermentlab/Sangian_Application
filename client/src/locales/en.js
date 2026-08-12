@@ -405,6 +405,12 @@ export const en = {
     "cancel": "Cancel",
     "pauseSave": "Pause & Save",
     "quitEnd": "Quit & End",
+    "carelessMistakePrompt": "Was this a careless mistake? Give one more try?",
+    "chooseSubtractionQuestion": "Choose which problem to attempt first",
+    "assessorRecordsSubtraction": "Ask the child to read the numbers, identify the sign, and solve on paper. Then record the result below.",
+    "assessorRecordsDivision": "Ask the child to solve on paper, then enter what they wrote below.",
+    "selectFiveNumbers": "Ask the child to choose any 5 numbers to identify",
+    "subtractionQ1RetryInstruction": "You solved the second subtraction problem correctly. Now, please try the first subtraction problem once again. Take your time and check your work carefully before answering.",
     "scoreTable": {
       "questionNo": "Question No",
       "question": "Question",

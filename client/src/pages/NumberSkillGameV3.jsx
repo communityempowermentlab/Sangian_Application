@@ -11,6 +11,39 @@ import { Capacitor } from '@capacitor/core';
 import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
 import './NumberSkillGame.css';
+import './NumberSkillGameV3.css';
+
+// ASER adaptive decision tree outcome levels — mirrors ReadingSkillGameV2's
+// LEVELS pattern. Drives finalizeAssessment()'s numeric score and the
+// ordinal score buckets configured server-side in analysisController.js.
+const LEVELS = {
+  Beginner: 0,
+  'Number Recognition (1–9)': 1,
+  'Number Recognition (11–99)': 2,
+  Subtraction: 3,
+  Division: 4,
+};
+
+const STAGE_LABELS = {
+  subtraction_pair_select: 'Subtraction',
+  subtraction_q1: 'Subtraction Q1',
+  subtraction_q2: 'Subtraction Q2',
+  subtraction_q1_retry: 'Subtraction Q1 (Retry)',
+  division_select: 'Division',
+  division_q1: 'Division',
+  division_retry: 'Division (Retry)',
+  number_recognition_99_select: 'Number Recognition (11–99)',
+  number_recognition_9_select: 'Number Recognition (1–9)',
+};
+
+const CATEGORY_NAMES = {
+  recognition9: 'Number Recognition (1–9)',
+  recognition99: 'Number Recognition (11–99)',
+  subtraction: 'Two-Digit Subtraction',
+  division: 'One-Digit Divisor (Three-Digit Dividend)',
+};
+
+const SUBTRACTION_PAIR_INDEX = 0; // which fixed pair (by display_order) is administered
 
 const NumberSkillGameV3 = () => {
   // Global Microphone Cleanup: Ensure hardware lock is released on unmount
@@ -28,9 +61,8 @@ const NumberSkillGameV3 = () => {
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
   const navigate = useNavigate();
-  
+
   const [categories, setCategories] = useState([]);
-  const [questions, setQuestions] = useState([]);
   const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
@@ -39,13 +71,6 @@ const NumberSkillGameV3 = () => {
         const res = await axios.get(`${API_URL}/public/ankganit-v3`);
         if (res.data.success) {
            setCategories(res.data.categories);
-           const flatQuestions = [];
-           res.data.categories.forEach(cat => {
-               cat.questions.forEach(q => {
-                   flatQuestions.push({...q, category: cat});
-               });
-           });
-           setQuestions(flatQuestions);
            setConfigLoaded(true);
         }
       } catch (err) {
@@ -55,30 +80,50 @@ const NumberSkillGameV3 = () => {
     fetchConfig();
   }, []);
 
+  const subtractionCat = categories.find(c => c.name === CATEGORY_NAMES.subtraction);
+  const divisionCat = categories.find(c => c.name === CATEGORY_NAMES.division);
+  const recognition99Cat = categories.find(c => c.name === CATEGORY_NAMES.recognition99);
+  const recognition9Cat = categories.find(c => c.name === CATEGORY_NAMES.recognition9);
+
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
   const [screen, setScreen] = useState('splash'); // splash, game, score
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [allScores, setAllScores] = useState([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [gameSessionId, setGameSessionId] = useState(null);
   const [attemptNo, setAttemptNo] = useState(1);
-  
+
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [resumeData, setResumeData] = useState(null);
   const [pauses, setPauses] = useState([]);
-  
+
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [quitReason, setQuitReason] = useState('');
   const [audioFinished, setAudioFinished] = useState(false);
-  
+
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  
+
   // Timer State
   const [qTimer, setQTimer] = useState(0);
 
+  // ── ASER adaptive-tree state ────────────────────────────────────────────
+  const [stage, setStage] = useState('subtraction_pair_select');
+  const [path, setPath] = useState([]);
+  const [pendingSubtractionQ1, setPendingSubtractionQ1] = useState(null); // index within the pair, or null (auto-default)
+  const [pendingDivisionSelection, setPendingDivisionSelection] = useState(null); // index within the division bank, or null
+  const [subtraction, setSubtraction] = useState({ pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+  const [division, setDivision] = useState(null);
+  const [numberRecognition99, setNumberRecognition99] = useState(null);
+  const [numberRecognition9, setNumberRecognition9] = useState(null);
+  const [carelessPromptStage, setCarelessPromptStage] = useState(null); // null | 'subtraction_q1' | 'subtraction_q2' | 'division'
+  // Tile-marking transient state, shared by whichever Number Recognition
+  // screen is currently active (only one is ever in progress at a time).
+  const [nrMarks, setNrMarks] = useState({});
+  const [nrSelectedTexts, setNrSelectedTexts] = useState([]);
+  const [finalLevel, setFinalLevel] = useState(null);
+  const [finalScore, setFinalScore] = useState(null);
+  const [finalGameTime, setFinalGameTime] = useState(null);
+
   // Assessment Form State
-  const [showGrid, setShowGrid] = useState(false);
   const [assessment, setAssessment] = useState({
     q1: '', q2: '', q3: '', q4: '',
     behaviors: [],
@@ -91,6 +136,9 @@ const NumberSkillGameV3 = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
 
+  // Digital numpad entry — the child types directly, auto-scored against
+  // the question bank (matches Ankganit V1/V2's input mechanics). Division
+  // needs two fields (quotient + remainder); subtraction just one (answer).
   const [activeInput, setActiveInput] = useState('answer');
   const [answerVal, setAnswerVal] = useState('');
   const [quotientVal, setQuotientVal] = useState('');
@@ -176,13 +224,17 @@ const NumberSkillGameV3 = () => {
   const checkResume = async (childId) => {
     setIsCheckingSession(true);
     try {
-      const res = await axios.get(`${API_URL}/games/sessions/resume/${childId}/numeracy_number_skill`);
+      const res = await axios.get(`${API_URL}/games/sessions/resume/${childId}/numeracy_number_skill_v3`);
       if (res.data.sessionInfo) {
-        setResumeData(res.data.sessionInfo);
-        setShowResumeModal(true);
+        const info = res.data.sessionInfo;
+        const resumable = ['in_progress', 'paused'];
+        if (resumable.includes(info.status) && !info.saved_state?.assessmentSubmitted) {
+          setResumeData(info);
+          setShowResumeModal(true);
+        }
       }
     } catch (e) {
-      console.error('Resume info fetch error', e); 
+      console.error('Resume info fetch error', e);
     } finally {
       setIsCheckingSession(false);
     }
@@ -193,7 +245,7 @@ const NumberSkillGameV3 = () => {
       const res = await axios.post(`${API_URL}/games/sessions/start`, {
         child_id: childData.child_id,
         game_name: 'numeracy_number_skill_v3',
-        total_questions: questions.length
+        total_questions: 5
       });
       setGameSessionId(res.data.sessionId);
       setAttemptNo(res.data.attempt_no || 1);
@@ -206,26 +258,44 @@ const NumberSkillGameV3 = () => {
     setGameSessionId(resumeData.id);
     setAttemptNo(resumeData.attempt_no || 1);
     const saved = resumeData.saved_state || {};
-    setQuestionIndex(saved.questionIndex || 0);
-    setAllScores(saved.allScores || []);
+    setStage(saved.stage || 'subtraction_pair_select');
+    setPath(saved.path || []);
+    setSubtraction(saved.subtraction || { pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+    setDivision(saved.division || null);
+    setNumberRecognition99(saved.numberRecognition99 || null);
+    setNumberRecognition9(saved.numberRecognition9 || null);
+    setFinalLevel(saved.finalLevel || null);
+    setFinalScore(saved.finalScore ?? null);
+    setFinalGameTime(saved.finalGameTime ?? null);
     setTimerSeconds(saved.timerSeconds || 0);
     setQTimer(saved.qTimer || 0);
     setPauses(saved.pauses || []);
-    setScreen('game');
+    setScreen(saved.finalLevel ? 'score' : 'game');
     setShowResumeModal(false);
   };
 
   const resetInternalState = () => {
-    setQuestionIndex(0);
-    setAllScores([]);
+    setStage('subtraction_pair_select');
+    setPath([]);
+    setPendingSubtractionQ1(null);
+    setPendingDivisionSelection(null);
+    setSubtraction({ pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+    setDivision(null);
+    setNumberRecognition99(null);
+    setNumberRecognition9(null);
+    setCarelessPromptStage(null);
+    setNrMarks({});
+    setNrSelectedTexts([]);
+    setFinalLevel(null);
+    setFinalScore(null);
+    setFinalGameTime(null);
     setTimerSeconds(0);
     setQTimer(0);
     setPauses([]);
-    setAnswerVal('');
     setQuotientVal('');
     setRemainderVal('');
+    setActiveInput('quotient');
     setAssessmentSubmitted(false);
-    setActiveInput('answer');
     setAudioFinished(false);
     setQuitReason('');
     setAssessment({ q1: '', q2: '', q3: '', q4: '', behaviors: [], notes: '' });
@@ -288,7 +358,7 @@ const NumberSkillGameV3 = () => {
           finalTranscript += event.results[i][0].transcript + ' ';
         }
       }
-      
+
       if (finalTranscript) {
          if (target === 'quitReason') {
             setQuitReason(prev => prev + finalTranscript);
@@ -315,113 +385,244 @@ const NumberSkillGameV3 = () => {
     setRecordingTarget(target);
   };
 
-  const saveToServer = async (statusOverride, reason) => {
+  // Single source of truth for the saved_state payload — every save call
+  // (progress sync, quit, finalize, assessment submit) goes through this,
+  // mirroring ReadingSkillGameV2.jsx's buildSavedState()/resumeGame() pair.
+  const buildSavedState = (extra = {}) => ({
+    stage, path,
+    subtraction, division, numberRecognition99, numberRecognition9,
+    finalLevel, finalScore, finalGameTime,
+    timerSeconds, qTimer, pauses,
+    ...extra
+  });
+
+  const saveToServer = async (statusOverride = null, reason = null) => {
     if (!gameSessionId) return;
     try {
       let updatedPauses = [...pauses];
       if (reason && (statusOverride === 'paused' || statusOverride === 'quit')) {
-         updatedPauses.push({
-             questionNumber: questionIndex + 1,
-             reason: reason,
-             timestamp: new Date().toISOString()
-         });
+         updatedPauses.push({ stage, reason, timestamp: new Date().toISOString() });
          setPauses(updatedPauses);
       }
 
       await axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
-        score: allScores.filter(s => s.score === 1).length,
-        progress_level: questionIndex + 1,
+        score: finalScore ?? 0,
+        progress_level: path.length + 1,
         status: statusOverride || 'in_progress',
         quit_reason: reason || null,
-        saved_state: { questionIndex, allScores, timerSeconds, qTimer, pauses: updatedPauses }
+        saved_state: buildSavedState({ pauses: updatedPauses })
       });
     } catch (e) { console.error('Failed to sync progress to server:', e); }
   };
 
-  const processScoring = (score, customValues = {}) => {
-    const q = questions[questionIndex];
-    const newScoreRec = {
-      qId: q.id || q.qid,
-      categoryId: q.category.id,
-      questionNumber: questionIndex + 1,
-      score: score, // 0 or 1
-      timeTaken: qTimer, // Time taken for current question
-      ...customValues
-    };
-    
-    const upScores = [...allScores, newScoreRec];
-    setAllScores(upScores);
-    setAnswerVal(''); setQuotientVal(''); setRemainderVal('');
-    
-    // Check Stop Rules
-    let consecutive = 0;
-    for (let i = upScores.length - 1; i >= 0; i--) {
-      if (upScores[i].score === 0) consecutive++;
-      else break;
-    }
+  // Sync progress to the server whenever the child advances to a new stage.
+  useEffect(() => {
+    if (screen === 'game' && path.length > 0) saveToServer('in_progress');
+  }, [stage]);
 
-    let shouldStop = false;
-    let stopMsg = "";
-    if (consecutive >= 3) {
-      shouldStop = true; stopMsg = "3 Consecutive Wrong";
-    }
+  // Records the CURRENT stage into the navigation-path breadcrumb, then
+  // switches to newStage — the single place that advances `stage`, so path
+  // recording can never be forgotten in an individual transition handler.
+  const goToStage = (newStage) => {
+    setPath(p => [...p, stage]);
+    setStage(newStage);
+    setQTimer(0);
+  };
 
-    if (!shouldStop) {
-      // Is this the last question in the current category?
-      const isLastInCategory = (questionIndex === questions.length - 1) || (questions[questionIndex + 1].category.id !== q.category.id);
-      
-      if (isLastInCategory) {
-        // Count correct answers for the current category
-        const correctInCat = upScores.filter(s => s.categoryId === q.category.id && s.score === 1).length;
-        if (correctInCat < q.category.minimum_correct) {
-          shouldStop = true;
-          stopMsg = `${q.category.name} Min Failed`;
-        }
-      }
-    }
+  // ── Subtraction ─────────────────────────────────────────────────────────
+  const sortedSubtractionQuestions = subtractionCat ? [...subtractionCat.questions].sort((a, b) => a.display_order - b.display_order) : [];
+  const subtractionPair = sortedSubtractionQuestions.slice(subtraction.pairIndex * 2, subtraction.pairIndex * 2 + 2);
 
-    if (shouldStop || questionIndex + 1 >= questions.length) {
-      setScreen('score');
-      // Save final state immediately
-      if (gameSessionId) {
-        axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
-          score: upScores.filter(s => s.score === 1).length,
-          progress_level: questionIndex + 1,
-          status: shouldStop ? 'dropped' : 'completed',
-          saved_state: { questionIndex: questionIndex + 1, allScores: upScores, timerSeconds, qTimer, pauses }
-        }).then(() => {
-          setTimeout(generateAndUploadPDF, 1500);
-        }).catch(e=>console.log(e));
-      }
+  const confirmSubtractionPairSelect = () => {
+    if (subtractionPair.length < 2) return;
+    const q1Idx = pendingSubtractionQ1 ?? 0;
+    const q2Idx = q1Idx === 0 ? 1 : 0;
+    const q1src = subtractionPair[q1Idx];
+    const q2src = subtractionPair[q2Idx];
+    setSubtraction(prev => ({
+      ...prev,
+      q1: { questionId: q1src.id, text: q1src.text, correctAnswer: q1src.correct_answer, firstAttempt: null, retryGiven: false, retryAttempt: null, finalCorrect: null },
+      q2: { questionId: q2src.id, text: q2src.text, correctAnswer: q2src.correct_answer, firstAttempt: null, finalCorrect: null },
+      q1SelectedFirst: pendingSubtractionQ1 !== null,
+    }));
+    setAnswerVal('');
+    setActiveInput('answer');
+    goToStage('subtraction_q1');
+  };
+
+  // Q1 wrong is never an immediate failure — always move straight to Q2 and
+  // only decide afterwards (see evaluateAfterQ2) whether Q1 gets a retry.
+  const markSubtractionQ1 = (correct, enteredAnswer) => {
+    const attempt = { correct, timeTaken: qTimer, enteredAnswer };
+    setSubtraction(prev => ({ ...prev, q1: { ...prev.q1, firstAttempt: attempt, finalCorrect: correct } }));
+    goToStage('subtraction_q2');
+  };
+
+  // The one-and-only Q1 retry — same Question 1, only reachable when Q1 was
+  // wrong the first time and Q2 came back correct.
+  const markSubtractionQ1Retry = (correct, enteredAnswer) => {
+    const attempt = { correct, timeTaken: qTimer, enteredAnswer };
+    const updated = { ...subtraction, q1: { ...subtraction.q1, retryGiven: true, retryAttempt: attempt, finalCorrect: correct } };
+    setSubtraction(updated);
+    proceedFromSubtractionResult(updated);
+  };
+
+  const markSubtractionQ2 = (correct, enteredAnswer) => {
+    const attempt = { correct, timeTaken: qTimer, enteredAnswer };
+    const updatedQ2 = { ...subtraction.q2, firstAttempt: attempt, finalCorrect: correct };
+    const updated = { ...subtraction, q2: updatedQ2 };
+    setSubtraction(updated);
+    evaluateAfterQ2(updated);
+  };
+
+  // If Q1 was wrong but Q2 came back correct, give Q1 one retry (same
+  // question). Otherwise the subtraction result is already final.
+  const evaluateAfterQ2 = (sub) => {
+    if (sub.q1.finalCorrect === false && sub.q2.finalCorrect === true) {
+      goToStage('subtraction_q1_retry');
     } else {
-      setQuestionIndex(i => i + 1);
-      setQTimer(0);
+      proceedFromSubtractionResult(sub);
     }
   };
 
-  // Run auto-save whenever question advances
-  useEffect(() => {
-    if (screen === 'game' && questionIndex > 0) saveToServer('in_progress');
-  }, [questionIndex]);
-
-  const handleManualScoring = (isCorrect) => processScoring(isCorrect ? 1 : 0);
-  const handleAutoScoring = () => {
-    const q = questions[questionIndex];
-    if (q.category.evaluation_type === 'auto_division') {
-      const cQuot = parseInt(quotientVal) || 0;
-      const cRem = parseInt(remainderVal) || 0;
-      const pass = (cQuot === Number(q.correct_answer) && cRem === Number(q.remainder));
-      processScoring(pass ? 1 : 0, { uQ: cQuot, uR: cRem });
+  const proceedFromSubtractionResult = (sub) => {
+    const bothCorrect = sub.q1.finalCorrect === true && sub.q2.finalCorrect === true;
+    const updated = { ...sub, bothCorrect };
+    setSubtraction(updated);
+    if (bothCorrect && divisionCat) {
+      setPendingDivisionSelection(null);
+      goToStage('division_select');
     } else {
-      const cAns = parseInt(answerVal) || 0;
-      processScoring((cAns === Number(q.correct_answer)) ? 1 : 0, { uA: cAns });
+      setNrMarks({}); setNrSelectedTexts([]);
+      goToStage('number_recognition_99_select');
     }
+  };
+
+  const getCurrentSubtractionQuestion = () => {
+    if (['subtraction_q1', 'subtraction_q1_retry'].includes(stage)) return subtraction.q1;
+    if (stage === 'subtraction_q2') return subtraction.q2;
+    return null;
+  };
+
+  const handleSubtractionMark = (correct, enteredAnswer) => {
+    if (stage === 'subtraction_q1') markSubtractionQ1(correct, enteredAnswer);
+    else if (stage === 'subtraction_q1_retry') markSubtractionQ1Retry(correct, enteredAnswer);
+    else if (stage === 'subtraction_q2') markSubtractionQ2(correct, enteredAnswer);
+  };
+
+  // Child types the answer on the numpad (matches Ankganit V1/V2's digital
+  // auto-scored subtraction UI) — correctness is derived from the typed
+  // value, not an assessor's manual judgment.
+  const submitSubtractionAnswer = () => {
+    const entered = parseInt(answerVal) || 0;
+    const correct = entered === Number(currentSubtractionQuestion.correctAnswer);
+    setAnswerVal('');
+    handleSubtractionMark(correct, entered);
+  };
+
+  // ── Division ─────────────────────────────────────────────────────────────
+  const sortedDivisionQuestions = divisionCat ? [...divisionCat.questions].sort((a, b) => a.display_order - b.display_order) : [];
+
+  const confirmDivisionSelect = () => {
+    const idx = pendingDivisionSelection ?? 0;
+    const q = sortedDivisionQuestions[idx];
+    if (!q) return;
+    setDivision({ questionId: q.id, text: q.text, expectedQuotient: q.correct_answer, expectedRemainder: q.remainder, firstAttempt: null, carelessRetryGiven: false, carelessRetryAttempt: null, finalCorrect: null });
+    setActiveInput('quotient');
+    goToStage('division_q1');
+  };
+
+  const submitDivisionAnswer = () => {
+    const enteredQuotient = parseInt(quotientVal) || 0;
+    const enteredRemainder = parseInt(remainderVal) || 0;
+    const correct = enteredQuotient === Number(division.expectedQuotient) && enteredRemainder === Number(division.expectedRemainder);
+    const attempt = { enteredQuotient, enteredRemainder, correct, timeTaken: qTimer };
+    setQuotientVal(''); setRemainderVal('');
+    const updated = { ...division, firstAttempt: attempt, finalCorrect: correct };
+    setDivision(updated);
+    if (correct) finalizeAssessment('Division', { division: updated });
+    else setCarelessPromptStage('division');
+  };
+
+  const submitDivisionRetryAnswer = () => {
+    const enteredQuotient = parseInt(quotientVal) || 0;
+    const enteredRemainder = parseInt(remainderVal) || 0;
+    const correct = enteredQuotient === Number(division.expectedQuotient) && enteredRemainder === Number(division.expectedRemainder);
+    const attempt = { enteredQuotient, enteredRemainder, correct, timeTaken: qTimer };
+    setQuotientVal(''); setRemainderVal('');
+    const updated = { ...division, carelessRetryAttempt: attempt, finalCorrect: correct };
+    setDivision(updated);
+    if (correct) finalizeAssessment('Division', { division: updated });
+    else finalizeAssessment('Subtraction', { division: updated });
+  };
+
+  const handleDivisionSubmit = () => {
+    if (stage === 'division_q1') submitDivisionAnswer();
+    else if (stage === 'division_retry') submitDivisionRetryAnswer();
+  };
+
+  // ── Careless-mistake retry prompt (division only — subtraction's Q1 retry
+  // is decided automatically by evaluateAfterQ2, no assessor prompt) ────────
+  const handleCarelessResponse = (giveRetry) => {
+    setCarelessPromptStage(null);
+    const updated = { ...division, carelessRetryGiven: giveRetry };
+    setDivision(updated);
+    if (giveRetry) goToStage('division_retry');
+    else finalizeAssessment('Subtraction', { division: updated });
+  };
+
+  // ── Number Recognition (shared tile-marking UI for both 1–9 and 11–99) ──
+  const activeNrCategory = stage === 'number_recognition_99_select' ? recognition99Cat : recognition9Cat;
+  const nrBank = activeNrCategory ? [...activeNrCategory.questions].sort((a, b) => a.display_order - b.display_order).map(q => q.title || q.text) : [];
+
+  const toggleNrTileSelection = (text) => {
+    const isSelected = nrSelectedTexts.includes(text);
+    if (isSelected) {
+      if (text in nrMarks) return; // locked — already marked
+      setNrSelectedTexts(prev => prev.filter(x => x !== text));
+    } else {
+      if (nrSelectedTexts.length >= 5) return; // cap reached
+      setNrSelectedTexts(prev => [...prev, text]);
+    }
+  };
+
+  const markNrTile = (text, correct) => {
+    setNrMarks(prev => ({ ...prev, [text]: correct ? 'correct' : 'incorrect' }));
+  };
+
+  const nrMarkedCount = nrSelectedTexts.filter(text => text in nrMarks).length;
+  const canContinueNrMarking = nrSelectedTexts.length === 5 && nrMarkedCount === 5;
+
+  const finishNumberRecognition99 = () => {
+    const selected = nrSelectedTexts.map(text => ({ text, correct: nrMarks[text] === 'correct' }));
+    const correctCount = selected.filter(s => s.correct).length;
+    const pass = correctCount >= 4;
+    const record = { selected, correctCount, pass, timeTaken: qTimer };
+    setNumberRecognition99(record);
+    if (pass) {
+      finalizeAssessment('Number Recognition (11–99)', { numberRecognition99: record });
+    } else {
+      setNrMarks({}); setNrSelectedTexts([]);
+      goToStage('number_recognition_9_select');
+    }
+  };
+
+  const finishNumberRecognition9 = () => {
+    const selected = nrSelectedTexts.map(text => ({ text, correct: nrMarks[text] === 'correct' }));
+    const correctCount = selected.filter(s => s.correct).length;
+    const pass = correctCount >= 4;
+    const record = { selected, correctCount, pass, timeTaken: qTimer };
+    setNumberRecognition9(record);
+    finalizeAssessment(pass ? 'Number Recognition (1–9)' : 'Beginner', { numberRecognition9: record });
+  };
+
+  const handleFinishNrMarking = () => {
+    if (stage === 'number_recognition_99_select') finishNumberRecognition99();
+    else if (stage === 'number_recognition_9_select') finishNumberRecognition9();
   };
 
   const handleNumpadInput = (val) => {
-    let setter = activeInput === 'quotient' ? setQuotientVal : 
-                 activeInput === 'remainder' ? setRemainderVal : setAnswerVal;
-    
+    const setter = activeInput === 'remainder' ? setRemainderVal : activeInput === 'quotient' ? setQuotientVal : setAnswerVal;
     if (val === 'clear') setter('');
     else if (val === 'back') setter(prev => prev.slice(0, -1));
     else setter(prev => String(prev) + String(val));
@@ -439,13 +640,10 @@ const NumberSkillGameV3 = () => {
     }
   };
 
-  const getTotalScore = () => allScores.filter(s => s.score === 1).length;
-
   const generateAndUploadPDF = async () => {
     if (!gameSessionId) return;
     let wrapper = null;
     try {
-      setShowGrid(true); // Force table to be visible for PDF capture
       await new Promise(r => setTimeout(r, 500)); // Wait for render
 
       const el = document.querySelector('.ns-main');
@@ -474,10 +672,6 @@ const NumberSkillGameV3 = () => {
       wrapper = document.createElement('div');
       wrapper.style.cssText = [
         'position:fixed', 'top:-99999px', 'left:0',
-        // Generous fixed desktop-class width rather than the live element's
-        // scrollWidth — see ChorMachayeShorGame's PDF capture for why tying
-        // wrapper width to the live (possibly narrow) viewport re-triggers
-        // clipping inside the app shell's width:100%+overflow:hidden.
         'width:' + Math.max(el.scrollWidth, 1400) + 'px',
         'background:#ffffff', 'padding:20px',
         'z-index:-9999', 'pointer-events:none',
@@ -533,7 +727,7 @@ const NumberSkillGameV3 = () => {
       // Save final screentime (stops here) to session so admin panel reflects it
       if (gameSessionId) {
         axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
-          saved_state: { questionIndex, allScores, timerSeconds, qTimer, pauses }
+          saved_state: buildSavedState({ assessmentSubmitted: true })
         }).catch(e => console.error('Screentime save error', e));
       }
 
@@ -548,8 +742,39 @@ const NumberSkillGameV3 = () => {
     }
   };
 
-  const renderMathQuestion = (text) => {
-    let cleanText = text.replace(/Identify number\s*-?\s*/ig, '').trim();
+  // The single terminal function — sets the final outcome, flips to the
+  // score screen, and does the one status:'completed' save. Mirrors
+  // ReadingSkillGameV2.jsx's finalizeAssessment() exactly.
+  const finalizeAssessment = (level, overrides = {}) => {
+    const finalPath = [...path, stage];
+    setPath(finalPath);
+    setFinalLevel(level);
+    setFinalScore(LEVELS[level]);
+    setFinalGameTime(timerSeconds);
+    setScreen('score');
+    if (gameSessionId) {
+      const payload = buildSavedState({
+        path: finalPath,
+        finalLevel: level,
+        finalScore: LEVELS[level],
+        finalGameTime: timerSeconds,
+        completedAt: new Date().toISOString(),
+        ...overrides
+      });
+      axios.put(`${API_URL}/games/sessions/update/${gameSessionId}`, {
+        score: LEVELS[level],
+        progress_level: finalPath.length,
+        status: 'completed',
+        quit_reason: null,
+        saved_state: payload
+      }).then(() => {
+        setTimeout(generateAndUploadPDF, 1500);
+      }).catch(e => console.log(e));
+    }
+  };
+
+  const renderMathQuestion = (text, compact = false) => {
+    let cleanText = (text || '').replace(/Identify number\s*-?\s*/ig, '').trim();
 
     // Normalize all types of minus/dash characters to standard hyphen
     cleanText = cleanText.replace(/[−–—]/g, '-');
@@ -560,9 +785,9 @@ const NumberSkillGameV3 = () => {
       const parts = cleanText.split('-');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '12rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: compact ? '5rem' : '12rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
             <div>{parts[0].trim()}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px', minWidth: '300px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px', minWidth: compact ? '140px' : '300px' }}>
               <span style={{ marginRight: '20px' }}>-</span>
               <span>{parts[1].trim()}</span>
             </div>
@@ -574,15 +799,15 @@ const NumberSkillGameV3 = () => {
       const parts = cleanText.split('÷');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', alignItems: 'stretch', fontSize: '8rem', fontWeight: 800, color: '#333', lineHeight: 1.2 }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', fontSize: compact ? '5.5rem' : '8rem', fontWeight: 800, color: '#333', lineHeight: 1.2 }}>
             {/* Divisor */}
             <div style={{ paddingRight: '0.15em', display: 'flex', alignItems: 'center' }}>
               {parts[1].trim()}
             </div>
-            
+
             {/* Dividend Container */}
             <div style={{ position: 'relative', display: 'flex' }}>
-              
+
               {/* Main Top Bar */}
               <div style={{
                 position: 'absolute',
@@ -593,7 +818,7 @@ const NumberSkillGameV3 = () => {
               }}></div>
 
               {/* Left Bracket ) (Uniform thickness, opens outside) */}
-              <svg 
+              <svg
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -603,20 +828,20 @@ const NumberSkillGameV3 = () => {
                   height: '100%',
                   display: 'block',
                   overflow: 'visible'
-                }} 
-                viewBox="0 0 100 100" 
+                }}
+                viewBox="0 0 100 100"
                 preserveAspectRatio="none"
               >
-                <path 
-                  d="M 0,2.5 C 50,2.5 100,20 100,50 C 100,80 50,97.5 0,97.5" 
-                  fill="none" 
-                  stroke="#333" 
-                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }} 
+                <path
+                  d="M 0,2.5 C 50,2.5 100,20 100,50 C 100,80 50,97.5 0,97.5"
+                  fill="none"
+                  stroke="#333"
+                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }}
                 />
               </svg>
-              
+
               {/* Right Bracket ( (Uniform thickness, opens outside) */}
-              <svg 
+              <svg
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -626,15 +851,15 @@ const NumberSkillGameV3 = () => {
                   height: '100%',
                   display: 'block',
                   overflow: 'visible'
-                }} 
-                viewBox="0 0 100 100" 
+                }}
+                viewBox="0 0 100 100"
                 preserveAspectRatio="none"
               >
-                <path 
-                  d="M 100,2.5 C 50,2.5 0,20 0,50 C 0,80 50,97.5 100,97.5" 
-                  fill="none" 
-                  stroke="#333" 
-                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }} 
+                <path
+                  d="M 100,2.5 C 50,2.5 0,20 0,50 C 0,80 50,97.5 100,97.5"
+                  fill="none"
+                  stroke="#333"
+                  style={{ vectorEffect: 'non-scaling-stroke', strokeWidth: '0.06em' }}
                 />
               </svg>
 
@@ -651,8 +876,35 @@ const NumberSkillGameV3 = () => {
     return cleanText;
   };
 
+  const renderPassBadge = (correct) => (
+    <span style={{
+      display: 'inline-block', padding: '3px 14px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 600,
+      background: correct ? '#dcfce7' : '#fee2e2', color: correct ? '#16a34a' : '#dc2626',
+    }}>{correct ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}</span>
+  );
 
-  const currentQuestion = questions[questionIndex];
+  // Results-screen per-stage breakdown — one row per path entry, resolved
+  // against the recorded subtraction/division/number-recognition state.
+  const getPathStageResult = (stageName) => {
+    if (stageName === 'subtraction_q1') return { detail: subtraction.q1?.text, correct: subtraction.q1?.firstAttempt?.correct, duration: subtraction.q1?.firstAttempt?.timeTaken };
+    if (stageName === 'subtraction_q1_retry') return { detail: subtraction.q1?.text, correct: subtraction.q1?.retryAttempt?.correct, duration: subtraction.q1?.retryAttempt?.timeTaken };
+    if (stageName === 'subtraction_q2') return { detail: subtraction.q2?.text, correct: subtraction.q2?.firstAttempt?.correct, duration: subtraction.q2?.firstAttempt?.timeTaken };
+    if (stageName === 'division_q1') return { detail: division?.text, correct: division?.firstAttempt?.correct, duration: division?.firstAttempt?.timeTaken };
+    if (stageName === 'division_retry') return { detail: division?.text, correct: division?.carelessRetryAttempt?.correct, duration: division?.carelessRetryAttempt?.timeTaken };
+    if (stageName === 'number_recognition_99_select') return { detail: `${numberRecognition99?.correctCount ?? 0} / 5`, correct: numberRecognition99?.pass, duration: numberRecognition99?.timeTaken };
+    if (stageName === 'number_recognition_9_select') return { detail: `${numberRecognition9?.correctCount ?? 0} / 5`, correct: numberRecognition9?.pass, duration: numberRecognition9?.timeTaken };
+    return { detail: '—', correct: undefined, duration: null };
+  };
+
+  const totalRetries = [
+    subtraction.q1?.retryGiven, division?.carelessRetryGiven,
+  ].filter(Boolean).length;
+
+  const totalDuration = path
+    .filter(s => STAGE_LABELS[s])
+    .reduce((sum, s) => sum + (getPathStageResult(s).duration || 0), 0);
+
+  const currentSubtractionQuestion = getCurrentSubtractionQuestion();
 
   return (
     <div className="ns-app">
@@ -664,8 +916,8 @@ const NumberSkillGameV3 = () => {
           {showGameName && <span className="ns-test-title">{t('home.games.numeracy.title')}{t('common.version3')}</span>}
         </div>
         <div className="ns-topbar-center">
-          {screen === 'game' && currentQuestion && (
-            <div className="ns-topbar-screen-title">{t('game.question')} {questionIndex + 1}</div>
+          {screen === 'game' && (
+            <div className="ns-topbar-screen-title">{STAGE_LABELS[stage] || stage}</div>
           )}
         </div>
         <div className="ns-stats">
@@ -676,7 +928,7 @@ const NumberSkillGameV3 = () => {
             <div className="ns-stat-pill"><span className="ns-stat-icon">⏱</span> <span className="ns-stat-value">{formatTime(qTimer)}</span></div>
           )}
           {showScore && (
-          <div className="ns-stat-pill"><span className="ns-stat-icon">🏆</span> <span className="ns-stat-value">{getTotalScore()}</span></div>
+          <div className="ns-stat-pill"><span className="ns-stat-icon">🏆</span> <span className="ns-stat-value">{finalLevel || '—'}</span></div>
           )}
           {screen === 'game' && <button className="btn-pause-quit" onClick={() => { setQuitReason(''); setShowQuitModal(true); }}><span>⏸</span> Pause/Quit</button>}
         </div>
@@ -708,46 +960,41 @@ const NumberSkillGameV3 = () => {
           </div>
         )}
 
-        {screen === 'game' && currentQuestion && questions[questionIndex].category.evaluation_type === 'manual' && (
+        {screen === 'game' && stage === 'subtraction_pair_select' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="ns-card ns-question-card">
-              <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(questions[questionIndex].text)}
-              </div>
+            <div className="ns3-pair-options">
+              {subtractionPair.map((q, idx) => (
+                <div
+                  key={q.id}
+                  className={`ns3-pair-card ${pendingSubtractionQ1 === idx ? 'selected' : ''}`}
+                  onClick={() => setPendingSubtractionQ1(idx)}
+                >
+                  {renderMathQuestion(q.text)}
+                </div>
+              ))}
             </div>
             <div className="ns-response-buttons">
-              <button className="ns-response-btn ns-btn-correct" onClick={() => handleManualScoring(true)}>✓ {t('game.correct')}</button>
-              <button className="ns-response-btn ns-btn-incorrect" onClick={() => handleManualScoring(false)}>✗ {t('game.incorrect')}</button>
+              <button className="ns-btn ns-btn-primary" disabled={pendingSubtractionQ1 === null} onClick={confirmSubtractionPairSelect}>{t('game.confirm')}</button>
             </div>
           </div>
         )}
 
-        {screen === 'game' && currentQuestion && questions[questionIndex].category.evaluation_type !== 'manual' && (
+        {screen === 'game' && currentSubtractionQuestion && (
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
-            <div className="ns-card ns-question-card ns-split-question">
+            <div className="ns-card ns-question-card ns-split-question" style={{ flexDirection: 'column' }}>
+              {stage === 'subtraction_q1_retry' && (
+                <div className="ns3-instruction">{t('game.subtractionQ1RetryInstruction')}</div>
+              )}
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(questions[questionIndex].text)}
+                {renderMathQuestion(currentSubtractionQuestion.text)}
               </div>
             </div>
 
             <div className="ns-auto-inputs ns-split-inputs">
-              {questions[questionIndex].category.evaluation_type === 'auto_division' ? (
-                <div className="ns-input-row">
-                  <div className="ns-input-group" onClick={()=>setActiveInput('quotient')}>
-                    <label>{t('game.quotient')}</label>
-                    <input type="text" readOnly value={quotientVal} className={activeInput==='quotient' ? 'ns-input-active' : ''} />
-                  </div>
-                  <div className="ns-input-group" onClick={()=>setActiveInput('remainder')}>
-                    <label>{t('game.remainder')}</label>
-                    <input type="text" readOnly value={remainderVal} className={activeInput==='remainder' ? 'ns-input-active' : ''} />
-                  </div>
-                </div>
-              ) : (
-                <div className="ns-input-group" onClick={()=>setActiveInput('answer')}>
-                  <input type="text" readOnly value={answerVal} placeholder="?" className="ns-input-active" />
-                </div>
-              )}
-              <button className="ns-btn ns-btn-submit" onClick={handleAutoScoring}>{t('game.submitAnswer')}</button>
+              <div className="ns-input-group" onClick={() => setActiveInput('answer')}>
+                <input type="text" readOnly value={answerVal} placeholder="?" className="ns-input-active" />
+              </div>
+              <button className="ns-btn ns-btn-submit" onClick={submitSubtractionAnswer}>{t('game.submitAnswer')}</button>
 
               <div className="ns-numpad">
                 {[1,2,3,4,5,6,7,8,9].map(num => <button key={num} onClick={()=>handleNumpadInput(num)} className="ns-key">{num}</button>)}
@@ -755,6 +1002,111 @@ const NumberSkillGameV3 = () => {
                 <button onClick={()=>handleNumpadInput(0)} className="ns-key">0</button>
                 <button onClick={()=>handleNumpadInput('back')} className="ns-key ns-key-back">⌫</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {screen === 'game' && stage === 'division_select' && (
+          <div className="ns-screen" style={{ backgroundColor: '#fff', justifyContent: 'center' }}>
+            <div className="ns3-division-grid ns3-division-grid-large">
+              {[sortedDivisionQuestions.slice(0, 2), sortedDivisionQuestions.slice(2, 4)].map((row, rowIdx) => (
+                <div key={rowIdx} className="ns3-division-row">
+                  {row.map((q, colIdx) => {
+                    const idx = rowIdx * 2 + colIdx;
+                    return (
+                      <div
+                        key={q.id}
+                        className={`ns3-pair-card ns3-division-card ${pendingDivisionSelection === idx ? 'selected' : ''}`}
+                        onClick={() => setPendingDivisionSelection(idx)}
+                      >
+                        {renderMathQuestion(q.text, true)}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="ns-response-buttons">
+              <button className="ns-btn ns-btn-primary" disabled={pendingDivisionSelection === null} onClick={confirmDivisionSelect}>{t('game.confirm')}</button>
+            </div>
+          </div>
+        )}
+
+        {screen === 'game' && (stage === 'division_q1' || stage === 'division_retry') && division && (
+          <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
+            <div className="ns-card ns-question-card ns-split-question">
+              <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
+                {renderMathQuestion(division.text)}
+              </div>
+            </div>
+
+            <div className="ns-auto-inputs ns-split-inputs">
+              <div className="ns-input-row">
+                <div className="ns-input-group" onClick={() => setActiveInput('quotient')}>
+                  <label>{t('game.quotient')}</label>
+                  <input type="text" readOnly value={quotientVal} className={activeInput === 'quotient' ? 'ns-input-active' : ''} />
+                </div>
+                <div className="ns-input-group" onClick={() => setActiveInput('remainder')}>
+                  <label>{t('game.remainder')}</label>
+                  <input type="text" readOnly value={remainderVal} className={activeInput === 'remainder' ? 'ns-input-active' : ''} />
+                </div>
+              </div>
+              <button className="ns-btn ns-btn-submit" onClick={handleDivisionSubmit}>{t('game.submitAnswer')}</button>
+
+              <div className="ns-numpad">
+                {[1,2,3,4,5,6,7,8,9].map(num => <button key={num} onClick={()=>handleNumpadInput(num)} className="ns-key">{num}</button>)}
+                <button onClick={()=>handleNumpadInput('clear')} className="ns-key ns-key-danger" style={{fontSize:'1.2rem'}}>{t('game.clear')}</button>
+                <button onClick={()=>handleNumpadInput(0)} className="ns-key">0</button>
+                <button onClick={()=>handleNumpadInput('back')} className="ns-key ns-key-back">⌫</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {screen === 'game' && (stage === 'number_recognition_99_select' || stage === 'number_recognition_9_select') && (
+          <div className="ns-screen" style={{ background: '#fff', padding: '20px' }}>
+            <div className="ns-chips" style={{ justifyContent: 'flex-end', marginBottom: 8 }}>
+              <span className="ns-chip">{nrMarkedCount} / 5 marked</span>
+            </div>
+
+            <div className="ns3-mark-grid">
+              {(nrBank.length === 10 ? [nrBank.slice(0, 4), nrBank.slice(4, 6), nrBank.slice(6, 10)] : [nrBank])
+                .map((row, rowIdx) => (
+                  <div className="ns3-mark-row" key={rowIdx}>
+                    {row.map((text) => {
+                      const isSelected = nrSelectedTexts.includes(text);
+                      const isMarked = text in nrMarks;
+                      return (
+                        <div
+                          key={text}
+                          className={`ns3-mark-tile ${isSelected ? 'ns3-mark-tile-selected' : ''}`}
+                          onClick={() => toggleNrTileSelection(text)}
+                          style={{ cursor: isMarked ? 'default' : 'pointer' }}
+                        >
+                          <div className="ns3-mark-tile-text">{text}</div>
+                          <div className={`ns3-mark-toggle-row ${isSelected ? 'visible' : ''}`}>
+                            <button
+                              aria-label="Mark as correct"
+                              className={`ns3-mark-toggle-btn ${nrMarks[text] === 'correct' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markNrTile(text, true); }}
+                            >✓</button>
+                            <button
+                              aria-label="Mark as incorrect"
+                              className={`ns3-mark-toggle-btn ${nrMarks[text] === 'incorrect' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markNrTile(text, false); }}
+                            >✗</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+            </div>
+
+            <div className="ns-response-buttons">
+              <button className="ns-btn ns-btn-primary" disabled={!canContinueNrMarking} onClick={handleFinishNrMarking}>
+                {t('game.finishAssessment')}
+              </button>
             </div>
           </div>
         )}
@@ -773,91 +1125,68 @@ const NumberSkillGameV3 = () => {
                 </span>
               </div>
             </div>
-            
+
             <div className="ns-card ns-result-card">
+              {finalLevel && (
+                <>
+                  <div className="ns-score-top">
+                    <div className="ns-score-dial-container">
+                      <div className="ns-score-dial-big">{finalScore}</div>
+                      <div className="ns-score-dial-small">/ {LEVELS.Division}</div>
+                    </div>
 
-
-              <div className="ns-score-top">
-                <div className="ns-score-dial-container">
-                  <div className="ns-score-dial-big">{getTotalScore()}</div>
-                  <div className="ns-score-dial-small">/ {questions.length}</div>
-                </div>
-
-                <div className="ns-metric-grid">
-                  <div className="ns-metric-box">
-                    <label>{t('game.correct')}</label>
-                    <div className="metric-val green">{getTotalScore()}</div>
-                  </div>
-                  <div className="ns-metric-box">
-                    <label>{t('game.incorrect')}</label>
-                    <div className="metric-val red">{allScores.length - getTotalScore()}</div>
-                  </div>
-                  <div className="ns-metric-box">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      {t('game.accuracyLabel')}
-                      <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Attempted × 100">ⓘ</span>
-                    </label>
-                    <div className="metric-val">{((getTotalScore() / questions.length) * 100).toFixed(1)}%</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{getTotalScore()} / {questions.length}</div>
-                  </div>
-                  <div className="ns-metric-box">
-                    <label>{t('game.totalTimeMetric')}</label>
-                    <div className="metric-val">
-                       {formatSec(allScores.reduce((acc, s) => acc + (s.timeTaken || 0), 0))}
+                    <div className="ns-metric-grid">
+                      <div className="ns-metric-box">
+                        <label>{t('game.finalResults')}</label>
+                        <div className="metric-val">{finalLevel}</div>
+                      </div>
+                      <div className="ns-metric-box">
+                        <label>{t('game.totalTimeMetric')}</label>
+                        <div className="metric-val">{formatSec(totalDuration)}</div>
+                      </div>
+                      <div className="ns-metric-box">
+                        <label>Retries Given</label>
+                        <div className="metric-val">{totalRetries}</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="ns-metric-box">
-                    <label>{t('game.avgTimeQ')}</label>
-                    <div className="metric-val">{Math.round(allScores.reduce((acc, s)=>acc+ (s.timeTaken||0), 0) / (allScores.length||1))}s</div>
+
+                  <div className="ns3-path-trail">
+                    {path.filter(s => STAGE_LABELS[s]).map((p, i, arr) => (
+                      <React.Fragment key={i}>
+                        <span className="ns-chip">{STAGE_LABELS[p]}</span>
+                        {i < arr.length - 1 && <span className="ns3-path-arrow">→</span>}
+                      </React.Fragment>
+                    ))}
                   </div>
-                </div>
+                </>
+              )}
+
+              <div style={{ marginTop: '20px', overflowX: 'auto', marginBottom: '30px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                  <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Stage</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.status')}</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>Detail</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.duration')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {path.filter(s => STAGE_LABELS[s]).map((stageName, idx) => {
+                      const r = getPathStageResult(stageName);
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{STAGE_LABELS[stageName]}</td>
+                          <td style={{ padding: '12px 16px' }}>{r.correct !== undefined ? renderPassBadge(r.correct) : '—'}</td>
+                          <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{r.detail}</td>
+                          <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b', fontFamily: 'monospace' }}>{formatSec(r.duration)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-
-                <div style={{ marginTop: '20px', overflowX: 'auto', marginBottom: '30px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                      <tr>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.sNo')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.question')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.responseLabel') || 'Response'}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.status')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.score')}</th>
-                        <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '0.85rem' }}>{t('game.scoreTable.duration')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allScores.map((scoreObj, idx) => {
-                        const qObj = questions.find(q => (q.id || q.qid) === scoreObj.qId);
-                        const timeDisp = scoreObj.timeTaken === 0 ? '0s' : scoreObj.timeTaken + 's';
-                        
-                        let cAnsText = qObj?.correct_answer ?? qObj?.correctAnswer ?? '—';
-                        if (qObj?.category?.evaluation_type === 'auto_division') cAnsText = `Q:${qObj.correct_answer ?? qObj.correctAnswer}, R:${qObj.remainder}`;
-
-                        let uAnsText = '—';
-                        if (qObj?.category?.evaluation_type === 'auto_division') {
-                          uAnsText = `Q:${scoreObj.uQ ?? '—'}, R:${scoreObj.uR ?? '—'}`;
-                        } else if (scoreObj.uA !== undefined) {
-                          uAnsText = scoreObj.uA;
-                        }
-
-                        return (
-                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>{idx + 1}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155' }}>{qObj?.text}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#334155', fontWeight: 600 }}>{uAnsText}</td>
-                            <td style={{ padding: '12px 16px' }}>
-                              <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 600, background: scoreObj.score === 1 ? '#d1fae5' : '#fee2e2', color: scoreObj.score === 1 ? '#065f46' : '#991b1b' }}>
-                                {scoreObj.score === 1 ? t('game.scoreTable.correct') : t('game.scoreTable.incorrect')}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 700, color: scoreObj.score === 1 ? '#059669' : '#dc2626' }}>{scoreObj.score}</td>
-                            <td style={{ padding: '12px 16px', fontSize: '0.9rem', color: '#64748b', fontFamily: 'monospace' }}>{formatSec(scoreObj.timeTaken)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
 
               {/* Assessment Form Segment */}
               <SessionAssessmentForm
@@ -882,10 +1211,10 @@ const NumberSkillGameV3 = () => {
       </main>
 
       {!isCheckingSession && (
-        <audio 
-          ref={audioRef} 
+        <audio
+          ref={audioRef}
           src="/assets/audios/number_skill_v3/splash.wav"
-          preload="auto" 
+          preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
         />
@@ -905,20 +1234,32 @@ const NumberSkillGameV3 = () => {
         </div>
       )}
 
+      {carelessPromptStage && (
+        <div className="ns-modal-overlay">
+          <div className="ns-modal">
+            <h2>{t('game.carelessMistakePrompt')}</h2>
+            <div className="ns-btn-row" style={{ marginTop: '20px', flexWrap: 'nowrap' }}>
+              <button className="ns-btn ns-btn-secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => handleCarelessResponse(false)}>{t('game.noLabel')}</button>
+              <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => handleCarelessResponse(true)}>{t('game.yesLabel')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showQuitModal && (
         <div className="ns-modal-overlay">
           <div className="ns-modal">
             <h2>{t('game.pauseQuitTitle')}</h2>
             <p>{t('game.pauseDesc')}</p>
-            
+
             <div style={{ position: 'relative' }}>
-              <textarea 
+              <textarea
                 placeholder={t('game.pausePlaceholder')}
-                value={quitReason} 
+                value={quitReason}
                 onChange={e => setQuitReason(e.target.value)}
               />
-              <button 
-                onClick={() => toggleRecording('quitReason')} 
+              <button
+                onClick={() => toggleRecording('quitReason')}
                 style={{
                   position: 'absolute', top: '25px', right: '10px',
                   background: isRecording && recordingTarget === 'quitReason' ? '#ef4444' : '#e2e8f0',

@@ -16,8 +16,9 @@ const GAME_MAX_SCORES = {
   atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 22,
   rover_mela: 44, auditory_dhyan: 33, working_memory_herpher: 25, working_memory_herpher_v2: 16,
   working_memory_herpher_v3: 25,
-  numeracy_number_skill: 26, numeracy_number_skill_v2: 30, numeracy_number_skill_v3: 30, literacy_reading_skill: 22,
+  numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
   literacy_reading_skill_v2: 4, // ASER adaptive flow: ordinal reading level 0-4 (Beginner..Story), not a point score
+  numeracy_number_skill_v3: 4, // ASER adaptive flow: ordinal level 0-4 (Beginner..Division), not a point score
   cognitive_flex_chor: 57, triangle_rachna: 48,
 };
 
@@ -1192,7 +1193,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
 
       <div className="ana-grid-3">
         <Card
-          title={gameKey === 'literacy_reading_skill_v2' ? 'Level Wise Distribution' : 'Score Distribution'}
+          title={['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(gameKey) ? 'Level Wise Distribution' : 'Score Distribution'}
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Score Distribution",

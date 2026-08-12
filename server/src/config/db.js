@@ -472,6 +472,76 @@ const initDb = async () => {
       );
     }
 
+    // One-time content migration: replace the old V2-mirroring placeholder V3
+    // content with the real ASER-tree question bank. Subtraction keeps
+    // 'auto_subtraction' (child types the answer on the numpad, auto-scored
+    // against correct_answer) — this field is informational for the admin
+    // panel only; the client's ASER stage engine renders by `stage` name,
+    // not by reading category.evaluation_type. Guarded by a content
+    // signature (the old first-subtraction-question text) rather than a
+    // count, since the count-based seed guard above can't re-fire once the
+    // tables are already seeded.
+    const [oldSubQ] = await connection.query(
+      "SELECT id FROM ankganit_v3_questions WHERE category_id = 3 AND text = '51 - 35' LIMIT 1"
+    );
+    if (oldSubQ.length > 0) {
+      await connection.query('DELETE FROM ankganit_v3_questions WHERE category_id IN (1,2,3,4)');
+      await connection.query("UPDATE ankganit_v3_categories SET evaluation_type = 'auto_subtraction', minimum_correct = 2 WHERE id = 3");
+      await connection.query('UPDATE ankganit_v3_categories SET minimum_correct = 1 WHERE id = 4');
+      // Spec: "4 or 5 correct" passes for both recognition categories — the
+      // original seed had category 2's threshold at 5, which would wrongly
+      // fail a 4/5 child.
+      await connection.query('UPDATE ankganit_v3_categories SET minimum_correct = 4 WHERE id IN (1,2)');
+
+      const v3QuestionsMigrated = [
+        // Category 1: Number Recognition (1–9) — 8 values
+        [1, 'Identify number 1', '1', 1, null, 1],
+        [1, 'Identify number 4', '4', 4, null, 2],
+        [1, 'Identify number 7', '7', 7, null, 3],
+        [1, 'Identify number 3', '3', 3, null, 4],
+        [1, 'Identify number 6', '6', 6, null, 5],
+        [1, 'Identify number 9', '9', 9, null, 6],
+        [1, 'Identify number 5', '5', 5, null, 7],
+        [1, 'Identify number 2', '2', 2, null, 8],
+
+        // Category 2: Number Recognition (11–99) — 10 values
+        [2, 'Identify number 51', '51', 51, null, 1],
+        [2, 'Identify number 83', '83', 83, null, 2],
+        [2, 'Identify number 37', '37', 37, null, 3],
+        [2, 'Identify number 65', '65', 65, null, 4],
+        [2, 'Identify number 55', '55', 55, null, 5],
+        [2, 'Identify number 26', '26', 26, null, 6],
+        [2, 'Identify number 91', '91', 91, null, 7],
+        [2, 'Identify number 43', '43', 43, null, 8],
+        [2, 'Identify number 36', '36', 36, null, 9],
+        [2, 'Identify number 27', '27', 27, null, 10],
+
+        // Category 3: Two-Digit Subtraction — 8 questions as 4 fixed pairs.
+        // display_order 1&2 = pair 1, 3&4 = pair 2, 5&6 = pair 3, 7&8 = pair 4.
+        // The client always administers pair 1 by default.
+        [3, '46 - 29', '46,29', 17, null, 1],
+        [3, '63 - 39', '63,39', 24, null, 2],
+        [3, '47 - 28', '47,28', 19, null, 3],
+        [3, '45 - 17', '45,17', 28, null, 4],
+        [3, '92 - 76', '92,76', 16, null, 5],
+        [3, '84 - 57', '84,57', 27, null, 6],
+        [3, '52 - 14', '52,14', 38, null, 7],
+        [3, '66 - 48', '66,48', 18, null, 8],
+
+        // Category 4: Division — 4 questions, client administers exactly 1
+        // (default = display_order 1).
+        [4, '879 ÷ 7', '879,7', 125, 4, 1],
+        [4, '824 ÷ 6', '824,6', 137, 2, 2],
+        [4, '985 ÷ 8', '985,8', 123, 1, 3],
+        [4, '517 ÷ 4', '517,4', 129, 1, 4],
+      ];
+
+      await connection.query(
+        'INSERT INTO ankganit_v3_questions (category_id, text, title, correct_answer, remainder, display_order) VALUES ?',
+        [v3QuestionsMigrated]
+      );
+    }
+
     // ── Automated Testing ──────────────────────────────────────────────────────
     
     // ── Number Recall V2 (Lottery Ka Ticket - V2) ──────────────────────────────

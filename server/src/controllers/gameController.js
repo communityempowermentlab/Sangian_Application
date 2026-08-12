@@ -48,6 +48,22 @@ const computeActualGameTime = (parsedState, gameName) => {
         return parsedState?.timerSeconds || 0;
     }
 
+    // numeracy_number_skill_v3 is an ASER-style adaptive decision tree (Subtraction →
+    // Division or Number Recognition), not a flat allScores array — sum each stage's
+    // final-attempt time directly, mirroring the literacy_reading_skill_v2 branch above.
+    if (gameName === 'numeracy_number_skill_v3') {
+        const stageDurations = [
+            (parsedState?.subtraction?.q1?.retryAttempt ?? parsedState?.subtraction?.q1?.firstAttempt)?.timeTaken,
+            parsedState?.subtraction?.q2?.firstAttempt?.timeTaken,
+            (parsedState?.division?.carelessRetryAttempt ?? parsedState?.division?.firstAttempt)?.timeTaken,
+            parsedState?.numberRecognition99?.timeTaken,
+            parsedState?.numberRecognition9?.timeTaken,
+        ];
+        const stageTime = stageDurations.reduce((sum, v) => sum + (Number(v) || 0), 0);
+        if (stageTime > 0) return stageTime;
+        return parsedState?.timerSeconds || 0;
+    }
+
     // Teaching-question entries (e.g. number_recall_lottery[/_v2]) are stored separately
     // in saved_state.teachingScores but scored like standard questions — fold them in here
     // so Duration/avg-game-time stay consistent with the client's combined total.
