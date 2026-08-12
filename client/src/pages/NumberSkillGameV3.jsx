@@ -31,7 +31,6 @@ const STAGE_LABELS = {
   subtraction_q1_retry: 'Subtraction Q1 (Retry)',
   division_select: 'Division',
   division_q1: 'Division',
-  division_retry: 'Division (Retry)',
   number_recognition_99_select: 'Number Recognition (11–99)',
   number_recognition_9_select: 'Number Recognition (1–9)',
 };
@@ -43,7 +42,6 @@ const CATEGORY_NAMES = {
   division: 'One-Digit Divisor (Three-Digit Dividend)',
 };
 
-const SUBTRACTION_PAIR_INDEX = 0; // which fixed pair (by display_order) is administered
 
 const NumberSkillGameV3 = () => {
   // Global Microphone Cleanup: Ensure hardware lock is released on unmount
@@ -108,13 +106,12 @@ const NumberSkillGameV3 = () => {
   // ── ASER adaptive-tree state ────────────────────────────────────────────
   const [stage, setStage] = useState('subtraction_pair_select');
   const [path, setPath] = useState([]);
-  const [pendingSubtractionQ1, setPendingSubtractionQ1] = useState(null); // index within the pair, or null (auto-default)
+  const [pendingSubtractionSelection, setPendingSubtractionSelection] = useState([]); // up to 2 question ids, in pick order (first = Q1)
   const [pendingDivisionSelection, setPendingDivisionSelection] = useState(null); // index within the division bank, or null
-  const [subtraction, setSubtraction] = useState({ pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+  const [subtraction, setSubtraction] = useState({ q1: null, q2: null, bothCorrect: null });
   const [division, setDivision] = useState(null);
   const [numberRecognition99, setNumberRecognition99] = useState(null);
   const [numberRecognition9, setNumberRecognition9] = useState(null);
-  const [carelessPromptStage, setCarelessPromptStage] = useState(null); // null | 'subtraction_q1' | 'subtraction_q2' | 'division'
   // Tile-marking transient state, shared by whichever Number Recognition
   // screen is currently active (only one is ever in progress at a time).
   const [nrMarks, setNrMarks] = useState({});
@@ -260,7 +257,7 @@ const NumberSkillGameV3 = () => {
     const saved = resumeData.saved_state || {};
     setStage(saved.stage || 'subtraction_pair_select');
     setPath(saved.path || []);
-    setSubtraction(saved.subtraction || { pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+    setSubtraction(saved.subtraction || { q1: null, q2: null, bothCorrect: null });
     setDivision(saved.division || null);
     setNumberRecognition99(saved.numberRecognition99 || null);
     setNumberRecognition9(saved.numberRecognition9 || null);
@@ -277,13 +274,12 @@ const NumberSkillGameV3 = () => {
   const resetInternalState = () => {
     setStage('subtraction_pair_select');
     setPath([]);
-    setPendingSubtractionQ1(null);
+    setPendingSubtractionSelection([]);
     setPendingDivisionSelection(null);
-    setSubtraction({ pairIndex: SUBTRACTION_PAIR_INDEX, q1: null, q2: null, q1SelectedFirst: null, bothCorrect: null });
+    setSubtraction({ q1: null, q2: null, bothCorrect: null });
     setDivision(null);
     setNumberRecognition99(null);
     setNumberRecognition9(null);
-    setCarelessPromptStage(null);
     setNrMarks({});
     setNrSelectedTexts([]);
     setFinalLevel(null);
@@ -430,20 +426,27 @@ const NumberSkillGameV3 = () => {
   };
 
   // ── Subtraction ─────────────────────────────────────────────────────────
+  // All 8 questions are shown at once; the child/assessor picks any 2 (in
+  // the order to attempt them — first pick = Q1). Once 2 are picked the
+  // selection locks: no further picks, no un-picking, until Confirm.
   const sortedSubtractionQuestions = subtractionCat ? [...subtractionCat.questions].sort((a, b) => a.display_order - b.display_order) : [];
-  const subtractionPair = sortedSubtractionQuestions.slice(subtraction.pairIndex * 2, subtraction.pairIndex * 2 + 2);
 
-  const confirmSubtractionPairSelect = () => {
-    if (subtractionPair.length < 2) return;
-    const q1Idx = pendingSubtractionQ1 ?? 0;
-    const q2Idx = q1Idx === 0 ? 1 : 0;
-    const q1src = subtractionPair[q1Idx];
-    const q2src = subtractionPair[q2Idx];
+  const toggleSubtractionSelection = (id) => {
+    setPendingSubtractionSelection(prev => {
+      if (prev.includes(id) || prev.length >= 2) return prev; // locked
+      return [...prev, id];
+    });
+  };
+
+  const confirmSubtractionSelect = () => {
+    if (pendingSubtractionSelection.length < 2) return;
+    const q1src = sortedSubtractionQuestions.find(q => q.id === pendingSubtractionSelection[0]);
+    const q2src = sortedSubtractionQuestions.find(q => q.id === pendingSubtractionSelection[1]);
+    if (!q1src || !q2src) return;
     setSubtraction(prev => ({
       ...prev,
       q1: { questionId: q1src.id, text: q1src.text, correctAnswer: q1src.correct_answer, firstAttempt: null, retryGiven: false, retryAttempt: null, finalCorrect: null },
       q2: { questionId: q2src.id, text: q2src.text, correctAnswer: q2src.correct_answer, firstAttempt: null, finalCorrect: null },
-      q1SelectedFirst: pendingSubtractionQ1 !== null,
     }));
     setAnswerVal('');
     setActiveInput('answer');
@@ -527,11 +530,12 @@ const NumberSkillGameV3 = () => {
     const idx = pendingDivisionSelection ?? 0;
     const q = sortedDivisionQuestions[idx];
     if (!q) return;
-    setDivision({ questionId: q.id, text: q.text, expectedQuotient: q.correct_answer, expectedRemainder: q.remainder, firstAttempt: null, carelessRetryGiven: false, carelessRetryAttempt: null, finalCorrect: null });
+    setDivision({ questionId: q.id, text: q.text, expectedQuotient: q.correct_answer, expectedRemainder: q.remainder, firstAttempt: null, finalCorrect: null });
     setActiveInput('quotient');
     goToStage('division_q1');
   };
 
+  // No retry for division — a wrong quotient/remainder is final immediately.
   const submitDivisionAnswer = () => {
     const enteredQuotient = parseInt(quotientVal) || 0;
     const enteredRemainder = parseInt(remainderVal) || 0;
@@ -540,35 +544,7 @@ const NumberSkillGameV3 = () => {
     setQuotientVal(''); setRemainderVal('');
     const updated = { ...division, firstAttempt: attempt, finalCorrect: correct };
     setDivision(updated);
-    if (correct) finalizeAssessment('Division', { division: updated });
-    else setCarelessPromptStage('division');
-  };
-
-  const submitDivisionRetryAnswer = () => {
-    const enteredQuotient = parseInt(quotientVal) || 0;
-    const enteredRemainder = parseInt(remainderVal) || 0;
-    const correct = enteredQuotient === Number(division.expectedQuotient) && enteredRemainder === Number(division.expectedRemainder);
-    const attempt = { enteredQuotient, enteredRemainder, correct, timeTaken: qTimer };
-    setQuotientVal(''); setRemainderVal('');
-    const updated = { ...division, carelessRetryAttempt: attempt, finalCorrect: correct };
-    setDivision(updated);
-    if (correct) finalizeAssessment('Division', { division: updated });
-    else finalizeAssessment('Subtraction', { division: updated });
-  };
-
-  const handleDivisionSubmit = () => {
-    if (stage === 'division_q1') submitDivisionAnswer();
-    else if (stage === 'division_retry') submitDivisionRetryAnswer();
-  };
-
-  // ── Careless-mistake retry prompt (division only — subtraction's Q1 retry
-  // is decided automatically by evaluateAfterQ2, no assessor prompt) ────────
-  const handleCarelessResponse = (giveRetry) => {
-    setCarelessPromptStage(null);
-    const updated = { ...division, carelessRetryGiven: giveRetry };
-    setDivision(updated);
-    if (giveRetry) goToStage('division_retry');
-    else finalizeAssessment('Subtraction', { division: updated });
+    finalizeAssessment(correct ? 'Division' : 'Subtraction', { division: updated });
   };
 
   // ── Number Recognition (shared tile-marking UI for both 1–9 and 11–99) ──
@@ -773,7 +749,10 @@ const NumberSkillGameV3 = () => {
     }
   };
 
-  const renderMathQuestion = (text, compact = false) => {
+  // fontSize/minWidth let call sites shrink the rendering to fit a grid of
+  // many cards (e.g. all 8 subtraction questions on one screen) — defaults
+  // are the full solve-screen size.
+  const renderMathQuestion = (text, fontSize, minWidth) => {
     let cleanText = (text || '').replace(/Identify number\s*-?\s*/ig, '').trim();
 
     // Normalize all types of minus/dash characters to standard hyphen
@@ -785,9 +764,9 @@ const NumberSkillGameV3 = () => {
       const parts = cleanText.split('-');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: compact ? '5rem' : '12rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: fontSize || '12rem', fontWeight: 800, color: '#333', lineHeight: 1.1 }}>
             <div>{parts[0].trim()}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px', minWidth: compact ? '140px' : '300px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderBottom: '10px solid #333', paddingBottom: '8px', minWidth: minWidth || '300px' }}>
               <span style={{ marginRight: '20px' }}>-</span>
               <span>{parts[1].trim()}</span>
             </div>
@@ -799,7 +778,7 @@ const NumberSkillGameV3 = () => {
       const parts = cleanText.split('÷');
       if (parts.length === 2) {
         return (
-          <div style={{ display: 'flex', alignItems: 'stretch', fontSize: compact ? '5.5rem' : '8rem', fontWeight: 800, color: '#333', lineHeight: 1.2 }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', fontSize: fontSize || '8rem', fontWeight: 800, color: '#333', lineHeight: 1.2 }}>
             {/* Divisor */}
             <div style={{ paddingRight: '0.15em', display: 'flex', alignItems: 'center' }}>
               {parts[1].trim()}
@@ -890,15 +869,10 @@ const NumberSkillGameV3 = () => {
     if (stageName === 'subtraction_q1_retry') return { detail: subtraction.q1?.text, correct: subtraction.q1?.retryAttempt?.correct, duration: subtraction.q1?.retryAttempt?.timeTaken };
     if (stageName === 'subtraction_q2') return { detail: subtraction.q2?.text, correct: subtraction.q2?.firstAttempt?.correct, duration: subtraction.q2?.firstAttempt?.timeTaken };
     if (stageName === 'division_q1') return { detail: division?.text, correct: division?.firstAttempt?.correct, duration: division?.firstAttempt?.timeTaken };
-    if (stageName === 'division_retry') return { detail: division?.text, correct: division?.carelessRetryAttempt?.correct, duration: division?.carelessRetryAttempt?.timeTaken };
     if (stageName === 'number_recognition_99_select') return { detail: `${numberRecognition99?.correctCount ?? 0} / 5`, correct: numberRecognition99?.pass, duration: numberRecognition99?.timeTaken };
     if (stageName === 'number_recognition_9_select') return { detail: `${numberRecognition9?.correctCount ?? 0} / 5`, correct: numberRecognition9?.pass, duration: numberRecognition9?.timeTaken };
     return { detail: '—', correct: undefined, duration: null };
   };
-
-  const totalRetries = [
-    subtraction.q1?.retryGiven, division?.carelessRetryGiven,
-  ].filter(Boolean).length;
 
   const totalDuration = path
     .filter(s => STAGE_LABELS[s])
@@ -962,19 +936,27 @@ const NumberSkillGameV3 = () => {
 
         {screen === 'game' && stage === 'subtraction_pair_select' && (
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
-            <div className="ns3-pair-options">
-              {subtractionPair.map((q, idx) => (
-                <div
-                  key={q.id}
-                  className={`ns3-pair-card ${pendingSubtractionQ1 === idx ? 'selected' : ''}`}
-                  onClick={() => setPendingSubtractionQ1(idx)}
-                >
-                  {renderMathQuestion(q.text)}
+            <div className="ns3-subtraction-grid">
+              {[sortedSubtractionQuestions.slice(0, 4), sortedSubtractionQuestions.slice(4, 8)].map((row, rowIdx) => (
+                <div key={rowIdx} className="ns3-division-row ns3-subtraction-row">
+                  {row.map((q) => {
+                    const isSelected = pendingSubtractionSelection.includes(q.id);
+                    const isLocked = !isSelected && pendingSubtractionSelection.length >= 2;
+                    return (
+                      <div
+                        key={q.id}
+                        className={`ns3-pair-card ns3-subtraction-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
+                        onClick={() => toggleSubtractionSelection(q.id)}
+                      >
+                        {renderMathQuestion(q.text, '3.2rem', '110px')}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
             <div className="ns-response-buttons">
-              <button className="ns-btn ns-btn-primary" disabled={pendingSubtractionQ1 === null} onClick={confirmSubtractionPairSelect}>{t('game.confirm')}</button>
+              <button className="ns-btn ns-btn-primary" disabled={pendingSubtractionSelection.length < 2} onClick={confirmSubtractionSelect}>{t('game.confirm')}</button>
             </div>
           </div>
         )}
@@ -1019,7 +1001,7 @@ const NumberSkillGameV3 = () => {
                         className={`ns3-pair-card ns3-division-card ${pendingDivisionSelection === idx ? 'selected' : ''}`}
                         onClick={() => setPendingDivisionSelection(idx)}
                       >
-                        {renderMathQuestion(q.text, true)}
+                        {renderMathQuestion(q.text, '5.5rem')}
                       </div>
                     );
                   })}
@@ -1032,7 +1014,7 @@ const NumberSkillGameV3 = () => {
           </div>
         )}
 
-        {screen === 'game' && (stage === 'division_q1' || stage === 'division_retry') && division && (
+        {screen === 'game' && stage === 'division_q1' && division && (
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card ns-split-question">
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1051,7 +1033,7 @@ const NumberSkillGameV3 = () => {
                   <input type="text" readOnly value={remainderVal} className={activeInput === 'remainder' ? 'ns-input-active' : ''} />
                 </div>
               </div>
-              <button className="ns-btn ns-btn-submit" onClick={handleDivisionSubmit}>{t('game.submitAnswer')}</button>
+              <button className="ns-btn ns-btn-submit" onClick={submitDivisionAnswer}>{t('game.submitAnswer')}</button>
 
               <div className="ns-numpad">
                 {[1,2,3,4,5,6,7,8,9].map(num => <button key={num} onClick={()=>handleNumpadInput(num)} className="ns-key">{num}</button>)}
@@ -1144,10 +1126,6 @@ const NumberSkillGameV3 = () => {
                         <label>{t('game.totalTimeMetric')}</label>
                         <div className="metric-val">{formatSec(totalDuration)}</div>
                       </div>
-                      <div className="ns-metric-box">
-                        <label>Retries Given</label>
-                        <div className="metric-val">{totalRetries}</div>
-                      </div>
                     </div>
                   </div>
 
@@ -1229,18 +1207,6 @@ const NumberSkillGameV3 = () => {
             <div className="ns-btn-row" style={{ marginTop: '20px', flexWrap: 'nowrap' }}>
               <button className="ns-btn ns-btn-secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { setShowResumeModal(false); resetInternalState(); setScreen('splash'); }}>{t('game.restartFresh')}</button>
               <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => { unlockAudioContext(); resumeGame(); }}>{t('game.resumeGame')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {carelessPromptStage && (
-        <div className="ns-modal-overlay">
-          <div className="ns-modal">
-            <h2>{t('game.carelessMistakePrompt')}</h2>
-            <div className="ns-btn-row" style={{ marginTop: '20px', flexWrap: 'nowrap' }}>
-              <button className="ns-btn ns-btn-secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => handleCarelessResponse(false)}>{t('game.noLabel')}</button>
-              <button className="ns-btn ns-btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => handleCarelessResponse(true)}>{t('game.yesLabel')}</button>
             </div>
           </div>
         </div>

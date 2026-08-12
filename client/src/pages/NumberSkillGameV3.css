@@ -14,15 +14,37 @@
   margin: 4px 0 16px;
 }
 
-/* Subtraction pair-select — two candidate problems, tap to pick which
-   becomes Question 1 (modeled on ReadingSkillGameV2's paragraph picker). */
-.ns3-pair-options {
+/* Subtraction question select — all 8 problems shown at once, tap any 2 (in
+   pick order — first pick = Q1). Reuses .ns3-division-row's 2-per-row
+   layout and .ns3-pair-card for the individual question cards. */
+.ns3-subtraction-grid {
   display: flex;
-  gap: 24px;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 1100px;
+}
+/* Tighter row gap than the shared .ns3-division-row default, and forced
+   single-line (never wrap) so all 4 cards always sit in one row — an 11"
+   tablet screen needs both rows to fit without scrolling. */
+.ns3-subtraction-row {
+  gap: 10px;
+  flex: 1;
+  flex-wrap: nowrap;
+  min-height: 0;
+}
+/* Compound selector (not just .ns3-subtraction-card) so this reliably wins
+   over .ns3-pair-card's base flex/max-width/padding regardless of the two
+   rules' order in this file — plain equal-specificity classes would
+   otherwise have their winner decided by source order, which is fragile. */
+.ns3-pair-card.ns3-subtraction-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 240px;
+  padding: 10px 8px;
   justify-content: center;
-  flex-wrap: wrap;
-  margin: 0 auto 24px;
-  max-width: 900px;
 }
 /* Division question select — all available problems, two per row, tap to
    pick one. Reuses .ns3-pair-card for the individual question cards. */
@@ -46,7 +68,9 @@
   max-width: 1200px;
   flex: 1;
 }
-.ns3-division-card {
+.ns3-pair-card.ns3-division-card {
+  flex: 1 1 0;
+  min-width: 0;
   max-width: 560px;
   padding: 32px;
   justify-content: center;
@@ -65,8 +89,9 @@
   align-items: center;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
-.ns3-pair-card:hover { border-color: #c7d2fe; }
+.ns3-pair-card:not(.locked):hover { border-color: #c7d2fe; }
 .ns3-pair-card.selected { border-color: #4f46e5; background: #eef2ff; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15); }
+.ns3-pair-card.locked { opacity: 0.4; filter: grayscale(0.6); cursor: not-allowed; pointer-events: none; }
 .ns3-pair-card-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
 
 /* Number Recognition tile-marking grid — full bank shown, up to 5

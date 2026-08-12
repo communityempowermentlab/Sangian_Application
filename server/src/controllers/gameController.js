@@ -55,7 +55,7 @@ const computeActualGameTime = (parsedState, gameName) => {
         const stageDurations = [
             (parsedState?.subtraction?.q1?.retryAttempt ?? parsedState?.subtraction?.q1?.firstAttempt)?.timeTaken,
             parsedState?.subtraction?.q2?.firstAttempt?.timeTaken,
-            (parsedState?.division?.carelessRetryAttempt ?? parsedState?.division?.firstAttempt)?.timeTaken,
+            parsedState?.division?.firstAttempt?.timeTaken,
             parsedState?.numberRecognition99?.timeTaken,
             parsedState?.numberRecognition9?.timeTaken,
         ];
