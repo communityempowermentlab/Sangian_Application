@@ -17,11 +17,11 @@ import ReadingV2ContentManager from '../components/ReadingV2ContentManager';
 const HERPHER_V3_CATEGORIES = [
     { id: 'item0', label: 'Item 0 - Practice (Tools)', min: 6,  max: 6 },
     { id: 'item1', label: 'Item 1 - Fruits',           min: 7,  max: 7 },
-    { id: 'item2', label: 'Item 2 - Vegetables',       min: 8,  max: 8 },
-    { id: 'item3', label: 'Item 3 - Sports',           min: 9,  max: 9 },
-    { id: 'item4', label: 'Item 4 - Clothes',          min: 10, max: 10 },
-    { id: 'item5', label: 'Item 5 - Kitchen',          min: 11, max: 11 },
-    { id: 'item6', label: 'Item 6 - Household',        min: 12, max: 12 },
+    { id: 'item2', label: 'Item 2 - Sports',           min: 8,  max: 8 },
+    { id: 'item3', label: 'Item 3 - Cloths',           min: 9,  max: 9 },
+    { id: 'item4', label: 'Item 4 - Households',       min: 10, max: 10 },
+    { id: 'item5', label: 'Item 5 - Vegetables',       min: 11, max: 11 },
+    { id: 'item6', label: 'Item 6 - Kitchen',          min: 12, max: 12 },
     { id: 'item7', label: 'Item 7 - Animals',          min: 13, max: 13 },
     { id: 'item8', label: 'Item 8 - Transport',        min: 14, max: 14 },
 ];
