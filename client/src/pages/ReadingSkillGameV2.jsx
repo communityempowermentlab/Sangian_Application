@@ -904,7 +904,7 @@ const ReadingSkillGameV2 = () => {
         {screen === 'game' && (stage === 'paragraph' || stage === 'paragraph_retry') && (
           <div className="rs-screen" style={{ backgroundColor: '#fff', padding: '20px' }}>
             <div className="rs-paragraph-options">
-              {PARAGRAPHS.map((text, idx) => {
+              {resolvedParagraphs.map((text, idx) => {
                 const isSelected = selectedParagraphIndex === idx;
                 const isDimmed = selectedParagraphIndex !== null && !isSelected;
                 // Retry re-reads the paragraph already chosen — selection locks so the
