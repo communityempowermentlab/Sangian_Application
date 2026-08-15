@@ -18,7 +18,7 @@ const HERPHER_V3_CATEGORIES = [
     { id: 'item0', label: 'Item 0 - Practice (Tools)', min: 6,  max: 6 },
     { id: 'item1', label: 'Item 1 - Fruits',           min: 7,  max: 7 },
     { id: 'item2', label: 'Item 2 - Sports',           min: 8,  max: 8 },
-    { id: 'item3', label: 'Item 3 - Cloths',           min: 9,  max: 9 },
+    { id: 'item3', label: 'Item 3 - Clothes',          min: 9,  max: 9 },
     { id: 'item4', label: 'Item 4 - Households',       min: 10, max: 10 },
     { id: 'item5', label: 'Item 5 - Vegetables',       min: 11, max: 11 },
     { id: 'item6', label: 'Item 6 - Kitchen',          min: 12, max: 12 },
