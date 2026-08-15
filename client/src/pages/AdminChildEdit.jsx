@@ -2,12 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildPhotoUpload from '../components/ChildPhotoUpload';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+
+// Only a true Super Admin session may reassign a child's organization — an
+// Organization login (or an org-bound Staff account) always keeps the
+// child bound to its own org, server-side (see adminChildController.js's
+// updateChild), so the picker would be redundant and misleading for those
+// sessions.
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const AdminChildEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [formData, setFormData] = useState({ new_child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '', status: 'active' });
+    const [formData, setFormData] = useState({ new_child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '', status: 'active', org_id: '' });
+    const [orgOptions, setOrgOptions] = useState([]);
     const [currentPhoto, setCurrentPhoto] = useState(null);  // filename from DB
     const [photoFile, setPhotoFile]       = useState(null);  // new File selected
     const [errors, setErrors]     = useState({});
@@ -67,6 +76,13 @@ const AdminChildEdit = () => {
             .catch(err => console.error('Failed to fetch child groups:', err));
     }, []);
 
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
+
     // Active groups are always offered; a group the child is already in stays
     // visible (tagged) even if it's since gone inactive, so it can be seen/unchecked.
     const groupOptions = allGroups.filter(g => g.status === 'active' || selectedGroupIds.includes(g.id));
@@ -109,6 +125,7 @@ const AdminChildEdit = () => {
                 gram_sabha: data.gram_sabha || '',
                 hamlet: data.hamlet || '',
                 status: data.status || 'active',
+                org_id: data.org_id || '',
             });
             setCurrentPhoto(data.photo || null);
             setSelectedGroupIds(data.group_ids ? data.group_ids.split(',').map(Number) : []);
@@ -146,6 +163,7 @@ const AdminChildEdit = () => {
         }
         if (!formData.gender)                              e.gender = 'Gender is required.';
         if (!/^[0-9]{10}$/.test(formData.mobile))         e.mobile = 'Enter a valid 10-digit mobile number.';
+        if (isAdminSession && !formData.org_id)            e.org_id = 'Please select an organization.';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -175,6 +193,7 @@ const AdminChildEdit = () => {
             data.append('hamlet', formData.hamlet.trim());
             data.append('status', formData.status);
             data.append('group_ids', JSON.stringify(selectedGroupIds));
+            if (isAdminSession) data.append('org_id', formData.org_id);
             if (photoFile) data.append('photo', photoFile);
 
             const res = await axiosAdmin.put(`/admin/children/${id}`, data);
@@ -257,6 +276,17 @@ const AdminChildEdit = () => {
                         <input id="name" type="text" placeholder="Enter full name" style={fieldStyle('name')} value={formData.name} onChange={handleInputChange} />
                         {errors.name && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.name}</div>}
                     </div>
+
+                    {isAdminSession && (
+                        <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label htmlFor="org_id" style={{ fontSize: '13px', fontWeight: 'bold' }}>Organization *</label>
+                            <select id="org_id" style={{ ...fieldStyle('org_id'), background: '#fff' }} value={formData.org_id} onChange={handleInputChange}>
+                                <option value="">Select organization</option>
+                                {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                            </select>
+                            {errors.org_id && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.org_id}</div>}
+                        </div>
+                    )}
 
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>

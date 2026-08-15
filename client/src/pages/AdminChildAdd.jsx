@@ -2,21 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import ChildPhotoUpload from '../components/ChildPhotoUpload';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+
+// Only a true Super Admin session picks an organization explicitly — an
+// Organization login (or an org-bound Staff account) always gets the
+// child bound to its own org automatically, server-side (see
+// adminChildController.js's addChild), so the picker would be redundant
+// and misleading for those sessions.
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const AdminChildAdd = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '' });
+    const [formData, setFormData] = useState({ child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '', org_id: '' });
     const [photoFile, setPhotoFile]   = useState(null);
     const [errors, setErrors]         = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
     const [groupOptions, setGroupOptions] = useState([]);
     const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+    const [orgOptions, setOrgOptions] = useState([]);
 
     useEffect(() => {
         axiosAdmin.get('/admin/child-groups')
             .then(res => setGroupOptions(res.data.filter(g => g.status === 'active')))
             .catch(err => console.error('Failed to fetch child groups:', err));
+    }, []);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
     }, []);
 
     const toggleGroup = (groupId) => {
@@ -84,6 +100,7 @@ const AdminChildAdd = () => {
         }
         if (!formData.gender)                               e.gender = 'Gender is required.';
         if (!/^[0-9]{10}$/.test(formData.mobile))          e.mobile = 'Enter a valid 10-digit mobile number.';
+        if (isAdminSession && !formData.org_id)             e.org_id = 'Please select an organization.';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -112,6 +129,7 @@ const AdminChildAdd = () => {
             data.append('gram_sabha', formData.gram_sabha.trim());
             data.append('hamlet', formData.hamlet.trim());
             data.append('group_ids', JSON.stringify(selectedGroupIds));
+            if (isAdminSession) data.append('org_id', formData.org_id);
             if (photoFile) data.append('photo', photoFile);
 
             const response = await axiosAdmin.post('/admin/children', data);
@@ -172,6 +190,17 @@ const AdminChildAdd = () => {
                         <input id="name" type="text" placeholder="Enter full name" style={fieldStyle('name')} value={formData.name} onChange={handleInputChange} />
                         {errors.name && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.name}</div>}
                     </div>
+
+                    {isAdminSession && (
+                        <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label htmlFor="org_id" style={{ fontSize: '13px', fontWeight: 'bold' }}>Organization *</label>
+                            <select id="org_id" style={{ ...fieldStyle('org_id'), background: '#fff' }} value={formData.org_id} onChange={handleInputChange}>
+                                <option value="">Select organization</option>
+                                {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                            </select>
+                            {errors.org_id && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.org_id}</div>}
+                        </div>
+                    )}
 
                     <div style={{ gridColumn: 'span 6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>

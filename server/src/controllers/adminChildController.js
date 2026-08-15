@@ -124,11 +124,27 @@ exports.addChild = async (req, res) => {
             return res.status(400).json({ message: 'Child ID already exists. Please choose a unique ID.' });
         }
 
-        // Super Admin's created-child stays org_id-NULL (same as before this
-        // feature existed); an org-bound staff account or Organization
-        // login always stamps its own org_id — never trusted from the
-        // client, always derived from the authenticated scope.
-        const orgId = req.orgScope.isSuperAdmin ? null : req.orgScope.orgId;
+        // Super Admin must explicitly pick which organization a new child
+        // belongs to (AdminChildAdd.jsx's org picker, admin-only); an
+        // org-bound staff account or Organization login always stamps its
+        // own org_id instead — never trusted from the client, always
+        // derived from the authenticated scope.
+        let orgId;
+        if (req.orgScope.isSuperAdmin) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ message: 'Please select the organization this child belongs to.' });
+            }
+            const [orgRows] = await pool.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ message: 'Selected organization not found.' });
+            }
+            orgId = requestedOrgId;
+        } else {
+            orgId = req.orgScope.orgId;
+        }
 
         const [result] = await pool.query(
             'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, org_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -180,13 +196,15 @@ exports.getChildById = async (req, res) => {
         const scope = scopeClause(req.orgScope);
         const [rows] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo,
+                   c.org_id, o.org_name,
                    (SELECT GROUP_CONCAT(cg.id ORDER BY cg.name)
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
                     WHERE cgm.children_id = c.id) AS group_ids,
                    (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name)
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
                     WHERE cgm.children_id = c.id) AS group_names
-            FROM children c WHERE c.child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}
+            FROM children c LEFT JOIN organizations o ON o.id = c.org_id
+            WHERE c.child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}
         `, [childId, ...scope.params]);
 
         if (rows.length === 0) {
@@ -223,6 +241,26 @@ exports.updateChild = async (req, res) => {
             return res.status(400).json({ message: 'Child ID, name, DOB, gender, mobile, father name, and mother name are required.' });
         }
 
+        // Only Super Admin may reassign a child's organization (AdminChildEdit.jsx's
+        // org picker, admin-only); an org-bound staff/Organization session keeps
+        // the child's existing org_id untouched regardless of what's submitted.
+        let newOrgId = oldData.org_id;
+        if (req.orgScope.isSuperAdmin && req.body.org_id !== undefined) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                await connection.rollback();
+                return res.status(400).json({ message: 'Please select the organization this child belongs to.' });
+            }
+            const [orgRows] = await connection.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                await connection.rollback();
+                return res.status(400).json({ message: 'Selected organization not found.' });
+            }
+            newOrgId = requestedOrgId;
+        }
+
         if (father_name.trim().length > 225 || mother_name.trim().length > 225) {
             if (req.file) fs.unlinkSync(req.file.path);
             await connection.rollback();
@@ -248,8 +286,8 @@ exports.updateChild = async (req, res) => {
 
             // Update main table child_id along with other fields
             const [result] = await connection.query(
-                'UPDATE children SET child_id = ?, name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ? WHERE child_id = ?',
-                [trimmedNewId, name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, childId]
+                'UPDATE children SET child_id = ?, name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ?, org_id = ? WHERE child_id = ?',
+                [trimmedNewId, name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, newOrgId, childId]
             );
 
             if (result.affectedRows === 0) {
@@ -261,8 +299,8 @@ exports.updateChild = async (req, res) => {
             targetChildId = trimmedNewId;
         } else {
             const [result] = await connection.query(
-                'UPDATE children SET name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ? WHERE child_id = ?',
-                [name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, childId]
+                'UPDATE children SET name = ?, dob = ?, gender = ?, mobile = ?, father_name = ?, mother_name = ?, remarks = ?, gram_sabha = ?, hamlet = ?, status = ?, org_id = ? WHERE child_id = ?',
+                [name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), status, newOrgId, childId]
             );
 
             if (result.affectedRows === 0) {
@@ -341,6 +379,15 @@ exports.updateChild = async (req, res) => {
         }
         if (status !== oldData.status) {
             logs.push(['Status', oldData.status, status]);
+        }
+        if (newOrgId !== oldData.org_id) {
+            const orgIds = [oldData.org_id, newOrgId].filter(v => v !== null && v !== undefined);
+            let orgNameMap = {};
+            if (orgIds.length) {
+                const [orgNameRows] = await connection.query('SELECT id, org_name FROM organizations WHERE id IN (?)', [orgIds]);
+                orgNameMap = Object.fromEntries(orgNameRows.map(o => [o.id, o.org_name]));
+            }
+            logs.push(['Organization', orgNameMap[oldData.org_id] || 'None', orgNameMap[newOrgId] || 'None']);
         }
         if ((father_name || '').trim() !== (oldData.father_name || '')) {
             logs.push(['Father Name', oldData.father_name || '', (father_name || '').trim()]);
