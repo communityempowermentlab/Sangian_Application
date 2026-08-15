@@ -181,23 +181,6 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
         }
     };
 
-    const handleDelete = async (file) => {
-        if (!window.confirm('Delete this audio file? This cannot be undone.')) return;
-        setBusyFileId(file.id);
-        try {
-            const res = await axiosAdmin.delete(`/admin/elements/${file.id}`);
-            if (res.data.success) {
-                showToast('Audio deleted');
-                loadAll();
-            }
-        } catch (error) {
-            console.error('Audio delete failed:', error);
-            showToast('Failed to delete audio', 'error');
-        } finally {
-            setBusyFileId(null);
-        }
-    };
-
     const handleToggleStatus = async (file) => {
         setBusyFileId(file.id);
         try {
@@ -277,26 +260,15 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                                             {uploadingKey === key ? 'Uploading...' : (file ? 'Replace' : 'Upload')}
                                         </button>
                                         {file && (
-                                            <>
-                                                <button
-                                                    className="admin-btn admin-btn-secondary"
-                                                    style={{ fontSize: '12px', padding: '5px 10px' }}
-                                                    onClick={() => handleToggleStatus(file)}
-                                                    disabled={isBusy}
-                                                    title={file.is_active === 0 ? 'Enable this audio' : 'Disable this audio'}
-                                                >
-                                                    {file.is_active === 0 ? 'Enable' : 'Disable'}
-                                                </button>
-                                                <button
-                                                    className="admin-btn-icon"
-                                                    style={{ color: '#dc2626' }}
-                                                    onClick={() => handleDelete(file)}
-                                                    disabled={isBusy}
-                                                    title="Delete this audio"
-                                                >
-                                                    🗑
-                                                </button>
-                                            </>
+                                            <button
+                                                className="admin-btn admin-btn-secondary"
+                                                style={{ fontSize: '12px', padding: '5px 10px' }}
+                                                onClick={() => handleToggleStatus(file)}
+                                                disabled={isBusy}
+                                                title={file.is_active === 0 ? 'Enable this audio' : 'Disable this audio'}
+                                            >
+                                                {file.is_active === 0 ? 'Enable' : 'Disable'}
+                                            </button>
                                         )}
                                     </div>
                                 </td>
