@@ -58,8 +58,8 @@ const AdminChildGroupsList = () => {
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Group Name</th>
                                         <th>Organization</th>
+                                        <th>Group Name</th>
                                         <th>Description</th>
                                         <th>Children</th>
                                         <th>Status</th>
@@ -75,8 +75,8 @@ const AdminChildGroupsList = () => {
                                         filteredGroups.map((group, index) => (
                                             <tr key={group.id}>
                                                 <td>{index + 1}</td>
-                                                <td style={{ fontWeight: '600' }}>{group.name}</td>
                                                 <td>{group.organization || '—'}</td>
+                                                <td style={{ fontWeight: '600' }}>{group.name}</td>
                                                 <td>{group.description || '—'}</td>
                                                 <td>{group.member_count ?? 0}</td>
                                                 <td>
