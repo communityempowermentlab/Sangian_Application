@@ -2,6 +2,28 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 
+// Every game's pre-existing static splash clip — the same paths hardcoded
+// as the fallback argument to getAudioUrl() in each game page (see
+// client/src/hooks/useTestAudio.js). Historically single-language (Hindi),
+// bundled into the client build rather than admin-managed. Shown here under
+// the Hindi row so an Admin sees what's already playing today before they
+// upload anything, instead of every language looking equally empty.
+const SPLASH_STATIC_FALLBACKS = {
+    numeracy_number_skill: '/assets/audios/number_skill/splash.wav',
+    numeracy_number_skill_v2: '/assets/audios/number_skill_v2/splash.wav',
+    numeracy_number_skill_v3: '/assets/audios/number_skill_v3/splash.wav',
+    literacy_reading_skill: '/assets/audios/reading_skill/splash.wav',
+    literacy_reading_skill_v2: '/assets/audios/reading_skill_v2/splash.wav',
+    working_memory_herpher: '/assets/audios/her_pher/splash.wav',
+    working_memory_herpher_v2: '/assets/audios/her_pher_v2/splash.wav',
+    working_memory_herpher_v3: '/assets/audios/her_pher_v3/splash.wav',
+    atlantis_bagiya: '/assets/audios/bagiya/splash.wav',
+    rover_mela: '/assets/audios/chalo_mela_chale/splash.wav',
+    number_recall_lottery: '/assets/audios/lottery_ka_ticket/splash1.m4a',
+    number_recall_lottery_v2: '/assets/audios/lottery_ka_ticket_V2/splash1.m4a',
+    triangle_rachna: '/assets/audios/rachna/splash.wav',
+};
+
 // Admin control for the "Test/Game -> Audio Element -> Language -> Audio
 // File" system: an ordered list of admin-defined audio slots per test
 // (audio_elements), each with an independently uploadable clip per
@@ -42,13 +64,18 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
 
     useEffect(() => { loadAll(); }, [loadAll]);
 
-    const getAudioUrl = (file) => {
-        if (file.file_path.startsWith('/assets')) return file.file_path;
-        return `${SERVER_BASE}${file.file_path}`;
-    };
+    const resolveUrl = (path) => (path.startsWith('/assets') ? path : `${SERVER_BASE}${path}`);
 
     const getFile = (slot, langCode) =>
         files.find(f => f.asset_type === `audio_${slot.element_key}` && f.language === langCode);
+
+    // Only the 'splash' slot has a pre-existing static default, and it's
+    // only ever shown under Hindi (see SPLASH_STATIC_FALLBACKS comment) —
+    // and only until an Admin uploads a real Hindi file for it, at which
+    // point the uploaded one takes over, matching useTestAudio's own
+    // resolution order.
+    const getStaticFallback = (slot, langCode) =>
+        (slot.element_key === 'splash' && langCode === 'hi') ? SPLASH_STATIC_FALLBACKS[gameKey] : null;
 
     const handleAddSlot = async () => {
         if (!newLabel.trim()) return;
@@ -83,40 +110,6 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
         } catch (error) {
             console.error('Reorder failed:', error);
             showToast('Failed to reorder', 'error');
-        }
-    };
-
-    const handleToggleSlotStatus = async (slot) => {
-        try {
-            const status = slot.status === 'active' ? 'inactive' : 'active';
-            await axiosAdmin.put(`/admin/audio-elements/${slot.id}`, { status });
-            showToast('Status updated');
-            loadAll();
-        } catch (error) {
-            console.error('Toggle slot status failed:', error);
-            showToast('Failed to update status', 'error');
-        }
-    };
-
-    const handleDeleteSlot = async (slot) => {
-        if (!window.confirm(`Delete "${slot.label}" and all its uploaded audio files across every language? This cannot be undone.`)) return;
-        try {
-            await axiosAdmin.delete(`/admin/audio-elements/${slot.id}`);
-            showToast('Audio element deleted');
-            loadAll();
-        } catch (error) {
-            console.error('Delete slot failed:', error);
-            showToast('Failed to delete audio element', 'error');
-        }
-    };
-
-    const handleFallbackChange = async (slot, fallback_language) => {
-        try {
-            await axiosAdmin.put(`/admin/audio-elements/${slot.id}`, { fallback_language: fallback_language || null });
-            loadAll();
-        } catch (error) {
-            console.error('Fallback update failed:', error);
-            showToast('Failed to update fallback language', 'error');
         }
     };
 
@@ -173,8 +166,7 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                     <p className="elements-desc">
                         Manage every audio clip for this test — splash screen audio and any other audio elements — with an
                         independent file per language. Games automatically load the clip matching the player's selected
-                        language, falling back to the fallback language below (or the platform default) when a clip is
-                        missing for the current one.
+                        language, falling back to the platform default language when a clip is missing for the current one.
                     </p>
 
                     {loading ? (
@@ -183,83 +175,73 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                         <>
                             {orderedSlots.map((slot, idx) => (
                                 <div key={slot.id} style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px', marginBottom: '16px', background: '#fafafa' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <button className="admin-btn" style={{ padding: '2px 8px', fontSize: '11px' }} disabled={idx === 0} onClick={() => handleReorder(slot, 'up')}>▲</button>
-                                                <button className="admin-btn" style={{ padding: '2px 8px', fontSize: '11px' }} disabled={idx === orderedSlots.length - 1} onClick={() => handleReorder(slot, 'down')}>▼</button>
-                                            </div>
-                                            <strong style={{ fontSize: '15px' }}>{slot.label}</strong>
-                                            <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'monospace' }}>({slot.element_key})</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <button className="admin-btn" style={{ padding: '2px 8px', fontSize: '11px' }} disabled={idx === 0} onClick={() => handleReorder(slot, 'up')}>▲</button>
+                                            <button className="admin-btn" style={{ padding: '2px 8px', fontSize: '11px' }} disabled={idx === orderedSlots.length - 1} onClick={() => handleReorder(slot, 'down')}>▼</button>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <label style={{ fontSize: '12px', color: '#6b7280' }}>
-                                                Fallback language:{' '}
-                                                <select
-                                                    value={slot.fallback_language || ''}
-                                                    onChange={(e) => handleFallbackChange(slot, e.target.value)}
-                                                    style={{ fontSize: '12px', padding: '2px 4px' }}
-                                                >
-                                                    <option value="">Platform default</option>
-                                                    {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
-                                                </select>
-                                            </label>
-                                            <button
-                                                className="admin-btn"
-                                                onClick={() => handleToggleSlotStatus(slot)}
-                                                style={{ background: slot.status === 'active' ? '#dcfce7' : '#fee2e2', color: slot.status === 'active' ? '#166534' : '#991b1b' }}
-                                            >
-                                                {slot.status === 'active' ? 'Active' : 'Inactive'}
-                                            </button>
-                                            <button className="admin-btn admin-btn-danger" onClick={() => handleDeleteSlot(slot)}>Delete</button>
-                                        </div>
+                                        <strong style={{ fontSize: '15px' }}>{slot.label}</strong>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'monospace' }}>({slot.element_key})</span>
                                     </div>
 
-                                    <div className="elements-grid">
-                                        {languages.map(lang => {
-                                            const file = getFile(slot, lang.code);
-                                            const key = `${slot.id}_${lang.code}`;
-                                            return (
-                                                <div key={lang.code} className="element-card">
-                                                    <div className="element-card-header">
-                                                        <strong>{lang.name}</strong> ({lang.code})
-                                                    </div>
-                                                    <div className="element-preview">
-                                                        {file ? (
-                                                            <audio controls src={getAudioUrl(file)} style={{ width: '100%' }} />
-                                                        ) : (
-                                                            <div className="element-preview-empty">No Audio</div>
-                                                        )}
-                                                    </div>
-                                                    <div className="element-actions">
-                                                        <input
-                                                            type="file"
-                                                            accept="audio/*"
-                                                            style={{ display: 'none' }}
-                                                            ref={el => fileRefs.current[key] = el}
-                                                            onChange={(e) => handleFileSelect(slot, lang.code, e.target.files[0])}
-                                                        />
-                                                        <button
-                                                            className="admin-btn admin-btn-primary"
-                                                            onClick={() => fileRefs.current[key]?.click()}
-                                                            disabled={uploadingKey === key}
-                                                        >
-                                                            {uploadingKey === key ? 'Uploading...' : (file ? 'Replace' : 'Upload')}
-                                                        </button>
-                                                        {file && (
-                                                            <button className="admin-btn admin-btn-danger" onClick={() => handleDeleteFile(file)}>
-                                                                Delete
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    {file && (
-                                                        <div className="element-meta">
-                                                            Last updated: {new Date(file.updated_at).toLocaleDateString()}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table className="admin-table" style={{ width: '100%' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: '140px' }}>Language</th>
+                                                    <th>Audio File</th>
+                                                    <th style={{ width: '160px' }}>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {languages.map(lang => {
+                                                    const file = getFile(slot, lang.code);
+                                                    const staticFallback = !file ? getStaticFallback(slot, lang.code) : null;
+                                                    const key = `${slot.id}_${lang.code}`;
+                                                    return (
+                                                        <tr key={lang.code}>
+                                                            <td>{lang.name} <span style={{ color: '#9ca3af', fontSize: '11px' }}>({lang.code})</span></td>
+                                                            <td>
+                                                                {file ? (
+                                                                    <audio controls src={resolveUrl(file.file_path)} style={{ height: '32px', maxWidth: '260px', width: '100%' }} />
+                                                                ) : staticFallback ? (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <audio controls src={staticFallback} style={{ height: '32px', maxWidth: '220px', width: '100%' }} />
+                                                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>Default</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span style={{ color: '#9ca3af', fontSize: '13px' }}>No Audio</span>
+                                                                )}
+                                                            </td>
+                                                            <td>
+                                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="audio/*"
+                                                                        style={{ display: 'none' }}
+                                                                        ref={el => fileRefs.current[key] = el}
+                                                                        onChange={(e) => handleFileSelect(slot, lang.code, e.target.files[0])}
+                                                                    />
+                                                                    <button
+                                                                        className="admin-btn admin-btn-primary"
+                                                                        style={{ fontSize: '12px', padding: '5px 10px' }}
+                                                                        onClick={() => fileRefs.current[key]?.click()}
+                                                                        disabled={uploadingKey === key}
+                                                                    >
+                                                                        {uploadingKey === key ? 'Uploading...' : (file ? 'Replace' : 'Upload')}
+                                                                    </button>
+                                                                    {file && (
+                                                                        <button className="admin-btn admin-btn-danger" style={{ fontSize: '12px', padding: '5px 10px' }} onClick={() => handleDeleteFile(file)}>
+                                                                            Delete
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             ))}
