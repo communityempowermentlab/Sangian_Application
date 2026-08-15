@@ -23,6 +23,23 @@ const MAX_CONSECUTIVE_WRONG = 3;
 const AUDIO_PATH = '/assets/audios/lottery_ka_ticket_V2';
 const IMAGE_PATH = '/assets/images/lottery_ka_ticket_V2';
 
+// The bundled single-stream (Hindi) clip for a given filename/DB path — used
+// as the staticFallbackPath argument to useTestAudio's getAudioUrl() so every
+// one of this game's 26 audio elements keeps playing exactly as before until
+// an Admin uploads a per-language override from Elements -> Audio Management.
+// Handles both a bare bundled filename (e.g. "1_4.m4a") and an
+// admin-entered/uploaded absolute path (e.g. "/uploads/elements/...") — same
+// resolution NumpadPanel/TeachingScreen already did locally, hoisted here so
+// it can also run at the parent level before wrapping with getAudioUrl().
+const resolveStaticAudio = (src) => {
+  if (!src) return null;
+  if (src.startsWith('/uploads/')) {
+    const SERVER_BASE = API_URL.replace(/\/api$/, '');
+    return `${SERVER_BASE}${src}`;
+  }
+  return `${AUDIO_PATH}/${src}`;
+};
+
 // ─── Numpad key layout ──────────────────────────────────────────
 const NUMPAD_KEYS = [
   { label: '1', val: 1 }, { label: '2', val: 2 }, { label: '3', val: 3 },
@@ -91,22 +108,13 @@ const NumpadPanel = ({
 
   const audioRef = useRef(null);
 
-  const resolveAudio = (src) => {
-    if (!src) return '';
-    if (src.startsWith('/uploads/')) {
-      const SERVER_BASE = API_URL.replace(/\/api$/, '');
-      return `${SERVER_BASE}${src}`;
-    }
-    return `${AUDIO_PATH}/${src}`;
-  };
-
   const playAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
     if (isManual) setReplayCount(prev => prev + 1);
     setIsPlaying(true);
     setSelected([]); // Clear selections when replaying audio
     if (!audioRef.current) {
-      audioRef.current = new Audio(resolveAudio(audioSrc));
+      audioRef.current = new Audio(audioSrc);
       audioRef.current.addEventListener('playing', () => setIsPlaying(true));
       audioRef.current.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current.addEventListener('pause', () => setIsPlaying(false));
@@ -210,28 +218,19 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
   const mainAudioRef = useRef(null);
   const teachingAudioRef = useRef(null);
 
-  const resolveAudio = (src) => {
-    if (!src) return '';
-    if (src.startsWith('/uploads/')) {
-      const SERVER_BASE = API_URL.replace(/\/api$/, '');
-      return `${SERVER_BASE}${src}`;
-    }
-    return `${AUDIO_PATH}/${src}`;
-  };
-
   const playMainAudio = useCallback((isManual = false) => {
     if (!audioSrc) return;
     if (isManual) setReplayCount(prev => prev + 1);
     setSelected([]);
     if (!mainAudioRef.current) {
-      mainAudioRef.current = new Audio(resolveAudio(audioSrc));
+      mainAudioRef.current = new Audio(audioSrc);
       mainAudioRef.current.addEventListener('playing', () => setIsPlaying(true));
       mainAudioRef.current.addEventListener('ended', () => {
         setIsPlaying(false);
         setMainAudioDone(true);
       });
     } else {
-      mainAudioRef.current.src = resolveAudio(audioSrc);
+      mainAudioRef.current.src = audioSrc;
     }
     mainAudioRef.current.currentTime = 0;
     mainAudioRef.current.play().catch(() => setIsPlaying(false));
@@ -245,7 +244,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
       return;
     }
     if (!teachingAudioRef.current) {
-      teachingAudioRef.current = new Audio(resolveAudio(teachingAudioSrc));
+      teachingAudioRef.current = new Audio(teachingAudioSrc);
       teachingAudioRef.current.addEventListener('ended', () => {
         setTeachingAudioPlayed(true);
         setSelected([]);
@@ -257,7 +256,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
         setIsWaiting(false);
       });
     } else {
-      teachingAudioRef.current.src = resolveAudio(teachingAudioSrc);
+      teachingAudioRef.current.src = teachingAudioSrc;
     }
     teachingAudioRef.current.currentTime = 0;
     teachingAudioRef.current.play().catch(() => {
@@ -984,10 +983,10 @@ const NumberRecallGameV2 = () => {
             <TeachingScreen
               title={`${t('game.practiceLabel')} · 1`}
               chipLabel={t('game.practiceLabel')}
-              audioSrc={practiceQ.audio}
+              audioSrc={getAudioUrl('practice', resolveStaticAudio(practiceQ.audio))}
               correct={practiceQ.correct}
               maxSelect={practiceQ.maxSelect}
-              teachingAudioSrc={practiceQ.teachingAudio}
+              teachingAudioSrc={getAudioUrl('practice_teaching', resolveStaticAudio(practiceQ.teachingAudio))}
               nextLabel={t('game.teachingQ1Label')}
               nextIcon=""
               onNext={() => setScreen('teaching1')}
@@ -1001,10 +1000,10 @@ const NumberRecallGameV2 = () => {
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 1`}
               chipLabel={t('game.teachingLabel')}
-              audioSrc="2_8.m4a"
+              audioSrc={getAudioUrl('teaching_1', resolveStaticAudio('2_8.m4a'))}
               correct={[2, 8]}
               maxSelect={2}
-              teachingAudioSrc="2_8_teaching_audio.m4a"
+              teachingAudioSrc={getAudioUrl('teaching_1_teaching', resolveStaticAudio('2_8_teaching_audio.m4a'))}
               nextLabel={t('game.teachingQ2Label')}
               nextIcon=""
               onNext={() => setScreen('teaching2')}
@@ -1019,7 +1018,7 @@ const NumberRecallGameV2 = () => {
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 2`}
               chipLabel={t('game.teachingLabel')}
-              audioSrc="5_10.m4a"
+              audioSrc={getAudioUrl('teaching_2', resolveStaticAudio('5_10.m4a'))}
               correct={[5, 10]}
               maxSelect={2}
               teachingAudioSrc={null}
@@ -1039,7 +1038,7 @@ const NumberRecallGameV2 = () => {
               title={`Question ${questionIndex + 1} of ${TOTAL_SCORED_QUESTIONS}`}
               chipLabel={`${t('game.question')} ${questionIndex + 1}`}
               qTimerDisplay={formatTime(qTimer)}
-              audioSrc={currentQ.audio}
+              audioSrc={getAudioUrl(String(currentQ.qid), resolveStaticAudio(currentQ.audio))}
               correct={currentQ.correct}
               maxSelect={currentQ.maxSelect}
               isScored={true}

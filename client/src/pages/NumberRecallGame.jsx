@@ -22,6 +22,12 @@ const MAX_CONSECUTIVE_WRONG = 3;
 const AUDIO_PATH = '/assets/audios/lottery_ka_ticket';
 const IMAGE_PATH = '/assets/images/lottery_ka_ticket';
 
+// The bundled single-stream (Hindi) clip for a given filename — used as the
+// staticFallbackPath argument to useTestAudio's getAudioUrl() so every one
+// of this game's 26 audio elements keeps playing exactly as before until an
+// Admin uploads a per-language override from Elements -> Audio Management.
+const resolveStaticAudio = (filename) => filename ? `${AUDIO_PATH}/${filename}` : null;
+
 // ─── All 20 scored questions ────────────────────────────────────
 const QUESTIONS = [
   { qid: 1,  correct: [8, 9],                   maxSelect: 2, audio: '8_9.m4a' },
@@ -119,7 +125,7 @@ const NumpadPanel = ({
     if (isManual) setReplayCount(prev => prev + 1);
     setSelected([]); // Clear selections when replaying audio
     if (!audioRef.current) {
-      audioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
+      audioRef.current = new Audio(audioSrc);
       audioRef.current.addEventListener('playing', () => setIsPlaying(true));
       audioRef.current.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current.addEventListener('pause', () => setIsPlaying(false));
@@ -226,7 +232,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
     if (isManual) setReplayCount(prev => prev + 1);
     setSelected([]); // Clear selections when replaying audio
     if (!mainAudioRef.current) {
-      mainAudioRef.current = new Audio(`${AUDIO_PATH}/${audioSrc}`);
+      mainAudioRef.current = new Audio(audioSrc);
       mainAudioRef.current.addEventListener('playing', () => setIsPlaying(true));
       mainAudioRef.current.addEventListener('ended', () => setIsPlaying(false));
       mainAudioRef.current.addEventListener('error', () => setIsPlaying(false));
@@ -243,7 +249,7 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
       return;
     }
     if (!teachingAudioRef.current) {
-      teachingAudioRef.current = new Audio(`${AUDIO_PATH}/${teachingAudioSrc}`);
+      teachingAudioRef.current = new Audio(teachingAudioSrc);
       teachingAudioRef.current.addEventListener('ended', () => {
         setTeachingAudioPlayed(true);
         setSelected([]);
@@ -979,10 +985,10 @@ const NumberRecallGame = () => {
             <TeachingScreen
               title={`${t('game.practiceLabel')} · ${t('game.sampleLabel')}`}
               chipLabel={t('game.practiceLabel')}
-              audioSrc="4_6.m4a"
+              audioSrc={getAudioUrl('practice', resolveStaticAudio('4_6.m4a'))}
               correct={[4, 6]}
               maxSelect={2}
-              teachingAudioSrc="4_6_teaching_audio.m4a"
+              teachingAudioSrc={getAudioUrl('practice_teaching', resolveStaticAudio('4_6_teaching_audio.m4a'))}
               nextLabel={t('game.teachingQ1Label')}
               nextIcon=""
               onNext={() => setScreen('teaching1')}
@@ -996,10 +1002,10 @@ const NumberRecallGame = () => {
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 1`}
               chipLabel={t('game.teachingLabel')}
-              audioSrc="9_4.m4a"
+              audioSrc={getAudioUrl('teaching_1', resolveStaticAudio('9_4.m4a'))}
               correct={[9, 4]}
               maxSelect={2}
-              teachingAudioSrc="9_4_teaching_audio.m4a"
+              teachingAudioSrc={getAudioUrl('teaching_1_teaching', resolveStaticAudio('9_4_teaching_audio.m4a'))}
               nextLabel={t('game.teachingQ2Label')}
               nextIcon=""
               onNext={() => setScreen('teaching2')}
@@ -1014,7 +1020,7 @@ const NumberRecallGame = () => {
             <TeachingScreen
               title={`${t('game.teachingLabel')} · Teaching 2`}
               chipLabel={t('game.teachingLabel')}
-              audioSrc="2_8.m4a"
+              audioSrc={getAudioUrl('teaching_2', resolveStaticAudio('2_8.m4a'))}
               correct={[2, 8]}
               maxSelect={2}
               teachingAudioSrc={null}
@@ -1034,7 +1040,7 @@ const NumberRecallGame = () => {
               title={`Question ${questionIndex + 1} of ${TOTAL_SCORED_QUESTIONS}`}
               chipLabel={`${t('game.question')} ${questionIndex + 1}`}
               qTimerDisplay={formatTime(qTimer)}
-              audioSrc={currentQ.audio}
+              audioSrc={getAudioUrl(String(currentQ.qid), resolveStaticAudio(currentQ.audio))}
               correct={currentQ.correct}
               maxSelect={currentQ.maxSelect}
               isScored={true}

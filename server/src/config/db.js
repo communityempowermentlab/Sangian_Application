@@ -2232,6 +2232,32 @@ const initDb = async () => {
       );
     }
 
+    // Lottery Ticket V1/V2 (number_recall_lottery[_v2]) each play ~26 distinct
+    // clips, not just splash — Practice, 2 Teaching questions (each with its
+    // own "wrong answer" teaching-audio), and 20 scored questions. Every one
+    // gets its own slot here so it's independently manageable per language
+    // from the Audio Management panel, same mechanism as splash above. The
+    // pre-existing single-stream (Hindi) filenames stay bundled as static
+    // fallbacks passed to getAudioUrl() at each game's call sites — nothing
+    // is migrated into a DB row here, so day-one behavior is unchanged until
+    // an Admin uploads a real per-language file for a slot.
+    const lotteryElementSeeds = [
+      { key: 'practice', label: 'Practice', order: 1 },
+      { key: 'practice_teaching', label: 'Practice (Teaching Audio)', order: 2 },
+      { key: 'teaching_1', label: 'Teaching 1', order: 3 },
+      { key: 'teaching_1_teaching', label: 'Teaching 1 (Teaching Audio)', order: 4 },
+      { key: 'teaching_2', label: 'Teaching 2', order: 5 },
+      ...Array.from({ length: 20 }, (_, i) => ({ key: String(i + 1), label: `Question ${i + 1}`, order: 6 + i })),
+    ];
+    for (const test_id of ['number_recall_lottery', 'number_recall_lottery_v2']) {
+      for (const seed of lotteryElementSeeds) {
+        await connection.query(
+          `INSERT IGNORE INTO audio_elements (test_id, element_key, label, display_order) VALUES (?, ?, ?, ?)`,
+          [test_id, seed.key, seed.label, seed.order]
+        );
+      }
+    }
+
     // Create child_profile_edit_logs table for tracking admin edits to child profiles
     await connection.query(`
       CREATE TABLE IF NOT EXISTS child_profile_edit_logs (
