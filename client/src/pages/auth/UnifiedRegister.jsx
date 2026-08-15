@@ -29,6 +29,29 @@ const GENDER_OPTIONS = [
 ];
 const DOB_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DOB_CURRENT_YEAR = new Date().getFullYear();
+
+// Mirrors AdminChildAdd.jsx's calculateAge — years/months/days as-of today,
+// or null while the three DOB dropdowns aren't all filled in yet.
+const calculateAge = (day, month, year) => {
+    if (!day || !month || !year) return null;
+    const dobDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    if (isNaN(dobDate.getTime())) return null;
+
+    const today = new Date();
+    let years = today.getFullYear() - dobDate.getFullYear();
+    let months = today.getMonth() - dobDate.getMonth();
+    let days = today.getDate() - dobDate.getDate();
+
+    if (days < 0) {
+        months--;
+        days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+    }
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    return { years, months, days };
+};
 const EMPTY_ORG = {
     org_name: '', org_type: 'ngo', org_email: '', org_mobile: '',
     address: '', city: '', state: '', country: '',
@@ -65,6 +88,7 @@ const UnifiedRegister = () => {
     const [indErrors, setIndErrors] = useState({});
     const [showIndPassword, setShowIndPassword] = useState(false);
     const [showOrgPassword, setShowOrgPassword] = useState(false);
+    const indAge = calculateAge(indForm.dobDay, indForm.dobMonth, indForm.dobYear);
 
     // ── Organization state ──────────────────────────────────────────────
     const [orgForm, setOrgForm] = useState(EMPTY_ORG);
@@ -276,7 +300,14 @@ const UnifiedRegister = () => {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="ind_dob_day">Date of Birth<span className="required">*</span></label>
+                                    <label htmlFor="ind_dob_day" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Date of Birth<span className="required">*</span></span>
+                                        {indAge && indAge.years >= 0 && (
+                                            <span style={{ color: '#4f46e5', fontWeight: 'bold', fontSize: '13px' }}>
+                                                {indAge.years}y {indAge.months}m {indAge.days}d
+                                            </span>
+                                        )}
+                                    </label>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <select id="ind_dob_day" name="dobDay" value={indForm.dobDay} onChange={handleIndChange} className={indErrors.dob ? 'input-error' : ''} style={{ flex: 1 }}>
                                             <option value="">Day</option>
