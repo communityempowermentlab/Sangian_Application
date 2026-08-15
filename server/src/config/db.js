@@ -1938,52 +1938,6 @@ const initDb = async () => {
       )
     `);
 
-    // Mirrors child_profile_edit_logs exactly, scoped to Individual account
-    // edits (currently just email/mobile changes — see
-    // adminIndividualController.js's updateIndividualContact) made by a
-    // Super Admin via the Individuals oversight panel.
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS individual_profile_edit_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        individual_id INT NOT NULL,
-        field_name VARCHAR(100) NOT NULL,
-        old_value TEXT,
-        new_value TEXT,
-        updated_by_id INT,
-        updated_by_name VARCHAR(255),
-        ip_address VARCHAR(45),
-        action_type VARCHAR(50) DEFAULT 'update',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (individual_id) REFERENCES individual_users(id) ON DELETE CASCADE
-      )
-    `);
-
-    // Mirrors individual_profile_edit_logs exactly, scoped to Organization
-    // profile edits (org_name/org_type/address/city/state/country/
-    // contact_person_name/contact_person_designation via updateOrganization,
-    // and org_email/org_mobile via updateOrganizationContact — see
-    // adminOrgController.js) made by a Super Admin via the Organizations
-    // oversight panel. Deliberately separate from organization_activity_logs
-    // (which covers every action type — login, permission changes, child/
-    // staff CRUD, etc.) so the Edit History tab can show a clean per-field
-    // diff list the same way AdminIndividualDetail.jsx's does, instead of
-    // that mixed general-purpose trail.
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS organization_profile_edit_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        org_id INT NOT NULL,
-        field_name VARCHAR(100) NOT NULL,
-        old_value TEXT,
-        new_value TEXT,
-        updated_by_id INT,
-        updated_by_name VARCHAR(255),
-        ip_address VARCHAR(45),
-        action_type VARCHAR(50) DEFAULT 'update',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
-      )
-    `);
-
     // Managed picklist for organizations.org_type (free-text column, not an
     // FK — this table only constrains what the two dropdowns that WRITE
     // that column offer: the public registration form
@@ -2016,6 +1970,55 @@ const initDb = async () => {
     }
 
     await initMultiTenantSchema(connection);
+
+    // Mirrors child_profile_edit_logs exactly, scoped to Individual account
+    // edits (currently just email/mobile changes — see
+    // adminIndividualController.js's updateIndividualContact) made by a
+    // Super Admin via the Individuals oversight panel. Created after
+    // initMultiTenantSchema() since it references individual_users(id),
+    // which that function creates.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS individual_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        individual_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (individual_id) REFERENCES individual_users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Mirrors individual_profile_edit_logs exactly, scoped to Organization
+    // profile edits (org_name/org_type/address/city/state/country/
+    // contact_person_name/contact_person_designation via updateOrganization,
+    // and org_email/org_mobile via updateOrganizationContact — see
+    // adminOrgController.js) made by a Super Admin via the Organizations
+    // oversight panel. Deliberately separate from organization_activity_logs
+    // (which covers every action type — login, permission changes, child/
+    // staff CRUD, etc.) so the Edit History tab can show a clean per-field
+    // diff list the same way AdminIndividualDetail.jsx's does, instead of
+    // that mixed general-purpose trail. Created after initMultiTenantSchema()
+    // since it references organizations(id), which that function creates.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS organization_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        org_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
+      )
+    `);
 
     connection.release();
     console.log('Database tables verified/created');
