@@ -954,7 +954,7 @@ const ReadingSkillGameV2 = () => {
                           onClick={() => toggleTileSelection(text)}
                           style={{ cursor: (isWordsFixedRetry || isMarked) ? 'default' : 'pointer' }}
                         >
-                          <div className={`rs-mark-tile-text ${stage === 'letters' ? 'rs-mark-tile-text-letter' : ''}`}>{text}</div>
+                          <div className="rs-mark-tile-text">{text}</div>
                           {/* Neutral toggle — same styling either way so the child gets no
                               colour/label cue about which option means correct vs incorrect;
                               only the assessor needs to know which is which. Stays switchable

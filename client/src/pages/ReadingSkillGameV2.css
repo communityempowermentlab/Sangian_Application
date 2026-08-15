@@ -958,9 +958,6 @@
 }
 .rs-mark-tile:not(.rs-mark-tile-locked):hover { border-color: #c7d2fe; }
 .rs-mark-tile-text { font-size: 3.4rem; font-weight: 800; text-align: center; color: #1e293b; line-height: 1.2; }
-/* Letters are single glyphs — pushed even larger than Words so they're
-   unmistakably clear for early readers. */
-.rs-mark-tile-text-letter { font-size: 5rem; }
 
 /* Toggle row is always present (fixed height) so tiles never resize/jank on
    selection — just hidden until the tile is picked. */
