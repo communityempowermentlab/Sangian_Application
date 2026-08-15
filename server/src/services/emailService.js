@@ -127,6 +127,15 @@ const sendOrgRegistrationReceived = (email, orgName) => sendFromTemplate(
     'org_registration_received', email, { org_name: orgName }
 );
 
+// ── Organization approved / rejected (Super Admin decision) ──────────────────
+const sendOrgApproved = (email, orgName) => sendFromTemplate(
+    'org_approved', email, { org_name: orgName }
+);
+
+const sendOrgRejected = (email, orgName, reason) => sendFromTemplate(
+    'org_rejected', email, { org_name: orgName, rejection_reason: reason }
+);
+
 // ── Ticket created (user confirmation) ───────────────────────────────────────
 const sendTicketCreated = (email, ticket) => sendFromTemplate(
     'ticket_created_user', email, { ticket_id: ticket.ticket_id, subject: ticket.title, status: 'Open' }
@@ -179,4 +188,4 @@ const sendContactAdminNotification = (adminEmail, { name, email, phone, subject,
     }
 );
 
-module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };
+module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendOrgApproved, sendOrgRejected, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };

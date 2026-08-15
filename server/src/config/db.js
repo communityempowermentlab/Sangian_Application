@@ -1809,6 +1809,36 @@ const initDb = async () => {
         available_variables: ['org_name'], bridged_setting: null, recipient_note: null,
       },
       {
+        trigger_key: 'org_approved', trigger_label: 'Organization Approved', category: 'Organization',
+        description: 'Sent to an Organization\'s registered email when a Super Admin approves their registration.',
+        status: 'on',
+        subject: 'Your Organization Has Been Approved – Sangian',
+        heading: 'You\'re approved!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Hi,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">Good news — <strong>{{org_name}}</strong>'s registration on the Sangian Assessment Platform has been reviewed and approved.</p>
+        <div style="margin:20px 0;padding:16px 20px;background:#f0fdf4;border-radius:10px;border-left:4px solid #16a34a">
+          <p style="margin:0;color:#16a34a;font-size:15px;font-weight:700">✅ Your organization account is now active.</p>
+        </div>
+        <p style="color:#374151;font-size:15px;line-height:1.6">You can now log in and start setting up your assessors, staff, and child groups.</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you did not expect this, please contact support.</p>`,
+        available_variables: ['org_name'], bridged_setting: null, recipient_note: null,
+      },
+      {
+        trigger_key: 'org_rejected', trigger_label: 'Organization Rejected', category: 'Organization',
+        description: 'Sent to an Organization\'s registered email when a Super Admin rejects their registration.',
+        status: 'on',
+        subject: 'Update on Your Organization Registration – Sangian',
+        heading: 'Registration Not Approved',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Hi,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">We've reviewed <strong>{{org_name}}</strong>'s registration on the Sangian Assessment Platform and were unable to approve it at this time.</p>
+        <div style="margin:20px 0;padding:16px 20px;background:#fef2f2;border-radius:10px;border-left:4px solid #dc2626">
+          <p style="margin:0 0 4px;color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Reason</p>
+          <p style="margin:0;color:#374151;font-size:14px;line-height:1.6">{{rejection_reason}}</p>
+        </div>
+        <p style="color:#374151;font-size:15px;line-height:1.6">If you believe this was a mistake or would like to provide more information, please contact our support team.</p>`,
+        available_variables: ['org_name', 'rejection_reason'], bridged_setting: null, recipient_note: null,
+      },
+      {
         trigger_key: 'ticket_created_user', trigger_label: 'Support Ticket Created (User Copy)', category: 'Support Ticket',
         description: 'Sent to the ticket submitter confirming their support ticket was created.',
         status: onOff(helpEmailRow?.send_user_email ?? 1),

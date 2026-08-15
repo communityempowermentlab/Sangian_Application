@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { logOrgActivity } = require('../utils/logOrgActivity');
+const email = require('../services/emailService');
 const { isChannelVerified } = require('./otpController');
 const { normalizeIndianMobile } = require('../utils/mobileNumber');
 const { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } = require('../utils/passwordStrength');
@@ -126,7 +127,7 @@ const approveOrganization = async (req, res) => {
     // NULL — never overwrites an org that already has grants (e.g.
     // re-approving after a suspension).
     const DEFAULT_ORG_MODULES = ['dashboard', 'children', 'assessors', 'staff', 'reports', 'analysis'];
-    const [existing] = await pool.query('SELECT permissions, org_name FROM organizations WHERE id = ?', [req.params.id]);
+    const [existing] = await pool.query('SELECT permissions, org_name, org_email FROM organizations WHERE id = ?', [req.params.id]);
     if (existing.length && existing[0].permissions === null) {
       await pool.query('UPDATE organizations SET permissions = ? WHERE id = ?', [JSON.stringify(DEFAULT_ORG_MODULES), req.params.id]);
     }
@@ -142,6 +143,10 @@ const approveOrganization = async (req, res) => {
       module: 'organizations', actionType: 'approve', description: 'Organization approved by Super Admin', req,
     });
 
+    if (existing[0]?.org_email) {
+      email.sendOrgApproved(existing[0].org_email, existing[0].org_name).catch(e => console.error('Org approved email error:', e.message));
+    }
+
     return res.json({ success: true, message: 'Organization approved.' });
   } catch (err) {
     console.error('approveOrganization error:', err);
@@ -156,11 +161,19 @@ const rejectOrganization = async (req, res) => {
     const reason = (req.body.reason || '').trim();
     if (!reason) return res.status(400).json({ success: false, message: 'A rejection reason is required.' });
 
+    const [existing] = await pool.query('SELECT org_name, org_email FROM organizations WHERE id = ?', [req.params.id]);
+    if (!existing.length) return res.status(404).json({ success: false, message: 'Organization not found.' });
+
     const [result] = await pool.query(
       `UPDATE organizations SET registration_status = 'rejected', rejection_reason = ? WHERE id = ?`,
       [reason, req.params.id]
     );
     if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Organization not found.' });
+
+    if (existing[0].org_email) {
+      email.sendOrgRejected(existing[0].org_email, existing[0].org_name, reason).catch(e => console.error('Org rejected email error:', e.message));
+    }
+
     return res.json({ success: true, message: 'Organization rejected.' });
   } catch (err) {
     console.error('rejectOrganization error:', err);
