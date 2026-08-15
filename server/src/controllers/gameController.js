@@ -762,17 +762,52 @@ exports.getReportDetail = async (req, res) => {
             let behaviors = row.q5_behaviors;
             try { if (typeof behaviors === 'string') behaviors = JSON.parse(behaviors); } catch (_) {}
 
+            // Padh ke Batao V2 is an adaptive ASER-style test (Paragraph -> Story,
+            // or Paragraph -> Words -> Letters, branching on pass/fail) — it never
+            // populates saved_state.allScores (the fixed-question-count format
+            // every other game here uses), so `scores` above is always empty for
+            // it. Read its real shape directly instead: finalLevel/finalScore are
+            // the ASER outcome (Beginner/Letter/Word/Paragraph/Story, 0-4 — see
+            // analysisController.js's CUSTOM_SCORE_BUCKETS.literacy_reading_skill_v2
+            // for the same scale), path is the actual stage sequence taken, and
+            // each stage's own result lives under its own saved_state key.
+            let readingV2 = null;
+            if (gameName === 'literacy_reading_skill_v2') {
+                const scoreStage = (items, time) => items ? {
+                    correct: items.filter(i => i.correct).length, total: items.length, time: time ?? null,
+                } : null;
+                const passFailStage = (result) => result ? { pass: !!result.pass, time: result.timeTaken ?? null } : null;
+                readingV2 = {
+                    reading_level: parsedState?.finalLevel || null,
+                    reading_level_score: parsedState?.finalScore ?? null,
+                    reading_path: Array.isArray(parsedState?.path) ? parsedState.path : [],
+                    reading_stages: {
+                        paragraph:       passFailStage(parsedState?.paragraphResult),
+                        paragraph_retry: passFailStage(parsedState?.paragraphRetryResult),
+                        story:           passFailStage(parsedState?.storyResult),
+                        words:           scoreStage(parsedState?.selectedWords, parsedState?.wordsTimeTaken),
+                        words_retry:     scoreStage(parsedState?.selectedWordsRetry, parsedState?.wordsRetryTimeTaken),
+                        letters:         scoreStage(parsedState?.selectedLetters, parsedState?.lettersTimeTaken),
+                    },
+                };
+            }
+
             return {
                 child_attempt_no: currentAttempt,
                 session_id: row.session_id,
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
                 score: row.score,
-                correct_count: (chorItems.length > 0)
-                    ? chorItems.filter(r => r.completed).length
-                    : scores.filter(s => s.score > 0).length,
-                attempted_questions: (chorItems.length > 0) ? chorItems.length : scores.length,
+                correct_count: readingV2
+                    ? ['words', 'words_retry', 'letters'].reduce((sum, k) => sum + (readingV2.reading_stages[k]?.correct ?? 0), 0)
+                    : (chorItems.length > 0)
+                        ? chorItems.filter(r => r.completed).length
+                        : scores.filter(s => s.score > 0).length,
+                attempted_questions: readingV2
+                    ? ['words', 'words_retry', 'letters'].reduce((sum, k) => sum + (readingV2.reading_stages[k]?.total ?? 0), 0)
+                    : (chorItems.length > 0) ? chorItems.length : scores.length,
                 total_questions: row.total_questions,
+                ...readingV2,
                 status: row.status,
                 quit_reason: row.quit_reason,
                 pauses: parsedState?.pauses || [],

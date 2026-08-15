@@ -354,6 +354,59 @@ const AdminReports = () => {
             { key: 'additional_notes',label: 'Notes' },
         ];
 
+        // Padh ke Batao V2's real shape (see gameController.js's reading_stages) —
+        // an adaptive path through up to 6 named stages, not a fixed question
+        // count, so these are fixed columns (not derived from detail.columns)
+        // matching HerPher/Auditory's own hardcoded-column convention. A stage
+        // the child's path skipped just renders "—".
+        const READING_V2_STAGE_COLS = [
+            { key: 'paragraph',       label: 'Paragraph',        type: 'pass_fail' },
+            { key: 'words',           label: 'Words',            type: 'score' },
+            { key: 'letters',         label: 'Letters',          type: 'score' },
+            { key: 'words_retry',     label: 'Words Retry',      type: 'score' },
+            { key: 'paragraph_retry', label: 'Paragraph Retry',  type: 'pass_fail' },
+            { key: 'story',           label: 'Story',            type: 'pass_fail' },
+        ];
+
+        // Labels match analysisController.js's CUSTOM_SCORE_BUCKETS.literacy_reading_skill_v2
+        // exactly (Beginner/Letters/Words/Paragraph/Story) — the ASER reading-level
+        // scheme this game's score (0-4) already represents everywhere else in the
+        // app. row.reading_level itself is singular ('Letter'/'Word', from
+        // ReadingSkillGameV2.jsx's LEVELS object) — mapped to the plural label here.
+        const READING_V2_LEVEL_META = {
+            Beginner:  { label: 'Beginner',  color: '#dc2626', bg: '#fee2e2' },
+            Letter:    { label: 'Letters',   color: '#d97706', bg: '#fef3c7' },
+            Word:      { label: 'Words',     color: '#ca8a04', bg: '#fef9c3' },
+            Paragraph: { label: 'Paragraph', color: '#2563eb', bg: '#dbeafe' },
+            Story:     { label: 'Story',     color: '#059669', bg: '#dcfce7' },
+        };
+
+        // Compact "how they got there" trail, e.g. "Paragraph ✗ → Words 3/5 →
+        // Letters 5/5" — shows the actual adaptive path, not just the outcome.
+        const readingV2PathSummary = (row) => {
+            const path = row.reading_path || [];
+            if (!path.length) return null;
+            return path.map(stageKey => {
+                const label = READING_V2_STAGE_COLS.find(c => c.key === stageKey)?.label || stageKey;
+                const st = row.reading_stages?.[stageKey];
+                if (!st) return label;
+                return 'pass' in st ? `${label} ${st.pass ? '✓' : '✗'}` : `${label} ${st.correct}/${st.total}`;
+            }).join(' → ');
+        };
+
+        const renderReadingV2Summary = (row) => {
+            const meta = READING_V2_LEVEL_META[row.reading_level];
+            const path = readingV2PathSummary(row);
+            return (
+                <div>
+                    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', color: meta ? meta.color : '#64748b', background: meta ? meta.bg : '#f1f5f9' }}>
+                        {meta ? meta.label : 'Incomplete'}
+                    </span>
+                    {path && <div style={{ marginTop: '4px', color: '#64748b', fontWeight: 500, fontSize: '0.68rem', whiteSpace: 'normal', maxWidth: 220 }}>{path}</div>}
+                </div>
+            );
+        };
+
         return (
             <main style={S.page}>
                 {/* Breadcrumb */}
@@ -508,7 +561,14 @@ const AdminReports = () => {
                                                 </React.Fragment>
                                             );
                                         })
-                                    ) : ['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key) ? (
+                                    ) : activeGame?.key === 'literacy_reading_skill_v2' ? (
+                                        READING_V2_STAGE_COLS.map(sc => (
+                                            <React.Fragment key={sc.key}>
+                                                <th style={{ ...S.th, textAlign: 'center', background: sc.type === 'pass_fail' ? '#ede9fe' : '#d1fae5', minWidth: 80 }}>{sc.label}</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>{sc.label} Time(s)</th>
+                                            </React.Fragment>
+                                        ))
+                                    ) : activeGame?.key === 'literacy_reading_skill' ? (
                                         <>
                                             {detail?.columns?.map((c, idx) => {
                                                 const qNum = idx + 1;
@@ -708,7 +768,25 @@ const AdminReports = () => {
                                                         </React.Fragment>
                                                     );
                                                 })
-                                            ) : ['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key) ? (
+                                            ) : activeGame?.key === 'literacy_reading_skill_v2' ? (
+                                                READING_V2_STAGE_COLS.map(sc => {
+                                                    const st = row.reading_stages?.[sc.key];
+                                                    return (
+                                                        <React.Fragment key={sc.key}>
+                                                            {sc.type === 'pass_fail' ? (
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: st == null ? '#94a3b8' : st.pass ? '#059669' : '#dc2626' }}>
+                                                                    {st == null ? '—' : st.pass ? 'Pass' : 'Fail'}
+                                                                </td>
+                                                            ) : (
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: st == null ? '#94a3b8' : st.correct >= 4 ? '#059669' : '#dc2626' }}>
+                                                                    {st == null ? '—' : `${st.correct} / ${st.total}`}
+                                                                </td>
+                                                            )}
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{st ? fmtSecs(st.time) : '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
+                                            ) : activeGame?.key === 'literacy_reading_skill' ? (
                                                 <>
                                                     {detail?.columns?.map((c, idx) => {
                                                         const qNum = idx + 1;
@@ -756,12 +834,14 @@ const AdminReports = () => {
                                             <td style={{ ...S.tdCenter, fontWeight: 700, fontSize: '0.8rem', lineHeight: '1.4', whiteSpace: 'nowrap' }}>
                                                 {['working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3', 'auditory_dhyan'].includes(activeGame?.key)
                                                     ? (row.score ?? '—')
-                                                    : (
-                                                        <>
-                                                           <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
-                                                           <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
-                                                        </>
-                                                    )
+                                                    : activeGame?.key === 'literacy_reading_skill_v2'
+                                                        ? renderReadingV2Summary(row)
+                                                        : (
+                                                            <>
+                                                               <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
+                                                               <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
+                                                            </>
+                                                        )
                                                 }
                                             </td>
                                             {isHerPher && (

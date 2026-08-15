@@ -84,7 +84,20 @@ export const generateReportData = (activeGame, detail) => {
             qHeaders.push(`${colLabel} Match Tgt?`);
             qHeaders.push(`${colLabel} Time(s)`);
         });
-    } else if (['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key)) {
+    } else if (activeGame?.key === 'literacy_reading_skill_v2') {
+        // Adaptive ASER-style path (Paragraph -> Story, or Paragraph -> Words ->
+        // Letters), not a fixed question count — see gameController.js's
+        // reading_level/reading_path/reading_stages.
+        qHeaders.push(
+            'Reading Level', 'Path Taken',
+            'Paragraph Result', 'Paragraph Time(s)',
+            'Words Score', 'Words Time(s)',
+            'Letters Score', 'Letters Time(s)',
+            'Words Retry Score', 'Words Retry Time(s)',
+            'Paragraph Retry Result', 'Paragraph Retry Time(s)',
+            'Story Result', 'Story Time(s)',
+        );
+    } else if (activeGame?.key === 'literacy_reading_skill') {
         detail.columns.forEach((c, idx) => {
             const colLabel = `Q${idx + 1}`;
             qHeaders.push(`${colLabel} Score`);
@@ -205,7 +218,15 @@ export const generateReportData = (activeGame, detail) => {
                     qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : ''
                 );
             });
-        } else if (['literacy_reading_skill', 'literacy_reading_skill_v2'].includes(activeGame?.key)) {
+        } else if (activeGame?.key === 'literacy_reading_skill_v2') {
+            rowArr.push(r.reading_level || 'Incomplete', (r.reading_path || []).join(' -> '));
+            ['paragraph', 'words', 'letters', 'words_retry', 'paragraph_retry', 'story'].forEach(key => {
+                const st = r.reading_stages?.[key];
+                if (!st) { rowArr.push('', ''); return; }
+                const time = st.time != null ? Math.round(st.time) : '';
+                rowArr.push('pass' in st ? (st.pass ? 'Pass' : 'Fail') : `${st.correct}/${st.total}`, time);
+            });
+        } else if (activeGame?.key === 'literacy_reading_skill') {
             detail?.columns?.forEach(c => {
                 const qs = r.question_scores || {};
                 rowArr.push(qs[c] ?? '', qs[`${c}_time`] ? Math.round(qs[`${c}_time`]) : '');
