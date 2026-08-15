@@ -59,6 +59,7 @@ const AdminChildGroupsList = () => {
                                     <tr>
                                         <th>#</th>
                                         <th>Group Name</th>
+                                        <th>Organization</th>
                                         <th>Description</th>
                                         <th>Children</th>
                                         <th>Status</th>
@@ -67,14 +68,15 @@ const AdminChildGroupsList = () => {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>Loading child groups...</td></tr>
+                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>Loading child groups...</td></tr>
                                     ) : filteredGroups.length === 0 ? (
-                                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No child groups found.</td></tr>
+                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>No child groups found.</td></tr>
                                     ) : (
                                         filteredGroups.map((group, index) => (
                                             <tr key={group.id}>
                                                 <td>{index + 1}</td>
                                                 <td style={{ fontWeight: '600' }}>{group.name}</td>
+                                                <td>{group.organization || '—'}</td>
                                                 <td>{group.description || '—'}</td>
                                                 <td>{group.member_count ?? 0}</td>
                                                 <td>
