@@ -334,7 +334,14 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                             </div>
                         ))
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
+                        <div>
+                            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', fontSize: '12px', color: '#4b5563', marginBottom: '10px', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px' }}>
+                                <span><strong style={{ color: '#059669' }}>✓</strong> Uploaded by Admin</span>
+                                <span><strong style={{ color: '#d97706' }}>●</strong> Default (built-in) audio only</span>
+                                <span><strong style={{ color: '#dc2626' }}>✕</strong> Uploaded but disabled</span>
+                                <span><strong style={{ color: '#d1d5db' }}>—</strong> Not configured</span>
+                            </div>
+                            <div style={{ overflowX: 'auto' }}>
                             <table className="admin-table" style={{ width: '100%' }}>
                                 <thead>
                                     <tr>
@@ -359,13 +366,13 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                                                     {languages.map(lang => {
                                                         const file = getFile(slot, lang.code);
                                                         const staticFallback = !file ? getStaticFallback(slot, lang.code) : null;
-                                                        const mark = file ? (file.is_active === 0 ? '✕' : '✓') : staticFallback ? '·' : '—';
-                                                        const color = file ? (file.is_active === 0 ? '#dc2626' : '#059669') : staticFallback ? '#9ca3af' : '#d1d5db';
+                                                        const mark = file ? (file.is_active === 0 ? '✕' : '✓') : staticFallback ? '●' : '—';
+                                                        const color = file ? (file.is_active === 0 ? '#dc2626' : '#059669') : staticFallback ? '#d97706' : '#d1d5db';
                                                         const title = file
                                                             ? `${lang.name}: ${file.is_active === 0 ? 'disabled' : 'configured'}`
-                                                            : staticFallback ? `${lang.name}: default audio only` : `${lang.name}: not configured`;
+                                                            : staticFallback ? `${lang.name}: default (built-in) audio only — not yet uploaded by Admin` : `${lang.name}: not configured`;
                                                         return (
-                                                            <td key={lang.code} style={{ textAlign: 'center', color, fontWeight: 700 }} title={title}>
+                                                            <td key={lang.code} style={{ textAlign: 'center', color, fontWeight: 700, fontSize: mark === '●' ? '10px' : '14px' }} title={title}>
                                                                 {mark}
                                                             </td>
                                                         );
@@ -392,6 +399,7 @@ export default function AudioElementsManager({ gameKey, languages, showToast }) 
                                     })}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     )}
                 </>
