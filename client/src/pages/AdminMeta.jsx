@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { useAdminNotification } from '../contexts/AdminNotificationContext';
 import './AdminMeta.css';
@@ -17,6 +18,12 @@ const SIDEBAR_ITEMS = [
             { key: 'privacy', icon: '🔒', label: 'Privacy Policy',      type: 'cms'     },
             { key: 'contact', icon: '📬', label: 'Contact Us',          type: 'contact' },
             { key: 'help',    icon: '🎫', label: 'Help & Support',      type: 'faq'     },
+        ],
+    },
+    {
+        group: 'Organizations',
+        items: [
+            { key: 'org-types', icon: '🏷️', label: 'Organization Types', type: 'org-types' },
         ],
     },
 ];
@@ -834,6 +841,157 @@ const HelpFaqAdmin = () => {
     );
 };
 
+// ── Organization Types (picklist backing organizations.org_type) ──────────
+// Feeds both the public registration form's dropdown (UnifiedRegister.jsx,
+// via /api/public/org-types) and the Super Admin's org edit page
+// (AdminOrganizationDetail.jsx, via /api/admin/org-types). Reuses the
+// meta-faq-* list/form styling since the shape (an orderable list of
+// simple items with add/edit/delete) is the same as the FAQ editor above.
+const OrgTypesAdmin = () => {
+    const [types, setTypes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [toast, setToast] = useState(null);
+    const [editing, setEditing] = useState(null); // 'new' | id | null
+    const [labelInput, setLabelInput] = useState('');
+    const [error, setError] = useState('');
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 3500);
+    };
+
+    const load = useCallback(() => {
+        setLoading(true);
+        axiosAdmin.get('/admin/org-types')
+            .then(({ data }) => setTypes(data.orgTypes || []))
+            .catch(() => showToast('Failed to load organization types.', 'error'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => { load(); }, [load]);
+
+    const openNew  = () => { setEditing('new'); setLabelInput(''); setError(''); };
+    const openEdit = (t) => { setEditing(t.id); setLabelInput(t.label); setError(''); };
+    const closeForm = () => { setEditing(null); setLabelInput(''); setError(''); };
+
+    const handleSaveItem = async () => {
+        if (!labelInput.trim()) { setError('Label is required.'); return; }
+        setSaving(true);
+        setError('');
+        try {
+            if (editing === 'new') {
+                await axiosAdmin.post('/admin/org-types', { value: labelInput.trim(), label: labelInput.trim() });
+            } else {
+                await axiosAdmin.put(`/admin/org-types/${editing}`, { label: labelInput.trim() });
+            }
+            closeForm();
+            await load();
+            showToast('Organization type saved.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to save.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const toggleActive = async (t) => {
+        try {
+            await axiosAdmin.put(`/admin/org-types/${t.id}`, { status: t.status === 'active' ? 'inactive' : 'active' });
+            await load();
+        } catch {
+            showToast('Failed to update status.', 'error');
+        }
+    };
+
+    const move = async (idx, dir) => {
+        const swap = idx + dir;
+        if (swap < 0 || swap >= types.length) return;
+        const arr = [...types];
+        [arr[idx], arr[swap]] = [arr[swap], arr[idx]];
+        setTypes(arr);
+        try {
+            await Promise.all([
+                axiosAdmin.put(`/admin/org-types/${arr[idx].id}`, { sort_order: idx }),
+                axiosAdmin.put(`/admin/org-types/${arr[swap].id}`, { sort_order: swap }),
+            ]);
+        } catch {
+            showToast('Failed to reorder.', 'error');
+            load();
+        }
+    };
+
+    if (loading) return <div className="meta-faq-loading"><div className="meta-editor-spinner" /></div>;
+
+    return (
+        <div className="meta-faq-shell">
+            {toast && <div className={`meta-toast meta-toast--${toast.type}`}>{toast.msg}</div>}
+
+            <div className="meta-faq-topbar">
+                <p className="meta-faq-hint">
+                    Options offered on the Organization registration form and the Super Admin's org edit page.
+                    Deactivating hides a type from new selections without breaking organizations already using it.
+                </p>
+                <button className="meta-faq-add-btn" onClick={openNew} disabled={saving}>+ Add Type</button>
+            </div>
+
+            {editing !== null && (
+                <div className="meta-faq-form-card">
+                    <h4 className="meta-faq-form-title">{editing === 'new' ? 'Add Organization Type' : 'Edit Organization Type'}</h4>
+                    <label className="meta-faq-label">Label</label>
+                    <input
+                        className="meta-faq-input"
+                        placeholder="e.g. Community Health Center"
+                        value={labelInput}
+                        onChange={e => setLabelInput(e.target.value)}
+                    />
+                    {error && <div style={{ color: '#dc2626', fontSize: '12px', fontWeight: 600, marginTop: '4px' }}>{error}</div>}
+                    <div className="meta-faq-form-actions">
+                        <button className="meta-faq-save-btn" onClick={handleSaveItem} disabled={saving}>
+                            {saving ? 'Saving…' : '💾 Save'}
+                        </button>
+                        <button className="meta-faq-cancel-btn" onClick={closeForm}>Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {types.length === 0 && editing === null ? (
+                <div className="meta-faq-empty">
+                    <div style={{ fontSize: 36 }}>🏷️</div>
+                    <p>No organization types yet. Click <strong>+ Add Type</strong> to get started.</p>
+                </div>
+            ) : (
+                <div className="meta-faq-list">
+                    {types.map((t, idx) => (
+                        <div key={t.id} className={`meta-faq-item ${editing === t.id ? 'meta-faq-item--editing' : ''}`}>
+                            <div className="meta-faq-item-order">
+                                <button className="meta-faq-order-btn" onClick={() => move(idx, -1)} disabled={idx === 0 || saving} title="Move up">▲</button>
+                                <span className="meta-faq-num">{idx + 1}</span>
+                                <button className="meta-faq-order-btn" onClick={() => move(idx, 1)} disabled={idx === types.length - 1 || saving} title="Move down">▼</button>
+                            </div>
+                            <div className="meta-faq-item-body">
+                                <div className="meta-faq-q">
+                                    {t.label}{' '}
+                                    {t.status === 'active'
+                                        ? <span className="admin-tag good" style={{ fontSize: '10px' }}>Active</span>
+                                        : <span className="admin-tag warn" style={{ fontSize: '10px', background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Inactive</span>}
+                                </div>
+                                <div className="meta-faq-a" style={{ fontFamily: 'monospace', fontSize: '11px' }}>value: {t.value}</div>
+                            </div>
+                            <div className="meta-faq-item-actions" style={{ flexDirection: 'row', flexWrap: 'nowrap' }}>
+                                <button className="meta-faq-edit-btn" onClick={() => openEdit(t)} disabled={saving}>✏️ Edit</button>
+                                <button className="meta-faq-edit-btn" onClick={() => toggleActive(t)} disabled={saving}>
+                                    {t.status === 'active' ? '⏸ Deactivate' : '▶ Activate'}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const PlaceholderPanel = ({ item }) => (
     <div className="meta-placeholder-panel">
         <div className="meta-placeholder-icon">{item.icon}</div>
@@ -844,11 +1002,17 @@ const PlaceholderPanel = ({ item }) => (
 
 
 const AdminMeta = () => {
-    const [activeKey, setActiveKey] = useState('terms');
+    const { tabKey } = useParams();
+    const navigate = useNavigate();
     const { newMessageCount, refreshCount } = useAdminNotification();
 
     const flatItems = SIDEBAR_ITEMS.flatMap(g => g.items);
-    const activeItem = flatItems.find(i => i.key === activeKey) ?? flatItems[0];
+    const activeItem = flatItems.find(i => i.key === tabKey);
+
+    // Unknown/stale tabKey (bad bookmark, typo'd URL, a tab that's since
+    // been removed) — redirect to the first tab rather than rendering a
+    // blank/broken panel.
+    if (!activeItem) return <Navigate to={`/admin/meta/${flatItems[0].key}`} replace />;
 
     return (
         <div className="admin-content meta-layout">
@@ -859,8 +1023,8 @@ const AdminMeta = () => {
                         {group.items.map(item => (
                             <button
                                 key={item.key}
-                                className={`meta-sidebar-item ${activeKey === item.key ? 'active' : ''}`}
-                                onClick={() => setActiveKey(item.key)}
+                                className={`meta-sidebar-item ${tabKey === item.key ? 'active' : ''}`}
+                                onClick={() => navigate(`/admin/meta/${item.key}`)}
                             >
                                 <span className="meta-sidebar-icon">{item.icon}</span>
                                 <span className="meta-sidebar-label-wrap">
@@ -883,9 +1047,10 @@ const AdminMeta = () => {
                     <div>
                         <h2 className="meta-main-title">{activeItem.label}</h2>
                         <p className="meta-main-sub">
-                            {activeItem.type === 'cms'     ? 'Edit content, SEO meta, and publish status for this page.' :
-                             activeItem.type === 'contact' ? 'Manage contact info, page description, and form submissions.' :
-                             activeItem.type === 'faq'     ? 'Manage bilingual FAQ and page content for the Help & Support page.' :
+                            {activeItem.type === 'cms'       ? 'Edit content, SEO meta, and publish status for this page.' :
+                             activeItem.type === 'contact'   ? 'Manage contact info, page description, and form submissions.' :
+                             activeItem.type === 'faq'       ? 'Manage bilingual FAQ and page content for the Help & Support page.' :
+                             activeItem.type === 'org-types' ? 'Manage the Organization Type options offered at registration and in org editing.' :
                              'Reserved for future development.'}
                         </p>
                     </div>
@@ -897,7 +1062,9 @@ const AdminMeta = () => {
                         ? <ContactAdmin key="contact" newMessageCount={newMessageCount} onStatusChange={refreshCount} />
                         : activeItem.type === 'faq'
                             ? <HelpFaqAdmin key="help-faq" />
-                            : <PlaceholderPanel item={activeItem} />
+                            : activeItem.type === 'org-types'
+                                ? <OrgTypesAdmin key="org-types" />
+                                : <PlaceholderPanel item={activeItem} />
                 }
             </main>
         </div>

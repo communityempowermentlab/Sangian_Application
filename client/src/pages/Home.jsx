@@ -342,15 +342,6 @@ const Home = () => {
                         <p className="hero-text-main">
                             {t('home.desc')}
                         </p>
-                        
-
-
-                        {!isLoggedIn && (
-                            <div className="hero-actions-main">
-                                <a href="/login" className="btn hero-btn-primary">{t('home.startTest')}</a>
-                                <a href="/register" className="btn hero-btn-ghost">{t('home.registerChild')}</a>
-                            </div>
-                        )}
                     </div>
                 </header>
 

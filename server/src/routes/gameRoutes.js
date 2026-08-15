@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const gameController = require('../controllers/gameController');
+const assessmentSessionController = require('../controllers/assessmentSessionController');
+const traceabilityController = require('../controllers/traceabilityController');
 const authMiddleware = require('../middleware/auth');       // child session pass-through
-const adminAuth = require('../middleware/adminAuth');       // admin JWT verification
+const requireAdminOrOrgAuth = require('../middleware/requireAdminOrOrgAuth');
+const resolveOrgScope = require('../middleware/resolveOrgScope');
 
 // ── Child game session routes (accessible by authenticated children) ──────────
 router.use(authMiddleware);
@@ -25,8 +28,20 @@ router.get('/sessions/pending-assessment/:childId',     gameController.getPendin
 router.post('/assessments',                             gameController.submitAssessment);
 router.post('/pdfs/upload',                             upload.single('pdf'), gameController.uploadDashboardPdf);
 
-// ── Admin-only report routes (valid admin JWT required) ───────────────────────
-router.get('/reports/overview',                         adminAuth, gameController.getReportOverview);
-router.get('/reports/detail/:gameName',                 adminAuth, gameController.getReportDetail);
+// ── Assessment sessions (traceability chain — see assessmentSessionController.js) ──
+// Starting one is an admin/staff/org action (picking a child + conducting
+// role before handing off to the child) — same guard as children routes.
+// Ending one is reached from the child-facing play flow, no auth of its
+// own, matching every other child game-session endpoint on this router.
+router.post('/assessment-sessions',                     requireAdminOrOrgAuth('children'), resolveOrgScope, assessmentSessionController.startAssessmentSession);
+router.put('/assessment-sessions/:id/end',               assessmentSessionController.endAssessmentSession);
+router.get('/assessment-sessions/:id',                   requireAdminOrOrgAuth('children'), resolveOrgScope, assessmentSessionController.getAssessmentSessionById);
+
+// ── Report routes — org-scoped: an Organization sees only its own
+// children's game sessions (req.orgScope filters game_sessions.org_id),
+// Super Admin/staff-with-'reports'-grant see everything, unchanged. ───────
+router.get('/reports/overview',                         requireAdminOrOrgAuth('reports'), resolveOrgScope, gameController.getReportOverview);
+router.get('/reports/detail/:gameName',                 requireAdminOrOrgAuth('reports'), resolveOrgScope, gameController.getReportDetail);
+router.get('/reports/assessment-trail',                 requireAdminOrOrgAuth('children'), resolveOrgScope, traceabilityController.getAssessmentTrail);
 
 module.exports = router;

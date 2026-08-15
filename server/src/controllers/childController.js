@@ -2,6 +2,7 @@ const { pool }       = require('../config/db');
 const path           = require('path');
 const fs             = require('fs');
 const { UPLOAD_DIR } = require('../middleware/upload');
+const { checkChildEligibility } = require('../utils/validateAssessorChild');
 
 const finalizePhoto = (tmpFile, childId) => {
     const ext         = path.extname(tmpFile.filename);
@@ -53,9 +54,24 @@ const registerChild = async (req, res) => {
         const gram_sabha = req.body.gram_sabha || '';
         const hamlet = req.body.hamlet || '';
 
+        // Optional org_id — e.g. a per-organization public registration
+        // link (?org_id=5). This endpoint is unauthenticated, so the value
+        // is never trusted at face value: it's only honored when it names
+        // an existing, approved organization; otherwise the child is
+        // registered exactly as before (org_id NULL), preserving today's
+        // default self-registration flow unchanged.
+        let orgId = null;
+        if (req.body.org_id) {
+            const [orgRows] = await pool.query(
+                "SELECT id FROM organizations WHERE id = ? AND registration_status = 'approved'",
+                [req.body.org_id]
+            );
+            if (orgRows.length) orgId = orgRows[0].id;
+        }
+
         const [result] = await pool.query(
-            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [child_id ? child_id.trim() : null, name.trim(), dob, gender.trim(), mobile.trim(), father_name.trim(), mother_name.trim(), remarks.trim(), gram_sabha.trim(), hamlet.trim()]
+            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, org_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [child_id ? child_id.trim() : null, name.trim(), dob, gender.trim(), mobile.trim(), father_name.trim(), mother_name.trim(), remarks.trim(), gram_sabha.trim(), hamlet.trim(), orgId]
         );
 
         const childIdStr = child_id ? child_id.trim() : result.insertId.toString();
@@ -90,26 +106,24 @@ const lookupChild = async (req, res) => {
             return res.status(400).json({ message: 'Child ID is required.' });
         }
 
+        const normalizedId = childId.toUpperCase();
+
+        // Child Selection checkpoint (see the Assessor spec's "Child Status
+        // Validation During Assessment") — validates existence, Active
+        // status, and organization association in one place, shared with
+        // the re-validation at Start Assessment (sessionController.js).
+        // This route is gated behind assessorAuth (childRoutes.js), so
+        // req.assessor is always set here.
+        const eligibility = await checkChildEligibility(normalizedId, req.assessor.id);
+        if (!eligibility.ok) {
+            return res.status(eligibility.code).json({ message: eligibility.message, eligible: false });
+        }
+
         const [rows] = await pool.query(
             'SELECT child_id, name, dob, gender, mobile, status, photo FROM children WHERE child_id = ?',
-            [childId.toUpperCase()]
+            [normalizedId]
         );
-
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Child ID not found.' });
-        }
-
-        const child = rows[0];
-
-        // Block lookup if child is deactivated
-        if (child.status === 'inactive') {
-            return res.status(403).json({
-                message: 'Account deactivated. Please contact an administrator.',
-                isInactive: true
-            });
-        }
-
-        res.status(200).json(child);
+        res.status(200).json(rows[0]);
     } catch (error) {
         console.error('Lookup Error:', error);
         res.status(500).json({ message: 'Server error while looking up child.' });

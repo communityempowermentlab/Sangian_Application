@@ -104,7 +104,7 @@ const AdminStaffEdit = () => {
                     <div style={{ marginBottom: '24px' }}>
                         <label style={labelStyle}>Menu Permissions</label>
                         <p style={{ margin: '0 0 10px', color: 'var(--muted)', fontSize: '13px' }}>Only the checked menus will be visible to this staff member. Takes effect immediately.</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
                             {ADMIN_MODULES.map(m => (
                                 <label key={m.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
                                     <input type="checkbox" checked={permissions.includes(m.key)} onChange={() => togglePermission(m.key)} />

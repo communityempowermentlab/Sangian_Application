@@ -4,11 +4,15 @@ import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 import { getLanguageIcon } from '../utils/languageIcons';
+import { isAssessorSession, getAssessorInfo, assessorLogout } from '../utils/assessorSession';
+import { isIndividualSession, getIndividualInfo, individualLogout } from '../utils/individualSession';
 
 const Navbar = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const { t, changeLanguage, language, availableLanguages } = useLanguage();
     const [showLangModal, setShowLangModal] = useState(false);
+    const [isLoggingOutAssessor, setIsLoggingOutAssessor] = useState(false);
+    const [isLoggingOutIndividual, setIsLoggingOutIndividual] = useState(false);
 
     useEffect(() => {
         const userStr = localStorage.getItem('currentChild');
@@ -17,7 +21,7 @@ const Navbar = () => {
         }
     }, []);
 
-    const handleLogout = async () => {
+    const endChildSession = async () => {
         try {
             const sessionId = localStorage.getItem('sessionId');
             if (sessionId) {
@@ -29,8 +33,45 @@ const Navbar = () => {
             localStorage.removeItem('currentChild');
             localStorage.removeItem('sessionId');
             setCurrentUser(null);
-            window.location.href = '/';
         }
+    };
+
+    const handleLogout = async () => {
+        await endChildSession();
+        window.location.href = '/';
+    };
+
+    // An Assessor's own identity — shown alongside the currently-selected
+    // child (if any) once the assessor has logged in at /login. Unlike
+    // before, the child no longer replaces the assessor's own header
+    // identity — the assessor stays visible for the whole session, and the
+    // Child ID/Name is appended once a child is selected (see
+    // AssessorSearchChild.jsx) and updates whenever a different child is
+    // selected next.
+    const assessorInfo = isAssessorSession() ? getAssessorInfo() : null;
+
+    const handleAssessorLogout = async () => {
+        setIsLoggingOutAssessor(true);
+        // A selected child is only reachable through this assessor's
+        // session — end it too so "logout ends protected access" holds for
+        // both, not just the assessor's own pages.
+        if (currentUser) await endChildSession();
+        await assessorLogout();
+        window.location.href = '/login';
+    };
+
+    // An Individual plays as their own linked child (see
+    // individualAuthController.js) — currentUser will therefore always be
+    // set for one too, but their own identity/name takes priority in the
+    // header (below) rather than showing the generic child card, and their
+    // logout must end both sessions for the same reason as the assessor's.
+    const individualInfo = isIndividualSession() ? getIndividualInfo() : null;
+
+    const handleIndividualLogout = async () => {
+        setIsLoggingOutIndividual(true);
+        if (currentUser) await endChildSession();
+        await individualLogout();
+        window.location.href = '/login';
     };
 
     return (
@@ -46,7 +87,33 @@ const Navbar = () => {
                     <button onClick={() => setShowLangModal(true)} className="btn nav-btn-outline" style={{ border: 'none', background: '#f3f4f6', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '1.2rem' }}>{getLanguageIcon(language)}</span> {t('navbar.language')}
                     </button>
-                    {currentUser ? (
+                    {assessorInfo ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: '13px', color: '#374151' }}>
+                                Assessor: <strong style={{ color: '#111827' }}>{assessorInfo.name || assessorInfo.email}</strong>
+                            </span>
+                            {currentUser && (
+                                <span style={{ fontSize: '13px', color: '#374151', paddingLeft: '10px', borderLeft: '1px solid #e5e7eb' }}>
+                                    Child ID: <strong style={{ color: '#111827' }}>{currentUser.child_id}</strong>{' '}
+                                    | Child Name: <strong style={{ color: '#111827' }}>{currentUser.name}</strong>
+                                </span>
+                            )}
+                            <a href="/assessor/dashboard" className="btn nav-btn-outline">👤 Account</a>
+                            <button onClick={handleAssessorLogout} disabled={isLoggingOutAssessor} className="btn nav-btn-outline" style={{ color: '#ef4444', borderColor: '#fee2e2' }}>
+                                {isLoggingOutAssessor ? 'Logging out…' : t('common.logout')}
+                            </button>
+                        </div>
+                    ) : individualInfo ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: '13px', color: '#374151' }}>
+                                <strong style={{ color: '#111827' }}>{individualInfo.full_name || individualInfo.email}</strong>
+                            </span>
+                            <a href="/individual/reports" className="btn nav-btn-outline">👤 My Account</a>
+                            <button onClick={handleIndividualLogout} disabled={isLoggingOutIndividual} className="btn nav-btn-outline" style={{ color: '#ef4444', borderColor: '#fee2e2' }}>
+                                {isLoggingOutIndividual ? 'Logging out…' : t('common.logout')}
+                            </button>
+                        </div>
+                    ) : currentUser ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <img
                                 src={getChildPhotoOrDefault(currentUser.photo)}
@@ -63,7 +130,7 @@ const Navbar = () => {
                     ) : (
                         <>
                             <a href="/login" className="btn nav-btn-outline">{t('common.login')}</a>
-                            <a href="/register" className="btn nav-btn-primary">{t('common.register')}</a>
+                            <a href="/signup/registration" className="btn nav-btn-primary">{t('common.register')}</a>
                         </>
                     )}
                 </div>

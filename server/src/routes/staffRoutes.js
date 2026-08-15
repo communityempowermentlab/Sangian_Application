@@ -4,6 +4,8 @@ const staffController = require('../controllers/staffController');
 const adminAuth = require('../middleware/adminAuth');
 const requireModuleAccess = require('../middleware/requireModuleAccess');
 const requireAdminOnly = require('../middleware/requireAdminOnly');
+const requireAdminOrOrgAuth = require('../middleware/requireAdminOrOrgAuth');
+const resolveOrgScope = require('../middleware/resolveOrgScope');
 
 // Self-service profile routes — reachable by the logged-in staff member
 // themself (or an admin) regardless of the 'staff' module grant; managing
@@ -28,13 +30,18 @@ router.get('/:id/login-history',     requireAdminOnly, staffController.getStaffL
 router.post('/:id/sessions/:sessionId/force-logout', requireAdminOnly, staffController.forceLogoutStaffSession);
 
 // Staff Management itself — gated by the 'staff' module grant for staff
-// accounts; always allowed for admin (requireModuleAccess short-circuits).
-router.get('/',                      requireModuleAccess('staff'), staffController.getAllStaff);
+// accounts; always allowed for admin. requireAdminOrOrgAuth + resolveOrgScope
+// replaces plain requireModuleAccess here (same admin/staff-with-grant
+// behavior, plus an Organization can now manage its own staff, scoped to
+// its own org_id — see staffController.js's scopeClause). Attendance stays
+// on requireModuleAccess: it's an admin/staff-only reporting view, not
+// exposed to Organizations.
+router.get('/',                      requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.getAllStaff);
 router.get('/attendance',            requireModuleAccess('staff'), staffController.getAttendance);
-router.get('/:id',                   requireModuleAccess('staff'), staffController.getStaffById);
-router.post('/',                     requireModuleAccess('staff'), staffController.addStaff);
-router.put('/:id',                   requireModuleAccess('staff'), staffController.updateStaff);
-router.delete('/:id',                requireModuleAccess('staff'), staffController.deleteStaff);
-router.put('/:id/reset-password',    requireModuleAccess('staff'), staffController.resetStaffPassword);
+router.get('/:id',                   requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.getStaffById);
+router.post('/',                     requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.addStaff);
+router.put('/:id',                   requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.updateStaff);
+router.delete('/:id',                requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.deleteStaff);
+router.put('/:id/reset-password',    requireAdminOrOrgAuth('staff'), resolveOrgScope, staffController.resetStaffPassword);
 
 module.exports = router;

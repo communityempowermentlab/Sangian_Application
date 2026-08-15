@@ -4,6 +4,7 @@ import axiosAdmin from '../services/axiosAdmin';
 import ChildSessionHistoryModal from '../components/ChildSessionHistoryModal';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
+import { canPerform, isOrgSession } from '../utils/staffPermissions';
 
 const TOTAL_GAMES = GAME_CATALOG.length;
 
@@ -115,6 +116,10 @@ const formatRelativeTime = (dateString) => {
 };
 
 const AdminChildrenList = () => {
+    // Organization column — shown to Super Admin/staff sessions (who may
+    // see records across multiple organizations), hidden for an
+    // Organization login since every row is already scoped to their own org.
+    const isOrg = isOrgSession();
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [groupFilterIds, setGroupFilterIds] = useState([]);
@@ -489,12 +494,14 @@ const AdminChildrenList = () => {
                         >
                             <span>📥</span> Export CSV
                         </button>
-                        <Link to="/admin/children/add" style={{ padding: '11px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#ffffff', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', border: 'none', fontSize: '14px', transition: 'all 0.2s' }}
-                            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-                        >
-                            <span style={{ fontSize: '16px' }}>➕</span> Add New Child
-                        </Link>
+                        {canPerform('children', 'add') && (
+                            <Link to="/admin/children/add" style={{ padding: '11px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#ffffff', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', border: 'none', fontSize: '14px', transition: 'all 0.2s' }}
+                                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <span style={{ fontSize: '16px' }}>➕</span> Add New Child
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -653,6 +660,7 @@ const AdminChildrenList = () => {
                                 <thead>
                                     <tr style={{ whiteSpace: 'nowrap' }}>
                                         <th>#</th>
+                                        {!isOrg && <th>Organization</th>}
                                         <th style={{ width: '56px' }}>Photo</th>
                                         <th onClick={() => requestSort('child_id')} style={{cursor: 'pointer'}}>Child Unique ID{getSortIndicator('child_id')}</th>
                                         <th onClick={() => requestSort('name')} style={{cursor: 'pointer'}}>Child Name{getSortIndicator('name')}</th>
@@ -677,13 +685,14 @@ const AdminChildrenList = () => {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="21" style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
+                                        <tr><td colSpan={isOrg ? 21 : 22} style={{ textAlign: 'center', padding: '20px' }}>Loading children...</td></tr>
                                     ) : currentChildren.length === 0 ? (
-                                        <tr><td colSpan="21" style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
+                                        <tr><td colSpan={isOrg ? 21 : 22} style={{ textAlign: 'center', padding: '20px' }}>No children found matching criteria.</td></tr>
                                     ) : (
                                         currentChildren.map((child, index) => (
                                             <tr key={child.child_id}>
                                                 <td>{startIndex + index + 1}</td>
+                                                {!isOrg && <td>{child.org_name || '—'}</td>}
                                                 <td>
                                                     <img
                                                         src={getChildPhotoOrDefault(child.photo)}
@@ -756,9 +765,11 @@ const AdminChildrenList = () => {
                                                 </td>
                                                 <td style={{ whiteSpace: 'nowrap' }}>
                                                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                                        <Link to={`/admin/children/edit/${child.child_id}`} style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}>
-                                                            ✏️ Edit
-                                                        </Link>
+                                                        {canPerform('children', 'edit') && (
+                                                            <Link to={`/admin/children/edit/${child.child_id}`} style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}>
+                                                                ✏️ Edit
+                                                            </Link>
+                                                        )}
                                                         <Link 
                                                             to={`/admin/children/scoreboard/${child.child_id}`}
                                                             style={{ fontSize: '13px', color: 'var(--text)', textDecoration: 'none', background: 'transparent', border: 'none' }}

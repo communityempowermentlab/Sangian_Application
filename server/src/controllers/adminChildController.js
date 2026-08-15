@@ -2,6 +2,27 @@ const { pool }   = require('../config/db');
 const path       = require('path');
 const fs         = require('fs');
 const { UPLOAD_DIR } = require('../middleware/upload');
+const { logOrgActivity } = require('../utils/logOrgActivity');
+
+// Only children belonging to an organization are logged to the org
+// activity trail (Super Admin CRUD on org_id-NULL, pre-existing children
+// isn't "organization activity"). actorType/actorName come from whichever
+// identity requireAdminOrOrgAuth authenticated — see its req.admin shape.
+// org_name is looked up fresh rather than trusted from req.admin.name,
+// since that's only actually the org's own name for an 'organization'
+// session — for an org-bound staff actor it's the staff member's name.
+const logChildActivity = async (req, orgId, actionType, description, extra = {}) => {
+    if (!orgId) return;
+    const [orgRows] = await pool.query('SELECT org_name FROM organizations WHERE id = ?', [orgId]);
+    await logOrgActivity({
+        orgId, orgName: orgRows[0]?.org_name,
+        actorType: req.admin.role,
+        actorId: req.admin.id,
+        actorName: req.admin.name || req.admin.email,
+        module: 'children', actionType, description, req,
+        ...extra,
+    });
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,11 +44,27 @@ const deletePhoto = (filename) => {
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 
+// Org isolation helper — a Super Admin sees everything (including
+// pre-existing org_id-NULL children, unchanged from before this feature);
+// an org-bound staff account or an Organization login sees only rows
+// stamped with their own org_id, never NULL/other-org rows. Used by every
+// function below that touches a specific child or the children list.
+const scopeClause = (orgScope, alias = 'c') => {
+    if (orgScope.isSuperAdmin) return { sql: '', params: [] };
+    const col = alias ? `${alias}.org_id` : 'org_id';
+    // Null-safe equality (<=>) — plain `=` never matches when orgId is NULL
+    // (SQL's NULL = NULL is unknown, not true), which would make legacy
+    // org_id-NULL staff unable to see their own org_id-NULL children.
+    return { sql: `${col} <=> ?`, params: [orgScope.orgId] };
+};
+
 // @route   GET /api/admin/children
 exports.getAllChildren = async (req, res) => {
     try {
+        const scope = scopeClause(req.orgScope);
         const [children] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo, c.created_at,
+                   c.org_id, o.org_name,
                    (SELECT login_time FROM login_sessions ls
                     WHERE ls.child_id = c.child_id AND ls.status = 'success'
                     ORDER BY login_time DESC LIMIT 1) AS last_login,
@@ -43,6 +80,7 @@ exports.getAllChildren = async (req, res) => {
                    COALESCE(agg.games_completed, 0)    AS games_completed,
                    agg.last_activity                   AS last_activity
             FROM children c
+            LEFT JOIN organizations o ON c.org_id = o.id
             LEFT JOIN (
                 SELECT child_id,
                        COUNT(*)                                                          AS total_sessions,
@@ -53,8 +91,9 @@ exports.getAllChildren = async (req, res) => {
                 FROM game_sessions
                 GROUP BY child_id
             ) agg ON agg.child_id = c.child_id
+            ${scope.sql ? `WHERE ${scope.sql}` : ''}
             ORDER BY c.created_at DESC
-        `);
+        `, scope.params);
         res.status(200).json(children);
     } catch (error) {
         console.error('Error fetching children for admin:', error);
@@ -85,9 +124,15 @@ exports.addChild = async (req, res) => {
             return res.status(400).json({ message: 'Child ID already exists. Please choose a unique ID.' });
         }
 
+        // Super Admin's created-child stays org_id-NULL (same as before this
+        // feature existed); an org-bound staff account or Organization
+        // login always stamps its own org_id — never trusted from the
+        // client, always derived from the authenticated scope.
+        const orgId = req.orgScope.isSuperAdmin ? null : req.orgScope.orgId;
+
         const [result] = await pool.query(
-            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), 'active']
+            'INSERT INTO children (child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, org_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [child_id.trim(), name.trim(), dob, gender.trim(), mobile.trim(), (father_name||'').trim(), (mother_name||'').trim(), (remarks||'').trim(), (gram_sabha||'').trim(), (hamlet||'').trim(), 'active', orgId]
         );
 
         const childIdStr = child_id.trim();
@@ -112,6 +157,10 @@ exports.addChild = async (req, res) => {
             }
         }
 
+        await logChildActivity(req, orgId, 'add', `Registered child "${name.trim()}" (${childIdStr})`, {
+            recordType: 'child', recordId: childIdStr, recordName: name.trim(),
+        });
+
         res.status(201).json({
             message: 'Child registered successfully by Admin.',
             child_id: childIdStr,
@@ -128,6 +177,7 @@ exports.addChild = async (req, res) => {
 exports.getChildById = async (req, res) => {
     try {
         const { childId } = req.params;
+        const scope = scopeClause(req.orgScope);
         const [rows] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo,
                    (SELECT GROUP_CONCAT(cg.id ORDER BY cg.name)
@@ -136,8 +186,8 @@ exports.getChildById = async (req, res) => {
                    (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name)
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
                     WHERE cgm.children_id = c.id) AS group_names
-            FROM children c WHERE c.child_id = ?
-        `, [childId]);
+            FROM children c WHERE c.child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}
+        `, [childId, ...scope.params]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Child ID not found.' });
@@ -159,8 +209,8 @@ exports.updateChild = async (req, res) => {
         const { childId } = req.params;
         const { new_child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status } = req.body;
 
-        const [oldRecord] = await connection.query('SELECT id, child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, photo FROM children WHERE child_id = ?', [childId]);
-        if (oldRecord.length === 0) {
+        const [oldRecord] = await connection.query('SELECT id, child_id, name, dob, gender, mobile, father_name, mother_name, remarks, gram_sabha, hamlet, status, photo, org_id FROM children WHERE child_id = ?', [childId]);
+        if (oldRecord.length === 0 || (!req.orgScope.isSuperAdmin && oldRecord[0].org_id !== req.orgScope.orgId)) {
             if (req.file) fs.unlinkSync(req.file.path);
             await connection.rollback();
             return res.status(404).json({ message: 'Child ID not found.' });
@@ -322,6 +372,15 @@ exports.updateChild = async (req, res) => {
         }
 
         await connection.commit();
+
+        if (logs.length) {
+            await logChildActivity(req, oldData.org_id, 'edit', `Updated child "${name.trim()}" (${targetChildId})`, {
+                recordType: 'child', recordId: targetChildId, recordName: name.trim(),
+                previousValue: Object.fromEntries(logs.map(([field, oldVal]) => [field, oldVal])),
+                newValue: Object.fromEntries(logs.map(([field, , newVal]) => [field, newVal])),
+            });
+        }
+
         res.status(200).json({ message: 'Child updated successfully.', new_child_id: targetChildId });
     } catch (error) {
         await connection.rollback();
@@ -339,18 +398,29 @@ exports.toggleStatus = async (req, res) => {
         const { childId } = req.params;
         const { status }  = req.body;
 
-        if (!['active', 'inactive'].includes(status)) {
+        // 'suspended'/'deleted' (soft-delete) are accepted here too — all
+        // four values behave identically to the Assessor flow (only
+        // 'active' is ever eligible for a new or continuing assessment,
+        // see validateAssessorChild.js), they just record *why* an admin
+        // blocked the child. No dedicated Suspend/Delete admin UI exists
+        // yet — this endpoint just no longer rejects those values.
+        if (!['active', 'inactive', 'suspended', 'deleted'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status value.' });
         }
 
+        const scope = scopeClause(req.orgScope);
         const [result] = await pool.query(
-            'UPDATE children SET status = ? WHERE child_id = ?',
-            [status, childId]
+            `UPDATE children SET status = ? WHERE child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`,
+            [status, childId, ...scope.params]
         );
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Child ID not found.' });
         }
+
+        await logChildActivity(req, req.orgScope.isSuperAdmin ? null : req.orgScope.orgId, 'edit', `Set child ${childId} status to ${status}`, {
+            recordType: 'child', recordId: childId,
+        });
 
         res.status(200).json({ message: `Child status updated to ${status}.` });
     } catch (error) {
@@ -363,6 +433,18 @@ exports.toggleStatus = async (req, res) => {
 exports.getChildSessions = async (req, res) => {
     try {
         const { childId } = req.params;
+        const scope = scopeClause(req.orgScope, '');
+        // Confirm the child is within scope before returning its session
+        // history — login_sessions has no org_id of its own (bare child_id
+        // string, see db.js), so ownership must be checked via `children`
+        // first, otherwise an org could learn another org's session data by
+        // guessing/enumerating child_id values.
+        const [owner] = await pool.query(
+            `SELECT id FROM children WHERE child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`,
+            [childId, ...scope.params]
+        );
+        if (!owner.length) return res.status(404).json({ message: 'Child ID not found.' });
+
         const [sessions] = await pool.query(
             `SELECT id, status, login_time, logout_time, session_duration,
                     ip_address, device_type, browser, os, location
@@ -380,12 +462,14 @@ exports.getChildSessions = async (req, res) => {
 exports.getChildLogs = async (req, res) => {
     try {
         const { childId } = req.params;
+        const scope = scopeClause(req.orgScope);
         const [logs] = await pool.query(
             `SELECT l.id, l.field_name, l.old_value, l.new_value, l.updated_by_name, l.ip_address, l.action_type, l.created_at
              FROM child_profile_edit_logs l
              JOIN children c ON l.children_id = c.id
-             WHERE c.child_id = ? ORDER BY l.created_at DESC`,
-            [childId]
+             WHERE c.child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}
+             ORDER BY l.created_at DESC`,
+            [childId, ...scope.params]
         );
         res.status(200).json(logs);
     } catch (error) {

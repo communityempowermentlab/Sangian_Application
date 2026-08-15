@@ -19,6 +19,17 @@ const adminAuth = (req, res, next) => {
         // admins, but staff get NO elevated access from this alone: every
         // existing route this guards was already admin-only, and per-module
         // access for staff is enforced separately by requireModuleAccess.
+        //
+        // Deliberately NOT widened to accept 'organization' — this function
+        // also gates many misc routes (SMTP settings, tickets, contact
+        // management, self-profile, ...) that only check adminAuth directly,
+        // with no per-module gate at all. Widening it here would silently
+        // open every one of those to org tokens too. An organization only
+        // ever authenticates through requireAdminOrOrgAuth.js (its own
+        // independent JWT verification + module×action check), used solely
+        // on the specific routes deliberately upgraded for org access —
+        // same "new sibling middleware, don't touch the shared one"
+        // principle the whole multi-tenant build follows.
         if (decoded.role !== 'admin' && decoded.role !== 'staff') {
             return res.status(403).json({ success: false, message: 'Forbidden: Admin access required.' });
         }

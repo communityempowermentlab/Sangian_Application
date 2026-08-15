@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useParams, Navigate } from 'react-router-dom';
 import { useSEO } from './seo/useSEO';
 import { SEO_DEFAULTS, ROUTE_SEO, SITE_URL } from './seo/seoConfig';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -7,7 +7,10 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Register from './pages/Register';
-import Login from './pages/Login';
+import UnifiedLogin from './pages/UnifiedLogin';
+import AssessorSearchChild from './pages/AssessorSearchChild';
+import AssessorDashboard from './pages/AssessorDashboard';
+import AssessorAccount from './pages/AssessorAccount';
 import AdminLogin from './pages/AdminLogin';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
@@ -31,13 +34,15 @@ import AtlantisBagiyaGame from './pages/AtlantisBagiyaGame';
 import AdminReports from './pages/AdminReports';
 import AdminDocs from './pages/AdminDocs';
 import AdminSettings from './pages/AdminSettings';
+import AdminOrgSettings from './pages/AdminOrgSettings';
+import { isOrgSession } from './utils/staffPermissions';
 import AdminElements from './pages/AdminElements';
 import AdminMultilingual from './pages/AdminMultilingual';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
 import AdminAssessorsList from './pages/AdminAssessorsList';
 import AdminAssessorAdd from './pages/AdminAssessorAdd';
-import AdminAssessorEdit from './pages/AdminAssessorEdit';
+import AdminAssessorDetail from './pages/AdminAssessorDetail';
 import AdminChildGroupsList from './pages/AdminChildGroupsList';
 import AdminChildGroupAdd from './pages/AdminChildGroupAdd';
 import AdminChildGroupEdit from './pages/AdminChildGroupEdit';
@@ -51,6 +56,8 @@ import ContactPage from './pages/ContactPage';
 import HelpPage from './pages/HelpPage';
 import RequireAdminAuth from './guards/RequireAdminAuth';
 import RequireChildAuth from './guards/RequireChildAuth';
+import RequireAssessorAuth from './guards/RequireAssessorAuth';
+import RequireIndividualAuth from './guards/RequireIndividualAuth';
 import RequireGameEnabled from './guards/RequireGameEnabled';
 import RequireStaffPermission from './guards/RequireStaffPermission';
 import RequireAdminOnly from './guards/RequireAdminOnly';
@@ -61,6 +68,13 @@ import AdminStaffProfile from './pages/AdminStaffProfile';
 import AdminStaffActivityLog from './pages/AdminStaffActivityLog';
 import AdminStaffAttendance from './pages/AdminStaffAttendance';
 import AdminStaffLoginHistory from './pages/AdminStaffLoginHistory';
+import AdminOrganizationsList from './pages/AdminOrganizationsList';
+import AdminIndividualsList from './pages/AdminIndividualsList';
+import AdminIndividualDetail from './pages/AdminIndividualDetail';
+import AdminOrganizationDetail from './pages/AdminOrganizationDetail';
+import UnifiedRegister from './pages/auth/UnifiedRegister';
+import IndividualReports from './pages/IndividualReports';
+import IndividualAccount from './pages/IndividualAccount';
 
 import { LanguageProvider } from './contexts/LanguageContext';
 import { HeaderConfigProvider } from './contexts/HeaderConfigContext';
@@ -103,7 +117,9 @@ const SEOManager = () => {
             const adminTitle = ADMIN_TITLES[pathname]
                 ?? (pathname.startsWith('/admin/children/edit/')
                     ? 'Edit Child | Admin Panel'
-                    : 'Admin Panel');
+                    : pathname.startsWith('/admin/meta/')
+                        ? 'Meta | Admin Panel'
+                        : 'Admin Panel');
             return {
                 title:     adminTitle,
                 robots:    'noindex,nofollow',
@@ -156,6 +172,47 @@ const SEOManager = () => {
     return null;
 };
 
+// Org Settings must stay strictly separate from the Super-Admin-only
+// global AdminSettings.jsx (SMTP, tickets, contact info, etc.) — an
+// organization session always gets its own scoped page here regardless of
+// what's granted, never the global one (RequireStaffPermission's
+// moduleKey="settings" on this route already keeps a session with no
+// 'settings' grant out entirely; this only decides WHICH settings page a
+// session that does have it lands on).
+const SettingsRoute = () => (isOrgSession() ? <AdminOrgSettings /> : <AdminSettings />);
+
+// Bare /admin/organizations/:id has no tab of its own — each tab
+// (Profile/Permissions/Login History/Activity Log/Edit History) gets its
+// own URL now (see AdminOrganizationDetail.jsx), so this just redirects to
+// the default one.
+const OrgDetailRedirect = () => {
+    const { id } = useParams();
+    return <Navigate to={`/admin/organizations/${id}/profile`} replace />;
+};
+
+// Bare /admin/assessors/:id has no tab of its own — each tab
+// (Profile/Password/Login History/Activity Log/Edit History) gets its own
+// URL now (see AdminAssessorDetail.jsx), so this just redirects to the
+// default one.
+const AssessorDetailRedirect = () => {
+    const { id } = useParams();
+    return <Navigate to={`/admin/assessors/${id}/profile`} replace />;
+};
+
+// Bare /admin/individuals/:id has no tab of its own — each tab
+// (Profile/Password/Login History/Edit History) gets its own URL now (see
+// AdminIndividualDetail.jsx), so this just redirects to the default one.
+const IndividualDetailRedirect = () => {
+    const { id } = useParams();
+    return <Navigate to={`/admin/individuals/${id}/profile`} replace />;
+};
+
+// /individual/login pre-dates the unified /login page (see
+// UnifiedLogin.jsx, which now handles Individual/Assessor/Organization all
+// behind one role toggle) — kept as a redirect so any existing bookmarks
+// or external links still land somewhere valid.
+const IndividualLoginRedirect = () => <Navigate to="/login" replace />;
+
 // Standard public layout with Navbar + Footer
 const PublicLayout = () => (
     <>
@@ -182,11 +239,32 @@ function App() {
                         <Route element={<PublicLayout />}>
                             <Route path="/" element={<Home />} />
                             <Route path="/register" element={<Register />} />
-                            <Route path="/login" element={<Login />} />
+                            <Route path="/login" element={<UnifiedLogin />} />
+                            <Route path="/signup" element={<UnifiedRegister />} />
+                            <Route path="/signup/registration" element={<UnifiedRegister />} />
+                            <Route path="/signup/organization" element={<UnifiedRegister />} />
+                            <Route path="/individual/login" element={<IndividualLoginRedirect />} />
                             <Route path="/terms-conditions" element={<TermsPage />} />
                             <Route path="/privacy-policy" element={<PrivacyPage />} />
                             <Route path="/contact-us" element={<ContactPage />} />
                             <Route path="/help" element={<HelpPage />} />
+                        </Route>
+
+                        {/* ── Protected Assessor Routes (assessor must be logged in) ── */}
+                        <Route element={<PublicLayout />}>
+                            <Route element={<RequireAssessorAuth />}>
+                                <Route path="/assessor/dashboard"     element={<AssessorDashboard />} />
+                                <Route path="/assessor/search-child"  element={<AssessorSearchChild />} />
+                                <Route path="/assessor/account"       element={<AssessorAccount />} />
+                            </Route>
+                        </Route>
+
+                        {/* ── Protected Individual Routes (individual must be logged in) ── */}
+                        <Route element={<PublicLayout />}>
+                            <Route element={<RequireIndividualAuth />}>
+                                <Route path="/individual/reports" element={<IndividualReports />} />
+                                <Route path="/individual/account" element={<IndividualAccount />} />
+                            </Route>
                         </Route>
 
                         {/* ── Protected Game Routes (child must be logged in, test must be enabled) ── */}
@@ -211,6 +289,10 @@ function App() {
                         </Route>
 
                         {/* ── Admin Login (public) ────────────────────── */}
+                        {/* Organizations authenticate here too now — no separate
+                            /org/login portal (see adminController.js's unified
+                            loginAdmin, which tries admins, then staff, then
+                            organizations). */}
                         <Route path="/admin/login" element={<AdminLogin />} />
 
                         {/* ── Protected Admin Routes (valid JWT required) ─ */}
@@ -240,7 +322,8 @@ function App() {
                                 <Route element={<RequireStaffPermission moduleKey="assessors" />}>
                                     <Route path="assessors"              element={<AdminAssessorsList />} />
                                     <Route path="assessors/add"          element={<AdminAssessorAdd />} />
-                                    <Route path="assessors/edit/:id"     element={<AdminAssessorEdit />} />
+                                    <Route path="assessors/:id"          element={<AssessorDetailRedirect />} />
+                                    <Route path="assessors/:id/:tab"     element={<AdminAssessorDetail />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="child-groups" />}>
                                     <Route path="child-groups"           element={<AdminChildGroupsList />} />
@@ -257,13 +340,14 @@ function App() {
                                     <Route path="docs"                   element={<AdminDocs />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="meta" />}>
-                                    <Route path="meta"                   element={<AdminMeta />} />
+                                    <Route path="meta"                   element={<Navigate to="/admin/meta/terms" replace />} />
+                                    <Route path="meta/:tabKey"           element={<AdminMeta />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="help-support" />}>
                                     <Route path="help-support"           element={<AdminHelpSupport />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="settings" />}>
-                                    <Route path="settings"               element={<AdminSettings />} />
+                                    <Route path="settings"               element={<SettingsRoute />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="elements" />}>
                                     <Route path="elements"               element={<AdminElements />} />
@@ -283,6 +367,16 @@ function App() {
                                 <Route element={<RequireAdminOnly />}>
                                     <Route path="staff/activity-log"      element={<AdminStaffActivityLog />} />
                                     <Route path="staff/:id/log-history"   element={<AdminStaffLoginHistory />} />
+                                    {/* Organization approval queue — Super Admin only, not a
+                                        grantable staff module (see requireAdminOnly server-side). */}
+                                    <Route path="organizations"           element={<AdminOrganizationsList />} />
+                                    <Route path="organizations/:id"       element={<OrgDetailRedirect />} />
+                                    <Route path="organizations/:id/:tab"  element={<AdminOrganizationDetail />} />
+                                    {/* Individual account oversight — same Super-Admin-only precedent
+                                        as organizations (individuals aren't org-scoped either). */}
+                                    <Route path="individuals"             element={<AdminIndividualsList />} />
+                                    <Route path="individuals/:id"         element={<IndividualDetailRedirect />} />
+                                    <Route path="individuals/:id/:tab"    element={<AdminIndividualDetail />} />
                                 </Route>
 
                             </Route>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
-import { isStaffSession } from '../utils/staffPermissions';
+import { isStaffSession, isOrgSession, canPerform } from '../utils/staffPermissions';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
@@ -65,7 +65,15 @@ const AdminStaffList = () => {
     };
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
-    const isAdmin = !isStaffSession();
+    // Log History is Super-Admin-only server-side (requireAdminOnly) — an
+    // organization session must never see the link either, or it's a dead
+    // link that always 403s.
+    const isAdmin = !isStaffSession() && !isOrgSession();
+    // Organization column — shown to Super Admin/staff sessions (who may
+    // see records across multiple organizations), hidden for an
+    // Organization login since every row is already scoped to their own
+    // org (see requireAdminOrOrgAuth.js / resolveOrgScope.js).
+    const isOrg = isOrgSession();
 
     return (
         <main className="admin-content" aria-label="Staff List">
@@ -75,9 +83,11 @@ const AdminStaffList = () => {
                         <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>Staff Management (Total: {total})</h3>
                         <p style={{ margin: 0, color: 'var(--muted)', fontSize: '13px' }}>Create staff accounts and control which admin menus each one can access.</p>
                     </div>
-                    <Link to="/admin/staff/add" style={{ padding: '11px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#ffffff', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', border: 'none', fontSize: '14px' }}>
-                        <span style={{ fontSize: '16px' }}>➕</span> Add New Staff
-                    </Link>
+                    {canPerform('staff', 'add') && (
+                        <Link to="/admin/staff/add" style={{ padding: '11px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#ffffff', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', border: 'none', fontSize: '14px' }}>
+                            <span style={{ fontSize: '16px' }}>➕</span> Add New Staff
+                        </Link>
+                    )}
                 </div>
 
                 {actionMsg && (
@@ -109,6 +119,7 @@ const AdminStaffList = () => {
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        {!isOrg && <th>Organization</th>}
                                         <th onClick={() => toggleSort('name')} style={{ cursor: 'pointer' }}>Staff Name {sortKey === 'name' && (sortDir === 'asc' ? '▲' : '▼')}</th>
                                         <th onClick={() => toggleSort('email')} style={{ cursor: 'pointer' }}>Email Address {sortKey === 'email' && (sortDir === 'asc' ? '▲' : '▼')}</th>
                                         <th>Mobile Number</th>
@@ -120,13 +131,14 @@ const AdminStaffList = () => {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>Loading staff...</td></tr>
+                                        <tr><td colSpan={isOrg ? 8 : 9} style={{ textAlign: 'center', padding: '20px' }}>Loading staff...</td></tr>
                                     ) : staff.length === 0 ? (
-                                        <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>No staff accounts found.</td></tr>
+                                        <tr><td colSpan={isOrg ? 8 : 9} style={{ textAlign: 'center', padding: '20px' }}>No staff accounts found.</td></tr>
                                     ) : (
                                         staff.map((member, index) => (
                                             <tr key={member.id}>
                                                 <td>{(page - 1) * limit + index + 1}</td>
+                                                {!isOrg && <td>{member.org_name || '—'}</td>}
                                                 <td style={{ fontWeight: 600 }}>{member.name}</td>
                                                 <td>{member.email}</td>
                                                 <td>{member.mobile}</td>
@@ -145,12 +157,18 @@ const AdminStaffList = () => {
                                                 <td>{fmtDate(member.created_at)}</td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                                        <Link to={`/admin/staff/edit/${member.id}`} style={{ textDecoration: 'none', fontSize: '13px', color: 'var(--primary)' }}>✏️ Edit</Link>
+                                                        {canPerform('staff', 'edit') && (
+                                                            <Link to={`/admin/staff/edit/${member.id}`} style={{ textDecoration: 'none', fontSize: '13px', color: 'var(--primary)' }}>✏️ Edit</Link>
+                                                        )}
                                                         {isAdmin && (
                                                             <Link to={`/admin/staff/${member.id}/log-history`} style={{ textDecoration: 'none', fontSize: '13px', color: '#0369a1' }}>📜 Log History</Link>
                                                         )}
-                                                        <button onClick={() => { setResetTarget(member); setNewPassword(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#7c3aed', padding: 0 }}>🔑 Reset Password</button>
-                                                        <button onClick={() => handleDelete(member)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#dc2626', padding: 0 }}>🗑️ Delete</button>
+                                                        {canPerform('staff', 'edit') && (
+                                                            <button onClick={() => { setResetTarget(member); setNewPassword(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#7c3aed', padding: 0 }}>🔑 Reset Password</button>
+                                                        )}
+                                                        {canPerform('staff', 'delete') && (
+                                                            <button onClick={() => handleDelete(member)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#dc2626', padding: 0 }}>🗑️ Delete</button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

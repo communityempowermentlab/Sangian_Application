@@ -208,7 +208,6 @@ const AdminChildAdd = () => {
                             <option value="">Select</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
-                            <option value="other">Other</option>
                         </select>
                         {errors.gender && <div style={{ fontSize: '12px', color: '#ef4444' }}>{errors.gender}</div>}
                     </div>

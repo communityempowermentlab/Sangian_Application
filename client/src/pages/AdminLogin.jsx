@@ -65,6 +65,15 @@ const AdminLogin = () => {
             } else {
                 localStorage.removeItem('staffPermissions');
             }
+            // Organizations: flat module grants (see requireAdminOrOrgAuth.js
+            // / organizations.permissions), same shape as staff's. Always
+            // set (or clear) so a stale grant never lingers into a later
+            // session on the same browser.
+            if (res.data.admin?.role === 'organization') {
+                localStorage.setItem('orgPermissions', JSON.stringify(res.data.permissions || []));
+            } else {
+                localStorage.removeItem('orgPermissions');
+            }
             window.location.href = '/admin/dashboard';
         } catch (err) {
             setErrors(prev => ({

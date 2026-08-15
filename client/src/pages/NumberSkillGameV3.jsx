@@ -19,7 +19,7 @@ import './NumberSkillGameV3.css';
 const LEVELS = {
   Beginner: 0,
   'Number Recognition (1–9)': 1,
-  'Number Recognition (11–99)': 2,
+  'Number Recognition (10–99)': 2,
   Subtraction: 3,
   Division: 4,
 };
@@ -31,13 +31,13 @@ const STAGE_LABELS = {
   subtraction_q1_retry: 'Subtraction Q1 (Retry)',
   division_select: 'Division',
   division_q1: 'Division',
-  number_recognition_99_select: 'Number Recognition (11–99)',
+  number_recognition_99_select: 'Number Recognition (10–99)',
   number_recognition_9_select: 'Number Recognition (1–9)',
 };
 
 const CATEGORY_NAMES = {
   recognition9: 'Number Recognition (1–9)',
-  recognition99: 'Number Recognition (11–99)',
+  recognition99: 'Number Recognition (10–99)',
   subtraction: 'Two-Digit Subtraction',
   division: 'One-Digit Divisor (Three-Digit Dividend)',
 };
@@ -427,13 +427,15 @@ const NumberSkillGameV3 = () => {
 
   // ── Subtraction ─────────────────────────────────────────────────────────
   // All 8 questions are shown at once; the child/assessor picks any 2 (in
-  // the order to attempt them — first pick = Q1). Once 2 are picked the
-  // selection locks: no further picks, no un-picking, until Confirm.
+  // the order to attempt them — first pick = Q1). A selected question can
+  // always be unpicked; once 2 are picked, further NEW picks are blocked
+  // until one is unpicked or Confirm is pressed.
   const sortedSubtractionQuestions = subtractionCat ? [...subtractionCat.questions].sort((a, b) => a.display_order - b.display_order) : [];
 
   const toggleSubtractionSelection = (id) => {
     setPendingSubtractionSelection(prev => {
-      if (prev.includes(id) || prev.length >= 2) return prev; // locked
+      if (prev.includes(id)) return prev.filter(x => x !== id); // unselect
+      if (prev.length >= 2) return prev; // locked until one is freed
       return [...prev, id];
     });
   };
@@ -576,7 +578,7 @@ const NumberSkillGameV3 = () => {
     const record = { selected, correctCount, pass, timeTaken: qTimer };
     setNumberRecognition99(record);
     if (pass) {
-      finalizeAssessment('Number Recognition (11–99)', { numberRecognition99: record });
+      finalizeAssessment('Number Recognition (10–99)', { numberRecognition99: record });
     } else {
       setNrMarks({}); setNrSelectedTexts([]);
       goToStage('number_recognition_9_select');
@@ -637,6 +639,11 @@ const NumberSkillGameV3 = () => {
       clone.style.animation = 'none';
       clone.style.opacity = '1';
       cloneNodes.forEach((node, i) => {
+        // Detached clone's inputs are never interacted with (it's a static
+        // screenshot source) — but a same-`name` radio left in the DOM
+        // collides with React's live-controlled group of the same name and
+        // triggers "Mixing React and non-React radio inputs" errors.
+        if (node.tagName === 'INPUT' && node.name) node.removeAttribute('name');
         node.style.animation = 'none';
         node.style.transition = 'none';
         node.style.opacity = '';

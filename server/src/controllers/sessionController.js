@@ -2,6 +2,7 @@ const { pool } = require('../config/db');
 const UAParser = require('ua-parser-js');
 const requestIp = require('request-ip');
 const axios = require('axios');
+const { checkChildEligibility } = require('../utils/validateAssessorChild');
 
 // Helper to get basic browser/os/device data
 const parseUserAgent = (userAgent) => {
@@ -38,6 +39,16 @@ const startSession = async (req, res) => {
         const { childId } = req.body;
         if (!childId) return res.status(400).json({ message: 'Child ID is required.' });
 
+        // Re-Validation Before Starting the Game — the child may have been
+        // deactivated by an admin in the gap between the assessor's search
+        // (childController.js's lookupChild) and clicking "Go to
+        // Assessment" here. req.assessor is set by assessorAuth (this
+        // route is gated behind it — see sessionRoutes.js).
+        const eligibility = await checkChildEligibility(childId.toUpperCase(), req.assessor.id);
+        if (!eligibility.ok) {
+            return res.status(eligibility.code).json({ message: eligibility.message, eligible: false });
+        }
+
         // Identify user agent and IP
         const userAgent = req.headers['user-agent'];
         const { browser, os, deviceType } = parseUserAgent(userAgent);
@@ -45,13 +56,17 @@ const startSession = async (req, res) => {
         const location = await getLocationFromIp(ip);
         const loginTime = new Date();
 
+        // req.assessor is set by assessorAuth (this route is gated behind
+        // it — see sessionRoutes.js) — stamped here so gameController.js's
+        // startGameSession can later derive which assessor supervised this
+        // child's session, without touching any of the ~15 game pages.
         const query = `
-      INSERT INTO login_sessions 
-      (child_id, status, login_time, ip_address, device_type, browser, os, location)
-      VALUES (?, 'success', ?, ?, ?, ?, ?, ?)
+      INSERT INTO login_sessions
+      (child_id, status, login_time, ip_address, device_type, browser, os, location, assessor_id)
+      VALUES (?, 'success', ?, ?, ?, ?, ?, ?, ?)
     `;
         const [result] = await pool.query(query, [
-            childId.toUpperCase(), loginTime, ip, deviceType, browser, os, location
+            childId.toUpperCase(), loginTime, ip, deviceType, browser, os, location, req.assessor?.id || null
         ]);
 
         res.status(201).json({
@@ -77,12 +92,12 @@ const failedSession = async (req, res) => {
         const location = await getLocationFromIp(ip);
 
         const query = `
-      INSERT INTO login_sessions 
-      (child_id, status, login_time, ip_address, device_type, browser, os, location)
-      VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?)
+      INSERT INTO login_sessions
+      (child_id, status, login_time, ip_address, device_type, browser, os, location, assessor_id)
+      VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?, ?)
     `;
         await pool.query(query, [
-            attemptedChildId || 'UNKNOWN', ip, deviceType, browser, os, location
+            attemptedChildId || 'UNKNOWN', ip, deviceType, browser, os, location, req.assessor?.id || null
         ]);
 
         res.status(200).json({ message: 'Failed attempt logged' });

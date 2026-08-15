@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const requestIp = require('request-ip');
 const axios = require('axios');
 const { logStaffActivity } = require('../utils/logStaffActivity');
+const { logOrgActivity } = require('../utils/logOrgActivity');
 const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
 
 // Basic JWT Secret for now. Ideally this goes in .env
@@ -110,9 +111,64 @@ const loginAdmin = async (req, res) => {
             });
         }
 
-        // Neither admin nor staff matched — log the failed attempt against
-        // whichever table the email actually belongs to (same behavior as
-        // before for admin emails; extended analogously for staff emails).
+        // Not admin or staff either — try Organizations (Phase A of the
+        // login-unification: organizations authenticate through this exact
+        // same endpoint now, no separate /org/login). Matched by org_email
+        // OR org_mobile, mirroring the identifier flexibility the retired
+        // orgAuthController.loginOrganization used to offer.
+        const [orgRows] = await pool.query('SELECT * FROM organizations WHERE org_email = ? OR org_mobile = ?', [email.trim(), email.trim()]);
+
+        if (orgRows.length > 0 && await bcrypt.compare(password, orgRows[0].password_hash)) {
+            const org = orgRows[0];
+
+            if (org.registration_status === 'pending') {
+                return res.status(403).json({ message: 'Your organization is awaiting approval. You will be able to log in once it is approved.' });
+            }
+            if (org.registration_status === 'rejected') {
+                return res.status(403).json({ message: `Your organization's registration was rejected.${org.rejection_reason ? ` Reason: ${org.rejection_reason}` : ''}` });
+            }
+            if (org.registration_status === 'suspended') {
+                return res.status(403).json({ message: 'Your organization has been suspended. Please contact the administrator.' });
+            }
+            if (org.status !== 'active') {
+                return res.status(403).json({ message: 'Your organization account is currently inactive. Please contact the administrator.' });
+            }
+
+            const loginTime = new Date();
+            const [sessionResult] = await pool.query(`
+      INSERT INTO org_login_sessions
+      (org_id, status, login_time, ip_address, device_type, browser, os, location)
+      VALUES (?, 'success', ?, ?, ?, ?, ?, ?)
+    `, [org.id, loginTime, ip, deviceType, browser, os, location]);
+
+            const token = jwt.sign({ id: org.id, email: org.org_email, name: org.org_name, role: 'organization' }, JWT_SECRET, { expiresIn: '12h' });
+
+            await logOrgActivity({
+                orgId: org.id, orgName: org.org_name, actorType: 'organization', actorId: org.id, actorName: org.org_name,
+                module: 'auth', actionType: 'login', description: 'Organization logged in', req,
+                sessionId: sessionResult.insertId,
+            });
+
+            return res.status(200).json({
+                message: 'Login successful',
+                token,
+                sessionId: sessionResult.insertId,
+                admin: {
+                    id: org.id,
+                    name: org.org_name,
+                    email: org.org_email,
+                    role: 'organization'
+                },
+                // Flat granted-module list, same shape as staff.permissions
+                // — [] until a Super Admin assigns permissions, meaning no
+                // menu is visible yet (fail-closed).
+                permissions: Array.isArray(org.permissions) ? org.permissions : [],
+            });
+        }
+
+        // Nothing matched at all — log the failed attempt against whichever
+        // table the email actually belongs to (same behavior as before for
+        // admin/staff emails; extended analogously for organization emails).
         if (rows.length > 0) {
             await pool.query(`
         INSERT INTO admin_login_sessions
@@ -125,6 +181,17 @@ const loginAdmin = async (req, res) => {
         (staff_id, status, login_time, ip_address, device_type, browser, os, location)
         VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?)
       `, [staffRows[0].id, ip, deviceType, browser, os, location]);
+        } else if (orgRows.length > 0) {
+            await pool.query(`
+        INSERT INTO org_login_sessions
+        (org_id, status, login_time, ip_address, device_type, browser, os, location, failure_reason)
+        VALUES (?, 'failed', NOW(), ?, ?, ?, ?, ?, ?)
+      `, [orgRows[0].id, ip, deviceType, browser, os, location, 'Incorrect password']);
+            await logOrgActivity({
+                orgId: orgRows[0].id, orgName: orgRows[0].org_name, actorType: 'organization', actorName: orgRows[0].org_name,
+                module: 'auth', actionType: 'login_failed', description: 'Failed login attempt (incorrect password)', req,
+                status: 'failure', errorMessage: 'Incorrect password',
+            });
         } else {
             await pool.query(`
         INSERT INTO admin_login_sessions
@@ -152,9 +219,21 @@ const logoutAdmin = async (req, res) => {
         // req.admin is set by adminAuth on this route — role tells us which
         // session table this sessionId belongs to. Admin path is unchanged.
         const isStaff = req.admin?.role === 'staff';
-        const table = isStaff ? 'staff_login_sessions' : 'admin_login_sessions';
+        const isOrg = req.admin?.role === 'organization';
+        const table = isOrg ? 'org_login_sessions' : isStaff ? 'staff_login_sessions' : 'admin_login_sessions';
 
-        const query = `
+        // Only org_login_sessions carries logout_type (see db.js) — a manual
+        // self-initiated logout here is distinct from a Super Admin's forced
+        // logout (adminOrgController.js's forceLogoutOrgSession, which sets
+        // logout_time directly without going through this route/type).
+        const query = isOrg ? `
+      UPDATE ${table}
+      SET
+        logout_time = NOW(),
+        session_duration = TIMESTAMPDIFF(SECOND, login_time, NOW()),
+        logout_type = 'manual'
+      WHERE id = ? AND status = 'success' AND logout_time IS NULL
+    ` : `
       UPDATE ${table}
       SET
         logout_time = NOW(),
@@ -175,6 +254,14 @@ const logoutAdmin = async (req, res) => {
             });
         }
 
+        if (isOrg) {
+            await logOrgActivity({
+                orgId: req.admin.id, orgName: req.admin.name, actorType: 'organization', actorId: req.admin.id, actorName: req.admin.name,
+                module: 'auth', actionType: 'logout', description: 'Organization logged out', req,
+                sessionId: Number(sessionId) || null,
+            });
+        }
+
         res.status(200).json({ message: 'Admin session ended successfully' });
     } catch (error) {
         console.error('Admin Logout Error:', error);
@@ -188,6 +275,18 @@ const logoutAdmin = async (req, res) => {
 const getDashboardStats = async (req, res) => {
     const conn = await pool.getConnection();
     try {
+        // Super Admin (orgScope.isSuperAdmin) sees the unfiltered global
+        // view, unchanged from before. A staff/organization session is
+        // scoped to its own org_id — game_sessions and children both carry
+        // org_id directly, so no join is needed to filter them.
+        const orgId = req.orgScope && !req.orgScope.isSuperAdmin ? req.orgScope.orgId : null;
+        const gsScope = orgId !== null ? 'WHERE org_id = ?' : '';
+        const gsScopeAnd = orgId !== null ? 'AND org_id = ?' : '';
+        const childScope = orgId !== null ? 'WHERE org_id = ?' : '';
+        const childScopeAnd = orgId !== null ? 'AND org_id = ?' : '';
+        const gsParams = orgId !== null ? [orgId] : [];
+        const childParams = orgId !== null ? [orgId] : [];
+
         const [[sessionCounts]] = await conn.execute(`
             SELECT
                 COUNT(*) AS total,
@@ -197,29 +296,33 @@ const getDashboardStats = async (req, res) => {
                 SUM(status = 'in_progress') AS in_progress,
                 SUM(status = 'dropped')    AS dropped
             FROM game_sessions
-        `);
+            ${gsScope}
+        `, gsParams);
 
-        const [[childCount]]    = await conn.execute('SELECT COUNT(*) AS total FROM children');
-        const [[assessorCount]] = await conn.execute('SELECT COUNT(*) AS total FROM assessors');
+        const [[childCount]] = await conn.execute(`SELECT COUNT(*) AS total FROM children ${childScope}`, childParams);
+        // Assessors are a Super-Admin-only global concept (no org_id column,
+        // not a grantable org module) — not meaningful per-organization.
+        const [[assessorCount]] = orgId !== null ? [[{ total: 0 }]] : await conn.execute('SELECT COUNT(*) AS total FROM assessors');
 
         const [[activeToday]] = await conn.execute(`
             SELECT COUNT(*) AS count FROM game_sessions
-            WHERE status = 'in_progress' AND DATE(updated_at) = CURDATE()
-        `);
+            WHERE status = 'in_progress' AND DATE(updated_at) = CURDATE() ${gsScopeAnd}
+        `, gsParams);
 
         const [[newThisWeek]] = await conn.execute(`
             SELECT COUNT(*) AS count FROM children
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        `);
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ${childScopeAnd}
+        `, childParams);
 
         const [recentActivity] = await conn.execute(`
             SELECT gs.id, gs.game_name, gs.status, gs.score, gs.updated_at, gs.created_at,
                    c.child_id, c.name AS child_name
             FROM game_sessions gs
             JOIN children c ON gs.child_id = c.child_id
+            ${orgId !== null ? 'WHERE gs.org_id = ?' : ''}
             ORDER BY gs.updated_at DESC
             LIMIT 20
-        `);
+        `, gsParams);
 
         const [gameStats] = await conn.execute(`
             SELECT
@@ -230,17 +333,18 @@ const getDashboardStats = async (req, res) => {
                 SUM(status = 'dropped')   AS dropped,
                 ROUND(AVG(CASE WHEN status = 'completed' AND score IS NOT NULL THEN score END), 1) AS avg_score
             FROM game_sessions
+            ${gsScope}
             GROUP BY CASE game_name WHEN 'chor_machaye_shor' THEN 'cognitive_flex_chor' ELSE game_name END
             ORDER BY total DESC
-        `);
+        `, gsParams);
 
         const [weekTrend] = await conn.execute(`
             SELECT DATE(created_at) AS date, COUNT(*) AS count
             FROM game_sessions
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ${gsScopeAnd}
             GROUP BY DATE(created_at)
             ORDER BY date ASC
-        `);
+        `, gsParams);
 
         res.json({
             success: true,
@@ -272,6 +376,8 @@ const getDashboardStats = async (req, res) => {
 // GET /api/admin/live-sessions — returns currently active in_progress sessions
 const getLiveSessions = async (req, res) => {
     try {
+        const orgId = req.orgScope && !req.orgScope.isSuperAdmin ? req.orgScope.orgId : null;
+        const params = orgId !== null ? [orgId] : [];
         const [rows] = await pool.query(`
             SELECT gs.id, gs.child_id, gs.game_name, gs.score, gs.progress_level,
                    gs.start_time, gs.updated_at,
@@ -279,10 +385,10 @@ const getLiveSessions = async (req, res) => {
                    c.name AS child_name
             FROM game_sessions gs
             JOIN children c ON gs.child_id = c.child_id
-            WHERE gs.status = 'in_progress'
+            WHERE gs.status = 'in_progress' ${orgId !== null ? 'AND gs.org_id = ?' : ''}
             ORDER BY gs.updated_at DESC
             LIMIT 20
-        `);
+        `, params);
         res.json({ success: true, sessions: rows, timestamp: new Date().toISOString() });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to load live sessions' });

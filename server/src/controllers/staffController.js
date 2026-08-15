@@ -1,6 +1,22 @@
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { logStaffActivity } = require('../utils/logStaffActivity');
+const { logOrgActivity } = require('../utils/logOrgActivity');
+
+// staff_activity_logs (above) is a staff/admin-centric trail; this is the
+// separate org-facing trail a Super Admin reviews per-organization (see
+// AdminOrganizationDetail.jsx) — only fires when the staff record actually
+// belongs to an organization.
+const logStaffOrgActivity = async (req, orgId, actionType, description, extra = {}) => {
+    if (!orgId) return;
+    const [orgRows] = await pool.query('SELECT org_name FROM organizations WHERE id = ?', [orgId]);
+    await logOrgActivity({
+        orgId, orgName: orgRows[0]?.org_name,
+        actorType: req.admin.role, actorId: req.admin.id, actorName: req.admin.name || req.admin.email,
+        module: 'staff', actionType, description, req,
+        ...extra,
+    });
+};
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN_LEN = 8;
@@ -14,6 +30,18 @@ function isPasswordStrong(pw) {
 function normalizePermissions(permissions) {
     if (!Array.isArray(permissions)) return [];
     return permissions.filter(p => typeof p === 'string' && p.trim()).map(p => p.trim());
+}
+
+// Same org-isolation convention as adminChildController.js's scopeClause —
+// Super Admin sees/manages every staff row (including pre-existing org_id-
+// NULL ones, unchanged); an org-bound staff account or Organization login
+// only ever sees/manages staff stamped with their own org_id.
+function scopeClause(orgScope, alias = '') {
+    if (orgScope.isSuperAdmin) return { sql: '', params: [] };
+    const col = alias ? `${alias}.org_id` : 'org_id';
+    // Null-safe equality (<=>) — see adminChildController.js's scopeClause
+    // for why plain `=` is wrong when orgId is NULL.
+    return { sql: `${col} <=> ?`, params: [orgScope.orgId] };
 }
 
 // ── Staff List (search + filter + pagination + sort) ───────────────────────
@@ -36,6 +64,8 @@ exports.getAllStaff = async (req, res) => {
             clauses.push('status = ?');
             params.push(status);
         }
+        const scope = scopeClause(req.orgScope);
+        if (scope.sql) { clauses.push(scope.sql); params.push(...scope.params); }
         const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
         const SORTABLE = new Set(['name', 'email', 'mobile', 'status', 'created_at', 'last_login']);
@@ -49,10 +79,11 @@ exports.getAllStaff = async (req, res) => {
         // last_login is derived from staff_login_sessions rather than stored
         // redundantly on `staff` — always reflects the true latest session.
         const listQuery = `
-            SELECT s.id, s.name, s.email, s.mobile, s.status, s.permissions, s.created_at,
+            SELECT s.id, s.name, s.email, s.mobile, s.status, s.permissions, s.created_at, s.org_id, o.org_name,
                    (SELECT MAX(login_time) FROM staff_login_sessions
                      WHERE staff_id = s.id AND status = 'success') AS last_login
             FROM staff s
+            LEFT JOIN organizations o ON s.org_id = o.id
             ${where}
             ORDER BY ${col === 'last_login' ? 'last_login' : `s.${col}`} ${dir}
             LIMIT ? OFFSET ?
@@ -71,9 +102,10 @@ exports.getAllStaff = async (req, res) => {
 // @route GET /api/admin/staff/:id
 exports.getStaffById = async (req, res) => {
     try {
+        const scope = scopeClause(req.orgScope);
         const [rows] = await pool.query(
-            'SELECT id, name, email, mobile, status, permissions, created_at, updated_at FROM staff WHERE id = ?',
-            [req.params.id]
+            `SELECT id, name, email, mobile, status, permissions, created_at, updated_at FROM staff WHERE id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`,
+            [req.params.id, ...scope.params]
         );
         if (!rows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
         res.json({ success: true, staff: rows[0] });
@@ -109,15 +141,30 @@ exports.addStaff = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 10);
         const perms = normalizePermissions(permissions);
 
+        // Super Admin's created-staff stays org_id-NULL (today's behavior,
+        // unchanged); an org-bound staff account or Organization login
+        // always stamps its own org_id — never trusted from the client.
+        const orgId = req.orgScope.isSuperAdmin ? null : req.orgScope.orgId;
+
         const [result] = await pool.query(
-            'INSERT INTO staff (name, email, mobile, password_hash, status, permissions) VALUES (?, ?, ?, ?, ?, ?)',
-            [trimmedName, normalizedEmail, trimmedMobile, passwordHash, status === 'inactive' ? 'inactive' : 'active', JSON.stringify(perms)]
+            'INSERT INTO staff (name, email, mobile, password_hash, status, permissions, org_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [trimmedName, normalizedEmail, trimmedMobile, passwordHash, status === 'inactive' ? 'inactive' : 'active', JSON.stringify(perms), orgId]
         );
 
-        await logStaffActivity({
-            staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'create',
-            description: `Created staff account "${trimmedName}" (${normalizedEmail})`, req,
-            menuName: 'Staff', pageName: 'Add Staff', recordId: result.insertId, recordName: trimmedName,
+        // logStaffActivity is a staff/admin audit trail keyed to req.admin —
+        // an Organization actor has no req.admin identity (see
+        // requireAdminOrOrgAuth), so this is admin/staff-only, same as
+        // before this feature existed.
+        if (req.admin) {
+            await logStaffActivity({
+                staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'create',
+                description: `Created staff account "${trimmedName}" (${normalizedEmail})`, req,
+                menuName: 'Staff', pageName: 'Add Staff', recordId: result.insertId, recordName: trimmedName,
+            });
+        }
+
+        await logStaffOrgActivity(req, orgId, 'add', `Added staff "${trimmedName}" (${normalizedEmail})`, {
+            recordType: 'staff', recordId: result.insertId, recordName: trimmedName,
         });
 
         res.status(201).json({ success: true, message: 'Staff account created successfully', staffId: result.insertId });
@@ -151,7 +198,8 @@ exports.updateStaff = async (req, res) => {
         const [dupMobile] = await pool.query('SELECT id FROM staff WHERE mobile = ? AND id != ?', [trimmedMobile, id]);
         if (dupMobile.length) return res.status(400).json({ success: false, message: 'Mobile number is already registered to another staff member.' });
 
-        const [beforeRows] = await pool.query('SELECT name, email, mobile, status, permissions FROM staff WHERE id = ?', [id]);
+        const scope = scopeClause(req.orgScope);
+        const [beforeRows] = await pool.query(`SELECT name, email, mobile, status, permissions, org_id FROM staff WHERE id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`, [id, ...scope.params]);
         if (!beforeRows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
         const before = beforeRows[0];
 
@@ -181,11 +229,19 @@ exports.updateStaff = async (req, res) => {
             previous.permissions = beforePerms; updated.permissions = perms;
         }
 
-        await logStaffActivity({
-            staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'edit',
-            description: `Updated staff account "${trimmedName}" (${normalizedEmail})`, req,
-            menuName: 'Staff', pageName: 'Edit Staff', recordId: id, recordName: trimmedName,
-            metadata: Object.keys(updated).length ? { previous, updated } : null,
+        if (req.admin) {
+            await logStaffActivity({
+                staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'edit',
+                description: `Updated staff account "${trimmedName}" (${normalizedEmail})`, req,
+                menuName: 'Staff', pageName: 'Edit Staff', recordId: id, recordName: trimmedName,
+                metadata: Object.keys(updated).length ? { previous, updated } : null,
+            });
+        }
+
+        await logStaffOrgActivity(req, before.org_id, 'edit', `Updated staff "${trimmedName}" (${normalizedEmail})`, {
+            recordType: 'staff', recordId: id, recordName: trimmedName,
+            previousValue: Object.keys(previous).length ? previous : null,
+            newValue: Object.keys(updated).length ? updated : null,
         });
 
         res.json({ success: true, message: 'Staff account updated successfully' });
@@ -201,15 +257,22 @@ exports.updateStaff = async (req, res) => {
 // @route DELETE /api/admin/staff/:id
 exports.deleteStaff = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT name, email FROM staff WHERE id = ?', [req.params.id]);
+        const scope = scopeClause(req.orgScope);
+        const [rows] = await pool.query(`SELECT name, email, org_id FROM staff WHERE id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`, [req.params.id, ...scope.params]);
         if (!rows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
 
         await pool.query('DELETE FROM staff WHERE id = ?', [req.params.id]);
 
-        await logStaffActivity({
-            staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'delete',
-            description: `Deleted staff account "${rows[0].name}" (${rows[0].email})`, req,
-            menuName: 'Staff', pageName: 'Staff List', recordId: req.params.id, recordName: rows[0].name,
+        if (req.admin) {
+            await logStaffActivity({
+                staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'delete',
+                description: `Deleted staff account "${rows[0].name}" (${rows[0].email})`, req,
+                menuName: 'Staff', pageName: 'Staff List', recordId: req.params.id, recordName: rows[0].name,
+            });
+        }
+
+        await logStaffOrgActivity(req, rows[0].org_id, 'delete', `Deleted staff "${rows[0].name}" (${rows[0].email})`, {
+            recordType: 'staff', recordId: req.params.id, recordName: rows[0].name,
         });
 
         res.json({ success: true, message: 'Staff account deleted' });
@@ -227,17 +290,20 @@ exports.resetStaffPassword = async (req, res) => {
         if (!isPasswordStrong(newPassword)) {
             return res.status(400).json({ success: false, message: `Password must be at least ${PASSWORD_MIN_LEN} characters and include a letter and a number.` });
         }
-        const [rows] = await pool.query('SELECT name, email FROM staff WHERE id = ?', [req.params.id]);
+        const scope = scopeClause(req.orgScope);
+        const [rows] = await pool.query(`SELECT name, email FROM staff WHERE id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`, [req.params.id, ...scope.params]);
         if (!rows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
 
         const passwordHash = await bcrypt.hash(newPassword, 10);
         await pool.query('UPDATE staff SET password_hash=? WHERE id=?', [passwordHash, req.params.id]);
 
-        await logStaffActivity({
-            staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'password_change',
-            description: `Reset password for staff "${rows[0].name}" (${rows[0].email})`, req,
-            menuName: 'Staff', pageName: 'Staff List', recordId: req.params.id, recordName: rows[0].name,
-        });
+        if (req.admin) {
+            await logStaffActivity({
+                staffId: req.admin.role === 'staff' ? req.admin.id : null, staffName: req.admin.name || req.admin.email, module: 'staff', actionType: 'password_change',
+                description: `Reset password for staff "${rows[0].name}" (${rows[0].email})`, req,
+                menuName: 'Staff', pageName: 'Staff List', recordId: req.params.id, recordName: rows[0].name,
+            });
+        }
 
         res.json({ success: true, message: 'Password reset successfully' });
     } catch (error) {

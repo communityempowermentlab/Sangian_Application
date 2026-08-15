@@ -18,6 +18,385 @@ if (process.env.DB_SOCKET) {
 
 const pool = mysql.createPool(poolConfig);
 
+// Multi-tenant foundation (Organizations, Individuals, Supervisors,
+// Volunteers, OTP-gated registration, assessment traceability) — grouped
+// into one function, called once at the end of initDb(), so this entire
+// feature's DDL is auditable as a single unit rather than interleaved with
+// the rest of the schema. Follows the same idempotent conventions as the
+// rest of this file: CREATE TABLE IF NOT EXISTS for new tables, guarded
+// ALTER TABLE ADD COLUMN (ignoring ER_DUP_FIELDNAME) for columns added to
+// tables that already exist live.
+const initMultiTenantSchema = async (connection) => {
+  // Organizations — self-registers, held in `registration_status='pending'`
+  // until a Super Admin approves it (see adminOrgController). org_type is a
+  // free VARCHAR (not an ENUM) and extra_attributes is a JSON escape hatch
+  // so future org kinds (Schools, NGOs, Hospitals, ...) don't need schema
+  // changes.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_name VARCHAR(255) NOT NULL,
+      org_type VARCHAR(50) NOT NULL DEFAULT 'ngo',
+      org_email VARCHAR(255) UNIQUE NOT NULL,
+      org_mobile VARCHAR(20) NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      address VARCHAR(500),
+      city VARCHAR(100),
+      state VARCHAR(100),
+      country VARCHAR(100),
+      contact_person_name VARCHAR(255),
+      contact_person_designation VARCHAR(150),
+      email_verified TINYINT DEFAULT 0,
+      mobile_verified TINYINT DEFAULT 0,
+      registration_status ENUM('pending', 'approved', 'rejected', 'suspended') DEFAULT 'pending',
+      status ENUM('active', 'inactive') DEFAULT 'active',
+      approved_by_admin_id INT NULL,
+      approved_at DATETIME NULL,
+      rejection_reason VARCHAR(500) NULL,
+      extra_attributes JSON NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (approved_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL
+    )
+  `);
+
+  // Individual users — self-registers, no approval step, active immediately
+  // once both OTP channels are verified.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS individual_users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      full_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      mobile VARCHAR(20) NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      email_verified TINYINT DEFAULT 0,
+      mobile_verified TINYINT DEFAULT 0,
+      status ENUM('active', 'inactive') DEFAULT 'active',
+      registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Mirrors admin_login_sessions/staff_login_sessions exactly (same
+  // columns/semantics), scoped to organizations and individuals respectively.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS org_login_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_id INT,
+      status ENUM('success', 'failed') NOT NULL DEFAULT 'success',
+      login_time DATETIME,
+      logout_time DATETIME,
+      session_duration INT,
+      ip_address VARCHAR(45),
+      device_type VARCHAR(50),
+      browser VARCHAR(50),
+      os VARCHAR(50),
+      location VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE SET NULL
+    )
+  `);
+
+  // Generalized audit log for Organization-side actions — mirrors
+  // staff_activity_logs' actor-capture convention (denormalized actor name
+  // + server-captured IP), extended with actor_type/actor_id since an
+  // organization's activity can be produced by the org account itself OR
+  // by one of its org-bound staff (see requireAdminOrOrgAuth.js's "ceiling"
+  // model) OR by a Super Admin acting on the org's behalf — the spec's
+  // audit trail needs to distinguish which. Immutability is enforced by
+  // omission: no UPDATE/DELETE route is ever built against this table.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS organization_activity_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_id INT NOT NULL,
+      org_name VARCHAR(255),
+      actor_type ENUM('organization', 'staff', 'admin') NOT NULL DEFAULT 'organization',
+      actor_id INT NULL,
+      actor_name VARCHAR(255),
+      module VARCHAR(100) NOT NULL,
+      action_type VARCHAR(50) NOT NULL,
+      description TEXT,
+      record_type VARCHAR(100),
+      record_id VARCHAR(100),
+      record_name VARCHAR(255),
+      previous_value JSON,
+      new_value JSON,
+      metadata JSON,
+      ip_address VARCHAR(45),
+      browser VARCHAR(50),
+      os VARCHAR(50),
+      device_type VARCHAR(50),
+      session_id INT,
+      status ENUM('success', 'failure') NOT NULL DEFAULT 'success',
+      error_message TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
+      INDEX idx_org_created (org_id, created_at)
+    )
+  `);
+
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS individual_login_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      individual_id INT,
+      status ENUM('success', 'failed') NOT NULL DEFAULT 'success',
+      login_time DATETIME,
+      logout_time DATETIME,
+      session_duration INT,
+      ip_address VARCHAR(45),
+      device_type VARCHAR(50),
+      browser VARCHAR(50),
+      os VARCHAR(50),
+      location VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (individual_id) REFERENCES individual_users(id) ON DELETE SET NULL
+    )
+  `);
+
+  // OTP verification for registration — deliberately separate from the
+  // existing `email_verifications` table (server/src/controllers/
+  // ticketController.js), which is single-purpose for support-ticket email
+  // verification. `channel` covers both email and phone (phone OTP is
+  // currently displayed on-screen rather than sent via SMS — no SMS
+  // gateway is integrated yet; see server/src/services/smsService.js).
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS otp_verifications (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      channel ENUM('email', 'phone') NOT NULL,
+      identifier VARCHAR(255) NOT NULL,
+      purpose ENUM('individual_registration', 'org_registration', 'individual_email_change', 'individual_mobile_change', 'org_email_change', 'org_mobile_change') NOT NULL,
+      otp VARCHAR(6) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      verified TINYINT DEFAULT 0,
+      attempts INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_channel_identifier_purpose (channel, identifier, purpose)
+    )
+  `);
+
+  // Supervisors — the mid-hierarchy role between Staff and Volunteer
+  // (Org -> Staff -> Supervisor -> Volunteer -> Child). Deliberately a new
+  // table rather than an extension of the pre-existing `assessors` table:
+  // `assessors` is a directory-only list (no password, no org scoping, no
+  // FK to anything) backing an unrelated, already-live admin feature —
+  // retrofitting login/org-scoping onto it would risk regressing that
+  // feature. password_hash is nullable: Supervisor self-login isn't wired
+  // up yet (org/admin manage these records on the Supervisor's behalf), but
+  // the column exists so that can be added later without a schema change.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS supervisors (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      mobile VARCHAR(20) NOT NULL,
+      designation VARCHAR(150) NULL,
+      password_hash VARCHAR(255) NULL,
+      status ENUM('active', 'inactive') DEFAULT 'active',
+      created_by_type ENUM('admin', 'org') DEFAULT 'org',
+      created_by_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_supervisor_org_email (org_id, email),
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Volunteers — bottom of the org hierarchy, optionally linked to the
+  // Supervisor who manages them.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS volunteers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_id INT NOT NULL,
+      supervisor_id INT NULL,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NULL,
+      mobile VARCHAR(20) NOT NULL,
+      status ENUM('active', 'inactive') DEFAULT 'active',
+      created_by_type ENUM('admin', 'org') DEFAULT 'org',
+      created_by_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
+      FOREIGN KEY (supervisor_id) REFERENCES supervisors(id) ON DELETE SET NULL
+    )
+  `);
+
+  // Assessment sessions — the traceability "Assessment" entity linking an
+  // Organization/Supervisor/Staff/Volunteer to a Child's game-play. NOT the
+  // same thing as the pre-existing `game_assessments` table, which is the
+  // post-game "how did you feel" questionnaire — kept deliberately
+  // distinctly named to avoid confusing the two. child_id is a bare
+  // VARCHAR (not an FK) to match the existing convention used by
+  // game_sessions/login_sessions, since `children.child_id` (not `id`) is
+  // the identifier used throughout the child-facing flow.
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS assessment_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      org_id INT NULL,
+      child_id VARCHAR(20) NOT NULL,
+      conducted_by_role ENUM('staff', 'supervisor', 'volunteer', 'self') DEFAULT 'self',
+      staff_id INT NULL,
+      supervisor_id INT NULL,
+      volunteer_id INT NULL,
+      status ENUM('in_progress', 'completed', 'abandoned') DEFAULT 'in_progress',
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      ended_at DATETIME NULL,
+      device_type VARCHAR(50),
+      browser VARCHAR(50),
+      os VARCHAR(50),
+      ip_address VARCHAR(45),
+      location VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE SET NULL,
+      FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL,
+      FOREIGN KEY (supervisor_id) REFERENCES supervisors(id) ON DELETE SET NULL,
+      FOREIGN KEY (volunteer_id) REFERENCES volunteers(id) ON DELETE SET NULL,
+      INDEX idx_child (child_id)
+    )
+  `);
+
+  // Org-scope children to their owning organization/supervisor/volunteer.
+  // Nullable so every pre-existing child row (created before this feature
+  // existed) stays exactly as visible/editable to the Super Admin as it is
+  // today — org_id is only set going forward for org-created children.
+  const alterColumn = async (table, ddl, label) => {
+    try {
+      await connection.query(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn(`Migration warning (${label}):`, e.message);
+    }
+  };
+
+  // Sibling of alterColumn for adding a UNIQUE index to an existing column
+  // (ADD COLUMN's DDL shape doesn't cover this). ER_DUP_KEYNAME means the
+  // index already exists (idempotent re-run); any other error (e.g.
+  // ER_DUP_ENTRY from pre-existing duplicate values) is logged, not thrown —
+  // schema init must never crash server startup.
+  const addUniqueIndex = async (table, indexName, column, label) => {
+    try {
+      await connection.query(`ALTER TABLE ${table} ADD UNIQUE KEY ${indexName} (${column})`);
+    } catch (e) {
+      if (e.code !== 'ER_DUP_KEYNAME') console.warn(`Migration warning (${label}):`, e.message);
+    }
+  };
+
+  // Widens an existing ENUM column's allowed values — CREATE TABLE IF NOT
+  // EXISTS above never applies to an already-existing table, so a
+  // pre-existing otp_verifications table (created before the
+  // individual_email_change/individual_mobile_change purposes existed)
+  // needs this explicit MODIFY to accept them. Safe to re-run every
+  // startup — MODIFYing an ENUM to the same definition is a no-op.
+  const widenEnum = async (table, column, ddl, label) => {
+    try {
+      await connection.query(`ALTER TABLE ${table} MODIFY COLUMN ${column} ${ddl}`);
+    } catch (e) {
+      console.warn(`Migration warning (${label}):`, e.message);
+    }
+  };
+  await widenEnum(
+    'otp_verifications', 'purpose',
+    "ENUM('individual_registration', 'org_registration', 'individual_email_change', 'individual_mobile_change', 'org_email_change', 'org_mobile_change') NOT NULL",
+    'otp_verifications.purpose'
+  );
+
+  await alterColumn('children', 'org_id INT NULL AFTER id', 'children.org_id');
+  await alterColumn('children', 'supervisor_id INT NULL AFTER org_id', 'children.supervisor_id');
+  await alterColumn('children', 'volunteer_id INT NULL AFTER supervisor_id', 'children.volunteer_id');
+
+  // Org-scope assessors, same convention as children.org_id — NULL
+  // preserves every pre-existing assessor row as Super-Admin-managed
+  // (unchanged); only assessors created by/for an organization going
+  // forward get this set. See adminAssessorController.js.
+  await alterColumn('assessors', 'org_id INT NULL AFTER id', 'assessors.org_id');
+
+  // Assessor self-login — password_hash is nullable so pre-existing
+  // assessor rows (added before this feature) simply can't log in until
+  // an admin sets a password via Add/Edit/Reset Password; remarks is a
+  // free-text admin note field. See adminAssessorController.js /
+  // assessorAuthController.js.
+  await alterColumn('assessors', 'password_hash VARCHAR(255) NULL', 'assessors.password_hash');
+  await alterColumn('assessors', 'remarks VARCHAR(500) NULL', 'assessors.remarks');
+
+  // Close pre-existing schema drift: these columns are already read/written
+  // throughout childController.js/adminChildController.js but were never
+  // formally created here — they only exist on the live DB via undocumented
+  // manual ALTERs. Adding them here (idempotently) makes the source of
+  // truth match reality instead of perpetuating the drift.
+  await alterColumn('children', 'father_name VARCHAR(225) NULL', 'children.father_name');
+  await alterColumn('children', 'mother_name VARCHAR(225) NULL', 'children.mother_name');
+  await alterColumn('children', 'remarks VARCHAR(500) NULL', 'children.remarks');
+  await alterColumn('children', 'gram_sabha VARCHAR(255) NULL', 'children.gram_sabha');
+  await alterColumn('children', 'hamlet VARCHAR(255) NULL', 'children.hamlet');
+
+  // Org-scope staff. NULL preserves every existing staff row as
+  // Super-Admin-managed (today's behavior, unchanged) — only staff created
+  // by/for an organization going forward get this set.
+  await alterColumn('staff', 'org_id INT NULL AFTER id', 'staff.org_id');
+
+  // Mobile-number uniqueness for Organizations and Individuals — org_email/
+  // individual_users.email are already UNIQUE in their CREATE TABLE above;
+  // mobile wasn't, so it's added here (matches staff.mobile, which already
+  // has this). Both registration controllers also check for a duplicate
+  // mobile explicitly before insert, so this constraint is the DB-level
+  // backstop, not the only guard.
+  await addUniqueIndex('organizations', 'uq_org_mobile', 'org_mobile', 'organizations.org_mobile');
+  await addUniqueIndex('individual_users', 'uq_individual_mobile', 'mobile', 'individual_users.mobile');
+
+  // Module permission grants for Organizations — a flat array of granted
+  // module keys, e.g. ["dashboard","children"], same all-or-nothing model
+  // as staff.permissions (checking a module grants full view/add/edit/
+  // delete/... access to it). NULL/missing key means no access to that
+  // module at all (fail-closed — see requireAdminOrOrgAuth.js).
+  await alterColumn('organizations', 'permissions JSON NULL', 'organizations.permissions');
+
+  // Login/logout audit detail for organizations — mirrors staff_login_
+  // sessions.logout_status but as an enum specific to how the spec wants
+  // logout events classified, plus a failure reason for failed attempts.
+  await alterColumn('org_login_sessions', "failure_reason VARCHAR(255) NULL", 'org_login_sessions.failure_reason');
+  await alterColumn('org_login_sessions', "logout_type ENUM('manual','expired','forced','system') NULL", 'org_login_sessions.logout_type');
+
+  // Traceability + device-info columns on game_sessions. All nullable so
+  // ordinary child self-play (no assessment_session_id) is entirely
+  // unaffected — these only populate when a game is started from an
+  // assessment-session deep link (see Phase F / gameController.js).
+  await alterColumn('game_sessions', 'org_id INT NULL', 'game_sessions.org_id');
+  await alterColumn('game_sessions', 'assessment_session_id INT NULL', 'game_sessions.assessment_session_id');
+  await alterColumn('game_sessions', 'staff_id INT NULL', 'game_sessions.staff_id');
+  await alterColumn('game_sessions', 'supervisor_id INT NULL', 'game_sessions.supervisor_id');
+  await alterColumn('game_sessions', 'volunteer_id INT NULL', 'game_sessions.volunteer_id');
+  await alterColumn('game_sessions', 'device_type VARCHAR(50) NULL', 'game_sessions.device_type');
+  await alterColumn('game_sessions', 'browser VARCHAR(50) NULL', 'game_sessions.browser');
+  await alterColumn('game_sessions', 'os VARCHAR(50) NULL', 'game_sessions.os');
+  await alterColumn('game_sessions', 'ip_address VARCHAR(45) NULL', 'game_sessions.ip_address');
+  await alterColumn('game_sessions', 'location VARCHAR(255) NULL', 'game_sessions.location');
+
+  // Assessor traceability — mirrors staff_id/supervisor_id/volunteer_id
+  // above but sourced from login_sessions.assessor_id (an Assessor never
+  // goes through the assessment_sessions chain those columns come from;
+  // see gameController.js's startGameSession for how this gets populated).
+  // No FK (same convention as the columns above — assessors is created
+  // later in this file).
+  await alterColumn('login_sessions', 'assessor_id INT NULL', 'login_sessions.assessor_id');
+  await alterColumn('game_sessions', 'assessor_id INT NULL', 'game_sessions.assessor_id');
+
+  // Individual traceability — an Individual plays as their own linked
+  // child profile (auto-provisioned at registration, one-to-one). Mirrors
+  // the assessor_id columns above exactly: children.individual_id is the
+  // forward link (individual -> their own child row); login_sessions/
+  // game_sessions.individual_id let existing org-scoped reports/analysis
+  // and the Individual's own "My Reports" page filter by it without a
+  // join through children. No FK, same convention as everything else here.
+  await alterColumn('children', 'individual_id INT NULL', 'children.individual_id');
+  await alterColumn('login_sessions', 'individual_id INT NULL', 'login_sessions.individual_id');
+  await alterColumn('game_sessions', 'individual_id INT NULL', 'game_sessions.individual_id');
+
+  // Reporting-continuity only — lets the post-game questionnaire be
+  // filtered/joined by organization without a join through game_sessions.
+  await alterColumn('game_assessments', 'org_id INT NULL', 'game_assessments.org_id');
+};
+
 // Initialize database tables
 const initDb = async () => {
   try {
@@ -223,6 +602,39 @@ const initDb = async () => {
       console.warn('Migration warning (game_sessions.status):', e.message);
     }
 
+    // 'rejected' — the terminal state for a session whose final score
+    // submission was blocked because the child was no longer Active at
+    // save time (see gameController.js's updateGameSession). Distinct from
+    // 'quit'/'dropped' (the child/assessor abandoned it) — this is the
+    // system refusing to persist a result, not an abandonment.
+    try {
+      await connection.query("ALTER TABLE game_sessions MODIFY COLUMN status ENUM('in_progress', 'completed', 'quit', 'paused', 'dropped', 'rejected') DEFAULT 'in_progress'");
+    } catch (e) {
+      console.warn('Migration warning (game_sessions.status rejected):', e.message);
+    }
+
+    // Captures the child's status at the moment this game session was
+    // created — audit/traceability only (per the Assessor spec's
+    // "Assessment Session Protection"). Must NEVER be used to authorize a
+    // later action; the score-save check in updateGameSession always
+    // re-reads live children.status instead of trusting this snapshot.
+    try {
+      await connection.query("ALTER TABLE game_sessions ADD COLUMN child_status_at_start VARCHAR(20) NULL AFTER status");
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (game_sessions.child_status_at_start):', e.message);
+    }
+
+    // Widen children.status to support the full Active/Inactive/Suspended/
+    // Deleted model (soft-delete — see adminChildController.js). Only
+    // 'active' is ever eligible for a new or continuing assessment; the
+    // other three all behave identically from the Assessor flow's
+    // perspective (blocked), they just record *why* for the admin side.
+    try {
+      await connection.query("ALTER TABLE children MODIFY COLUMN status ENUM('active', 'inactive', 'suspended', 'deleted') DEFAULT 'active'");
+    } catch (e) {
+      console.warn('Migration warning (children.status widen):', e.message);
+    }
+
     // Create game_documents table for wiki-style per-game documentation
     await connection.query(`
       CREATE TABLE IF NOT EXISTS game_documents (
@@ -252,7 +664,7 @@ const initDb = async () => {
       CREATE TABLE IF NOT EXISTS assessors (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) NOT NULL,
         mobile_number VARCHAR(15) NOT NULL,
         status ENUM('active', 'inactive') DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -261,12 +673,123 @@ const initDb = async () => {
       )
     `);
 
+    // Assessor email/mobile uniqueness is enforced per-organization at the
+    // application level (adminAssessorController.js), not globally — the
+    // same email can be reused by an assessor in a different organization.
+    // A pre-existing DB from before this change still has the old global
+    // `email VARCHAR(255) UNIQUE` index, which would reject that at the DB
+    // layer regardless of the app-level check, so drop it here (the plain,
+    // non-unique idx_email index stays, so email lookups are still
+    // indexed). No-ops on a fresh install, where CREATE TABLE above never
+    // created the unique index in the first place.
+    try {
+      await connection.query('ALTER TABLE assessors DROP INDEX email');
+    } catch (e) {
+      if (e.code !== 'ER_CANT_DROP_FIELD_OR_KEY') console.warn('Migration warning (assessors drop unique email index):', e.message);
+    }
+
     // Safely add status to assessors table
     try {
       await connection.query("ALTER TABLE assessors ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active' AFTER mobile_number");
     } catch (e) {
       if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessors.status):', e.message);
     }
+
+    // Assessor login sessions — mirrors individual_login_sessions/
+    // org_login_sessions. Assessors log in via /login (the same page that
+    // already handles the child-search step) to gate that step behind an
+    // authenticated assessor identity; see assessorAuthController.js.
+    // Must be created after the `assessors` table above (FK reference).
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assessor_login_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        assessor_id INT,
+        status ENUM('success', 'failed') NOT NULL DEFAULT 'success',
+        login_time DATETIME,
+        logout_time DATETIME,
+        session_duration INT,
+        ip_address VARCHAR(45),
+        device_type VARCHAR(50),
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        location VARCHAR(255),
+        failure_reason VARCHAR(255) NULL,
+        logout_type ENUM('manual', 'expired', 'forced', 'system') NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (assessor_id) REFERENCES assessors(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Closes schema drift for a DB where assessor_login_sessions was
+    // created before failure_reason/logout_type existed on it (CREATE
+    // TABLE IF NOT EXISTS above never adds columns to an already-existing
+    // table). No-ops on a fresh install, where the CREATE TABLE above
+    // already includes both columns.
+    try {
+      await connection.query('ALTER TABLE assessor_login_sessions ADD COLUMN failure_reason VARCHAR(255) NULL');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessor_login_sessions.failure_reason):', e.message);
+    }
+    try {
+      await connection.query("ALTER TABLE assessor_login_sessions ADD COLUMN logout_type ENUM('manual','expired','forced','system') NULL");
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') console.warn('Migration warning (assessor_login_sessions.logout_type):', e.message);
+    }
+
+    // Generalized audit log for Assessor-related actions — direct port of
+    // organization_activity_logs, scoped to assessor_id instead of org_id.
+    // actor_type covers both the assessor's own self-service actions
+    // (login/logout) and admin/org/staff-side management actions (create,
+    // edit, password reset, force-logout) performed on the assessor's
+    // record. Immutability is enforced by omission: no UPDATE/DELETE route
+    // is ever built against this table.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assessor_activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        assessor_id INT NOT NULL,
+        assessor_name VARCHAR(255),
+        actor_type ENUM('assessor', 'admin', 'organization', 'staff') NOT NULL DEFAULT 'assessor',
+        actor_id INT NULL,
+        actor_name VARCHAR(255),
+        module VARCHAR(100) NOT NULL,
+        action_type VARCHAR(50) NOT NULL,
+        description TEXT,
+        record_type VARCHAR(100),
+        record_id VARCHAR(100),
+        record_name VARCHAR(255),
+        previous_value JSON,
+        new_value JSON,
+        metadata JSON,
+        ip_address VARCHAR(45),
+        browser VARCHAR(50),
+        os VARCHAR(50),
+        device_type VARCHAR(50),
+        session_id INT,
+        status ENUM('success', 'failure') NOT NULL DEFAULT 'success',
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (assessor_id) REFERENCES assessors(id) ON DELETE CASCADE,
+        INDEX idx_assessor_created (assessor_id, created_at)
+      )
+    `);
+
+    // Clean per-field edit diff trail for the Edit History tab — direct
+    // port of organization_profile_edit_logs, scoped to assessor_id.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assessor_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        assessor_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (assessor_id) REFERENCES assessors(id) ON DELETE CASCADE
+      )
+    `);
 
     // Create child_groups table
     await connection.query(`
@@ -421,7 +944,7 @@ const initDb = async () => {
       await connection.query(`
         INSERT INTO ankganit_v3_categories (id, name, minimum_correct, evaluation_type, display_order) VALUES
         (1, 'Number Recognition (1–9)', 4, 'manual', 1),
-        (2, 'Number Recognition (11–99)', 5, 'manual', 2),
+        (2, 'Number Recognition (10–99)', 5, 'manual', 2),
         (3, 'Two-Digit Subtraction', 4, 'auto_subtraction', 3),
         (4, 'One-Digit Divisor (Three-Digit Dividend)', 2, 'auto_division', 4)
       `);
@@ -504,7 +1027,7 @@ const initDb = async () => {
         [1, 'Identify number 5', '5', 5, null, 7],
         [1, 'Identify number 2', '2', 2, null, 8],
 
-        // Category 2: Number Recognition (11–99) — 10 values
+        // Category 2: Number Recognition (10–99) — 10 values
         [2, 'Identify number 51', '51', 51, null, 1],
         [2, 'Identify number 83', '83', 83, null, 2],
         [2, 'Identify number 37', '37', 37, null, 3],
@@ -541,6 +1064,15 @@ const initDb = async () => {
         [v3QuestionsMigrated]
       );
     }
+
+    // Rename V3's category 2 label — "Number Recognition (11–99)" → "(10–99)".
+    // Separate from the block above since that one's guard (old subtraction
+    // text) no longer matches once already migrated; this needs its own
+    // idempotent guard so it still fires on a DB that ran the migration
+    // above before this rename existed.
+    await connection.query(
+      "UPDATE ankganit_v3_categories SET name = 'Number Recognition (10–99)' WHERE id = 2 AND name = 'Number Recognition (11–99)'"
+    );
 
     // ── Automated Testing ──────────────────────────────────────────────────────
     
@@ -1405,6 +1937,85 @@ const initDb = async () => {
         FOREIGN KEY (children_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
+
+    // Mirrors child_profile_edit_logs exactly, scoped to Individual account
+    // edits (currently just email/mobile changes — see
+    // adminIndividualController.js's updateIndividualContact) made by a
+    // Super Admin via the Individuals oversight panel.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS individual_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        individual_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (individual_id) REFERENCES individual_users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Mirrors individual_profile_edit_logs exactly, scoped to Organization
+    // profile edits (org_name/org_type/address/city/state/country/
+    // contact_person_name/contact_person_designation via updateOrganization,
+    // and org_email/org_mobile via updateOrganizationContact — see
+    // adminOrgController.js) made by a Super Admin via the Organizations
+    // oversight panel. Deliberately separate from organization_activity_logs
+    // (which covers every action type — login, permission changes, child/
+    // staff CRUD, etc.) so the Edit History tab can show a clean per-field
+    // diff list the same way AdminIndividualDetail.jsx's does, instead of
+    // that mixed general-purpose trail.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS organization_profile_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        org_id INT NOT NULL,
+        field_name VARCHAR(100) NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        updated_by_id INT,
+        updated_by_name VARCHAR(255),
+        ip_address VARCHAR(45),
+        action_type VARCHAR(50) DEFAULT 'update',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Managed picklist for organizations.org_type (free-text column, not an
+    // FK — this table only constrains what the two dropdowns that WRITE
+    // that column offer: the public registration form
+    // (UnifiedRegister.jsx, via /api/public/org-types) and the Super
+    // Admin's org edit page (AdminOrganizationDetail.jsx, via
+    // /api/admin/org-types). Managed from Admin > Meta > Organization
+    // Types (orgTypeController.js) — same "Meta" home as CMS pages/FAQ/
+    // contact info.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS org_types (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        value VARCHAR(100) NOT NULL UNIQUE,
+        label VARCHAR(150) NOT NULL,
+        sort_order INT DEFAULT 0,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    const [orgTypeRows] = await connection.query('SELECT COUNT(*) AS total FROM org_types');
+    if (orgTypeRows[0].total === 0) {
+      // Seeds the same 5 options UnifiedRegister.jsx previously hardcoded,
+      // so switching it over to fetch from this table is a no-op for
+      // existing users on first deploy.
+      await connection.query(
+        `INSERT INTO org_types (value, label, sort_order) VALUES
+         ('ngo', 'NGO', 1), ('school', 'School', 2), ('hospital', 'Hospital', 3),
+         ('government', 'Government Department', 4), ('other', 'Other', 5)`
+      );
+    }
+
+    await initMultiTenantSchema(connection);
 
     connection.release();
     console.log('Database tables verified/created');

@@ -1,4 +1,7 @@
 const { pool } = require('../config/db');
+const requestIp = require('request-ip');
+const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
+const { checkChildEligibility } = require('../utils/validateAssessorChild');
 
 // Rover coin budget per question (t2 + 4 bonus coins) — mirrors client-side ROVER_Q_BUDGET
 const ROVER_Q_BUDGET = {
@@ -103,11 +106,22 @@ const normalizeGameName = (name) => {
 // Start a new game session
 exports.startGameSession = async (req, res) => {
     try {
-        const { child_id, game_name, total_questions } = req.body;
+        const { child_id, game_name, total_questions, assessment_session_id } = req.body;
 
         if (!child_id || !game_name) {
             return res.status(400).json({ success: false, message: 'child_id and game_name are required' });
         }
+
+        // Re-Validation Before Starting the Game — "Select Child → Validate
+        // Child → Start Assessment → Re-validate Child → Launch Game". This
+        // route isn't assessor-gated (called directly by every game page,
+        // not just the assessor flow), so only the child's own status is
+        // checked here — no assessor/org context is available to re-check.
+        const eligibility = await checkChildEligibility(child_id);
+        if (!eligibility.ok) {
+            return res.status(eligibility.code).json({ success: false, message: eligibility.message });
+        }
+        const childStatusAtStart = eligibility.child.status;
 
         let normalizedName = game_name;
         if (['Chalo Mela Chale', 'chalo_mela_chale'].includes(game_name)) {
@@ -117,10 +131,85 @@ exports.startGameSession = async (req, res) => {
             normalizedName = 'cognitive_flex_chor';
         }
 
+        // Optional traceability chain — when a game is started from an
+        // assessment-session deep link (see Phase F / assessmentSession
+        // Controller.js), copy its org/role identity plus device info onto
+        // the new game_sessions row. Absent when a child just plays
+        // normally (today's default flow) — every new column stays NULL,
+        // zero behavior change for that path.
+        //
+        // assessment_session_id is auto-detected by child_id when not
+        // explicitly passed (none of the ~15 existing game pages' start
+        // calls send it) — the most recent still-in_progress assessment
+        // session for this child, if any. This links the whole traceability
+        // chain without needing to touch every individual game's start
+        // call; it's a deliberate simplification, not a security boundary
+        // (only ever narrows to that specific child's own sessions).
+        let effectiveAssessmentSessionId = assessment_session_id || null;
+        let traceFields = { org_id: null, staff_id: null, supervisor_id: null, volunteer_id: null, assessor_id: null, individual_id: null };
+        if (!effectiveAssessmentSessionId) {
+            const [autoRows] = await pool.query(
+                `SELECT id, org_id, staff_id, supervisor_id, volunteer_id FROM assessment_sessions
+                 WHERE child_id = ? AND status = 'in_progress' ORDER BY started_at DESC LIMIT 1`,
+                [child_id]
+            );
+            if (autoRows.length) {
+                effectiveAssessmentSessionId = autoRows[0].id;
+                traceFields = { ...traceFields, ...autoRows[0] };
+            }
+        } else {
+            const [asRows] = await pool.query(
+                'SELECT org_id, staff_id, supervisor_id, volunteer_id FROM assessment_sessions WHERE id = ?',
+                [effectiveAssessmentSessionId]
+            );
+            if (asRows.length) traceFields = { ...traceFields, ...asRows[0] };
+        }
+
+        // Assessor traceability — an Assessor never goes through the
+        // assessment_sessions chain above (that's the staff/supervisor/
+        // volunteer path), so this is derived independently from the most
+        // recent successful login_sessions row for this child (stamped by
+        // sessionController.js's startSession when gated behind
+        // assessorAuth). Backfills org_id from the assessor's own
+        // organization only if the assessment_sessions lookup above didn't
+        // already set one — otherwise assessor-run sessions would carry
+        // org_id NULL and be invisible to that organization's Reports/
+        // Analysis (see requireAdminOrOrgAuth.js's org-scoping).
+        const [assessorLoginRows] = await pool.query(
+            `SELECT ls.assessor_id, a.org_id AS assessor_org_id
+             FROM login_sessions ls LEFT JOIN assessors a ON a.id = ls.assessor_id
+             WHERE ls.child_id = ? AND ls.status = 'success' AND ls.assessor_id IS NOT NULL
+             ORDER BY ls.login_time DESC LIMIT 1`,
+            [child_id]
+        );
+        if (assessorLoginRows.length) {
+            traceFields.assessor_id = assessorLoginRows[0].assessor_id;
+            if (!traceFields.org_id) traceFields.org_id = assessorLoginRows[0].assessor_org_id;
+        }
+
+        // Individual traceability — same derivation as assessor_id above,
+        // from the most recent successful login_sessions row for this
+        // child (stamped by individualAuthController.js's loginIndividual/
+        // completeProfile). An Individual plays as their own linked child,
+        // so this will match on essentially every session for that child.
+        const [individualLoginRows] = await pool.query(
+            `SELECT individual_id FROM login_sessions
+             WHERE child_id = ? AND status = 'success' AND individual_id IS NOT NULL
+             ORDER BY login_time DESC LIMIT 1`,
+            [child_id]
+        );
+        if (individualLoginRows.length) {
+            traceFields.individual_id = individualLoginRows[0].individual_id;
+        }
+
+        const userAgent = req.headers['user-agent'];
+        const { browser, os, deviceType } = parseUserAgent(userAgent);
+        const ip = normalizeIp(requestIp.getClientIp(req)) || 'Unknown';
+
         // Check if an active in_progress session already exists to prevent duplication
         const [existing] = await pool.query(
-            `SELECT id FROM game_sessions 
-             WHERE child_id = ? AND game_name = ? AND status = 'in_progress' 
+            `SELECT id FROM game_sessions
+             WHERE child_id = ? AND game_name = ? AND status = 'in_progress'
              ORDER BY start_time DESC LIMIT 1`,
             [child_id, normalizedName]
         );
@@ -130,10 +219,13 @@ exports.startGameSession = async (req, res) => {
             sessionId = existing[0].id;
         } else {
             const [result] = await pool.query(
-                `INSERT INTO game_sessions 
-                (child_id, game_name, start_time, total_questions, status, progress_level, score) 
-                VALUES (?, ?, NOW(), ?, 'in_progress', 1, 0)`,
-                [child_id, normalizedName, total_questions || 0]
+                `INSERT INTO game_sessions
+                (child_id, game_name, start_time, total_questions, status, child_status_at_start, progress_level, score,
+                 org_id, assessment_session_id, staff_id, supervisor_id, volunteer_id, assessor_id, individual_id, device_type, browser, os, ip_address)
+                VALUES (?, ?, NOW(), ?, 'in_progress', ?, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [child_id, normalizedName, total_questions || 0, childStatusAtStart,
+                 traceFields.org_id, effectiveAssessmentSessionId, traceFields.staff_id, traceFields.supervisor_id, traceFields.volunteer_id, traceFields.assessor_id, traceFields.individual_id,
+                 deviceType, browser, os, ip]
             );
             sessionId = result.insertId;
         }
@@ -169,11 +261,47 @@ exports.updateGameSession = async (req, res) => {
         }
 
         const currentStatus = existing[0].status;
+        const TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected'];
 
-        // Guard: never overwrite a terminal status (quit/dropped) with completed.
-        // This is the server-side safety net against client-side bugs.
-        if (status === 'completed' && (currentStatus === 'quit' || currentStatus === 'dropped')) {
+        // Guard: once a session reaches a terminal status, no later request
+        // may change it away from that status — including "downgrading"
+        // it back to in_progress/paused. Games sync progress on every
+        // stage change (saveToServer('in_progress')) as well as firing the
+        // final status:'completed' save; if an earlier in-flight
+        // progress-sync request resolves AFTER the completion request
+        // (slow network, retry, tab backgrounding), it would otherwise
+        // silently clobber a genuinely-completed session back to "In
+        // Progress" — this is what was causing completed Ankganit V3
+        // assessments to intermittently show as still in progress.
+        // Non-status fields (e.g. saved_state, used by the post-game
+        // questionnaire flag) can still be updated after the fact; only an
+        // actual status change away from the terminal value is blocked.
+        if (TERMINAL_STATUSES.includes(currentStatus) && status && status !== currentStatus) {
             return res.status(200).json({ success: true, message: 'Session already finalized — status preserved.' });
+        }
+
+        // Validation During/Before Score Submission — the most important
+        // checkpoint in the Assessor spec's flow. Re-reads children.status
+        // LIVE, right now, regardless of what child_status_at_start
+        // captured or what passed at Search/Start Assessment earlier — an
+        // admin could have deactivated the child at any point while the
+        // game was in progress. Also re-checks the org that originally
+        // started this session (game_sessions.assessor_id) still matches
+        // the child's current organization. On failure, the score is
+        // NEVER written: the session is marked 'rejected' instead of
+        // 'completed' and the request's score/progress_level are dropped.
+        if (status === 'completed') {
+            const eligibility = await checkChildEligibility(existing[0].child_id, existing[0].assessor_id);
+            if (!eligibility.ok) {
+                await pool.query(
+                    `UPDATE game_sessions SET status = 'rejected', end_time = NOW() WHERE id = ?`,
+                    [sessionId]
+                );
+                return res.status(403).json({
+                    success: false,
+                    message: 'This child is no longer active, so the assessment result could not be saved. Please contact the administrator or select another child.',
+                });
+            }
         }
 
         let updateQuery = 'UPDATE game_sessions SET ';
@@ -214,8 +342,8 @@ exports.getResumeSession = async (req, res) => {
 
         // Find the absolute latest session for this game that is NOT finalized
         const [rows] = await pool.query(
-            `SELECT * FROM game_sessions 
-             WHERE child_id = ? AND game_name = ? AND status NOT IN ('completed', 'quit', 'dropped')
+            `SELECT * FROM game_sessions
+             WHERE child_id = ? AND game_name = ? AND status NOT IN ('completed', 'quit', 'dropped', 'rejected')
              ORDER BY start_time DESC LIMIT 1`,
             [childId, normalizedName]
         );
@@ -322,15 +450,24 @@ exports.getReportOverview = async (req, res) => {
             FROM game_sessions gs
         `;
         const queryParams = [];
+        const conditions = [];
         if (groupIds.length > 0) {
-            queryStr += `
-                WHERE EXISTS (
+            conditions.push(`EXISTS (
                     SELECT 1 FROM children c
                     JOIN child_group_members cgm ON cgm.children_id = c.id
                     WHERE c.child_id = gs.child_id AND cgm.group_id IN (?)
-                )
-            `;
+                )`);
             queryParams.push(groupIds);
+        }
+        // Org isolation — an Organization session only ever sees its own
+        // children's sessions; Super Admin/staff-with-org_id-NULL see
+        // everything, unchanged from before this feature.
+        if (!req.orgScope.isSuperAdmin) {
+            conditions.push('gs.org_id <=> ?');
+            queryParams.push(req.orgScope.orgId);
+        }
+        if (conditions.length > 0) {
+            queryStr += ` WHERE ${conditions.join(' AND ')}`;
         }
 
         const [sessions] = await pool.query(queryStr, queryParams);
@@ -449,6 +586,12 @@ exports.getReportDetail = async (req, res) => {
         if (groupIds.length > 0) {
             queryStr += ' AND EXISTS (SELECT 1 FROM child_group_members cgm WHERE cgm.children_id = c.id AND cgm.group_id IN (?))';
             queryParams.push(groupIds);
+        }
+
+        // Org isolation — same convention as getReportOverview above.
+        if (!req.orgScope.isSuperAdmin) {
+            queryStr += ' AND gs.org_id <=> ?';
+            queryParams.push(req.orgScope.orgId);
         }
 
         queryStr += ' ORDER BY gs.start_time ASC';
@@ -716,10 +859,16 @@ exports.submitAssessment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Q5 is required: please select at least one observed behaviour.' });
         }
 
+        // Reporting continuity only — lets this questionnaire be filtered/
+        // joined by organization without a join through game_sessions.
+        // NULL when the session has no org (today's default child self-play).
+        const [[sessionRow]] = await pool.query('SELECT org_id FROM game_sessions WHERE id = ?', [session_id]);
+        const orgId = sessionRow?.org_id ?? null;
+
         const [result] = await pool.query(
-            `INSERT INTO game_assessments 
-             (session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors, additional_notes) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO game_assessments
+             (session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors, additional_notes, org_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 session_id,
                 child_id,
@@ -728,7 +877,8 @@ exports.submitAssessment = async (req, res) => {
                 q3_tiredness,
                 q4_play_again,
                 JSON.stringify(behaviorsArr),
-                additional_notes || ''
+                additional_notes || '',
+                orgId
             ]
         );
 

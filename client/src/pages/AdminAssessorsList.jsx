@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession } from '../utils/staffPermissions';
+
+const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 const AdminAssessorsList = () => {
     const [assessors, setAssessors] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const isOrg = isOrgSession();
 
     useEffect(() => {
         fetchAssessors();
@@ -27,6 +31,8 @@ const AdminAssessorsList = () => {
         assessor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessor.mobile_number?.includes(searchTerm)
     );
+
+    const colCount = isOrg ? 8 : 9;
 
     return (
         <main className="admin-content" aria-label="Assessors List">
@@ -59,27 +65,31 @@ const AdminAssessorsList = () => {
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        {!isOrg && <th>Organization</th>}
                                         <th>Assessor Name</th>
                                         <th>Email ID</th>
                                         <th>Mobile Number</th>
                                         <th>Registered Date</th>
+                                        <th>Last Login</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>Loading assessors...</td></tr>
+                                        <tr><td colSpan={colCount} style={{ textAlign: 'center', padding: '20px' }}>Loading assessors...</td></tr>
                                     ) : filteredAssessors.length === 0 ? (
-                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>No assessors found.</td></tr>
+                                        <tr><td colSpan={colCount} style={{ textAlign: 'center', padding: '20px' }}>No assessors found.</td></tr>
                                     ) : (
                                         filteredAssessors.map((assessor, index) => (
                                             <tr key={assessor.id}>
                                                 <td>{index + 1}</td>
+                                                {!isOrg && <td>{assessor.org_name || '—'}</td>}
                                                 <td style={{ fontWeight: '600' }}>{assessor.name}</td>
                                                 <td>{assessor.email}</td>
                                                 <td>{assessor.mobile_number}</td>
-                                                <td>{new Date(assessor.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                                <td>{fmtDateTime(assessor.created_at)}</td>
+                                                <td>{fmtDateTime(assessor.last_login)}</td>
                                                 <td>
                                                     {assessor.status === 'active' ? (
                                                         <span className="admin-tag good">Active</span>
@@ -89,7 +99,7 @@ const AdminAssessorsList = () => {
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '16px' }}>
-                                                        <Link to={`/admin/assessors/edit/${assessor.id}`} style={{ textDecoration: 'none', fontSize: '13px', color: 'var(--primary)' }}>✏️ Edit / Toggle Status</Link>
+                                                        <Link to={`/admin/assessors/${assessor.id}/profile`} style={{ textDecoration: 'none', fontSize: '13px', color: 'var(--primary)' }}>✏️ Edit / View</Link>
                                                     </div>
                                                 </td>
                                             </tr>

@@ -51,7 +51,7 @@ const CUSTOM_SCORE_BUCKETS = {
   numeracy_number_skill_v3: [
     { lo: 0, hi: 0,    label: 'Beginner',                  description: 'Could not correctly identify at least 4 of 5 selected single-digit numbers.' },
     { lo: 1, hi: 1,    label: 'Number Recognition (1–9)',   description: 'Correctly identified 4 or 5 of the selected single-digit numbers.' },
-    { lo: 2, hi: 2,    label: 'Number Recognition (11–99)', description: 'Correctly identified 4 or 5 of the selected two-digit numbers.' },
+    { lo: 2, hi: 2,    label: 'Number Recognition (10–99)', description: 'Correctly identified 4 or 5 of the selected two-digit numbers.' },
     { lo: 3, hi: 3,    label: 'Subtraction',                description: 'Solved both administered two-digit subtraction problems correctly.' },
     { lo: 4, hi: null, label: 'Division',                   description: 'Correctly solved the administered division problem (quotient and remainder).' }, // open-ended — catches any score at/above the max
   ],
@@ -186,6 +186,21 @@ const SCORE_PCT_CASE = `CASE gs.game_name ${
 function parseFilters(req) {
   const { startDate, endDate, gender, status, ageGroup, childId, gameKey, groupId, attempt } = req.query;
 
+  // Org isolation — an Organization session only ever sees its own
+  // children's game sessions; Super Admin/staff-with-org_id-NULL see
+  // everything, unchanged from before this feature. Two variants since
+  // this filter set gets reused against both game_sessions-aliased (gs)
+  // and children-aliased (c) queries elsewhere in this file (getOverviewV2's
+  // registered-children/demographic queries run directly against `children
+  // c`, not `game_sessions gs`).
+  const orgScope = req.orgScope || { isSuperAdmin: true, orgId: null };
+  const orgClauses = [], orgParams = [];
+  const orgClausesC = [], orgParamsC = [];
+  if (!orgScope.isSuperAdmin) {
+    orgClauses.push('gs.org_id <=> ?');  orgParams.push(orgScope.orgId);
+    orgClausesC.push('c.org_id <=> ?');  orgParamsC.push(orgScope.orgId);
+  }
+
   // Date clauses (on gs.created_at)
   const dateClauses = [], dateParams = [];
   if (startDate) { dateClauses.push('gs.created_at >= ?');          dateParams.push(startDate); }
@@ -268,16 +283,16 @@ function parseFilters(req) {
     groupParams.push(groupIds);
   }
 
-  const allClauses     = [...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const allParams      = [...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const allClauses     = [...orgClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const allParams      = [...orgParams,  ...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For gender distribution: skip gender filter so all genders are visible
-  const noGenderClauses = [...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const noGenderParams  = [...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const noGenderClauses = [...orgClauses, ...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noGenderParams  = [...orgParams,  ...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For age-group distribution: skip age filter so all bands are visible
-  const noAgeClauses = [...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const noAgeParams  = [...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const noAgeClauses = [...orgClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noAgeParams  = [...orgParams,  ...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
 
@@ -285,6 +300,7 @@ function parseFilters(req) {
     allClauses, allParams, noGenderClauses, noGenderParams, noAgeClauses, noAgeParams, needsChildJoin,
     // Raw pieces — used by getOverviewV2 to compose custom clause sets (e.g. children-only
     // queries with no date scoping, or a shifted date range for period-over-period trend).
+    orgClauses, orgParams, orgClausesC, orgParamsC,
     dateClauses, dateParams, genderClauses, genderParams, statusClauses, statusParams, ageClauses, childClauses, childParams,
     gameClauses, gameParams, groupClauses, groupParams, attemptClauses, attemptParams,
     cGameIntersectionClauses, cGameIntersectionParams
@@ -301,14 +317,19 @@ const CHILD_JOIN = 'LEFT JOIN children c ON gs.child_id = c.child_id';
 // ── GET /api/analysis/meta ──────────────────────────────────────────────────
 exports.getMeta = async (req, res) => {
   try {
+    // Org isolation — doesn't go through parseFilters (no other filters
+    // apply to this endpoint), so scoped directly here.
+    const { orgScope } = req;
+    const orgWhere  = orgScope.isSuperAdmin ? '' : 'AND org_id <=> ?';
+    const orgParams = orgScope.isSuperAdmin ? [] : [orgScope.orgId];
     const [[row]] = await pool.query(`
       SELECT
         DATE_FORMAT(MIN(start_time), '%Y-%m-%d')  AS minDate,
         DATE_FORMAT(CURDATE(),       '%Y-%m-%d')  AS today,
         COUNT(*)                                   AS totalSessions
       FROM game_sessions
-      WHERE start_time IS NOT NULL
-    `);
+      WHERE start_time IS NOT NULL ${orgWhere}
+    `, orgParams);
     res.json(row || { minDate: null, today: new Date().toISOString().slice(0, 10), totalSessions: 0 });
   } catch (err) {
     console.error('Analysis meta error:', err);
@@ -916,24 +937,24 @@ exports.getOverviewV2 = async (req, res) => {
       childSearchParams.push(cid, `%${cid}%`);
     }
 
-    const childOnlyClauses = [...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
-    const childOnlyParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
+    const childOnlyClauses = [...f.orgClausesC, ...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const childOnlyParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [regChildRows] = await pool.query(`
       SELECT c.child_id FROM children c ${toWhere(childOnlyClauses)}
     `, childOnlyParams);
     const totalRegisteredChildren = regChildRows.length;
     const registeredChildrenIds = regChildRows.map(r => r.child_id);
 
-    const noGenderChildClauses = [...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
-    const noGenderChildParams  = [...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
+    const noGenderChildClauses = [...f.orgClausesC, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noGenderChildParams  = [...f.orgParamsC, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [genderDistRaw] = await pool.query(`
       SELECT COALESCE(c.gender, 'unknown') AS gender, COUNT(*) AS count
       FROM children c ${toWhere(noGenderChildClauses)}
       GROUP BY c.gender
     `, noGenderChildParams);
 
-    const noAgeChildClauses = [...f.genderClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
-    const noAgeChildParams  = [...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
+    const noAgeChildClauses = [...f.orgClausesC, ...f.genderClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noAgeChildParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [ageGroupDistRaw] = await pool.query(`
       SELECT ${AGE_BAND_CASE} AS ageBand, COUNT(*) AS count
       FROM children c ${toWhere(noAgeChildClauses)}
@@ -1020,8 +1041,8 @@ exports.getOverviewV2 = async (req, res) => {
       const prevEnd   = new Date(`${req.query.startDate}T00:00:00`); prevEnd.setDate(prevEnd.getDate() - 1);
       const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - (days - 1));
       const iso = (d) => d.toISOString().slice(0, 10);
-      const prevClauses = ['gs.created_at >= ?', 'gs.created_at <= ?', ...f.genderClauses, ...f.statusClauses, ...f.ageClauses, ...f.childClauses, ...f.gameClauses, ...f.groupClauses, ...f.attemptClauses];
-      const prevParams  = [iso(prevStart), `${iso(prevEnd)} 23:59:59`, ...f.genderParams, ...f.statusParams, ...f.childParams, ...f.gameParams, ...f.groupParams, ...f.attemptParams];
+      const prevClauses = ['gs.created_at >= ?', 'gs.created_at <= ?', ...f.orgClauses, ...f.genderClauses, ...f.statusClauses, ...f.ageClauses, ...f.childClauses, ...f.gameClauses, ...f.groupClauses, ...f.attemptClauses];
+      const prevParams  = [iso(prevStart), `${iso(prevEnd)} 23:59:59`, ...f.orgParams, ...f.genderParams, ...f.statusParams, ...f.childParams, ...f.gameParams, ...f.groupParams, ...f.attemptParams];
       const [[prevKpis]] = await pool.query(`
         SELECT COUNT(*) AS sessions,
                ROUND(AVG(${SCORE_PCT_CASE}), 1) AS avgScorePct

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { AdminNotificationProvider, useAdminNotification } from '../contexts/AdminNotificationContext';
 import { getAdminLogoUrl } from '../services/photoUtils';
-import { canSeeModule, isStaffSession } from '../utils/staffPermissions';
+import { canSeeModule, isStaffSession, isOrgSession } from '../utils/staffPermissions';
 
 const isTokenValid = () => {
     const token = localStorage.getItem('adminToken');
@@ -74,11 +74,13 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/multilingual')  ? 'multilingual' :
         location.pathname.includes('/admin/elements')      ? 'elements'     :
         location.pathname.includes('/admin/staff')          ? 'staff'        :
+        location.pathname.includes('/admin/organizations')  ? 'organizations' :
+        location.pathname.includes('/admin/individuals')    ? 'individuals'  :
         location.pathname.includes('/admin/ankganit-v2-config') ? 'ankganit-v2-config' :
         location.pathname.includes('/admin/settings')      ? 'settings'     :
             'dashboard';
 
-    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors' || activeGroup === 'child-groups' || activeGroup === 'staff';
+    const isUsersActive = activeGroup === 'children' || activeGroup === 'assessors' || activeGroup === 'child-groups' || activeGroup === 'staff' || activeGroup === 'organizations';
     const appVersion = 'v1.0.0';
 
     // Sync profile from localStorage when updated by profile settings page
@@ -108,6 +110,7 @@ const AdminLayoutInner = () => {
             localStorage.removeItem('adminSessionId');
             localStorage.removeItem('adminUser');
             localStorage.removeItem('staffPermissions');
+            localStorage.removeItem('orgPermissions');
             navigate('/admin/login', { replace: true });
         }
     }, [location.pathname, navigate]);
@@ -120,6 +123,7 @@ const AdminLayoutInner = () => {
                 localStorage.removeItem('adminSessionId');
                 localStorage.removeItem('adminUser');
                 localStorage.removeItem('staffPermissions');
+                localStorage.removeItem('orgPermissions');
                 navigate('/admin/login', { replace: true });
             }
         }, 60_000);
@@ -156,6 +160,7 @@ const AdminLayoutInner = () => {
             localStorage.removeItem('adminSessionId');
             localStorage.removeItem('adminUser');
             localStorage.removeItem('staffPermissions');
+            localStorage.removeItem('orgPermissions');
             navigate('/admin/login');
         }
     };
@@ -205,19 +210,31 @@ const AdminLayoutInner = () => {
                             </Link>
                         )}
 
-                        {/* Users dropdown — hidden entirely for a staff account with none
-                            of children/assessors/child-groups/staff granted; individual
-                            items inside are filtered the same way for a partial grant. */}
-                        {(canSeeModule('children') || canSeeModule('assessors') || canSeeModule('child-groups') || canSeeModule('staff')) && (
+                        {/* Organization dropdown — merged single module: Organizations
+                            (Super Admin only, hard requireAdminOnly role check, never a
+                            canSeeModule permission a staff/org account can be granted)
+                            plus every user-management menu (children/assessors/
+                            child-groups/staff), each filtered individually for a
+                            partial staff/org grant. */}
+                        {((!isStaffSession() && !isOrgSession()) || canSeeModule('children') || canSeeModule('assessors') || canSeeModule('child-groups') || canSeeModule('staff')) && (
                         <div className="admin-menu-dropdown" ref={usersRef}>
                             <button
                                 className={`admin-menu-item admin-menu-item--btn ${isUsersActive ? 'active' : ''}`}
                                 onClick={() => setUsersOpen(o => !o)}
                             >
-                                👥 Users <span className="admin-dropdown-caret">{usersOpen ? '▴' : '▾'}</span>
+                                🏢 Organization <span className="admin-dropdown-caret">{usersOpen ? '▴' : '▾'}</span>
                             </button>
                             {usersOpen && (
                                 <div className="admin-dropdown-panel">
+                                    {!isStaffSession() && !isOrgSession() && (
+                                        <Link
+                                            to="/admin/organizations"
+                                            className={`admin-dropdown-item ${activeGroup === 'organizations' ? 'active' : ''}`}
+                                            onClick={() => setUsersOpen(false)}
+                                        >
+                                            🏢 Organizations
+                                        </Link>
+                                    )}
                                     {canSeeModule('children') && (
                                         <Link
                                             to="/admin/children"
@@ -257,6 +274,16 @@ const AdminLayoutInner = () => {
                                 </div>
                             )}
                         </div>
+                        )}
+
+                        {/* Individual account oversight — same Super-Admin-only precedent. */}
+                        {!isStaffSession() && !isOrgSession() && (
+                            <Link
+                                to="/admin/individuals"
+                                className={`admin-menu-item ${activeGroup === 'individuals' ? 'active' : ''}`}
+                            >
+                                🧑 Individuals
+                            </Link>
                         )}
 
                         {canSeeModule('reports') && (

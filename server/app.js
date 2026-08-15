@@ -18,6 +18,7 @@ const { adminRouter: cmsAdminRoutes, publicRouter: cmsPublicRoutes } = require('
 const { adminRouter: translationsAdminRoutes, publicRouter: translationsPublicRoutes } = require('./src/routes/translationsRoutes');
 const { adminRouter: testConfigAdminRoutes, publicRouter: testConfigPublicRoutes } = require('./src/routes/testConfigRoutes');
 const { adminRouter: headerConfigAdminRoutes, publicRouter: headerConfigPublicRoutes } = require('./src/routes/headerConfigRoutes');
+const { adminRouter: orgTypeAdminRoutes, publicRouter: orgTypePublicRoutes } = require('./src/routes/orgTypeRoutes');
 const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatchingPublicRoutes } = require('./src/routes/responseMatchingRoutes');
 const { adminRouter: analysisSettingsAdminRoutes } = require('./src/routes/analysisSettingsRoutes');
 const { adminRouter: testGroupsAdminRoutes } = require('./src/routes/testGroupsRoutes');
@@ -31,6 +32,10 @@ const { adminRouter: ankganitV3AdminRoutes, publicRouter: ankganitV3PublicRoutes
 const numberRecallV2ConfigRoutes = require('./src/routes/numberRecallV2ConfigRoutes');
 const staffRoutes = require('./src/routes/staffRoutes');
 const requireModuleAccess = require('./src/middleware/requireModuleAccess');
+const otpRoutes = require('./src/routes/otpRoutes');
+const individualAuthRoutes = require('./src/routes/individualAuthRoutes');
+const orgAuthRoutes = require('./src/routes/orgAuthRoutes');
+const assessorAuthRoutes = require('./src/routes/assessorAuthRoutes');
 
 const helmet  = require('helmet');
 const app = express();
@@ -130,7 +135,11 @@ app.use('/api/crash-analytics', crashAnalyticsRoutes);
 app.use('/api/errors',          crashLogRoutes);
 app.use('/api/testing',         testingRoutes);
 app.use('/api/screenshots',     screenshotRoutes);
-app.use('/api/analysis',        requireModuleAccess('analysis'), analysisRoutes);
+// Gated per-route inside analysisRoutes.js (requireAdminOrOrgAuth +
+// resolveOrgScope) instead of here — requireModuleAccess's adminAuth call
+// would reject an 'organization' JWT outright before it ever got a chance
+// to authenticate as an org, same reasoning as children/dashboard/assessors.
+app.use('/api/analysis',        analysisRoutes);
 app.use('/api/cms',             cmsAdminRoutes);
 app.use('/api/public/cms',      cmsPublicRoutes);
 app.use('/api/admin/translations', requireModuleAccess('multilingual'), translationsAdminRoutes);
@@ -155,6 +164,12 @@ app.use('/api/public/ankganit-v2', ankganitV2PublicRoutes);
 app.use('/api/admin/ankganit-v3', ankganitV3AdminRoutes);
 app.use('/api/public/ankganit-v3', ankganitV3PublicRoutes);
 app.use('/api', numberRecallV2ConfigRoutes);
+app.use('/api/otp',        otpRoutes);
+app.use('/api/individual', individualAuthRoutes);
+app.use('/api/org',        orgAuthRoutes);
+app.use('/api/assessor',   assessorAuthRoutes);
+app.use('/api/admin/org-types', orgTypeAdminRoutes);
+app.use('/api/public/org-types', orgTypePublicRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

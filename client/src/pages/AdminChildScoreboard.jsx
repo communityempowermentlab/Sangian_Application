@@ -249,6 +249,8 @@ const AdminChildScoreboard = () => {
                                                 <span className="admin-tag" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>Paused</span>
                                             ) : session.status === 'dropped' ? (
                                                 <span className="admin-tag" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Dropped</span>
+                                            ) : session.status === 'rejected' ? (
+                                                <span className="admin-tag" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }} title="Score submission was blocked because the child was no longer Active">Rejected</span>
                                             ) : (
                                                 <span className="admin-tag" style={{ background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>{session.status}</span>
                                             )}

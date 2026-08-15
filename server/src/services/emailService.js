@@ -43,12 +43,14 @@ const getHelpSettings = async () => {
 };
 
 // ── Core send helper (dynamic SMTP from DB) ───────────────────────────────────
+// Returns a delivery-status object (rather than void) so every caller can
+// log/report success vs failure consistently, for monitoring/troubleshooting
+// — one place to get this right instead of duplicating logging per email type.
 const send = async (to, subject, html) => {
     const smtp = await getSmtp();
     if (!smtp || !smtp.host || !smtp.username) {
-        console.log('\n📧 [EMAIL - SMTP not configured, logging instead]');
-        console.log(`To: ${to}\nSubject: ${subject}\n---`);
-        return;
+        console.log(`📧 [EMAIL NOT SENT — SMTP unconfigured] To: ${to} | Subject: "${subject}"`);
+        return { delivered: false, reason: 'smtp_not_configured' };
     }
     const transporter = nodemailer.createTransport({
         host:   smtp.host,
@@ -59,7 +61,14 @@ const send = async (to, subject, html) => {
     const fromAddr = smtp.from_email
         ? `${smtp.from_name || 'Sangian Support'} <${smtp.from_email}>`
         : (process.env.SMTP_FROM || 'Sangian Support <support@sangian.celworld.org>');
-    await transporter.sendMail({ from: fromAddr, to, subject, html });
+    try {
+        const info = await transporter.sendMail({ from: fromAddr, to, subject, html });
+        console.log(`📧 [EMAIL SENT] To: ${to} | Subject: "${subject}" | MessageId: ${info.messageId}`);
+        return { delivered: true, messageId: info.messageId };
+    } catch (err) {
+        console.error(`📧 [EMAIL FAILED] To: ${to} | Subject: "${subject}" | Error: ${err.message}`);
+        throw err;
+    }
 };
 
 // ── OTP email ─────────────────────────────────────────────────────────────────
@@ -74,6 +83,72 @@ const sendOtp = (email, otp) => send(
           </div>
         </div>
         <p style="color:#6b7280;font-size:13px;line-height:1.6">⏱️ This code is valid for <strong>10 minutes</strong>.<br>If you did not request this, please ignore this email.</p>
+    `)
+);
+
+// ── Individual registration success (full onboarding welcome email) ──────────
+// mobile is optional — displayed only when provided, per spec ("Registered
+// Mobile Number (optional)").
+const sendIndividualWelcome = (email, fullName, mobile) => send(
+    email,
+    'Welcome! Your Registration is Successful',
+    wrap('Welcome!', `
+        <p style="color:#374151;font-size:15px;line-height:1.6">Dear <strong>${fullName}</strong>,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">Your registration has been completed successfully, and your account is now active.</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">You can now log in using your registered ${mobile ? 'mobile number/' : ''}email address and start using the application.</p>
+
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:140px">Registered Name</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${fullName}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${email}</td></tr>
+          ${mobile ? `<tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Mobile</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:14px;color:#1f2937">${mobile}</td></tr>` : ''}
+        </table>
+
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">What's Next?</h3>
+        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
+          <li>Log in to your account.</li>
+          <li>Complete your profile (if applicable).</li>
+          <li>Start your assigned assessments/games.</li>
+          <li>Follow the on-screen instructions while playing.</li>
+        </ul>
+
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Game/Assessment Information</h3>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 8px">The application includes various games/assessments designed to evaluate different skills. Before starting, please ensure that:</p>
+        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
+          <li>You are in a quiet environment.</li>
+          <li>You have a stable internet connection.</li>
+          <li>You carefully read the instructions displayed before each game.</li>
+          <li>Complete each assessment without interruption.</li>
+        </ul>
+
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Scoring</h3>
+        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
+          <li>Your score will be calculated automatically after completing each assessment.</li>
+          <li>Results will be available in your account (if enabled).</li>
+          <li>Follow all instructions carefully to achieve the most accurate results.</li>
+        </ul>
+
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Need Help?</h3>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px">If you experience any issues while logging in or playing the games, please contact our support team.</p>
+
+        <p style="color:#374151;font-size:15px;line-height:1.6">Thank you for registering with us. We wish you the very best!</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6;margin-top:20px">Regards,<br><strong>The Support Team</strong></p>
+
+        <p style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb">If you did not create this account, please contact support immediately.</p>
+    `)
+);
+
+// ── Organization registration received (pending approval) ────────────────────
+const sendOrgRegistrationReceived = (email, orgName) => send(
+    email,
+    'Registration Received – Sangian',
+    wrap('Thank you for registering!', `
+        <p style="color:#374151;font-size:15px;line-height:1.6">Hi,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">We've received your registration for <strong>${orgName}</strong> on the Sangian Assessment Platform. Your organization is now awaiting review by an administrator.</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">You'll be able to log in as soon as it's approved — no further action is needed from you right now.</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you did not submit this registration, please contact support.</p>
     `)
 );
 
@@ -233,4 +308,4 @@ const sendContactAdminNotification = (adminEmail, { name, email, phone, subject,
     `)
 );
 
-module.exports = { sendOtp, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };
+module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };
