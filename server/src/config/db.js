@@ -335,6 +335,13 @@ const initMultiTenantSchema = async (connection) => {
   // by/for an organization going forward get this set.
   await alterColumn('staff', 'org_id INT NULL AFTER id', 'staff.org_id');
 
+  // Org-scope child groups — same convention as children/assessors/staff's
+  // org_id, routed the same way (requireAdminOrOrgAuth + resolveOrgScope):
+  // Super Admin explicitly picks the organization; an org-bound staff
+  // account or Organization login gets its own org_id stamped
+  // automatically. See adminChildGroupController.js.
+  await alterColumn('child_groups', 'org_id INT NULL AFTER id', 'child_groups.org_id');
+
   // Mobile-number uniqueness for Organizations and Individuals — org_email/
   // individual_users.email are already UNIQUE in their CREATE TABLE above;
   // mobile wasn't, so it's added here (matches staff.mobile, which already

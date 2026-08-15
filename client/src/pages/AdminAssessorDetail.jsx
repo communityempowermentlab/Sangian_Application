@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
 
 const fieldErrorStyle = { fontSize: '12px', color: '#dc2626', marginTop: '4px' };
+
+// Only a true Super Admin session may reassign an assessor's organization —
+// an Organization login (or an org-bound Staff account) always keeps the
+// assessor bound to its own org, server-side (see adminAssessorController.js's
+// updateAssessor).
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const fmtDuration = (seconds) => {
@@ -56,6 +63,14 @@ const AdminAssessorDetail = () => {
     // Edit History tab
     const [editLogs, setEditLogs] = useState([]);
     const [editLogsLoading, setEditLogsLoading] = useState(false);
+
+    const [orgOptions, setOrgOptions] = useState([]);
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     const fetchAssessor = async () => {
         setLoading(true);
@@ -143,6 +158,9 @@ const AdminAssessorDetail = () => {
             const mobileDigits = form.mobile_number.replace(/\D/g, '');
             const normalized = mobileDigits.length === 12 && mobileDigits.startsWith('91') ? mobileDigits.slice(2) : mobileDigits;
             if (!/^[6-9]\d{9}$/.test(normalized)) newErrors.mobile_number = 'Please enter a valid 10-digit mobile number.';
+        }
+        if (isAdminSession && !form.org_id) {
+            newErrors.org_id = 'Please select an organization.';
         }
         if (Object.keys(newErrors).length) {
             setErrors(newErrors);
@@ -317,10 +335,24 @@ const AdminAssessorDetail = () => {
                                         ) : (assessor.remarks || '—')}
                                     </td>
                                 </tr>
-                                {assessor.org_name && (
+                                {(isAdminSession || assessor.org_name) && (
                                     <tr>
-                                        <td style={{ fontWeight: 600 }}>Organization</td>
-                                        <td>{assessor.org_name}</td>
+                                        <td style={{ fontWeight: 600 }}>Organization{isAdminSession ? ' *' : ''}</td>
+                                        <td>
+                                            {editing && isAdminSession ? (
+                                                <>
+                                                    <select
+                                                        value={form.org_id || ''}
+                                                        onChange={e => setForm(f => ({ ...f, org_id: e.target.value }))}
+                                                        style={{ padding: '6px 10px', borderRadius: '6px', border: `1px solid ${errors.org_id ? '#fca5a5' : '#e5e7eb'}`, background: '#fff' }}
+                                                    >
+                                                        <option value="">Select organization</option>
+                                                        {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                                    </select>
+                                                    {errors.org_id && <div style={fieldErrorStyle}>{errors.org_id}</div>}
+                                                </>
+                                            ) : (assessor.org_name || '—')}
+                                        </td>
                                     </tr>
                                 )}
                                 <tr>

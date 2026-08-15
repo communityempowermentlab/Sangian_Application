@@ -14,7 +14,6 @@ const adminOrgController   = require('../controllers/adminOrgController');
 const adminIndividualController = require('../controllers/adminIndividualController');
 const adminAuth            = require('../middleware/adminAuth');
 const requireAdminOnly     = require('../middleware/requireAdminOnly');
-const { requireModuleAccessByPath } = require('../middleware/requireModuleAccess');
 const requireAdminOrOrgAuth = require('../middleware/requireAdminOrOrgAuth');
 const resolveOrgScope       = require('../middleware/resolveOrgScope');
 const { upload }           = require('../middleware/upload');
@@ -24,22 +23,13 @@ const { adminLogoUpload }  = require('../middleware/adminLogoUpload');
 // ── Public routes (no auth required) ─────────────────────────────────────────
 router.post('/login', adminController.loginAdmin);
 
-// This router bundles several distinct menus (assessors/child-groups/
-// dashboard) alongside cross-cutting endpoints (profile, logout, contact,
-// tickets, help-content, smtp) that aren't tied to one specific menu — so
-// gating happens once here, resolved per-request by path prefix, rather
-// than per individual route below. Admins always pass through unaffected;
-// unmapped paths (profile/logout/contact-*/etc) still require adminAuth
-// via their own route below, just aren't menu-permission-gated.
-//
-// '/children', '/dashboard', and '/assessors' are deliberately NOT in this
-// list — Organizations must also reach them, and requireModuleAccessByPath's
-// adminAuth call would reject an 'organization' JWT outright before the
-// request ever got a chance to authenticate as an org. All three use
-// requireAdminOrOrgAuth + resolveOrgScope directly on each route instead.
-router.use(requireModuleAccessByPath([
-    ['/child-groups', 'child-groups'],
-]));
+// NOTE: every menu that used to be gated here (assessors/child-groups/
+// dashboard) has since moved to requireAdminOrOrgAuth + resolveOrgScope on
+// each route directly, so Organizations can reach them too, scoped to their
+// own org — requireModuleAccessByPath's adminAuth call would otherwise
+// reject an 'organization' JWT outright. Nothing currently needs the
+// generic by-path wrapper; requireModuleAccessByPath itself stays available
+// in requireModuleAccess.js for any future menu that's admin/staff-only.
 
 // ── Dashboard — default landing page for admin/staff/organization alike.
 // getDashboardStats/getLiveSessions read req.orgScope to filter KPIs down
@@ -84,11 +74,14 @@ router.get('/assessors/:id/activity-log', requireAdminOrOrgAuth('assessors'), re
 router.get('/assessors/:id/edit-logs', requireAdminOrOrgAuth('assessors'), resolveOrgScope, adminAssessorController.getAssessorEditLogs);
 router.post('/assessors/:id/sessions/:sessionId/force-logout', requireAdminOrOrgAuth('assessors'), resolveOrgScope, adminAssessorController.forceLogoutAssessorSession);
 
-// Child Group management
-router.get('/child-groups',          adminAuth, adminChildGroupController.getAllGroups);
-router.post('/child-groups',         adminAuth, adminChildGroupController.addGroup);
-router.get('/child-groups/:id',      adminAuth, adminChildGroupController.getGroupById);
-router.put('/child-groups/:id',      adminAuth, adminChildGroupController.updateGroup);
+// Child Group management — org-scoped, same pattern as children/assessors/
+// staff. Admin and staff-with-'child-groups'-grant behavior is unchanged,
+// Organizations are newly able to reach these, scoped to their own groups
+// only.
+router.get('/child-groups',          requireAdminOrOrgAuth('child-groups'), resolveOrgScope, adminChildGroupController.getAllGroups);
+router.post('/child-groups',         requireAdminOrOrgAuth('child-groups'), resolveOrgScope, adminChildGroupController.addGroup);
+router.get('/child-groups/:id',      requireAdminOrOrgAuth('child-groups'), resolveOrgScope, adminChildGroupController.getGroupById);
+router.put('/child-groups/:id',      requireAdminOrOrgAuth('child-groups'), resolveOrgScope, adminChildGroupController.updateGroup);
 
 // Contact message badge count
 router.get('/contact-messages/new-count', adminAuth, contactController.getNewMessageCount);

@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
-import { ADMIN_MODULES } from '../utils/staffPermissions';
+import { ADMIN_MODULES, isOrgSession, isStaffSession } from '../utils/staffPermissions';
 
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' };
 const labelStyle = { display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' };
 
+// Only a true Super Admin session picks an organization explicitly — an
+// Organization login (or an org-bound Staff account) always gets the new
+// staff account bound to its own org automatically, server-side (see
+// staffController.js's addStaff).
+const isAdminSession = !isOrgSession() && !isStaffSession();
+
 const AdminStaffAdd = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        name: '', email: '', mobile: '', password: '', status: 'active',
+        name: '', email: '', mobile: '', password: '', status: 'active', org_id: '',
     });
     const [permissions, setPermissions] = useState([]);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgOptions, setOrgOptions] = useState([]);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,6 +51,10 @@ const AdminStaffAdd = () => {
         }
         if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
             setError('Password must be at least 8 characters and include a letter and a number.');
+            return;
+        }
+        if (isAdminSession && !formData.org_id) {
+            setError('Please select an organization.');
             return;
         }
 
@@ -83,6 +101,15 @@ const AdminStaffAdd = () => {
                             <label style={labelStyle}>Password <span style={{ color: '#dc2626' }}>*</span></label>
                             <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Min 8 chars, letter + number" style={inputStyle} required />
                         </div>
+                        {isAdminSession && (
+                            <div className="form-group">
+                                <label style={labelStyle}>Organization <span style={{ color: '#dc2626' }}>*</span></label>
+                                <select name="org_id" value={formData.org_id} onChange={handleChange} style={{ ...inputStyle, background: '#fff' }}>
+                                    <option value="">Select organization</option>
+                                    {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ marginBottom: '24px' }}>

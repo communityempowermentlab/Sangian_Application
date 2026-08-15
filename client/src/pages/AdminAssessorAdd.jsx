@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
 
 const fieldErrorStyle = { fontSize: '12px', color: '#dc2626', marginTop: '4px' };
+
+// Only a true Super Admin session picks an organization explicitly — an
+// Organization login (or an org-bound Staff account) always gets the
+// assessor bound to its own org automatically, server-side (see
+// adminAssessorController.js's addAssessor).
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const AdminAssessorAdd = () => {
     const navigate = useNavigate();
@@ -11,11 +18,20 @@ const AdminAssessorAdd = () => {
         email: '',
         mobile_number: '',
         password: '',
-        remarks: ''
+        remarks: '',
+        org_id: '',
     });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgOptions, setOrgOptions] = useState([]);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -46,6 +62,9 @@ const AdminAssessorAdd = () => {
             newErrors.password = 'Password is required.';
         } else if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
             newErrors.password = 'Password must be at least 8 characters and include a letter and a number.';
+        }
+        if (isAdminSession && !formData.org_id) {
+            newErrors.org_id = 'Please select an organization.';
         }
 
         if (Object.keys(newErrors).length) {
@@ -119,6 +138,22 @@ const AdminAssessorAdd = () => {
                                 <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>Must be unique — used to log in.</div>
                             )}
                         </div>
+
+                        {isAdminSession && (
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Organization <span style={{ color: '#dc2626' }}>*</span></label>
+                                <select
+                                    name="org_id"
+                                    value={formData.org_id}
+                                    onChange={handleChange}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: `1px solid ${errors.org_id ? '#fca5a5' : '#e5e7eb'}`, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                >
+                                    <option value="">Select organization</option>
+                                    {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                </select>
+                                {errors.org_id && <div style={fieldErrorStyle}>{errors.org_id}</div>}
+                            </div>
+                        )}
 
                         <div className="form-group">
                             <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Mobile Number <span style={{ color: '#dc2626' }}>*</span></label>

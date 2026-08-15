@@ -104,7 +104,9 @@ exports.getStaffById = async (req, res) => {
     try {
         const scope = scopeClause(req.orgScope);
         const [rows] = await pool.query(
-            `SELECT id, name, email, mobile, status, permissions, created_at, updated_at FROM staff WHERE id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`,
+            `SELECT s.id, s.name, s.email, s.mobile, s.status, s.permissions, s.created_at, s.updated_at, s.org_id, o.org_name
+             FROM staff s LEFT JOIN organizations o ON o.id = s.org_id
+             WHERE s.id = ? ${scope.sql ? `AND ${scope.sql}` : ''}`,
             [req.params.id, ...scope.params]
         );
         if (!rows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
@@ -141,10 +143,24 @@ exports.addStaff = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 10);
         const perms = normalizePermissions(permissions);
 
-        // Super Admin's created-staff stays org_id-NULL (today's behavior,
-        // unchanged); an org-bound staff account or Organization login
-        // always stamps its own org_id — never trusted from the client.
-        const orgId = req.orgScope.isSuperAdmin ? null : req.orgScope.orgId;
+        // Super Admin must explicitly pick which organization a new staff
+        // account belongs to (AdminStaffAdd.jsx's org picker, admin-only);
+        // an org-bound staff account or Organization login always stamps
+        // its own org_id instead — never trusted from the client.
+        let orgId;
+        if (req.orgScope.isSuperAdmin) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                return res.status(400).json({ success: false, message: 'Please select the organization this staff account belongs to.' });
+            }
+            const [orgRows] = await pool.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                return res.status(400).json({ success: false, message: 'Selected organization not found.' });
+            }
+            orgId = requestedOrgId;
+        } else {
+            orgId = req.orgScope.orgId;
+        }
 
         const [result] = await pool.query(
             'INSERT INTO staff (name, email, mobile, password_hash, status, permissions, org_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -203,6 +219,23 @@ exports.updateStaff = async (req, res) => {
         if (!beforeRows.length) return res.status(404).json({ success: false, message: 'Staff not found' });
         const before = beforeRows[0];
 
+        // Only Super Admin may reassign a staff account's organization
+        // (AdminStaffEdit.jsx's org picker, admin-only); an org-bound
+        // staff/Organization session keeps the account's existing org_id
+        // untouched regardless of what's submitted.
+        let newOrgId = before.org_id;
+        if (req.orgScope.isSuperAdmin && req.body.org_id !== undefined) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                return res.status(400).json({ success: false, message: 'Please select the organization this staff account belongs to.' });
+            }
+            const [orgRows] = await pool.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                return res.status(400).json({ success: false, message: 'Selected organization not found.' });
+            }
+            newOrgId = requestedOrgId;
+        }
+
         const perms = normalizePermissions(permissions);
         const newStatus = status === 'inactive' ? 'inactive' : 'active';
         // Existence already confirmed above via beforeRows — unlike that
@@ -212,8 +245,8 @@ exports.updateStaff = async (req, res) => {
         // as the "not found" signal here without misreporting a genuine
         // no-op save (e.g. clicking Save without editing anything) as 404.
         await pool.query(
-            'UPDATE staff SET name=?, email=?, mobile=?, status=?, permissions=? WHERE id=?',
-            [trimmedName, normalizedEmail, trimmedMobile, newStatus, JSON.stringify(perms), id]
+            'UPDATE staff SET name=?, email=?, mobile=?, status=?, permissions=?, org_id=? WHERE id=?',
+            [trimmedName, normalizedEmail, trimmedMobile, newStatus, JSON.stringify(perms), newOrgId, id]
         );
 
         // Only the fields that actually changed — keeps the diff readable
@@ -227,6 +260,16 @@ exports.updateStaff = async (req, res) => {
         if (before.status !== newStatus) { previous.status = before.status; updated.status = newStatus; }
         if (JSON.stringify([...beforePerms].sort()) !== JSON.stringify([...perms].sort())) {
             previous.permissions = beforePerms; updated.permissions = perms;
+        }
+        if (newOrgId !== before.org_id) {
+            const orgIds = [before.org_id, newOrgId].filter(v => v !== null && v !== undefined);
+            let orgNameMap = {};
+            if (orgIds.length) {
+                const [orgNameRows] = await pool.query('SELECT id, org_name FROM organizations WHERE id IN (?)', [orgIds]);
+                orgNameMap = Object.fromEntries(orgNameRows.map(o => [o.id, o.org_name]));
+            }
+            previous.organization = orgNameMap[before.org_id] || 'None';
+            updated.organization = orgNameMap[newOrgId] || 'None';
         }
 
         if (req.admin) {

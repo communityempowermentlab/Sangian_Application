@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+
+// Only a true Super Admin session may reassign a group's organization — an
+// Organization login (or an org-bound Staff account) always keeps the
+// group bound to its own org, server-side (see
+// adminChildGroupController.js's updateGroup).
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const AdminChildGroupEdit = () => {
     const { id } = useParams();
@@ -8,15 +15,24 @@ const AdminChildGroupEdit = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        status: 'active'
+        status: 'active',
+        org_id: '',
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgOptions, setOrgOptions] = useState([]);
 
     useEffect(() => {
         fetchGroup();
     }, [id]);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     const fetchGroup = async () => {
         try {
@@ -24,7 +40,8 @@ const AdminChildGroupEdit = () => {
             setFormData({
                 name: response.data.name,
                 description: response.data.description || '',
-                status: response.data.status || 'active'
+                status: response.data.status || 'active',
+                org_id: response.data.org_id || '',
             });
         } catch (err) {
             setError('Failed to fetch child group details.');
@@ -43,6 +60,10 @@ const AdminChildGroupEdit = () => {
 
         if (!formData.name.trim() || !formData.status) {
             setError('Group name and status are mandatory.');
+            return;
+        }
+        if (isAdminSession && !formData.org_id) {
+            setError('Please select an organization.');
             return;
         }
 
@@ -118,6 +139,21 @@ const AdminChildGroupEdit = () => {
                             </select>
                             <p style={{ margin: '6px 0 0', color: 'var(--muted)', fontSize: '12px' }}>Inactive groups stay visible on children already assigned to them, but won't appear as an option when assigning groups to a child going forward.</p>
                         </div>
+
+                        {isAdminSession && (
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Organization <span style={{ color: '#dc2626' }}>*</span></label>
+                                <select
+                                    name="org_id"
+                                    value={formData.org_id}
+                                    onChange={handleChange}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', background: '#fff' }}
+                                >
+                                    <option value="">Select organization</option>
+                                    {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '16px' }}>

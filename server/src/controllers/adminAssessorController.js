@@ -126,10 +126,25 @@ exports.addAssessor = async (req, res) => {
             return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LEN} characters and include a letter and a number.` });
         }
 
-        // Super Admin's created-assessor stays org_id-NULL (same as before
-        // this feature existed); an org-bound staff account or Organization
-        // login always stamps its own org_id — never trusted from the client.
-        const orgId = orgScope.isSuperAdmin ? null : orgScope.orgId;
+        // Super Admin must explicitly pick which organization a new
+        // assessor belongs to (AdminAssessorAdd.jsx's org picker,
+        // admin-only); an org-bound staff account or Organization login
+        // always stamps its own org_id instead — never trusted from the
+        // client, always derived from the authenticated scope.
+        let orgId;
+        if (orgScope.isSuperAdmin) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                return res.status(400).json({ message: 'Please select the organization this assessor belongs to.' });
+            }
+            const [orgRows] = await pool.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                return res.status(400).json({ message: 'Selected organization not found.' });
+            }
+            orgId = requestedOrgId;
+        } else {
+            orgId = orgScope.orgId;
+        }
 
         // Email/mobile uniqueness is scoped PER ORGANIZATION, not global —
         // the same email+password can be reused by an assessor registering
@@ -213,25 +228,41 @@ exports.updateAssessor = async (req, res) => {
         );
         if (!existingRow.length) return res.status(404).json({ message: 'Assessor not found' });
         const before = existingRow[0];
-        const rowOrgId = before.org_id;
+
+        // Only Super Admin may reassign an assessor's organization
+        // (AdminAssessorDetail.jsx's org picker, admin-only); an org-bound
+        // staff/Organization session keeps the assessor's existing org_id
+        // untouched regardless of what's submitted.
+        let newOrgId = before.org_id;
+        if (orgScope.isSuperAdmin && req.body.org_id !== undefined) {
+            const requestedOrgId = req.body.org_id ? parseInt(req.body.org_id, 10) : null;
+            if (!requestedOrgId) {
+                return res.status(400).json({ message: 'Please select the organization this assessor belongs to.' });
+            }
+            const [orgRows] = await pool.query('SELECT id FROM organizations WHERE id = ?', [requestedOrgId]);
+            if (!orgRows.length) {
+                return res.status(400).json({ message: 'Selected organization not found.' });
+            }
+            newOrgId = requestedOrgId;
+        }
 
         // Check if email/mobile belongs to someone else IN THE SAME
         // ORGANIZATION — uniqueness is per-organization, not global (see
-        // addAssessor). The assessor's own org_id (not the caller's
-        // orgScope) is what matters here, since org_id isn't editable
-        // through this form.
-        const [existingEmail] = await pool.query('SELECT id FROM assessors WHERE email = ? AND org_id <=> ? AND id != ?', [normalizedEmail, rowOrgId, id]);
+        // addAssessor). Checked against newOrgId (not the old org_id) so
+        // reassigning an assessor to a different org re-validates against
+        // that org's own uniqueness bucket.
+        const [existingEmail] = await pool.query('SELECT id FROM assessors WHERE email = ? AND org_id <=> ? AND id != ?', [normalizedEmail, newOrgId, id]);
         if (existingEmail && existingEmail.length > 0) {
             return res.status(400).json({ message: 'Email ID already exists for an assessor in this organization.' });
         }
-        const [existingMobile] = await pool.query('SELECT id FROM assessors WHERE mobile_number = ? AND org_id <=> ? AND id != ?', [normalizedMobile, rowOrgId, id]);
+        const [existingMobile] = await pool.query('SELECT id FROM assessors WHERE mobile_number = ? AND org_id <=> ? AND id != ?', [normalizedMobile, newOrgId, id]);
         if (existingMobile && existingMobile.length > 0) {
             return res.status(400).json({ message: 'Mobile number already exists for an assessor in this organization.' });
         }
 
         const [result] = await pool.query(
-            'UPDATE assessors SET name = ?, email = ?, mobile_number = ?, status = ?, remarks = ? WHERE id = ?',
-            [trimmedName, normalizedEmail, normalizedMobile, status, trimmedRemarks, id]
+            'UPDATE assessors SET name = ?, email = ?, mobile_number = ?, status = ?, remarks = ?, org_id = ? WHERE id = ?',
+            [trimmedName, normalizedEmail, normalizedMobile, status, trimmedRemarks, newOrgId, id]
         );
 
         if (result.affectedRows === 0) {
@@ -253,6 +284,18 @@ exports.updateAssessor = async (req, res) => {
                     [id, PROFILE_FIELD_LABELS[field], oldVal, newVal, actor.actorId, actor.actorName, ip]
                 );
             }
+        }
+        if (newOrgId !== before.org_id) {
+            const orgIds = [before.org_id, newOrgId].filter(v => v !== null && v !== undefined);
+            let orgNameMap = {};
+            if (orgIds.length) {
+                const [orgNameRows] = await pool.query('SELECT id, org_name FROM organizations WHERE id IN (?)', [orgIds]);
+                orgNameMap = Object.fromEntries(orgNameRows.map(o => [o.id, o.org_name]));
+            }
+            await pool.query(
+                'INSERT INTO assessor_profile_edit_logs (assessor_id, field_name, old_value, new_value, updated_by_id, updated_by_name, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [id, 'Organization', orgNameMap[before.org_id] || 'None', orgNameMap[newOrgId] || 'None', actor.actorId, actor.actorName, ip]
+            );
         }
 
         await logAssessorActivity({

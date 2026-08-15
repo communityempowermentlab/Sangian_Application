@@ -1,26 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
-import { ADMIN_MODULES } from '../utils/staffPermissions';
+import { ADMIN_MODULES, isOrgSession, isStaffSession } from '../utils/staffPermissions';
 
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' };
 const labelStyle = { display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' };
 
+// Only a true Super Admin session may reassign a staff account's
+// organization — an Organization login (or an org-bound Staff account)
+// always keeps the account bound to its own org, server-side (see
+// staffController.js's updateStaff).
+const isAdminSession = !isOrgSession() && !isStaffSession();
+
 const AdminStaffEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ name: '', email: '', mobile: '', status: 'active' });
+    const [formData, setFormData] = useState({ name: '', email: '', mobile: '', status: 'active', org_id: '' });
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgOptions, setOrgOptions] = useState([]);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     useEffect(() => {
         (async () => {
             try {
                 const { data } = await axiosAdmin.get(`/admin/staff/${id}`);
                 const s = data.staff;
-                setFormData({ name: s.name, email: s.email, mobile: s.mobile, status: s.status });
+                setFormData({ name: s.name, email: s.email, mobile: s.mobile, status: s.status, org_id: s.org_id || '' });
                 setPermissions(Array.isArray(s.permissions) ? s.permissions : []);
             } catch (err) {
                 setError('Failed to load staff account.');
@@ -50,10 +64,14 @@ const AdminStaffEdit = () => {
             setError('Please enter a valid email address.');
             return;
         }
+        if (isAdminSession && !formData.org_id) {
+            setError('Please select an organization.');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
-            await axiosAdmin.put(`/admin/staff/${id}`, { name, email, mobile, status, permissions });
+            await axiosAdmin.put(`/admin/staff/${id}`, { name, email, mobile, status, permissions, org_id: formData.org_id });
             navigate('/admin/staff');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update staff account.');
@@ -99,6 +117,15 @@ const AdminStaffEdit = () => {
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
+                        {isAdminSession && (
+                            <div className="form-group">
+                                <label style={labelStyle}>Organization <span style={{ color: '#dc2626' }}>*</span></label>
+                                <select name="org_id" value={formData.org_id} onChange={handleChange} style={{ ...inputStyle, background: '#fff' }}>
+                                    <option value="">Select organization</option>
+                                    {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ marginBottom: '24px' }}>

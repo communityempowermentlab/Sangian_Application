@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+
+// Only a true Super Admin session picks an organization explicitly — an
+// Organization login (or an org-bound Staff account) always gets the new
+// group bound to its own org automatically, server-side (see
+// adminChildGroupController.js's addGroup).
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const AdminChildGroupAdd = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
-        description: ''
+        description: '',
+        org_id: '',
     });
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgOptions, setOrgOptions] = useState([]);
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,6 +37,10 @@ const AdminChildGroupAdd = () => {
 
         if (!formData.name.trim()) {
             setError('Group name is required.');
+            return;
+        }
+        if (isAdminSession && !formData.org_id) {
+            setError('Please select an organization.');
             return;
         }
 
@@ -83,6 +103,21 @@ const AdminChildGroupAdd = () => {
                                 style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
                             />
                         </div>
+
+                        {isAdminSession && (
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' }}>Organization <span style={{ color: '#dc2626' }}>*</span></label>
+                                <select
+                                    name="org_id"
+                                    value={formData.org_id}
+                                    onChange={handleChange}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', background: '#fff' }}
+                                >
+                                    <option value="">Select organization</option>
+                                    {orgOptions.map(o => <option key={o.id} value={o.id}>{o.org_name}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '16px' }}>
