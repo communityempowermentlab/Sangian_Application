@@ -94,6 +94,7 @@ const AssessorDashboard = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                 <thead>
                                     <tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb', color: '#6b7280' }}>
+                                        <th style={{ padding: '8px' }}>Child ID</th>
                                         <th style={{ padding: '8px' }}>Child</th>
                                         <th style={{ padding: '8px' }}>Game</th>
                                         <th style={{ padding: '8px' }}>Status</th>
@@ -103,11 +104,12 @@ const AssessorDashboard = () => {
                                 </thead>
                                 <tbody>
                                     {recentActivity.length === 0 ? (
-                                        <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — search for a child to get started.</td></tr>
+                                        <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — search for a child to get started.</td></tr>
                                     ) : (
                                         recentActivity.map(row => (
                                             <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                                <td style={{ padding: '8px', fontWeight: 600 }}>{row.child_name || row.child_id}</td>
+                                                <td style={{ padding: '8px', color: '#6b7280' }}>{row.child_id}</td>
+                                                <td style={{ padding: '8px', fontWeight: 600 }}>{row.child_name || '—'}</td>
                                                 <td style={{ padding: '8px' }}>{gameTitle(row.game_name)}</td>
                                                 <td style={{ padding: '8px' }}>{STATUS_LABEL[row.status] || row.status}</td>
                                                 <td style={{ padding: '8px' }}>{row.status === 'completed' ? (row.score ?? '—') : '—'}</td>
