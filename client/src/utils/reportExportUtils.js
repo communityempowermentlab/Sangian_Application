@@ -170,7 +170,7 @@ export const generateReportData = (activeGame, detail) => {
     }
 
     const headers = [
-        'Session ID', 'Child ID', 'Child Name', 'Att. #', 'Start Date', 'Start Time', 'End Date', 'End Time',
+        'Session ID', 'Child ID', 'Child Name', 'Organization', 'Assessor', 'Att. #', 'Start Date', 'Start Time', 'End Date', 'End Time',
         'Duration', 'Screentime',
         'Status', 'Total Correct', 'Total Questions', 'Final Score', 'Total Time(s)',
         ...qHeaders,
@@ -182,7 +182,7 @@ export const generateReportData = (activeGame, detail) => {
         
     const rows = sortedRows.map(r => {
         const rowArr = [
-            r.session_id, r.child_id, r.child_name, `#${r.child_attempt_no || '1'}`,
+            r.session_id, r.child_id, r.child_name, r.organization_name || '—', r.assessor_name || '—', `#${r.child_attempt_no || '1'}`,
             fmtOnlyDate(r.start_time), fmtOnlyTime(r.start_time),
             fmtOnlyDate(r.end_time), fmtOnlyTime(r.end_time),
             r.actual_game_time != null ? fmtSecs(r.actual_game_time) : '—',

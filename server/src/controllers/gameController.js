@@ -559,6 +559,8 @@ exports.getReportDetail = async (req, res) => {
                 gs.id               AS session_id,
                 gs.child_id,
                 c.name              AS child_name,
+                o.org_name          AS organization_name,
+                asr.name            AS assessor_name,
                 gs.score,
                 gs.total_questions,
                 gs.progress_level,
@@ -576,6 +578,16 @@ exports.getReportDetail = async (req, res) => {
                 (SELECT file_path FROM game_dashboard_pdfs WHERE session_id = gs.id ORDER BY id DESC LIMIT 1) AS pdf_url
             FROM game_sessions gs
             LEFT JOIN children c ON gs.child_id = c.child_id
+            -- Organization: prefer the session's own org_id (set for
+            -- assessor-run sessions via assessment_sessions/login_sessions —
+            -- see startGameSession) and fall back to the child's own org_id
+            -- (set at Add/Edit Child time) so direct child self-play, which
+            -- never touches gs.org_id, still resolves an organization.
+            LEFT JOIN organizations o ON o.id = COALESCE(gs.org_id, c.org_id)
+            -- Assessor: only ever set on gs.assessor_id (assessor-run
+            -- sessions) — no equivalent on children, so self-play sessions
+            -- correctly resolve to NULL ("—" on the client) here.
+            LEFT JOIN assessors asr ON asr.id = gs.assessor_id
             LEFT JOIN game_assessments ga
               ON ga.session_id = gs.id
               -- A session can end up with more than one assessment row (e.g. a
@@ -838,6 +850,8 @@ exports.getReportDetail = async (req, res) => {
                 session_id: row.session_id,
                 child_id: row.child_id,
                 child_name: row.child_name || '—',
+                organization_name: row.organization_name || null,
+                assessor_name: row.assessor_name || null,
                 score: row.score,
                 correct_count: readingV2
                     ? ['words', 'words_retry', 'letters'].reduce((sum, k) => sum + (readingV2.reading_stages[k]?.correct ?? 0), 0)
