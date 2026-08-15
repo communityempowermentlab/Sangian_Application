@@ -10,6 +10,7 @@ import AdminAnkganitV3Config from './AdminAnkganitV3Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 import RachnaElements from '../components/RachnaElements';
 import AudioElementsManager from '../components/AudioElementsManager';
+import ReadingV2ContentManager from '../components/ReadingV2ContentManager';
 
 // Her Pher V3 uses a fixed item-wise image count per category (unlike V1/V2's
 // uniform caps) — see HerPherElements.jsx's default CATEGORIES for the shape.
@@ -296,6 +297,10 @@ export default function AdminElements() {
                     <div className="elements-section">
                         <AdminNumberRecallV2Config />
                     </div>
+                )}
+
+                {activeTest === 'literacy_reading_skill_v2' && (
+                    <ReadingV2ContentManager languages={languages} showToast={showToast} />
                 )}
 
                 {activeTest === 'triangle_rachna' && (

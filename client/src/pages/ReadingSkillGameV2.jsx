@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useTestAudio } from '../hooks/useTestAudio';
+import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -62,18 +63,6 @@ const STORY_ASSESSMENT_HINTS = [
     { description: 'If the child makes 0–3 mistakes while reading the story —', example: null, answer: 'No' },
   ],
 ];
-
-// Lookup by pendingAssessTarget — 'paragraph' and 'paragraph_retry' share the same set.
-const ASSESSMENT_QUESTION_SETS = {
-  paragraph: PARAGRAPH_ASSESSMENT_QUESTIONS,
-  paragraph_retry: PARAGRAPH_ASSESSMENT_QUESTIONS,
-  story: STORY_ASSESSMENT_QUESTIONS,
-};
-const ASSESSMENT_HINT_SETS = {
-  paragraph: PARAGRAPH_ASSESSMENT_HINTS,
-  paragraph_retry: PARAGRAPH_ASSESSMENT_HINTS,
-  story: STORY_ASSESSMENT_HINTS,
-};
 
 const LETTERS_BANK = ['ल', 'प', 'स', 'क', 'ग', 'ड', 'ब', 'म', 'ट', 'झ'];
 const WORDS_BANK = ['लाल', 'दूध', 'पैर', 'तेल', 'किला', 'मोर', 'जूता', 'कुल', 'पानी', 'मौका'];
@@ -168,6 +157,22 @@ const ReadingSkillGameV2 = () => {
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const { getAudioUrl, ready: audioReady } = useTestAudio('literacy_reading_skill_v2');
+  const { getContent } = useTestContent('literacy_reading_skill_v2');
+
+  // Admin-managed test content (Elements -> Test Content), resolved for the
+  // player's current language — falls back to the original hardcoded Hindi
+  // source values below when nothing is configured yet, so behavior is
+  // unchanged until an Admin adds a translation from the panel.
+  const resolvedLetters = getContent('letters_bank')?.letters || LETTERS_BANK;
+  const resolvedWords = getContent('words_bank')?.words || WORDS_BANK;
+  const resolvedParagraphs = getContent('paragraphs')?.paragraphs || PARAGRAPHS;
+  const resolvedStory = getContent('story')?.text || STORY_TEXT;
+  const resolvedParagraphQuestions = getContent('paragraph_questions')?.questions || PARAGRAPH_ASSESSMENT_QUESTIONS;
+  const resolvedStoryQuestions = getContent('story_questions')?.questions || STORY_ASSESSMENT_QUESTIONS;
+  const resolvedParagraphHints = getContent('paragraph_hints')?.hints || PARAGRAPH_ASSESSMENT_HINTS;
+  const resolvedStoryHints = getContent('story_hints')?.hints || STORY_ASSESSMENT_HINTS;
+  const resolvedQuestionSets = { paragraph: resolvedParagraphQuestions, paragraph_retry: resolvedParagraphQuestions, story: resolvedStoryQuestions };
+  const resolvedHintSets = { paragraph: resolvedParagraphHints, paragraph_retry: resolvedParagraphHints, story: resolvedStoryHints };
 
   // ─── StatusBar: hide on native during this game ───────────────────────────
   useEffect(() => {
@@ -602,14 +607,14 @@ const ReadingSkillGameV2 = () => {
     }
   };
 
-  const assessmentQuestionTexts = ASSESSMENT_QUESTION_SETS[pendingAssessTarget] || PARAGRAPH_ASSESSMENT_QUESTIONS;
-  const currentAssessmentHints = ASSESSMENT_HINT_SETS[pendingAssessTarget] || null;
+  const assessmentQuestionTexts = resolvedQuestionSets[pendingAssessTarget] || resolvedParagraphQuestions;
+  const currentAssessmentHints = resolvedHintSets[pendingAssessTarget] || null;
 
   const isWordsFixedRetry = stage === 'words' && wordsSource === 'afterLetters';
   // Word retry still shows the full 10-word bank (so the child sees every option again),
   // but only the 5 words picked the first time round are highlighted/markable — everything
   // else here keys off fixedRetryTexts instead of markingBank's length.
-  const markingBank = stage === 'letters' ? LETTERS_BANK : WORDS_BANK;
+  const markingBank = stage === 'letters' ? resolvedLetters : resolvedWords;
   const fixedRetryTexts = isWordsFixedRetry ? new Set(selectedWords.map(w => w.text)) : null;
   // Word retry: only the pre-picked 5 need marking. Otherwise the assessor picks up to 5
   // tiles first; only picked tiles get Correct/Incorrect.
@@ -730,7 +735,7 @@ const ReadingSkillGameV2 = () => {
     }
   };
 
-  const selectedParagraphText = selectedParagraphIndex != null ? PARAGRAPHS[selectedParagraphIndex] : null;
+  const selectedParagraphText = selectedParagraphIndex != null ? resolvedParagraphs[selectedParagraphIndex] : null;
 
   // ── Story screen: shrink-to-fit font sizing ─────────────────────────────
   // The story is fixed content but the visible card height varies by device,
@@ -789,7 +794,7 @@ const ReadingSkillGameV2 = () => {
   const renderStageRow = (stageName, idx) => {
     let detail = '—';
     if (stageName === 'paragraph' || stageName === 'paragraph_retry') detail = selectedParagraphText || '—';
-    else if (stageName === 'story') detail = STORY_TEXT;
+    else if (stageName === 'story') detail = resolvedStory;
     else if (stageName === 'words') detail = selectedWords.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
     else if (stageName === 'words_retry') detail = selectedWordsRetry.map(w => `${w.text}${w.correct ? '✓' : '✗'}`).join('  ');
     else if (stageName === 'letters') detail = selectedLetters.map(l => `${l.text}${l.correct ? '✓' : '✗'}`).join('  ');
@@ -883,7 +888,7 @@ const ReadingSkillGameV2 = () => {
                     textAlign: 'justify'
                   }}
                 >
-                  {STORY_TEXT}
+                  {resolvedStory}
                 </div>
               </div>
             </div>
@@ -1132,7 +1137,7 @@ const ReadingSkillGameV2 = () => {
                             <div className="rs-hint-desc">{ex.description}</div>
                             {ex.example && <div className="rs-hint-quote">“{ex.example}”</div>}
                             <div className={`rs-hint-answer ${ex.answer === 'Yes' ? 'is-yes' : 'is-no'}`}>
-                              → Select {ex.answer}
+                              → {t('game.selectLabel')} {ex.answer === 'Yes' ? t('game.yesLabel') : t('game.noLabel')}
                             </div>
                           </div>
                         ))}

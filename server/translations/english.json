@@ -450,7 +450,8 @@
       "q1": "The gap between two triangles is more than 2 squares.",
       "q2": "The alignment between the triangles has a difference of more than 2 squares.",
       "q3": "The shape created by the child matches the reference figure."
-    }
+    },
+    "selectLabel": "Select"
   },
   "modal": {
     "disclaimer": "This description is informational only. Always follow your official KABC manual and institutional protocols when administering tests.",
