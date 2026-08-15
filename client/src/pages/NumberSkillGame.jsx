@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -110,6 +111,7 @@ const NumberSkillGame = () => {
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('numeracy_number_skill');
 
   // ─── StatusBar: hide on native during this game ───────────────────────────
   useEffect(() => {
@@ -162,7 +164,7 @@ const NumberSkillGame = () => {
   };
 
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished && audioReady) {
       audioRef.current.currentTime = 0;
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
@@ -172,7 +174,7 @@ const NumberSkillGame = () => {
         });
       }
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   useEffect(() => {
     if ((screen === 'game' && !showQuitModal) || (screen === 'score' && !assessmentSubmitted)) {
@@ -827,10 +829,10 @@ const NumberSkillGame = () => {
       </main>
 
       {!isCheckingSession && (
-        <audio 
-          ref={audioRef} 
-          src="/assets/audios/number_skill/splash.wav"
-          preload="auto" 
+        <audio
+          ref={audioRef}
+          src={getAudioUrl('splash', '/assets/audios/number_skill/splash.wav')}
+          preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
         />

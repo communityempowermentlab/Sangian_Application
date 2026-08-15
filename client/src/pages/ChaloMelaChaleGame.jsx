@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -422,6 +423,7 @@ const ChaloMelaChaleGame = () => {
   const pdfGeneratedRef       = useRef(false);
   const tqTrialsRef           = useRef({});   // stores per-trial data for teaching questions
   const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
+  const { getAudioUrl, ready: audioReady } = useTestAudio('rover_mela');
 
   // ── Session screentime timer ─────────────────────────────────────────────
   // Starts only when "Start Now" is clicked (or game is resumed); stops when assessment is submitted.
@@ -1012,7 +1014,8 @@ const ChaloMelaChaleGame = () => {
       screen === 'splash' &&
       !showResumeModal &&
       !splashAudioStartedRef.current &&
-      audioRef.current
+      audioRef.current &&
+      audioReady
     ) {
       splashAudioStartedRef.current = true;
       // Force-reload clears any stale error/ended state left from when src was
@@ -1032,7 +1035,7 @@ const ChaloMelaChaleGame = () => {
       hasAutoStarted.current.sampleB = true;
       startAutoDemoSB();
     }
-  }, [isCheckingSession, screen, showResumeModal, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
+  }, [isCheckingSession, screen, showResumeModal, audioReady, startAutoDemoA, startAutoDemoSB]); // eslint-disable-line
 
   const handleGridClick = (r, c) => {
     const s = questionStateRef.current;
@@ -1959,7 +1962,7 @@ const ChaloMelaChaleGame = () => {
                 <img src={`${IMG_DIR}/chalo_mela_chale.jpg`} alt="Chalo Mela Chalen" className="cm-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
                 <div className="cm-splash-btn-overlay">
                   <button style={{ padding: '14px 40px', fontSize: '1.2rem' }} className={`cm-btn cm-btn-primary ${!audioFinished ? 'cm-btn-disabled' : ''}`} disabled={!audioFinished} onClick={() => { setScreen('sampleA'); setSessionActive(true); }}>{t('game.startNow')}</button>
-                  <button style={{ padding: '14px 40px', fontSize: '1.2rem' }} className="cm-btn cm-btn-secondary" onClick={() => { setAudioFinished(false); playAudio('splash.wav', () => setAudioFinished(true)); }}>{t('game.replayAudio')}</button>
+                  <button style={{ padding: '14px 40px', fontSize: '1.2rem' }} className="cm-btn cm-btn-secondary" onClick={() => { setAudioFinished(false); if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => setAudioFinished(true)); } }}>{t('game.replayAudio')}</button>
                 </div>
               </div>
             </div>
@@ -2176,7 +2179,7 @@ const ChaloMelaChaleGame = () => {
       {isPaused && <div style={{ position: 'fixed', inset: 0, zIndex: 999, cursor: 'not-allowed' }} />}
       <audio
         ref={audioRef}
-        src={screen === 'splash' ? `${AUDIO_DIR}/splash.wav` : undefined}
+        src={screen === 'splash' ? getAudioUrl('splash', `${AUDIO_DIR}/splash.wav`) : undefined}
         preload="auto"
         onEnded={() => setAudioFinished(true)}
       />

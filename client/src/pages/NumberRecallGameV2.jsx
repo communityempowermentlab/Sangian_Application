@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useResponseMatching } from '../contexts/ResponseMatchingContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { unlockAudioContext } from '../utils/audioUnlock';
@@ -413,6 +414,7 @@ const NumberRecallGameV2 = () => {
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('number_recall_lottery_v2');
 
   const sp = childData?.age ? getSP(childData.age) : '—';
   const totalScore = allScores.filter(s => s.score === 1).length + teachingScores.filter(s => s.score === 1).length;
@@ -503,11 +505,11 @@ const NumberRecallGameV2 = () => {
 
   // ── Splash audio autoplay ──────────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished && audioReady) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   // ── Session timer ──────────────────────────────────────────
   // Keeps running on the score screen until the assessor submits the Session
@@ -1162,7 +1164,7 @@ const NumberRecallGameV2 = () => {
       {!isCheckingSession && (
         <audio
           ref={audioRef}
-          src={`${AUDIO_PATH}/splash1.m4a`}
+          src={getAudioUrl('splash', `${AUDIO_PATH}/splash1.m4a`)}
           preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}

@@ -9,6 +9,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { ShapeEl, SHAPE_SIZE_PX } from '../components/RachnaShapeEl';
 import {
@@ -92,6 +93,7 @@ const TriangleRachnaGame = () => {
   const timerRef           = useRef(null);
   const audioSplashRef  = useRef(null);
   const workspaceRef    = useRef(null);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('triangle_rachna');
   const dragItemRef     = useRef(null); // { sourceItem }
   const itemDragRef     = useRef(null); // { id, startX, startY, origX, origY }
   const rotateRef       = useRef(null); // { id, centerX, centerY, startAngle, origRot }
@@ -248,11 +250,11 @@ const TriangleRachnaGame = () => {
 
   // ── Splash audio autoplay ──────────────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished && audioReady) {
       audioSplashRef.current.currentTime = 0;
       audioSplashRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   // ── Timer Reset ──────────────────────────────────────────────
   useEffect(() => {
@@ -1362,7 +1364,7 @@ const TriangleRachnaGame = () => {
       {!isCheckingSession && (
         <audio
           ref={audioSplashRef}
-          src={`${AUDIO_PATH}/splash.wav`}
+          src={getAudioUrl('splash', `${AUDIO_PATH}/splash.wav`)}
           preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}

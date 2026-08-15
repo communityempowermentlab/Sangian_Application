@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useResponseMatching } from '../contexts/ResponseMatchingContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
@@ -279,6 +280,7 @@ const HerPherGameV2 = () => {
   const timerSecondsRef   = useRef(0);
   const audioSplashRef    = useRef(null);
   const isResumingRef     = useRef(false);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('working_memory_herpher_v2');
 
   // Game canvas — measured so the layout fills all available screen space
   const gameContainerRef  = useRef(null);
@@ -358,11 +360,11 @@ const HerPherGameV2 = () => {
 
   // ──── Splash audio autoplay ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioSplashRef.current && !audioFinished && audioReady) {
       audioSplashRef.current.currentTime = 0;
       audioSplashRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   // ──── Question timer ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1412,7 +1414,7 @@ const HerPherGameV2 = () => {
       {!isCheckingSession && (
         <audio
           ref={audioSplashRef}
-          src={`${AUDIO_PATH}/splash.wav`}
+          src={getAudioUrl('splash', `${AUDIO_PATH}/splash.wav`)}
           preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}

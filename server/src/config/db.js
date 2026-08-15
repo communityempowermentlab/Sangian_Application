@@ -2189,6 +2189,42 @@ const initDb = async () => {
       }
     }
 
+    // ── Multilingual Audio Management (Elements → Audio) ────────────────────
+    // Admin-defined, ordered "audio slots" per test (e.g. "Splash Screen
+    // Audio", "Audio 1", "Audio 2"...). The actual per-language files are
+    // NOT stored here — they're ordinary test_elements rows with
+    // asset_type = 'audio_' + element_key, reusing that table's existing
+    // (test_id, asset_type, language, file_name) unique key and upload/
+    // delete/toggle plumbing (elementsController.js) unchanged. This table
+    // only tracks the slot's identity/order/fallback/status — see
+    // audioElementController.js.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS audio_elements (
+        id                INT AUTO_INCREMENT PRIMARY KEY,
+        test_id           VARCHAR(100) NOT NULL,
+        element_key       VARCHAR(100) NOT NULL,
+        label             VARCHAR(255) NOT NULL,
+        display_order     INT DEFAULT 0,
+        fallback_language VARCHAR(10) DEFAULT NULL,
+        status            ENUM('active', 'inactive') DEFAULT 'active',
+        created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_test_element (test_id, element_key)
+      )
+    `);
+
+    // Seed one 'splash' slot per game in the canonical registry — this is
+    // the well-known key the splash-screen <audio> tags look up by
+    // convention (see client/src/hooks/useTestAudio.js). Admins can add
+    // further slots freely from the panel; those aren't seeded here.
+    const { GAMES_REGISTRY } = require('../services/testConfigService');
+    for (const game of GAMES_REGISTRY) {
+      await connection.query(
+        `INSERT IGNORE INTO audio_elements (test_id, element_key, label, display_order) VALUES (?, 'splash', 'Splash Screen Audio', 0)`,
+        [game.key]
+      );
+    }
+
     // Create child_profile_edit_logs table for tracking admin edits to child profiles
     await connection.query(`
       CREATE TABLE IF NOT EXISTS child_profile_edit_logs (

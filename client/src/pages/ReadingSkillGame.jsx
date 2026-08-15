@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -121,6 +122,7 @@ const ReadingSkillGame = () => {
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('literacy_reading_skill');
 
   // ─── StatusBar: hide on native during this game ───────────────────────────
   useEffect(() => {
@@ -173,7 +175,7 @@ const ReadingSkillGame = () => {
   };
 
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && audioRef.current && !audioFinished && audioReady) {
       audioRef.current.currentTime = 0;
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
@@ -183,7 +185,7 @@ const ReadingSkillGame = () => {
         });
       }
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   useEffect(() => {
     if ((screen === 'game' && !showQuitModal && !showMidTestModal) || (screen === 'score' && !assessmentSubmitted)) {
@@ -869,9 +871,9 @@ const ReadingSkillGame = () => {
       </main>
 
       {!isCheckingSession && (
-        <audio 
-          ref={audioRef} 
-          src="/assets/audios/reading_skill/splash.wav" 
+        <audio
+          ref={audioRef}
+          src={getAudioUrl('splash', '/assets/audios/reading_skill/splash.wav')}
           preload="auto" 
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}

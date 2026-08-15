@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -638,6 +639,7 @@ const AtlantisBagiyaGame = () => {
   const timerRef = useRef(null);
   const splashAudioRef = useRef(null);
   const activeAudioRef = useRef(null);
+  const { getAudioUrl, ready: audioReady } = useTestAudio('atlantis_bagiya');
 
   // ── Computed ────────────────────────────────────────────
   const totalScore = allScores.reduce((s, a) => s + a.score, 0);
@@ -719,11 +721,11 @@ const AtlantisBagiyaGame = () => {
 
   // ── Splash audio autoplay ───────────────────────────────
   useEffect(() => {
-    if (!isCheckingSession && screen === 'splash' && !showResumeModal && splashAudioRef.current && !audioFinished) {
+    if (!isCheckingSession && screen === 'splash' && !showResumeModal && splashAudioRef.current && !audioFinished && audioReady) {
       splashAudioRef.current.currentTime = 0;
       splashAudioRef.current.play().catch(() => setAudioFinished(true));
     }
-  }, [isCheckingSession, screen, showResumeModal, audioFinished]);
+  }, [isCheckingSession, screen, showResumeModal, audioFinished, audioReady]);
 
   // ── Session timer (runs during game AND score screen until assessment submitted) ─────
   useEffect(() => {
@@ -1826,7 +1828,7 @@ const AtlantisBagiyaGame = () => {
       {!isCheckingSession && (
         <audio
           ref={splashAudioRef}
-          src={`${AUD}/splash.wav`}
+          src={getAudioUrl('splash', `${AUD}/splash.wav`)}
           preload="auto"
           onEnded={() => setAudioFinished(true)}
           onError={() => setAudioFinished(true)}
