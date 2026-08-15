@@ -88,6 +88,16 @@ const computeActualGameTime = (parsedState, gameName) => {
 // (usually well below the continuous session timer), so the two rarely coincide in practice.
 const computeScreenTime = (parsedState) => parsedState?.screentime ?? parsedState?.timerSeconds ?? null;
 
+// Shared by the literacy_reading_skill_v2 and numeracy_number_skill_v3 report
+// enrichment below — both are ASER-style adaptive-tree tests whose stages are
+// either "N correct out of a small marked set" (scoreStage) or a single
+// pass/fail outcome (passFailStage), never the flat allScores format every
+// other game here uses.
+const scoreStage = (items, time) => items ? {
+    correct: items.filter(i => i.correct).length, total: items.length, time: time ?? null,
+} : null;
+const passFailStage = (pass, time) => pass === undefined || pass === null ? null : { pass: !!pass, time: time ?? null };
+
 // Maps every historical/alternate spelling of a game_name to its canonical catalog key —
 // mirrors the CASE expression previously duplicated inline in the overview SQL query.
 const normalizeGameName = (name) => {
@@ -773,22 +783,53 @@ exports.getReportDetail = async (req, res) => {
             // each stage's own result lives under its own saved_state key.
             let readingV2 = null;
             if (gameName === 'literacy_reading_skill_v2') {
-                const scoreStage = (items, time) => items ? {
-                    correct: items.filter(i => i.correct).length, total: items.length, time: time ?? null,
-                } : null;
-                const passFailStage = (result) => result ? { pass: !!result.pass, time: result.timeTaken ?? null } : null;
                 readingV2 = {
                     reading_level: parsedState?.finalLevel || null,
                     reading_level_score: parsedState?.finalScore ?? null,
                     reading_path: Array.isArray(parsedState?.path) ? parsedState.path : [],
                     reading_stages: {
-                        paragraph:       passFailStage(parsedState?.paragraphResult),
-                        paragraph_retry: passFailStage(parsedState?.paragraphRetryResult),
-                        story:           passFailStage(parsedState?.storyResult),
+                        paragraph:       passFailStage(parsedState?.paragraphResult?.pass, parsedState?.paragraphResult?.timeTaken),
+                        paragraph_retry: passFailStage(parsedState?.paragraphRetryResult?.pass, parsedState?.paragraphRetryResult?.timeTaken),
+                        story:           passFailStage(parsedState?.storyResult?.pass, parsedState?.storyResult?.timeTaken),
                         words:           scoreStage(parsedState?.selectedWords, parsedState?.wordsTimeTaken),
                         words_retry:     scoreStage(parsedState?.selectedWordsRetry, parsedState?.wordsRetryTimeTaken),
                         letters:         scoreStage(parsedState?.selectedLetters, parsedState?.lettersTimeTaken),
                     },
+                };
+            }
+
+            // numeracy_number_skill_v3 — the ASER numeracy tree: Subtraction (2
+            // questions, always attempted first) then either Division (if both
+            // subtraction answers were correct) or Number Recognition 10-99 (if
+            // not), and Number Recognition 1-9 only if 10-99 also failed.
+            // finalLevel/finalScore are the outcome (Beginner/Number Recognition
+            // (1-9)/(10-99)/Subtraction/Division, 0-4 — see analysisController.js's
+            // CUSTOM_SCORE_BUCKETS.numeracy_number_skill_v3 for the same scale).
+            let numeracyV3 = null;
+            if (gameName === 'numeracy_number_skill_v3') {
+                // q1/q2 are null until actually answered (a quit session
+                // during subtraction_pair_select has {q1:null, q2:null,
+                // bothCorrect:null}) — gate on q1 so an unattempted
+                // subtraction stage reports as "—" (null) rather than a
+                // misleading "0/2", and size total to what was actually
+                // presented (a quit after Q1 alone is "0 or 1 / 1", not "/2").
+                const sub = parsedState?.subtraction;
+                const subtractionStage = sub?.q1 ? {
+                    correct: (sub.q1?.finalCorrect ? 1 : 0) + (sub.q2?.finalCorrect ? 1 : 0),
+                    total: (sub.q1 ? 1 : 0) + (sub.q2 ? 1 : 0),
+                    time: (sub.q1?.retryAttempt?.timeTaken ?? sub.q1?.firstAttempt?.timeTaken ?? 0) + (sub.q2?.firstAttempt?.timeTaken ?? 0),
+                } : null;
+                const stages = {
+                    subtraction:    subtractionStage,
+                    division:       passFailStage(parsedState?.division?.finalCorrect, parsedState?.division?.firstAttempt?.timeTaken),
+                    recognition99:  scoreStage(parsedState?.numberRecognition99?.selected, parsedState?.numberRecognition99?.timeTaken),
+                    recognition9:   scoreStage(parsedState?.numberRecognition9?.selected, parsedState?.numberRecognition9?.timeTaken),
+                };
+                numeracyV3 = {
+                    numeracy_level: parsedState?.finalLevel || null,
+                    numeracy_level_score: parsedState?.finalScore ?? null,
+                    numeracy_path: [stages.subtraction ? 'subtraction' : null, stages.division ? 'division' : (stages.recognition99 ? 'recognition99' : null), stages.recognition9 ? 'recognition9' : null].filter(Boolean),
+                    numeracy_stages: stages,
                 };
             }
 
@@ -800,14 +841,19 @@ exports.getReportDetail = async (req, res) => {
                 score: row.score,
                 correct_count: readingV2
                     ? ['words', 'words_retry', 'letters'].reduce((sum, k) => sum + (readingV2.reading_stages[k]?.correct ?? 0), 0)
-                    : (chorItems.length > 0)
-                        ? chorItems.filter(r => r.completed).length
-                        : scores.filter(s => s.score > 0).length,
+                    : numeracyV3
+                        ? ['subtraction', 'recognition99', 'recognition9'].reduce((sum, k) => sum + (numeracyV3.numeracy_stages[k]?.correct ?? 0), 0)
+                        : (chorItems.length > 0)
+                            ? chorItems.filter(r => r.completed).length
+                            : scores.filter(s => s.score > 0).length,
                 attempted_questions: readingV2
                     ? ['words', 'words_retry', 'letters'].reduce((sum, k) => sum + (readingV2.reading_stages[k]?.total ?? 0), 0)
-                    : (chorItems.length > 0) ? chorItems.length : scores.length,
+                    : numeracyV3
+                        ? ['subtraction', 'recognition99', 'recognition9'].reduce((sum, k) => sum + (numeracyV3.numeracy_stages[k]?.total ?? 0), 0)
+                        : (chorItems.length > 0) ? chorItems.length : scores.length,
                 total_questions: row.total_questions,
                 ...readingV2,
+                ...numeracyV3,
                 status: row.status,
                 quit_reason: row.quit_reason,
                 pauses: parsedState?.pauses || [],

@@ -407,6 +407,54 @@ const AdminReports = () => {
             );
         };
 
+        // Ankganit V3's real shape (see gameController.js's numeracy_stages) — an
+        // adaptive tree: Subtraction always first, then either Division (both
+        // subtraction answers correct) or Number Recognition (10-99), and Number
+        // Recognition (1-9) only if 10-99 also failed. Fixed columns, same
+        // "—" convention as READING_V2_STAGE_COLS for stages the path skipped.
+        const NUMERACY_V3_STAGE_COLS = [
+            { key: 'subtraction',   label: 'Subtraction',              type: 'score' },
+            { key: 'division',      label: 'Division',                 type: 'pass_fail' },
+            { key: 'recognition99', label: 'Number Recognition (10-99)', type: 'score' },
+            { key: 'recognition9',  label: 'Number Recognition (1-9)',   type: 'score' },
+        ];
+
+        // Labels/keys match analysisController.js's
+        // CUSTOM_SCORE_BUCKETS.numeracy_number_skill_v3 exactly, including the
+        // en-dashes in row.numeracy_level ('Number Recognition (1–9)' /
+        // '(10–99)') — these are the literal finalLevel strings NumberSkillGameV3.jsx writes.
+        const NUMERACY_V3_LEVEL_META = {
+            Beginner:                        { label: 'Beginner',                   color: '#dc2626', bg: '#fee2e2' },
+            'Number Recognition (1–9)':      { label: 'Number Recognition (1-9)',   color: '#d97706', bg: '#fef3c7' },
+            'Number Recognition (10–99)':    { label: 'Number Recognition (10-99)', color: '#ca8a04', bg: '#fef9c3' },
+            Subtraction:                     { label: 'Subtraction',                color: '#2563eb', bg: '#dbeafe' },
+            Division:                        { label: 'Division',                   color: '#059669', bg: '#dcfce7' },
+        };
+
+        const numeracyV3PathSummary = (row) => {
+            const path = row.numeracy_path || [];
+            if (!path.length) return null;
+            return path.map(stageKey => {
+                const label = NUMERACY_V3_STAGE_COLS.find(c => c.key === stageKey)?.label || stageKey;
+                const st = row.numeracy_stages?.[stageKey];
+                if (!st) return label;
+                return 'pass' in st ? `${label} ${st.pass ? '✓' : '✗'}` : `${label} ${st.correct}/${st.total}`;
+            }).join(' → ');
+        };
+
+        const renderNumeracyV3Summary = (row) => {
+            const meta = NUMERACY_V3_LEVEL_META[row.numeracy_level];
+            const path = numeracyV3PathSummary(row);
+            return (
+                <div>
+                    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontWeight: 700, fontSize: '0.78rem', color: meta ? meta.color : '#64748b', background: meta ? meta.bg : '#f1f5f9' }}>
+                        {meta ? meta.label : 'Incomplete'}
+                    </span>
+                    {path && <div style={{ marginTop: '4px', color: '#64748b', fontWeight: 500, fontSize: '0.68rem', whiteSpace: 'normal', maxWidth: 220 }}>{path}</div>}
+                </div>
+            );
+        };
+
         return (
             <main style={S.page}>
                 {/* Breadcrumb */}
@@ -588,6 +636,13 @@ const AdminReports = () => {
                                                 );
                                             })}
                                         </>
+                                    ) : activeGame?.key === 'numeracy_number_skill_v3' ? (
+                                        NUMERACY_V3_STAGE_COLS.map(sc => (
+                                            <React.Fragment key={sc.key}>
+                                                <th style={{ ...S.th, textAlign: 'center', background: sc.type === 'pass_fail' ? '#ede9fe' : '#d1fae5', minWidth: 80 }}>{sc.label}</th>
+                                                <th style={{ ...S.th, textAlign: 'center', background: '#e0f2fe', minWidth: 60 }}>{sc.label} Time(s)</th>
+                                            </React.Fragment>
+                                        ))
                                     ) : (
                                         detail.columns.map((c, idx) => {
                                             const isAtlantis = activeGame?.key === 'atlantis_bagiya';
@@ -808,6 +863,24 @@ const AdminReports = () => {
                                                         );
                                                     })}
                                                 </>
+                                            ) : activeGame?.key === 'numeracy_number_skill_v3' ? (
+                                                NUMERACY_V3_STAGE_COLS.map(sc => {
+                                                    const st = row.numeracy_stages?.[sc.key];
+                                                    return (
+                                                        <React.Fragment key={sc.key}>
+                                                            {sc.type === 'pass_fail' ? (
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: st == null ? '#94a3b8' : st.pass ? '#059669' : '#dc2626' }}>
+                                                                    {st == null ? '—' : st.pass ? 'Pass' : 'Fail'}
+                                                                </td>
+                                                            ) : (
+                                                                <td style={{ ...S.tdCenter, fontWeight: 700, color: st == null ? '#94a3b8' : st.correct >= (st.total - 1) ? '#059669' : '#dc2626' }}>
+                                                                    {st == null ? '—' : `${st.correct} / ${st.total}`}
+                                                                </td>
+                                                            )}
+                                                            <td style={{ ...S.tdCenter, color: '#64748b' }}>{st ? fmtSecs(st.time) : '—'}</td>
+                                                        </React.Fragment>
+                                                    );
+                                                })
                                             ) : (
                                                 detail.columns.map(c => {
                                                     const v = row.question_scores[c];
@@ -836,7 +909,9 @@ const AdminReports = () => {
                                                     ? (row.score ?? '—')
                                                     : activeGame?.key === 'literacy_reading_skill_v2'
                                                         ? renderReadingV2Summary(row)
-                                                        : (
+                                                        : activeGame?.key === 'numeracy_number_skill_v3'
+                                                            ? renderNumeracyV3Summary(row)
+                                                            : (
                                                             <>
                                                                <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
                                                                <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>

@@ -111,6 +111,17 @@ export const generateReportData = (activeGame, detail) => {
                 qHeaders.push(`${colLabel} SSR 3 Score`);
             }
         });
+    } else if (activeGame?.key === 'numeracy_number_skill_v3') {
+        // Adaptive ASER-style numeracy tree (Subtraction -> Division, or
+        // Subtraction -> Number Recognition 10-99 -> 1-9) — see
+        // gameController.js's numeracy_level/numeracy_path/numeracy_stages.
+        qHeaders.push(
+            'Numeracy Level', 'Path Taken',
+            'Subtraction Score', 'Subtraction Time(s)',
+            'Division Result', 'Division Time(s)',
+            'Number Recognition (10-99) Score', 'Number Recognition (10-99) Time(s)',
+            'Number Recognition (1-9) Score', 'Number Recognition (1-9) Time(s)',
+        );
     } else if (isChorCSV) {
         detail.columns.forEach((c) => {
             const colLabel = chorColLabel(c);
@@ -236,6 +247,14 @@ export const generateReportData = (activeGame, detail) => {
                     rowArr.push(ssr[1]?.answer || '', ssr[1]?.score ?? '');
                     rowArr.push(ssr[2]?.answer || '', ssr[2]?.score ?? '');
                 }
+            });
+        } else if (activeGame?.key === 'numeracy_number_skill_v3') {
+            rowArr.push(r.numeracy_level || 'Incomplete', (r.numeracy_path || []).join(' -> '));
+            ['subtraction', 'division', 'recognition99', 'recognition9'].forEach(key => {
+                const st = r.numeracy_stages?.[key];
+                if (!st) { rowArr.push('', ''); return; }
+                const time = st.time != null ? Math.round(st.time) : '';
+                rowArr.push('pass' in st ? (st.pass ? 'Pass' : 'Fail') : `${st.correct}/${st.total}`, time);
             });
         } else if (isChorCSV) {
             detail?.columns?.forEach(c => {
