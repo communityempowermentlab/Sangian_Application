@@ -9,6 +9,7 @@ const ticketController     = require('../controllers/ticketController');
 const helpContentController = require('../controllers/helpContentController');
 const smtpController       = require('../controllers/smtpController');
 const ticketSettingsController = require('../controllers/ticketSettingsController');
+const notificationController = require('../controllers/notificationController');
 const adminOrgController   = require('../controllers/adminOrgController');
 const adminIndividualController = require('../controllers/adminIndividualController');
 const adminAuth            = require('../middleware/adminAuth');
@@ -121,6 +122,12 @@ router.post('/smtp-test',       adminAuth, smtpController.testSmtpConnection);
 // ── Help & Support email notification settings ────────────────────────────────
 router.get('/help-email-settings',   adminAuth, ticketSettingsController.getHelpEmailSettings);
 router.post('/help-email-settings',  adminAuth, ticketSettingsController.updateHelpEmailSettings);
+
+// ── Notification Management (Settings → Notifications) ─────────────────────────
+router.get('/notifications',              adminAuth, notificationController.getAllNotifications);
+router.get('/notifications/:triggerKey',  adminAuth, notificationController.getNotificationByKey);
+router.put('/notifications/:triggerKey',  adminAuth, notificationController.updateNotification);
+router.patch('/notifications/:triggerKey/status', adminAuth, notificationController.updateNotificationStatus);
 
 // ── Organization approval queue — Super Admin only (requireAdminOnly, not a
 // grantable staff module — see adminOrgController.js) ─────────────────────

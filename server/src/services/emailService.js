@@ -4,6 +4,10 @@ const { pool }   = require('../config/db');
 const BRAND_COLOR = '#4f46e5';
 
 // ── HTML email wrapper ────────────────────────────────────────────────────────
+// This chrome (header bar + footer disclaimer) is intentionally NOT part of
+// the admin-editable template — it's the one piece of every system email
+// that stays consistent regardless of what an Admin edits in Settings →
+// Notifications. Admins control the heading + body inside it.
 const wrap = (title, body) => `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -27,26 +31,25 @@ const wrap = (title, body) => `<!DOCTYPE html>
   </table>
 </body></html>`;
 
-const btn = (text, url) =>
-    `<a href="${url}" style="display:inline-block;margin-top:16px;padding:12px 28px;background:${BRAND_COLOR};color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">${text}</a>`;
-
 // ── Fetch SMTP config from DB ─────────────────────────────────────────────────
 const getSmtp = async () => {
     const [[row]] = await pool.query('SELECT * FROM smtp_settings WHERE id = 1');
     return row || null;
 };
 
-// ── Fetch Help & Support email settings from DB ───────────────────────────────
-const getHelpSettings = async () => {
-    const [[row]] = await pool.query('SELECT * FROM help_email_settings WHERE id = 1');
-    return row || { send_user_email: 1, send_admin_email: 1, send_on_admin_reply: 1, send_on_user_reply: 1, admin_email: null };
+// ── Fetch Help & Support admin recipient (Ticket Notifications settings) ─────
+// Only the recipient address — the on/off decision for these emails now
+// lives entirely in notification_templates (see sendFromTemplate below).
+const getHelpAdminEmail = async () => {
+    const [[row]] = await pool.query('SELECT admin_email FROM help_email_settings WHERE id = 1');
+    return row?.admin_email || process.env.ADMIN_EMAIL || 'admin@sangian.com';
 };
 
-// ── Core send helper (dynamic SMTP from DB) ───────────────────────────────────
+// ── Core send helper (dynamic SMTP from DB, optional per-template sender override) ─
 // Returns a delivery-status object (rather than void) so every caller can
 // log/report success vs failure consistently, for monitoring/troubleshooting
 // — one place to get this right instead of duplicating logging per email type.
-const send = async (to, subject, html) => {
+const send = async (to, subject, html, senderOverride) => {
     const smtp = await getSmtp();
     if (!smtp || !smtp.host || !smtp.username) {
         console.log(`📧 [EMAIL NOT SENT — SMTP unconfigured] To: ${to} | Subject: "${subject}"`);
@@ -58,9 +61,9 @@ const send = async (to, subject, html) => {
         secure: smtp.encryption === 'ssl',
         auth:   { user: smtp.username, pass: smtp.password },
     });
-    const fromAddr = smtp.from_email
-        ? `${smtp.from_name || 'Sangian Support'} <${smtp.from_email}>`
-        : (process.env.SMTP_FROM || 'Sangian Support <support@sangian.celworld.org>');
+    const name  = senderOverride?.name  || smtp.from_name  || 'Sangian Support';
+    const addr  = senderOverride?.email || smtp.from_email || (process.env.SMTP_FROM || 'support@sangian.celworld.org');
+    const fromAddr = `${name} <${addr}>`;
     try {
         const info = await transporter.sendMail({ from: fromAddr, to, subject, html });
         console.log(`📧 [EMAIL SENT] To: ${to} | Subject: "${subject}" | MessageId: ${info.messageId}`);
@@ -71,167 +74,85 @@ const send = async (to, subject, html) => {
     }
 };
 
-// ── OTP email ─────────────────────────────────────────────────────────────────
-const sendOtp = (email, otp) => send(
-    email,
-    'Your Verification Code – Sangian Support',
-    wrap('Verify Your Email', `
-        <p style="color:#374151;font-size:15px;line-height:1.6">Use the code below to verify your email and access the support ticket system.</p>
-        <div style="margin:24px 0;text-align:center">
-          <div style="display:inline-block;background:#eef2ff;border:2px dashed ${BRAND_COLOR};border-radius:14px;padding:20px 40px">
-            <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:${BRAND_COLOR}">${otp}</span>
-          </div>
-        </div>
-        <p style="color:#6b7280;font-size:13px;line-height:1.6">⏱️ This code is valid for <strong>10 minutes</strong>.<br>If you did not request this, please ignore this email.</p>
-    `)
-);
+// ── Notification Management engine ────────────────────────────────────────────
+// Every system email is admin-configured via the notification_templates
+// table (Admin Settings → Notifications). This is the single place that
+// checks a trigger's on/off status and renders its admin-edited content
+// before anything reaches send(). See server/src/config/db.js for the
+// table/seed and server/src/controllers/notificationController.js for the
+// CRUD behind the admin UI.
+const getTemplate = async (triggerKey) => {
+    const [[row]] = await pool.query('SELECT * FROM notification_templates WHERE trigger_key = ?', [triggerKey]);
+    return row || null;
+};
+
+const renderTemplate = (str, vars) => (str || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
+    if (!(key in vars)) return match; // leave unrecognized placeholders as-is, e.g. an admin typo
+    return vars[key] === null || vars[key] === undefined ? '' : String(vars[key]);
+});
+
+const sendFromTemplate = async (triggerKey, to, vars) => {
+    const template = await getTemplate(triggerKey);
+    if (!template) {
+        console.warn(`📧 [EMAIL SKIPPED — unknown trigger "${triggerKey}"] To: ${to}`);
+        return { delivered: false, reason: 'template_not_found' };
+    }
+    if (template.status !== 'on') {
+        console.log(`📧 [EMAIL SKIPPED — "${triggerKey}" is OFF] To: ${to}`);
+        return { delivered: false, reason: 'disabled' };
+    }
+    const subject = renderTemplate(template.subject, vars);
+    const heading  = renderTemplate(template.heading, vars);
+    const bodyHtml = renderTemplate(template.body_html, vars);
+    const html = wrap(heading, bodyHtml);
+    const senderOverride = (template.sender_name || template.sender_email)
+        ? { name: template.sender_name, email: template.sender_email }
+        : null;
+    return send(to, subject, html, senderOverride);
+};
+
+// ── OTP / verification code email ─────────────────────────────────────────────
+// Shared by registration (individual/org), email/mobile-change flows
+// (otpController.js) and the support-ticket portal's own email gate
+// (ticketController.js) — same content either way.
+const sendOtp = (email, otp) => sendFromTemplate('otp_verification', email, { otp });
 
 // ── Individual registration success (full onboarding welcome email) ──────────
-// mobile is optional — displayed only when provided, per spec ("Registered
-// Mobile Number (optional)").
-const sendIndividualWelcome = (email, fullName, mobile) => send(
-    email,
-    'Welcome! Your Registration is Successful',
-    wrap('Welcome!', `
-        <p style="color:#374151;font-size:15px;line-height:1.6">Dear <strong>${fullName}</strong>,</p>
-        <p style="color:#374151;font-size:15px;line-height:1.6">Your registration has been completed successfully, and your account is now active.</p>
-        <p style="color:#374151;font-size:15px;line-height:1.6">You can now log in using your registered ${mobile ? 'mobile number/' : ''}email address and start using the application.</p>
-
-        <table style="width:100%;margin:20px 0;border-collapse:collapse">
-          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:140px">Registered Name</td>
-              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${fullName}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${email}</td></tr>
-          ${mobile ? `<tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Mobile</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:14px;color:#1f2937">${mobile}</td></tr>` : ''}
-        </table>
-
-        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">What's Next?</h3>
-        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
-          <li>Log in to your account.</li>
-          <li>Complete your profile (if applicable).</li>
-          <li>Start your assigned assessments/games.</li>
-          <li>Follow the on-screen instructions while playing.</li>
-        </ul>
-
-        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Game/Assessment Information</h3>
-        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 8px">The application includes various games/assessments designed to evaluate different skills. Before starting, please ensure that:</p>
-        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
-          <li>You are in a quiet environment.</li>
-          <li>You have a stable internet connection.</li>
-          <li>You carefully read the instructions displayed before each game.</li>
-          <li>Complete each assessment without interruption.</li>
-        </ul>
-
-        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Scoring</h3>
-        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
-          <li>Your score will be calculated automatically after completing each assessment.</li>
-          <li>Results will be available in your account (if enabled).</li>
-          <li>Follow all instructions carefully to achieve the most accurate results.</li>
-        </ul>
-
-        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Need Help?</h3>
-        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px">If you experience any issues while logging in or playing the games, please contact our support team.</p>
-
-        <p style="color:#374151;font-size:15px;line-height:1.6">Thank you for registering with us. We wish you the very best!</p>
-        <p style="color:#374151;font-size:15px;line-height:1.6;margin-top:20px">Regards,<br><strong>The Support Team</strong></p>
-
-        <p style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb">If you did not create this account, please contact support immediately.</p>
-    `)
+const sendIndividualWelcome = (email, fullName, mobile) => sendFromTemplate(
+    'individual_registration_welcome', email, { full_name: fullName, email, mobile: mobile || '—' }
 );
 
 // ── Organization registration received (pending approval) ────────────────────
-const sendOrgRegistrationReceived = (email, orgName) => send(
-    email,
-    'Registration Received – Sangian',
-    wrap('Thank you for registering!', `
-        <p style="color:#374151;font-size:15px;line-height:1.6">Hi,</p>
-        <p style="color:#374151;font-size:15px;line-height:1.6">We've received your registration for <strong>${orgName}</strong> on the Sangian Assessment Platform. Your organization is now awaiting review by an administrator.</p>
-        <p style="color:#374151;font-size:15px;line-height:1.6">You'll be able to log in as soon as it's approved — no further action is needed from you right now.</p>
-        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you did not submit this registration, please contact support.</p>
-    `)
+const sendOrgRegistrationReceived = (email, orgName) => sendFromTemplate(
+    'org_registration_received', email, { org_name: orgName }
 );
 
 // ── Ticket created (user confirmation) ───────────────────────────────────────
-const sendTicketCreated = async (email, ticket) => {
-    const settings = await getHelpSettings();
-    if (!settings.send_user_email) return;
-    return send(
-        email,
-        `Ticket ${ticket.ticket_id} Created – Sangian Support`,
-        wrap('Your ticket has been submitted!', `
-            <p style="color:#374151;font-size:15px;line-height:1.6">Thank you for reaching out. We have received your support request and will get back to you within <strong>1–2 business days</strong>.</p>
-            <table style="width:100%;margin:20px 0;border-collapse:collapse">
-              <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Ticket ID</td>
-                  <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:15px;font-weight:800;color:${BRAND_COLOR}">${ticket.ticket_id}</td></tr>
-              <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
-                  <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${ticket.title}</td></tr>
-              <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Status</td>
-                  <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#16a34a;font-weight:700">Open</td></tr>
-            </table>
-            <p style="color:#6b7280;font-size:13px;line-height:1.6">To check your ticket status or add a reply, visit the Help &amp; Support page and use your email to access your tickets.</p>
-        `)
-    );
-};
+const sendTicketCreated = (email, ticket) => sendFromTemplate(
+    'ticket_created_user', email, { ticket_id: ticket.ticket_id, subject: ticket.title, status: 'Open' }
+);
 
 // ── New ticket (admin notification) ──────────────────────────────────────────
 const sendNewTicketAdmin = async (ticket) => {
-    const settings = await getHelpSettings();
-    if (!settings.send_admin_email) return;
-    const adminEmail = settings.admin_email || process.env.ADMIN_EMAIL || 'admin@sangian.com';
-    return send(
-        adminEmail,
-        `New Support Ticket ${ticket.ticket_id} – ${ticket.title}`,
-        wrap(`New ticket from ${ticket.email}`, `
-            <p style="color:#374151;font-size:15px;line-height:1.6">A new support ticket has been submitted.</p>
-            <table style="width:100%;margin:20px 0;border-collapse:collapse">
-              <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Ticket ID</td>
-                  <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:15px;font-weight:800;color:${BRAND_COLOR}">${ticket.ticket_id}</td></tr>
-              <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">From</td>
-                  <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${ticket.email}</td></tr>
-              <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
-                  <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${ticket.title}</td></tr>
-              <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;vertical-align:top">Message</td>
-                  <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#374151;line-height:1.6">${ticket.description}</td></tr>
-            </table>
-            ${btn('View in Admin Panel', `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/help-support`)}
-        `)
-    );
+    const adminEmail = await getHelpAdminEmail();
+    return sendFromTemplate('ticket_created_admin', adminEmail, {
+        ticket_id: ticket.ticket_id, subject: ticket.title, from_email: ticket.email, message: ticket.description,
+        admin_panel_url: `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/help-support`,
+    });
 };
 
 // ── Admin replied (user notification) ────────────────────────────────────────
-const sendAdminReply = async (email, ticket_id, preview) => {
-    const settings = await getHelpSettings();
-    if (!settings.send_on_admin_reply) return;
-    return send(
-        email,
-        `New Reply on Ticket ${ticket_id} – Sangian Support`,
-        wrap('The support team has replied to your ticket', `
-            <p style="color:#374151;font-size:15px;line-height:1.6">You have a new reply on ticket <strong>${ticket_id}</strong>.</p>
-            <blockquote style="margin:16px 0;padding:14px 18px;background:#f8fafc;border-left:4px solid ${BRAND_COLOR};border-radius:0 10px 10px 0">
-              <p style="margin:0;color:#374151;font-size:14px;line-height:1.6">${preview}</p>
-            </blockquote>
-            <p style="color:#6b7280;font-size:13px">Log in to the Help &amp; Support page to view the full reply and respond.</p>
-        `)
-    );
-};
+const sendAdminReply = (email, ticket_id, preview) => sendFromTemplate(
+    'ticket_admin_reply', email, { ticket_id, reply_preview: preview }
+);
 
 // ── User replied (admin notification) ────────────────────────────────────────
 const sendUserReply = async (ticket_id, email, preview) => {
-    const settings = await getHelpSettings();
-    if (!settings.send_on_user_reply) return;
-    const adminEmail = settings.admin_email || process.env.ADMIN_EMAIL || 'admin@sangian.com';
-    return send(
-        adminEmail,
-        `User Reply on Ticket ${ticket_id}`,
-        wrap(`New reply from ${email}`, `
-            <p style="color:#374151;font-size:15px;line-height:1.6">The user has replied to ticket <strong>${ticket_id}</strong>.</p>
-            <blockquote style="margin:16px 0;padding:14px 18px;background:#f8fafc;border-left:4px solid #ec4899;border-radius:0 10px 10px 0">
-              <p style="margin:0;color:#374151;font-size:14px;line-height:1.6">${preview}</p>
-            </blockquote>
-            ${btn('Reply in Admin Panel', `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/help-support`)}
-        `)
-    );
+    const adminEmail = await getHelpAdminEmail();
+    return sendFromTemplate('ticket_user_reply', adminEmail, {
+        ticket_id, from_email: email, reply_preview: preview,
+        admin_panel_url: `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/help-support`,
+    });
 };
 
 // ── Status changed (user notification) ───────────────────────────────────────
@@ -241,71 +162,21 @@ const STATUS_LABELS = {
     resolved: 'Resolved', closed: 'Closed',
 };
 
-const sendStatusChanged = async (email, ticket_id, status) => {
-    const settings = await getHelpSettings();
-    if (!settings.send_user_email) return;
-    return send(
-        email,
-        `Ticket ${ticket_id} Status Updated – ${STATUS_LABELS[status] || status}`,
-        wrap('Your ticket status has been updated', `
-            <p style="color:#374151;font-size:15px;line-height:1.6">The status of your support ticket <strong>${ticket_id}</strong> has been updated.</p>
-            <div style="margin:20px 0;padding:14px 20px;background:#eef2ff;border-radius:10px;display:inline-block">
-              <span style="font-size:16px;font-weight:800;color:${BRAND_COLOR}">New Status: ${STATUS_LABELS[status] || status}</span>
-            </div>
-            <p style="color:#6b7280;font-size:13px">Visit the Help &amp; Support page to view your ticket details.</p>
-        `)
-    );
-};
+const sendStatusChanged = (email, ticket_id, status) => sendFromTemplate(
+    'ticket_status_changed', email, { ticket_id, status_label: STATUS_LABELS[status] || status }
+);
 
 // ── Contact form — thank-you to sender ───────────────────────────────────────
-const sendContactThankYou = (email, name, lang = 'en') => {
-    const isHi = lang === 'hi';
-    return send(
-        email,
-        isHi
-            ? 'आपसे संपर्क करने के लिए धन्यवाद – संगियान सपोर्ट'
-            : 'Thank You for Reaching Out – Sangian Support',
-        wrap(
-            isHi ? `धन्यवाद, ${name}!` : `Thank You, ${name}!`,
-            isHi ? `
-                <p style="color:#374151;font-size:15px;line-height:1.6">आपका संदेश कम्युनिटी एम्पावरमेंट लैब टीम को सफलतापूर्वक प्राप्त हो गया है।</p>
-                <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid ${BRAND_COLOR}">
-                  <p style="margin:0;color:${BRAND_COLOR};font-size:15px;font-weight:700">✅ आपका संदेश सफलतापूर्वक भेज दिया गया है।</p>
-                </div>
-                <p style="color:#374151;font-size:14px;line-height:1.6">हम आमतौर पर <strong>1–2 कार्य दिवसों</strong> के भीतर आपके ईमेल पते पर उत्तर देते हैं।</p>
-                <p style="color:#6b7280;font-size:13px;line-height:1.6">इस दौरान, त्वरित उत्तरों के लिए हमारा सहायता और समर्थन अनुभाग देखें।</p>
-            ` : `
-                <p style="color:#374151;font-size:15px;line-height:1.6">We have successfully received your message and our team will review it shortly.</p>
-                <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid ${BRAND_COLOR}">
-                  <p style="margin:0;color:${BRAND_COLOR};font-size:15px;font-weight:700">✅ Your message has been received successfully.</p>
-                </div>
-                <p style="color:#374151;font-size:14px;line-height:1.6">We typically respond within <strong>1–2 business days</strong> at the email address you provided.</p>
-                <p style="color:#6b7280;font-size:13px;line-height:1.6">In the meantime, feel free to explore our assessment platform or check our Help &amp; Support section for quick answers.</p>
-            `
-        )
-    );
-};
+const sendContactThankYou = (email, name, lang = 'en') => sendFromTemplate(
+    lang === 'hi' ? 'contact_thank_you_hi' : 'contact_thank_you_en', email, { name }
+);
 
 // ── Contact form — admin notification ────────────────────────────────────────
-const sendContactAdminNotification = (adminEmail, { name, email, phone, subject, message }) => send(
-    adminEmail,
-    `New Contact Form – ${subject}`,
-    wrap(`New message from ${name}`, `
-        <p style="color:#374151;font-size:15px;line-height:1.6">A new contact form submission has been received.</p>
-        <table style="width:100%;margin:20px 0;border-collapse:collapse">
-          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:100px">Name</td>
-              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:14px;color:#1f2937;font-weight:700">${name}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${email}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Phone</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${phone || '—'}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">${subject}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;vertical-align:top">Message</td>
-              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#374151;line-height:1.6">${message}</td></tr>
-        </table>
-        ${btn('View in Admin Panel', `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/contact`)}
-    `)
+const sendContactAdminNotification = (adminEmail, { name, email, phone, subject, message }) => sendFromTemplate(
+    'contact_admin_notification', adminEmail, {
+        name, email, phone: phone || '—', subject, message,
+        admin_panel_url: `${process.env.ADMIN_URL || 'http://localhost:3000'}/admin/contact`,
+    }
 );
 
 module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };

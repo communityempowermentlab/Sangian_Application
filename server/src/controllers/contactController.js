@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const { sendContactThankYou, sendContactAdminNotification } = require('../services/emailService');
+const { syncNotificationTemplates } = require('../utils/notificationBridge');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -204,6 +205,11 @@ const updateContactEmailSettings = async (req, res) => {
                admin_email       = VALUES(admin_email)`,
             [send_sender_email ? 1 : 0, send_admin_email ? 1 : 0, admin_email?.trim() || null]
         );
+
+        // Keep Settings → Notifications in sync — see notificationBridge.js.
+        await syncNotificationTemplates('contact_email_settings', 'send_sender_email', !!send_sender_email);
+        await syncNotificationTemplates('contact_email_settings', 'send_admin_email', !!send_admin_email);
+
         res.json({ success: true, message: 'Email settings saved.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

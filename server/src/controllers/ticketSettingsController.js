@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { syncNotificationTemplates } = require('../utils/notificationBridge');
 
 const getHelpEmailSettings = async (req, res) => {
     try {
@@ -32,6 +33,13 @@ const updateHelpEmailSettings = async (req, res) => {
                 admin_email || null,
             ]
         );
+
+        // Keep Settings → Notifications in sync — see notificationBridge.js.
+        await syncNotificationTemplates('help_email_settings', 'send_user_email', !!send_user_email);
+        await syncNotificationTemplates('help_email_settings', 'send_admin_email', !!send_admin_email);
+        await syncNotificationTemplates('help_email_settings', 'send_on_admin_reply', !!send_on_admin_reply);
+        await syncNotificationTemplates('help_email_settings', 'send_on_user_reply', !!send_on_user_reply);
+
         return res.json({ success: true });
     } catch (err) {
         console.error('updateHelpEmailSettings error:', err);

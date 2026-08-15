@@ -7,6 +7,7 @@ import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
 import { getAdminLogoUrl } from '../services/photoUtils';
 import AdminLanguageSettingsTab from './AdminLanguageSettingsTab';
 import AdminTestConfigTab from './AdminTestConfigTab';
+import AdminNotificationsTab from './AdminNotificationsTab';
 
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ const SETTINGS_MENU = [
     { key: 'integrations',      icon: '🔗', label: 'Integrations',        color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
     { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
-    { key: 'notifications',     icon: '🔔', label: 'Notifications',     color: '#f59e0b', available: false },
+    { key: 'notifications',     icon: '🔔', label: 'Notifications',     color: '#f59e0b', available: true  },
     { key: 'api_keys',          icon: '🔑', label: 'API Keys',          color: '#10b981', available: false },
 ];
 
@@ -2147,6 +2148,7 @@ const CONTENT_MAP = {
     admin_profile:     <AdminProfileTab />,
     languages:         <AdminLanguageSettingsTab />,
     test_config:       <AdminTestConfigTab />,
+    notifications:     <AdminNotificationsTab />,
 };
 
 const AdminSettings = () => {

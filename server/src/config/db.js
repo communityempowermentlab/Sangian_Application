@@ -1711,6 +1711,244 @@ const initDb = async () => {
       [process.env.ADMIN_EMAIL || null]
     );
 
+    // ── Notification Management (Admin Settings → Notifications) ───────────────
+    // Every system-generated email as an admin-editable row: subject, heading,
+    // body (with {{variable}} placeholders), sender override, and an on/off
+    // status. emailService.js's sendFromTemplate() is the single place that
+    // reads this table before sending anything — see that file for the render/
+    // gating logic. The 6 ticket/contact rows below are "bridged" to the
+    // existing help_email_settings/contact_email_settings boolean columns
+    // (see utils/notificationBridge.js) so the older Ticket Notifications/
+    // Contact Us Email settings tabs keep working and stay in sync with this
+    // table instead of becoming a second, conflicting on/off switch.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS notification_templates (
+        id                   INT AUTO_INCREMENT PRIMARY KEY,
+        trigger_key          VARCHAR(100) UNIQUE NOT NULL,
+        trigger_label        VARCHAR(255) NOT NULL,
+        category             VARCHAR(100) NOT NULL,
+        description          VARCHAR(500),
+        status               ENUM('on','off') NOT NULL DEFAULT 'on',
+        subject              VARCHAR(500) NOT NULL,
+        heading              VARCHAR(255) NOT NULL,
+        body_html            LONGTEXT NOT NULL,
+        sender_name          VARCHAR(100) DEFAULT NULL,
+        sender_email         VARCHAR(255) DEFAULT NULL,
+        recipient_note       VARCHAR(255) DEFAULT NULL,
+        available_variables  JSON NOT NULL,
+        bridged_setting      VARCHAR(100) DEFAULT NULL,
+        updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Bridged rows start from whatever the legacy tables are already set to,
+    // so upgrading an existing install never silently flips an email on/off.
+    const [[helpEmailRow]] = await connection.query('SELECT send_user_email, send_admin_email, send_on_admin_reply, send_on_user_reply FROM help_email_settings WHERE id = 1');
+    const [[contactEmailRow]] = await connection.query('SELECT send_sender_email, send_admin_email FROM contact_email_settings WHERE id = 1');
+    const onOff = (v) => (v ? 'on' : 'off');
+
+    const TICKET_ADMIN_URL_HINT = '{{admin_panel_url}}';
+
+    const notificationSeeds = [
+      {
+        trigger_key: 'otp_verification', trigger_label: 'Account Verification (OTP)', category: 'Account Verification',
+        description: 'Sent when a user requests an email verification code (registration, email/mobile change, or the support-ticket portal).',
+        status: 'on',
+        subject: 'Your Verification Code – Sangian Support',
+        heading: 'Verify Your Email',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Use the code below to verify your email and access your account.</p>
+        <div style="margin:24px 0;text-align:center">
+          <div style="display:inline-block;background:#eef2ff;border:2px dashed #4f46e5;border-radius:14px;padding:20px 40px">
+            <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#4f46e5">{{otp}}</span>
+          </div>
+        </div>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">⏱️ This code is valid for <strong>10 minutes</strong>.<br>If you did not request this, please ignore this email.</p>`,
+        available_variables: ['otp'], bridged_setting: null, recipient_note: null,
+      },
+      {
+        trigger_key: 'individual_registration_welcome', trigger_label: 'Individual Registration Welcome', category: 'Individual',
+        description: 'Sent to an Individual after their registration completes successfully.',
+        status: 'on',
+        subject: 'Welcome! Your Registration is Successful',
+        heading: 'Welcome!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Dear <strong>{{full_name}}</strong>,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">Your registration has been completed successfully, and your account is now active. You can now log in using your registered email address (and mobile number, if provided) and start using the application.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:140px">Registered Name</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{full_name}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{email}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Mobile</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:14px;color:#1f2937">{{mobile}}</td></tr>
+        </table>
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">What's Next?</h3>
+        <ul style="margin:0 0 20px;padding-left:20px;color:#374151;font-size:14px;line-height:1.9">
+          <li>Log in to your account.</li>
+          <li>Complete your profile (if applicable).</li>
+          <li>Start your assigned assessments/games.</li>
+          <li>Follow the on-screen instructions while playing.</li>
+        </ul>
+        <h3 style="margin:24px 0 10px;color:#0f172a;font-size:16px;font-weight:800">Need Help?</h3>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px">If you experience any issues while logging in or playing the games, please contact our support team.</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">Thank you for registering with us. We wish you the very best!</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6;margin-top:20px">Regards,<br><strong>The Support Team</strong></p>
+        <p style="color:#6b7280;font-size:12px;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb">If you did not create this account, please contact support immediately.</p>`,
+        available_variables: ['full_name', 'email', 'mobile'], bridged_setting: null, recipient_note: null,
+      },
+      {
+        trigger_key: 'org_registration_received', trigger_label: 'Organization Registration Received', category: 'Organization',
+        description: 'Sent to an Organization after they submit registration, while it awaits Super Admin approval.',
+        status: 'on',
+        subject: 'Registration Received – Sangian',
+        heading: 'Thank you for registering!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Hi,</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">We've received your registration for <strong>{{org_name}}</strong> on the Sangian Assessment Platform. Your organization is now awaiting review by an administrator.</p>
+        <p style="color:#374151;font-size:15px;line-height:1.6">You'll be able to log in as soon as it's approved — no further action is needed from you right now.</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you did not submit this registration, please contact support.</p>`,
+        available_variables: ['org_name'], bridged_setting: null, recipient_note: null,
+      },
+      {
+        trigger_key: 'ticket_created_user', trigger_label: 'Support Ticket Created (User Copy)', category: 'Support Ticket',
+        description: 'Sent to the ticket submitter confirming their support ticket was created.',
+        status: onOff(helpEmailRow?.send_user_email ?? 1),
+        subject: 'Ticket {{ticket_id}} Created – Sangian Support',
+        heading: 'Your ticket has been submitted!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Thank you for reaching out. We have received your support request and will get back to you within <strong>1–2 business days</strong>.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Ticket ID</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:15px;font-weight:800;color:#4f46e5">{{ticket_id}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{subject}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Status</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#16a34a;font-weight:700">{{status}}</td></tr>
+        </table>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">To check your ticket status or add a reply, visit the Help &amp; Support page and use your email to access your tickets.</p>`,
+        available_variables: ['ticket_id', 'subject', 'status'], bridged_setting: 'help_email_settings.send_user_email', recipient_note: null,
+      },
+      {
+        trigger_key: 'ticket_created_admin', trigger_label: 'Support Ticket Created (Admin Copy)', category: 'Support Ticket',
+        description: 'Sent to the admin inbox when a new support ticket is submitted.',
+        status: onOff(helpEmailRow?.send_admin_email ?? 1),
+        subject: 'New Support Ticket {{ticket_id}} – {{subject}}',
+        heading: 'New ticket from {{from_email}}',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">A new support ticket has been submitted.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Ticket ID</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:15px;font-weight:800;color:#4f46e5">{{ticket_id}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">From</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{from_email}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{subject}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;vertical-align:top">Message</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#374151;line-height:1.6">{{message}}</td></tr>
+        </table>
+        <a href="${TICKET_ADMIN_URL_HINT}" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">View in Admin Panel</a>`,
+        available_variables: ['ticket_id', 'subject', 'from_email', 'message', 'admin_panel_url'], bridged_setting: 'help_email_settings.send_admin_email',
+        recipient_note: 'Sent to the admin address configured in Settings → Ticket Notifications.',
+      },
+      {
+        trigger_key: 'ticket_admin_reply', trigger_label: 'Support Ticket – Admin Replied', category: 'Support Ticket',
+        description: 'Sent to the ticket submitter when an admin replies to their ticket.',
+        status: onOff(helpEmailRow?.send_on_admin_reply ?? 1),
+        subject: 'New Reply on Ticket {{ticket_id}} – Sangian Support',
+        heading: 'The support team has replied to your ticket',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">You have a new reply on ticket <strong>{{ticket_id}}</strong>.</p>
+        <blockquote style="margin:16px 0;padding:14px 18px;background:#f8fafc;border-left:4px solid #4f46e5;border-radius:0 10px 10px 0">
+          <p style="margin:0;color:#374151;font-size:14px;line-height:1.6">{{reply_preview}}</p>
+        </blockquote>
+        <p style="color:#6b7280;font-size:13px">Log in to the Help &amp; Support page to view the full reply and respond.</p>`,
+        available_variables: ['ticket_id', 'reply_preview'], bridged_setting: 'help_email_settings.send_on_admin_reply', recipient_note: null,
+      },
+      {
+        trigger_key: 'ticket_user_reply', trigger_label: 'Support Ticket – User Replied', category: 'Support Ticket',
+        description: 'Sent to the admin inbox when a user replies to their own ticket.',
+        status: onOff(helpEmailRow?.send_on_user_reply ?? 1),
+        subject: 'User Reply on Ticket {{ticket_id}}',
+        heading: 'New reply from {{from_email}}',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">The user has replied to ticket <strong>{{ticket_id}}</strong>.</p>
+        <blockquote style="margin:16px 0;padding:14px 18px;background:#f8fafc;border-left:4px solid #ec4899;border-radius:0 10px 10px 0">
+          <p style="margin:0;color:#374151;font-size:14px;line-height:1.6">{{reply_preview}}</p>
+        </blockquote>
+        <a href="${TICKET_ADMIN_URL_HINT}" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">Reply in Admin Panel</a>`,
+        available_variables: ['ticket_id', 'from_email', 'reply_preview', 'admin_panel_url'], bridged_setting: 'help_email_settings.send_on_user_reply',
+        recipient_note: 'Sent to the admin address configured in Settings → Ticket Notifications.',
+      },
+      {
+        trigger_key: 'ticket_status_changed', trigger_label: 'Support Ticket – Status Changed', category: 'Support Ticket',
+        description: "Sent to the ticket submitter when a Super Admin changes their ticket's status.",
+        status: onOff(helpEmailRow?.send_user_email ?? 1),
+        subject: 'Ticket {{ticket_id}} Status Updated – {{status_label}}',
+        heading: 'Your ticket status has been updated',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">The status of your support ticket <strong>{{ticket_id}}</strong> has been updated.</p>
+        <div style="margin:20px 0;padding:14px 20px;background:#eef2ff;border-radius:10px;display:inline-block">
+          <span style="font-size:16px;font-weight:800;color:#4f46e5">New Status: {{status_label}}</span>
+        </div>
+        <p style="color:#6b7280;font-size:13px">Visit the Help &amp; Support page to view your ticket details.</p>`,
+        available_variables: ['ticket_id', 'status_label'], bridged_setting: 'help_email_settings.send_user_email', recipient_note: null,
+      },
+      {
+        trigger_key: 'contact_thank_you_en', trigger_label: 'Contact Form – Thank You (English)', category: 'Contact Form',
+        description: 'Sent to the sender after submitting the Contact Us form (English).',
+        status: onOff(contactEmailRow?.send_sender_email ?? 1),
+        subject: 'Thank You for Reaching Out – Sangian Support',
+        heading: 'Thank You, {{name}}!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">We have successfully received your message and our team will review it shortly.</p>
+        <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid #4f46e5">
+          <p style="margin:0;color:#4f46e5;font-size:15px;font-weight:700">✅ Your message has been received successfully.</p>
+        </div>
+        <p style="color:#374151;font-size:14px;line-height:1.6">We typically respond within <strong>1–2 business days</strong> at the email address you provided.</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">In the meantime, feel free to explore our assessment platform or check our Help &amp; Support section for quick answers.</p>`,
+        available_variables: ['name'], bridged_setting: 'contact_email_settings.send_sender_email', recipient_note: null,
+      },
+      {
+        trigger_key: 'contact_thank_you_hi', trigger_label: 'Contact Form – Thank You (Hindi)', category: 'Contact Form',
+        description: 'Sent to the sender after submitting the Contact Us form (Hindi).',
+        status: onOff(contactEmailRow?.send_sender_email ?? 1),
+        subject: 'आपसे संपर्क करने के लिए धन्यवाद – संगियान सपोर्ट',
+        heading: 'धन्यवाद, {{name}}!',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">आपका संदेश कम्युनिटी एम्पावरमेंट लैब टीम को सफलतापूर्वक प्राप्त हो गया है।</p>
+        <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid #4f46e5">
+          <p style="margin:0;color:#4f46e5;font-size:15px;font-weight:700">✅ आपका संदेश सफलतापूर्वक भेज दिया गया है।</p>
+        </div>
+        <p style="color:#374151;font-size:14px;line-height:1.6">हम आमतौर पर <strong>1–2 कार्य दिवसों</strong> के भीतर आपके ईमेल पते पर उत्तर देते हैं।</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">इस दौरान, त्वरित उत्तरों के लिए हमारा सहायता और समर्थन अनुभाग देखें।</p>`,
+        available_variables: ['name'], bridged_setting: 'contact_email_settings.send_sender_email', recipient_note: null,
+      },
+      {
+        trigger_key: 'contact_admin_notification', trigger_label: 'Contact Form – Admin Notification', category: 'Contact Form',
+        description: 'Sent to the admin inbox when the Contact Us form is submitted.',
+        status: onOff(contactEmailRow?.send_admin_email ?? 1),
+        subject: 'New Contact Form – {{subject}}',
+        heading: 'New message from {{name}}',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">A new contact form submission has been received.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:100px">Name</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;font-size:14px;color:#1f2937;font-weight:700">{{name}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Email</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{email}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Phone</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{phone}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{subject}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;vertical-align:top">Message</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#374151;line-height:1.6">{{message}}</td></tr>
+        </table>
+        <a href="${TICKET_ADMIN_URL_HINT}" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px">View in Admin Panel</a>`,
+        available_variables: ['name', 'email', 'phone', 'subject', 'message', 'admin_panel_url'], bridged_setting: 'contact_email_settings.send_admin_email',
+        recipient_note: 'Sent to the admin address configured in Settings → Contact Us Email.',
+      },
+    ];
+
+    for (const t of notificationSeeds) {
+      await connection.query(
+        `INSERT IGNORE INTO notification_templates
+         (trigger_key, trigger_label, category, description, status, subject, heading, body_html, available_variables, bridged_setting, recipient_note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [t.trigger_key, t.trigger_label, t.category, t.description, t.status, t.subject, t.heading, t.body_html, JSON.stringify(t.available_variables), t.bridged_setting, t.recipient_note]
+      );
+    }
+
     // Create test_elements table for managing static assets (splash screens, etc.)
     await connection.query(`
       CREATE TABLE IF NOT EXISTS test_elements (
