@@ -118,26 +118,6 @@ export default function ReadingV2ContentManager({ languages, showToast }) {
     }
   };
 
-  const handleDelete = async () => {
-    const file = getFile(activeElement.key, activeLang);
-    if (!file) return;
-    if (!window.confirm('Delete this translation? This cannot be undone.')) return;
-    setBusyFileId(file.id);
-    try {
-      const res = await axiosAdmin.delete(`/admin/elements/${file.id}`);
-      if (res.data.success) {
-        showToast('Content deleted');
-        setDraft(blankConfig(activeElement));
-        loadAll();
-      }
-    } catch (error) {
-      console.error('Delete failed:', error);
-      showToast('Failed to delete content', 'error');
-    } finally {
-      setBusyFileId(null);
-    }
-  };
-
   const updateArrayItem = (idx, value) => {
     setDraft(d => {
       const arr = [...(d[activeElement.field] || [])];
@@ -364,14 +344,9 @@ export default function ReadingV2ContentManager({ languages, showToast }) {
                                     {saving ? 'Saving...' : 'Save'}
                                   </button>
                                   {currentFile && (
-                                    <>
-                                      <button className="admin-btn admin-btn-secondary" onClick={handleToggleStatus} disabled={busyFileId === currentFile.id}>
-                                        {currentFile.is_active === 0 ? 'Enable' : 'Disable'}
-                                      </button>
-                                      <button className="admin-btn-icon" style={{ color: '#dc2626' }} onClick={handleDelete} disabled={busyFileId === currentFile.id} title="Delete this translation">
-                                        🗑
-                                      </button>
-                                    </>
+                                    <button className="admin-btn admin-btn-secondary" onClick={handleToggleStatus} disabled={busyFileId === currentFile.id}>
+                                      {currentFile.is_active === 0 ? 'Enable' : 'Disable'}
+                                    </button>
                                   )}
                                 </div>
                               </td>
