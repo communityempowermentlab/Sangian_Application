@@ -438,7 +438,7 @@ exports.getGameHistory = async (req, res) => {
         const historyWithAttempts = rows.map(row => {
             const gName = row.game_name;
             gameCounts[gName] = (gameCounts[gName] || 0) + 1;
-            
+
             // Check if PDF physically exists on the disk
             if (row.pdf_url) {
                 const fileName = row.pdf_url.split('/').pop();
@@ -448,7 +448,12 @@ exports.getGameHistory = async (req, res) => {
                 }
             }
 
-            return { ...row, attempt_no: gameCounts[gName] };
+            // Duration — same computeActualGameTime() used for the "Duration"
+            // column in report detail/CSV/dashboard KPI, so this history
+            // list's figure matches those exactly rather than drifting.
+            const actualGameTime = computeActualGameTime(parseSavedState(row.saved_state), gName);
+
+            return { ...row, attempt_no: gameCounts[gName], actual_game_time: actualGameTime > 0 ? Math.round(actualGameTime) : null };
         });
 
         // Re-sort to DESC for UI

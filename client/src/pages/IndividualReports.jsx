@@ -10,6 +10,14 @@ const gameTitle = (key) => GAME_TITLE_BY_KEY[key] || key;
 
 const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
+// Matches AdminReports.jsx's fmtSecs — same "Duration" figure, same format.
+const fmtDuration = (v) => {
+    if (v == null) return '—';
+    const s = Math.round(Number(v));
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
+};
+
 const STATUS_LABEL = {
     completed: <span style={{ color: '#16a34a', fontWeight: 600 }}>Completed</span>,
     in_progress: <span style={{ color: '#2563eb', fontWeight: 600 }}>In Progress</span>,
@@ -73,13 +81,14 @@ const IndividualReports = () => {
                                     <th style={{ padding: '8px' }}>Attempt</th>
                                     <th style={{ padding: '8px' }}>Status</th>
                                     <th style={{ padding: '8px' }}>Score</th>
+                                    <th style={{ padding: '8px' }}>Duration</th>
                                     <th style={{ padding: '8px' }}>Date</th>
                                     <th style={{ padding: '8px' }}>Report</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {history.length === 0 ? (
-                                    <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — play a game from the home page to get started.</td></tr>
+                                    <tr><td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — play a game from the home page to get started.</td></tr>
                                 ) : (
                                     history.map(row => (
                                         <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -87,6 +96,7 @@ const IndividualReports = () => {
                                             <td style={{ padding: '8px' }}>#{row.attempt_no}</td>
                                             <td style={{ padding: '8px' }}>{STATUS_LABEL[row.status] || row.status}</td>
                                             <td style={{ padding: '8px' }}>{row.status === 'completed' ? (row.score ?? '—') : '—'}</td>
+                                            <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDuration(row.actual_game_time)}</td>
                                             <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDateTime(row.start_time)}</td>
                                             <td style={{ padding: '8px' }}>
                                                 {row.pdf_url ? (
