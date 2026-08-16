@@ -57,7 +57,7 @@ const getIndividualById = async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT u.id, u.full_name, u.email, u.mobile, u.email_verified, u.mobile_verified, u.status, u.registration_date, u.updated_at,
-              c.dob, c.gender, c.photo
+              c.dob, c.gender, c.photo, c.child_id
        FROM individual_users u
        LEFT JOIN children c ON c.individual_id = u.id
        WHERE u.id = ?`,

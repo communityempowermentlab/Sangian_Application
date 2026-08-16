@@ -1,8 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import axiosAdmin from '../services/axiosAdmin';
+import { API_URL } from '../services/api';
 import OtpGate from '../components/shared/OtpGate';
 import PasswordStrengthChecklist, { isStrongPassword } from '../components/shared/PasswordStrengthChecklist';
+
+// Same game-history endpoint AdminChildScoreboard.jsx already uses (keyed
+// purely by child_id, no org filtering) — reused here rather than adding a
+// new backend endpoint, per the "minimum required changes" ask. Label map
+// duplicated locally since that file exports nothing today.
+const GAME_LABELS = {
+    'literacy_reading_skill': 'Padh ke batao',
+    'literacy_reading_skill_v2': 'Padh ke batao - Version 2',
+    'numeracy_number_skill': 'Ankganit',
+    'numeracy_number_skill_v2': 'Ankganit V2',
+    'numeracy_number_skill_v3': 'Ankganit V3',
+    'number_recall_lottery': 'Lottery Ka Ticket',
+    'number_recall_lottery_v2': 'Lottery Ka Ticket - Version 2',
+    'atlantis_bagiya': 'Bagiya',
+    'working_memory_herpher': 'Her Pher',
+    'working_memory_herpher_v2': 'Her Pher V2',
+    'working_memory_herpher_v3': 'Her Pher V3',
+    'auditory_dhyan': 'Dhyan Kahan Hai',
+    'triangle_rachna': 'Rachna',
+    'rover_mela': 'Chalo Mela Chalen',
+    'chalo_mela_chale': 'Chalo Mela Chalen',
+    'cognitive_flex_chor': 'Chor Machaye Shor',
+    'chor_machaye_shor': 'Chor Machaye Shor',
+};
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const MOBILE_RE = /^[6-9]\d{9}$/;
@@ -37,6 +63,7 @@ const GENDER_LABEL = { female: 'Female', male: 'Male', other: 'Other', prefer_no
 
 const TABS = [
     ['profile', 'Profile'],
+    ['reports', 'Reports'],
     ['password', 'Password'],
     ['login-history', 'Login History'],
     ['edit-history', 'Edit History'],
@@ -82,6 +109,10 @@ const AdminIndividualDetail = () => {
     const [sessions, setSessions] = useState([]);
     const [sessionsSummary, setSessionsSummary] = useState(null);
     const [sessionsLoading, setSessionsLoading] = useState(false);
+
+    // Reports tab state
+    const [gameHistory, setGameHistory] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
 
     // Password (Super-Admin-initiated reset — no current-password check)
     const [newPassword, setNewPassword] = useState('');
@@ -140,11 +171,30 @@ const AdminIndividualDetail = () => {
         }
     }, [id]);
 
+    // Reuses GET /games/sessions/history/:childId — the same org-agnostic
+    // endpoint AdminChildScoreboard.jsx already calls for any child — no new
+    // backend endpoint needed. childId comes from the individual's linked
+    // child profile (see getIndividualById), not from :id (the individual's
+    // own id) or the individual's login/session records.
+    const fetchReports = useCallback(async (childId) => {
+        if (!childId) { setGameHistory([]); return; }
+        setReportsLoading(true);
+        try {
+            const { data } = await axios.get(`${API_URL}/games/sessions/history/${childId}`);
+            setGameHistory(data.history || []);
+        } catch (error) {
+            console.error('Failed to load game reports', error);
+        } finally {
+            setReportsLoading(false);
+        }
+    }, []);
+
     useEffect(() => { fetchIndividual(); }, [id]);
     useEffect(() => {
         if (tab === 'login-history') fetchSessions();
         if (tab === 'edit-history') fetchLogs();
-    }, [tab, fetchSessions, fetchLogs]);
+        if (tab === 'reports' && individual) fetchReports(individual.child_id);
+    }, [tab, fetchSessions, fetchLogs, fetchReports, individual]);
 
     const startEditing = () => {
         setNameInput(individual.full_name);
@@ -217,6 +267,35 @@ const AdminIndividualDetail = () => {
 
     const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
     const canSavePassword = isStrongPassword(newPassword) && passwordsMatch;
+
+    // gameHistory is already sorted newest-first by the API (getGameHistory),
+    // so the first row seen per game_name while iterating in order is that
+    // game's latest attempt — no extra sort needed here.
+    const reportsSummary = useMemo(() => {
+        const completed = gameHistory.filter(h => h.status === 'completed');
+        const scored = completed.filter(h => typeof h.score === 'number' && h.score !== null);
+        const avgScore = scored.length ? scored.reduce((s, h) => s + h.score, 0) / scored.length : null;
+
+        const perGame = {};
+        for (const h of gameHistory) {
+            if (!perGame[h.game_name]) perGame[h.game_name] = { game_name: h.game_name, attempts: 0, latest: h };
+            perGame[h.game_name].attempts += 1;
+        }
+
+        return {
+            totalAttempts: gameHistory.length,
+            distinctGamesCount: Object.keys(perGame).length,
+            completedCount: completed.length,
+            avgScore,
+            perGame: Object.values(perGame),
+        };
+    }, [gameHistory]);
+
+    const gameDuration = (session) => {
+        if (!session.start_time || !session.end_time) return null;
+        const secs = Math.round((new Date(session.end_time) - new Date(session.start_time)) / 1000);
+        return secs >= 0 ? secs : null;
+    };
 
     const handleResetPassword = async () => {
         setPasswordSaving(true);
@@ -447,6 +526,70 @@ const AdminIndividualDetail = () => {
                                     {saving ? 'Saving…' : '💾 Save Changes'}
                                 </button>
                             </div>
+                        )}
+                    </div>
+                )}
+
+                {tab === 'reports' && (
+                    <div className="admin-card w12" style={{ boxShadow: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                        {!individual.child_id ? (
+                            <p style={{ color: '#6b7280', fontSize: '13px' }}>No linked game profile found for this account yet.</p>
+                        ) : reportsLoading ? (
+                            <p style={{ color: '#6b7280', fontSize: '13px' }}>Loading…</p>
+                        ) : gameHistory.length === 0 ? (
+                            <p style={{ color: '#6b7280', fontSize: '13px' }}>This individual hasn't played any games yet.</p>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                                    {[
+                                        ['Games Played', reportsSummary.distinctGamesCount],
+                                        ['Total Attempts', reportsSummary.totalAttempts],
+                                        ['Tests Completed', reportsSummary.completedCount],
+                                        ['Average Score', reportsSummary.avgScore !== null ? reportsSummary.avgScore.toFixed(1) : '—'],
+                                    ].map(([label, value]) => (
+                                        <div key={label} style={{ flex: '1 1 160px', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: '#fff' }}>
+                                            <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, marginBottom: '4px' }}>{label}</div>
+                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a' }}>{value}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Test-wise Summary</h4>
+                                <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                                    <table className="admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Game / Test</th><th>Attempts</th><th>Latest Attempt</th>
+                                                <th>Latest Score</th><th>Latest Status</th><th>Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {reportsSummary.perGame.map(g => (
+                                                <tr key={g.game_name}>
+                                                    <td style={{ fontWeight: 600 }}>{GAME_LABELS[g.game_name] || g.game_name}</td>
+                                                    <td>{g.attempts}</td>
+                                                    <td>{fmtDateTime(g.latest.start_time)}</td>
+                                                    <td>{g.latest.score ?? '—'}</td>
+                                                    <td>
+                                                        {g.latest.status === 'completed'
+                                                            ? <span className="admin-tag good">Completed</span>
+                                                            : <span className="admin-tag warn" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>{g.latest.status}</span>}
+                                                    </td>
+                                                    <td>{fmtDuration(gameDuration(g.latest))}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <Link
+                                    to={`/admin/children/scoreboard/${individual.child_id}`}
+                                    className="admin-btn"
+                                    style={{ textDecoration: 'none', display: 'inline-block' }}
+                                >
+                                    📊 View Full Detailed Report ({reportsSummary.totalAttempts} attempts) →
+                                </Link>
+                            </>
                         )}
                     </div>
                 )}
