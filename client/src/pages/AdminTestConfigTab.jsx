@@ -743,6 +743,103 @@ const TestGroupsPanel = () => {
     );
 };
 
+// ── Sub-section: Individual User Test Settings (global ON/OFF per test,
+// applied to every Individual User platform-wide) — a separate, independent
+// access-control layer from Organization-wise Test Assignment
+// (AdminOrganizationDetail.jsx's Assigned Tests tab, per-organization).
+// Enforced server-side in gameController.js's startGameSession regardless
+// of this toggle's state; this UI only edits the setting. ───────────────
+const IndividualUserTestAccessPanel = () => {
+    const [tests, setTests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [savingKey, setSavingKey] = useState(null);
+    const [savedKey, setSavedKey] = useState(null);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosAdmin.get('/admin/individual-test-access');
+            setTests(res.data.tests || []);
+        } catch (error) {
+            console.error('Failed to load Individual User test access:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const toggle = async (key, currentAccess) => {
+        setSavingKey(key);
+        const next = !currentAccess;
+        try {
+            await axiosAdmin.put(`/admin/individual-test-access/${key}`, { allowed: next });
+            setTests((prev) => prev.map((t) => (t.key === key ? { ...t, individualAccess: next } : t)));
+            setSavedKey(key);
+            setTimeout(() => setSavedKey(null), 1800);
+        } catch (error) {
+            console.error('Failed to update Individual User test access:', error);
+        } finally {
+            setSavingKey(null);
+        }
+    };
+
+    if (loading) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading…</div>;
+    }
+
+    return (
+        <div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '20px', maxWidth: '640px' }}>
+                Controls which active tests are available to <strong>Individual Users</strong> platform-wide — completely
+                separate from Organization-wise Test Assignment. Turning a test OFF here blocks every Individual User
+                from starting it (both here on the front-end and at the API level); the test card still shows, but
+                starting it displays a message instead of the game.
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', maxWidth: '760px' }}>
+                <thead>
+                    <tr style={{ background: '#f9fafb' }}>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Test</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontWeight: 700 }}>Category</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Status</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#6b7280', fontWeight: 700 }}>Individual User Access</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tests.map((test) => {
+                        const cat = CATEGORY_COLORS[test.category] || { bg: '#f1f5f9', text: '#475569' };
+                        return (
+                            <tr key={test.key} style={{ borderTop: '1px solid #f3f4f6', background: '#fff' }}>
+                                <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>{test.title}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                    <span style={{ background: cat.bg, color: cat.text, padding: '3px 10px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                        {test.category}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                    <span style={{ padding: '3px 12px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700, background: '#f0fdf4', color: '#16a34a' }}>
+                                        Active
+                                    </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                        <ToggleSwitch checked={test.individualAccess} disabled={savingKey === test.key} onClick={() => toggle(test.key, test.individualAccess)} />
+                                        {savedKey === test.key && <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✓ Updated</span>}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    {tests.length === 0 && (
+                        <tr><td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>No active tests.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 // ── Main: Test Configuration (Test Visibility + Global Header Configuration) ────
 const TEST_CONFIG_SUBSECTIONS = [
     { key: 'visibility', label: 'Test Visibility',             icon: '🎮' },
@@ -750,6 +847,7 @@ const TEST_CONFIG_SUBSECTIONS = [
     { key: 'matching',   label: 'Response Completion Requirement', icon: '🎯' },
     { key: 'analysis',   label: 'Analysis Dashboard',          icon: '📊' },
     { key: 'groups',     label: 'Test Groups',                 icon: '🗂️' },
+    { key: 'individual', label: 'Individual User Test Settings', icon: '🧑' },
 ];
 
 const SUBSECTION_PANELS = {
@@ -758,6 +856,7 @@ const SUBSECTION_PANELS = {
     matching:   ResponseMatchingPanel,
     analysis:   AnalysisSettingsPanel,
     groups:     TestGroupsPanel,
+    individual: IndividualUserTestAccessPanel,
 };
 
 const AdminTestConfigTab = () => {

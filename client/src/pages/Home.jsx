@@ -4,7 +4,10 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
+import { isIndividualSession } from '../utils/individualSession';
 import '../pages/ReadingSkillGame.css'; // Re-use modal styles
+
+const INDIVIDUAL_TEST_BLOCKED_MESSAGE = 'This test is currently not available for Individual Users. Please try another test.';
 
 const Home = () => {
     const { t, language } = useLanguage();
@@ -244,7 +247,9 @@ const Home = () => {
         title: '',
         subtitle: '',
         description: '',
-        startUrl: ''
+        startUrl: '',
+        blocked: false,
+        blockedMessage: ''
     });
 
     const [summaries, setSummaries]     = useState({});
@@ -257,6 +262,12 @@ const Home = () => {
     // startGameSession re-checks this fresh server-side regardless, so a
     // stale/unfetched value here can never grant access it shouldn't.
     const [assignedTests, setAssignedTests] = useState(null);
+    // Global Individual User Test Settings — separate, independent gate from
+    // Organization-wise Test Assignment above. Unlike assignedTests, a
+    // blocked test still shows its card (per spec); only clicking it is
+    // intercepted (see openModal). {} = nothing known-blocked yet (fail
+    // open) — startGameSession re-checks this fresh server-side regardless.
+    const [individualAllowedMap, setIndividualAllowedMap] = useState({});
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -276,6 +287,12 @@ const Home = () => {
         axios.get(`${API_URL}/public/test-config`)
             .then(({ data }) => setEnabledTests(data))
             .catch(() => setEnabledTests({})); // on error, show all games rather than hiding everything
+
+        if (isIndividualSession()) {
+            axios.get(`${API_URL}/public/individual-test-access`)
+                .then(({ data }) => setIndividualAllowedMap(data || {}))
+                .catch(() => setIndividualAllowedMap({})); // fail open — real gate is server-side at session start
+        }
 
         axios.get(`${API_URL}/public/elements`)
             .then(({ data }) => setElementsData(data.elements || []))
@@ -329,12 +346,18 @@ const Home = () => {
     };
 
     const openModal = (test) => {
+        // Global Individual User Test Settings: the card stays visible and
+        // clickable (per spec) — only starting the game is blocked, via this
+        // info modal's Start button being replaced with the message below.
+        const blocked = isIndividualSession() && individualAllowedMap[test.gameKey] === false;
         setModalData({
             isOpen: true,
             title: test.title,
             subtitle: test.subtitle,
             description: test.desc,
-            startUrl: test.startUrl
+            startUrl: test.startUrl,
+            blocked,
+            blockedMessage: INDIVIDUAL_TEST_BLOCKED_MESSAGE,
         });
     };
 

@@ -4,6 +4,7 @@ const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
 const { checkChildEligibility } = require('../utils/validateAssessorChild');
 const { normalizeGameName } = require('../utils/gameNameAliases');
 const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
+const individualTestAccessService = require('../services/individualTestAccessService');
 
 // Rover coin budget per question (t2 + 4 bonus coins) — mirrors client-side ROVER_Q_BUDGET
 const ROVER_Q_BUDGET = {
@@ -220,6 +221,17 @@ exports.startGameSession = async (req, res) => {
             if (!allowed) {
                 return res.status(403).json({ success: false, message: 'This test is not assigned to your organization.' });
             }
+        }
+
+        // Global Individual User Test Settings — separate, independent gate
+        // from Organization-wise Test Assignment above. Same fallback shape
+        // (traceFields.individual_id, derived from login_sessions, falls
+        // back to the child's own individual_id) for the same reason: a
+        // direct play session doesn't always leave a fresh login_sessions
+        // row to derive from by the time this runs.
+        const effectiveIndividualId = traceFields.individual_id || eligibility.child.individual_id;
+        if (effectiveIndividualId && !individualTestAccessService.isAllowed(normalizeGameName(game_name))) {
+            return res.status(403).json({ success: false, message: 'This test is currently not available for Individual Users. Please try another test.' });
         }
 
         const userAgent = req.headers['user-agent'];

@@ -22,6 +22,7 @@ const { adminRouter: orgTypeAdminRoutes, publicRouter: orgTypePublicRoutes } = r
 const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatchingPublicRoutes } = require('./src/routes/responseMatchingRoutes');
 const { adminRouter: analysisSettingsAdminRoutes } = require('./src/routes/analysisSettingsRoutes');
 const { adminRouter: testGroupsAdminRoutes } = require('./src/routes/testGroupsRoutes');
+const { adminRouter: individualTestAccessAdminRoutes, publicRouter: individualTestAccessPublicRoutes } = require('./src/routes/individualTestAccessRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const ticketRoutes      = require('./src/routes/ticketRoutes');
 const helpContentRoutes = require('./src/routes/helpContentRoutes');
@@ -147,6 +148,8 @@ app.use('/api/admin/translations', requireModuleAccess('multilingual'), translat
 app.use('/api/public/translations', translationsPublicRoutes);
 app.use('/api/admin/test-config', testConfigAdminRoutes);
 app.use('/api/public/test-config', testConfigPublicRoutes);
+app.use('/api/admin/individual-test-access', individualTestAccessAdminRoutes);
+app.use('/api/public/individual-test-access', individualTestAccessPublicRoutes);
 app.use('/api/admin/header-config', headerConfigAdminRoutes);
 app.use('/api/public/header-config', headerConfigPublicRoutes);
 app.use('/api/admin/response-matching-config', responseMatchingAdminRoutes);

@@ -19,7 +19,7 @@ const WRONG_ORG_MESSAGE = 'This child is not associated with your organization.'
 // throughout this codebase (adminChildController.js's scopeClause, etc.).
 async function checkChildEligibility(childId, assessorId = null) {
     const [childRows] = await pool.query(
-        'SELECT child_id, name, status, org_id FROM children WHERE child_id = ?',
+        'SELECT child_id, name, status, org_id, individual_id FROM children WHERE child_id = ?',
         [childId]
     );
     if (!childRows.length) {

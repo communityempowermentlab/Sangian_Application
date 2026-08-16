@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) => {
+const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl, blocked = false, blockedMessage }) => {
     const { t } = useLanguage();
     // Handle escape key to close
     useEffect(() => {
@@ -36,26 +36,30 @@ const TestModal = ({ isOpen, onClose, title, subtitle, description, startUrl }) 
                     </div>
                 </div>
                 <div className="modal-body" id="modalBody">
-                    {description}
+                    {blocked
+                        ? <span style={{ color: '#b91c1c', fontWeight: 600 }}>{blockedMessage}</span>
+                        : description}
                 </div>
                 <div className="modal-footer" style={{ justifyContent: 'flex-end' }}>
                     <div className="modal-actions">
                         <button type="button" className="btn modal-btn-secondary" onClick={onClose}>
                             {t('modal.close')}
                         </button>
-                        <button
-                            type="button"
-                            className="btn modal-btn-primary"
-                            onClick={() => {
-                                if (startUrl) {
-                                    window.location.href = startUrl;
-                                } else {
-                                    alert(t('modal.noUrl'));
-                                }
-                            }}
-                        >
-                            {t('modal.startGame')}
-                        </button>
+                        {!blocked && (
+                            <button
+                                type="button"
+                                className="btn modal-btn-primary"
+                                onClick={() => {
+                                    if (startUrl) {
+                                        window.location.href = startUrl;
+                                    } else {
+                                        alert(t('modal.noUrl'));
+                                    }
+                                }}
+                            >
+                                {t('modal.startGame')}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
