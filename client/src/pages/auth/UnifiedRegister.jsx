@@ -4,6 +4,20 @@ import axios from 'axios';
 import { API_URL } from '../../services/api';
 import OtpGate from '../../components/shared/OtpGate';
 import PasswordStrengthChecklist, { isStrongPassword } from '../../components/shared/PasswordStrengthChecklist';
+import CmsModal from '../../components/shared/CmsModal';
+
+// Inline-in-a-sentence trigger for the consent checkbox's Terms/Privacy
+// links — visually a link, but a real <button> so it never submits the
+// surrounding <form>.
+const ConsentLink = ({ onClick, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#4f46e5', textDecoration: 'underline', cursor: 'pointer' }}
+    >
+        {children}
+    </button>
+);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Indian mobile: optional +91/91 prefix, optional leading 0, then 10 digits
@@ -102,6 +116,8 @@ const UnifiedRegister = () => {
 
     const [serverMsg, setServerMsg] = useState({ type: '', text: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Shared by both forms — only one can be open at a time. { pageKey, label } | null
+    const [cmsModal, setCmsModal] = useState(null);
 
     const switchType = (type) => {
         setAccountType(type);
@@ -382,9 +398,9 @@ const UnifiedRegister = () => {
                                         />
                                         <span>
                                             I agree to the{' '}
-                                            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+                                            <ConsentLink onClick={() => setCmsModal({ pageKey: 'terms', label: 'Terms & Conditions' })}>Terms &amp; Conditions</ConsentLink>
                                             {' '}and{' '}
-                                            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                                            <ConsentLink onClick={() => setCmsModal({ pageKey: 'privacy', label: 'Privacy Policy' })}>Privacy Policy</ConsentLink>.
                                         </span>
                                     </label>
                                     <p className="field-error">{indErrors.consent}</p>
@@ -493,9 +509,9 @@ const UnifiedRegister = () => {
                                         />
                                         <span>
                                             I agree to the{' '}
-                                            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+                                            <ConsentLink onClick={() => setCmsModal({ pageKey: 'terms', label: 'Terms & Conditions' })}>Terms &amp; Conditions</ConsentLink>
                                             {' '}and{' '}
-                                            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                                            <ConsentLink onClick={() => setCmsModal({ pageKey: 'privacy', label: 'Privacy Policy' })}>Privacy Policy</ConsentLink>.
                                         </span>
                                     </label>
                                     <p className="field-error">{orgErrors.consent}</p>
@@ -514,6 +530,13 @@ const UnifiedRegister = () => {
                     </div>
                 </div>
             </section>
+            {cmsModal && (
+                <CmsModal
+                    pageKey={cmsModal.pageKey}
+                    label={cmsModal.label}
+                    onClose={() => setCmsModal(null)}
+                />
+            )}
         </main>
     );
 };
