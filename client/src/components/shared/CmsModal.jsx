@@ -63,7 +63,7 @@ const CmsModal = ({ pageKey, label, onClose }) => {
                 aria-label={page?.title || label}
                 style={{
                     background: '#fff', borderRadius: '14px', maxWidth: '640px', width: '100%',
-                    maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+                    maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                 }}
             >
@@ -78,7 +78,7 @@ const CmsModal = ({ pageKey, label, onClose }) => {
                         &times;
                     </button>
                 </div>
-                <div style={{ padding: '20px 22px', overflowY: 'auto' }}>
+                <div style={{ padding: '20px 22px', overflowY: 'auto', minHeight: 0, flex: '1 1 auto' }}>
                     {loading ? (
                         <p style={{ color: '#6b7280', margin: 0 }}>Loading…</p>
                     ) : error || !page ? (
