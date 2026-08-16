@@ -257,11 +257,19 @@ function RankList({ title, rows = [], valueKey, valueFmt, emptyLabel, info, show
 
 // ── Main Panel ────────────────────────────────────────────
 
-export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
+export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalog = [] }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
-  const [testSortKey, setTestSortKey] = React.useState('totalAttempts');
-  const [testSortDir, setTestSortDir] = React.useState('desc');
+  // Default view follows the Settings → Test Configuration → Test Visibility
+  // drag-and-drop sequence (see testOrderPos below); users may still click
+  // any column to sort by that metric instead.
+  const [testSortKey, setTestSortKey] = React.useState('title');
+  const [testSortDir, setTestSortDir] = React.useState('asc');
   const navigate = useNavigate();
+
+  // `catalog` is already sorted per that configured sequence (orderedCatalog
+  // in AdminAnalysis.jsx), so its index doubles as the display-sequence
+  // position for every game.
+  const testOrderPos = new Map(catalog.map((c, i) => [c.key, i]));
 
   function handleTestSort(key) {
     if (testSortKey === key) setTestSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -269,7 +277,7 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon }) {
   }
 
   const TEST_SORT_FIELDS = {
-    title:            t => (t.title || t.gameKey || '').toLowerCase(),
+    title:            t => testOrderPos.get(t.gameKey) ?? 999,
     totalAttempts:    t => Number(t.totalAttempts) || 0,
     avgScorePct:      t => Number(t.avgScorePct) || 0,
     maxScoreAchieved: t => Number(t.maxScoreAchieved) || 0,

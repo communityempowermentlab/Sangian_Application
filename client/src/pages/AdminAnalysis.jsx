@@ -654,8 +654,11 @@ function SkeletonCard() {
 // ── Overview Panel ────────────────────────────────────────
 
 function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelExportEnabled = true, showKpiInfoIcon }) {
-  const [sortKey, setSortKey] = React.useState('sessions');
-  const [sortDir, setSortDir] = React.useState('desc');
+  // Default view follows the Settings → Test Configuration → Test Visibility
+  // drag-and-drop sequence (see testOrderPos below); users may still click
+  // any column to sort by that metric instead.
+  const [sortKey, setSortKey] = React.useState('game');
+  const [sortDir, setSortDir] = React.useState('asc');
   const [childSortKey, setChildSortKey] = React.useState('attempt');
   const [childSortDir, setChildSortDir] = React.useState('desc');
 
@@ -726,8 +729,14 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
   const genderSegs = genderDist.map(r => ({ label: GENDER_LABELS[r.gender] || r.gender || 'Unknown', color: GENDER_COLORS[r.gender] || '#94a3b8', value: Number(r.children) }));
   const maxSessions = Math.max(...byGame.map(g => Number(g.sessions) || 0), 1);
 
+  // Settings → Test Configuration → Test Visibility drag-and-drop order —
+  // `catalog` is already sorted that way by the parent (orderedCatalog), so
+  // its index doubles as the display-sequence position for every game.
+  const testOrderPos = new Map(catalog.map((c, i) => [c.key, i]));
+  const byGameOrdered = [...byGame].sort((a, b) => (testOrderPos.get(a.gameKey) ?? 999) - (testOrderPos.get(b.gameKey) ?? 999));
+
   const SORT_FIELDS = {
-    game:       g => (GAME_CATALOG.find(c => c.key === g.gameKey)?.title || g.gameKey || '').toLowerCase(),
+    game:       g => testOrderPos.get(g.gameKey) ?? 999,
     sessions:   g => Number(g.sessions) || 0,
     children:   g => Number(g.children) || 0,
     completed:  g => Number(g.completed) || 0,
@@ -855,7 +864,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
           <div className="ana-hbar-list">
             {byGame.length === 0
               ? <div className="ana-chart-empty">No test data for selected filters</div>
-              : byGame.map(g => {
+              : byGameOrdered.map(g => {
                 const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
                 return (
                   <HBar key={g.gameKey}
@@ -2114,7 +2123,7 @@ export default function AdminAnalysis() {
           {activeTab === 'overall'
             ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} showKpiInfoIcon={showKpiInfoIcon} />
             : activeTab === 'overall-v2'
-            ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} />
+            ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} catalog={orderedCatalog} />
             : <GamePanel
                 showKpiInfoIcon={showKpiInfoIcon}
                 csvExportEnabled={csvExportEnabled}
