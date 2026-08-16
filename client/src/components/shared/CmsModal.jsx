@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../services/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import '../../pages/CmsPage.css';
 
 // Shows an existing CMS page (Terms & Conditions, Privacy Policy, ...) in a
 // modal instead of navigating away — reuses the exact same
@@ -84,7 +85,7 @@ const CmsModal = ({ pageKey, label, onClose }) => {
                     ) : error || !page ? (
                         <p style={{ color: '#dc2626', margin: 0 }}>Failed to load this page. Please try again.</p>
                     ) : (
-                        <div dangerouslySetInnerHTML={{ __html: page.content }} />
+                        <div className="cms-body" dangerouslySetInnerHTML={{ __html: page.content }} />
                     )}
                 </div>
             </div>
