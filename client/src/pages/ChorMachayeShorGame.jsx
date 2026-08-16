@@ -1413,7 +1413,7 @@ const ChorMachayeShorGame = () => {
   if (screen === 'splash') {
     return (
       <div className="chor-body-shell">
-        <div className="chor-app">
+        <div className="chor-app chor-app-splash">
           <header className="chor-topbar">
             <div className="chor-brand">
               {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="chor-brand-img" />}

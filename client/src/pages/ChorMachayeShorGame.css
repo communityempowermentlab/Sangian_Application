@@ -58,6 +58,16 @@
   transform: translateZ(0); /* Enforce border-radius clipping on children */
 }
 
+/* Splash screen is a full-bleed edge-to-edge image (see chor-splash-cover's
+   own border-radius:0 overrides below) — but the outer .chor-app card still
+   clipped it to its own 28px rounded corners, leaving the card's white
+   background visible in the corner notches. Every other game's splash
+   screen fills the viewport with no outer rounding at all, so match that
+   here instead of half-flattening just the inner elements. */
+.chor-app-splash {
+  border-radius: 0;
+}
+
 .chor-app * {
   box-sizing: border-box;
 }
