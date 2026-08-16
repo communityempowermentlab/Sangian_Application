@@ -345,6 +345,11 @@ const ChorMachayeShorGame = () => {
   // testConfigService.js's GAMES_REGISTRY) — distinct from the GAME_NAME
   // constant below, which is only for game-session tracking.
   const { getAudioUrl, ready: audioReady } = useTestAudio('cognitive_flex_chor');
+  // Admin-managed per-language audio (Elements -> Audio Management), falling
+  // back to the bundled Hindi clips under AUDIO_DIR when nothing's
+  // configured yet — resolved fresh at each call site, since playAudio()
+  // runs from inside async handlers, not JSX render output.
+  const resolveAudio = useCallback((key, file) => getAudioUrl(key, `${AUDIO_DIR}/${file}`), [getAudioUrl]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -642,10 +647,10 @@ const ChorMachayeShorGame = () => {
     startItem(currentItemIndex); // Start from wherever we are
   };
 
-  const playAudio = useCallback((file) => {
+  const playAudio = useCallback((url) => {
     if (audioRef.current) { audioRef.current.pause(); }
     return new Promise((resolve) => {
-      const audio = new Audio(`${AUDIO_DIR}/${file}`);
+      const audio = new Audio(url);
       audioRef.current = audio;
       
       const fallback = setTimeout(() => resolve(), 3000);
@@ -970,7 +975,7 @@ const ChorMachayeShorGame = () => {
         return h;
       }));
       
-      await playAudio('cm_neglect.wav');
+      await playAudio(resolveAudio('cm_neglect', 'cm_neglect.wav'));
       
       setHouses(prev => prev.map(h => h.isResponseHouse ? { ...h, animationClass: 'highlight-sharp' } : { ...h, animationClass: '' }));
       await new Promise(r => setTimeout(r, 800));
@@ -997,7 +1002,7 @@ const ChorMachayeShorGame = () => {
     setHouses(prev => prev.map(h => h.currentPosition === house.currentPosition ? { ...h, animationClass: 'correct-response' } : h));
     setTreasurePos(house.currentPosition);
     showFeedbackMsg(t('game.correctFeedbackChor'), 'correct');
-    await playAudio('cm_appalause.wav');
+    await playAudio(resolveAudio('cm_appalause', 'cm_appalause.wav'));
     await new Promise(r => setTimeout(r, 500));
     setTreasurePos(null);
     setHouses(prev => prev.map(h => ({ ...h, animationClass: '' })));
@@ -1026,7 +1031,7 @@ const ChorMachayeShorGame = () => {
       if (h.isResponseHouse) return { ...h, animationClass: 'highlight-blur' };
       return h;
     }));
-    await playAudio('cm_neglect.wav');
+    await playAudio(resolveAudio('cm_neglect', 'cm_neglect.wav'));
     setHouses(prev => prev.map(h => h.isResponseHouse ? { ...h, animationClass: 'highlight-sharp' } : { ...h, animationClass: '' }));
     await new Promise(r => setTimeout(r, 800));
     setHouses(prev => prev.map(h => ({ ...h, animationClass: '' })));
@@ -1068,7 +1073,7 @@ const ChorMachayeShorGame = () => {
         
         saveToServer('in_progress', newResults);
         showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
-        await playAudio('cm_thief_caught.wav');
+        await playAudio(resolveAudio('cm_thief_caught', 'cm_thief_caught.wav'));
         setNextButtonReady(true);
       } else {
         await finalizeItem(true);
@@ -1139,7 +1144,7 @@ const ChorMachayeShorGame = () => {
       setNextButtonReady(true);
     } else if (success) {
       showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
-      await playAudio('cm_thief_caught.wav');
+      await playAudio(resolveAudio('cm_thief_caught', 'cm_thief_caught.wav'));
       setNextButtonReady(true);
     } else {
       setNextButtonReady(true);

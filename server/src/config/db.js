@@ -2317,6 +2317,21 @@ const initDb = async () => {
       );
     }
 
+    // Chor Machaye Shor (cognitive_flex_chor) — 3 in-game SFX, played on every
+    // correct/incorrect touch and on completing an item. 'splash' is already
+    // seeded above via GAMES_REGISTRY.
+    const chorElementSeeds = [
+      { key: 'cm_appalause', label: 'Feedback: Correct Touch', order: 1 },
+      { key: 'cm_neglect', label: 'Feedback: Incorrect Touch', order: 2 },
+      { key: 'cm_thief_caught', label: 'Feedback: Item Complete (Thief Caught)', order: 3 },
+    ];
+    for (const seed of chorElementSeeds) {
+      await connection.query(
+        `INSERT IGNORE INTO audio_elements (test_id, element_key, label, display_order) VALUES (?, ?, ?, ?)`,
+        ['cognitive_flex_chor', seed.key, seed.label, seed.order]
+      );
+    }
+
     // Create child_profile_edit_logs table for tracking admin edits to child profiles
     await connection.query(`
       CREATE TABLE IF NOT EXISTS child_profile_edit_logs (
