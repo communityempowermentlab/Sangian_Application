@@ -291,12 +291,6 @@ const AdminIndividualDetail = () => {
         };
     }, [gameHistory]);
 
-    const gameDuration = (session) => {
-        if (!session.start_time || !session.end_time) return null;
-        const secs = Math.round((new Date(session.end_time) - new Date(session.start_time)) / 1000);
-        return secs >= 0 ? secs : null;
-    };
-
     const handleResetPassword = async () => {
         setPasswordSaving(true);
         setPasswordMsg({ type: '', text: '' });
@@ -571,7 +565,7 @@ const AdminIndividualDetail = () => {
                                                     <td style={{ textAlign: 'center' }}>#{session.attempt_no || 1}</td>
                                                     <td style={{ textAlign: 'center' }}>{session.score ?? '—'}</td>
                                                     <td style={{ textAlign: 'center' }}>{GAME_MAX_SCORES[session.game_name] ?? '—'}</td>
-                                                    <td>{fmtDuration(gameDuration(session))}</td>
+                                                    <td>{fmtDuration(session.actual_game_time)}</td>
                                                     <td>
                                                         {session.status === 'completed'
                                                             ? <span className="admin-tag good">Completed</span>
