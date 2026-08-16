@@ -86,6 +86,7 @@ const UnifiedRegister = () => {
     const [indEmailTakenMsg, setIndEmailTakenMsg] = useState('');
     const [indMobileTakenMsg, setIndMobileTakenMsg] = useState('');
     const [indErrors, setIndErrors] = useState({});
+    const [indConsentAccepted, setIndConsentAccepted] = useState(false);
     const [showIndPassword, setShowIndPassword] = useState(false);
     const [showOrgPassword, setShowOrgPassword] = useState(false);
     const indAge = calculateAge(indForm.dobDay, indForm.dobMonth, indForm.dobYear);
@@ -97,6 +98,7 @@ const UnifiedRegister = () => {
     const [orgEmailTakenMsg, setOrgEmailTakenMsg] = useState('');
     const [orgMobileTakenMsg, setOrgMobileTakenMsg] = useState('');
     const [orgErrors, setOrgErrors] = useState({});
+    const [orgConsentAccepted, setOrgConsentAccepted] = useState(false);
 
     const [serverMsg, setServerMsg] = useState({ type: '', text: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,6 +139,7 @@ const UnifiedRegister = () => {
         if (!isStrongPassword(indForm.password)) e.password = 'Password does not meet the requirements below.';
         if (!indDobString || isNaN(new Date(indDobString).getTime())) e.dob = 'Date of birth is required.';
         if (!indForm.gender) e.gender = 'Please select a gender.';
+        if (!indConsentAccepted) e.consent = 'Please agree to the Terms & Conditions and Privacy Policy to continue.';
         setIndErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -165,6 +168,7 @@ const UnifiedRegister = () => {
         else if (!orgMobileVerified) e.org_mobile = e.org_mobile || 'Please verify the organization mobile number with OTP.';
         if (!orgForm.contact_person_name.trim()) e.contact_person_name = 'Contact person name is required.';
         if (!isStrongPassword(orgForm.password)) e.password = 'Password does not meet the requirements below.';
+        if (!orgConsentAccepted) e.consent = 'Please agree to the Terms & Conditions and Privacy Policy to continue.';
         setOrgErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -365,6 +369,27 @@ const UnifiedRegister = () => {
                                     <p className="field-error">{indErrors.password}</p>
                                 </div>
 
+                                <div className="form-group">
+                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontWeight: 400, cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={indConsentAccepted}
+                                            onChange={(e) => {
+                                                setIndConsentAccepted(e.target.checked);
+                                                if (indErrors.consent) setIndErrors(prev => ({ ...prev, consent: '' }));
+                                            }}
+                                            style={{ marginTop: '3px' }}
+                                        />
+                                        <span>
+                                            I agree to the{' '}
+                                            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+                                            {' '}and{' '}
+                                            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                                        </span>
+                                    </label>
+                                    <p className="field-error">{indErrors.consent}</p>
+                                </div>
+
                                 <div className="form-actions">
                                     <button type="submit" className="btn form-btn-primary" disabled={isSubmitting} style={{ padding: '10px 20px' }}>
                                         {isSubmitting ? 'Creating account…' : 'Create Account'}
@@ -453,6 +478,27 @@ const UnifiedRegister = () => {
                                     </div>
                                     <PasswordStrengthChecklist password={orgForm.password} />
                                     <p className="field-error">{orgErrors.password}</p>
+                                </div>
+
+                                <div className="form-group">
+                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontWeight: 400, cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={orgConsentAccepted}
+                                            onChange={(e) => {
+                                                setOrgConsentAccepted(e.target.checked);
+                                                if (orgErrors.consent) setOrgErrors(prev => ({ ...prev, consent: '' }));
+                                            }}
+                                            style={{ marginTop: '3px' }}
+                                        />
+                                        <span>
+                                            I agree to the{' '}
+                                            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>
+                                            {' '}and{' '}
+                                            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                                        </span>
+                                    </label>
+                                    <p className="field-error">{orgErrors.consent}</p>
                                 </div>
 
                                 <div className="form-actions">
