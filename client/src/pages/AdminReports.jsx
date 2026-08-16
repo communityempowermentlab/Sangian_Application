@@ -4,6 +4,13 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal } from '../utils/reportExportUtils';
 import { logReportDownload } from '../utils/logActivity';
+import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+
+// Only a true Super Admin sees data across every company — org/staff
+// sessions are already hard-scoped server-side to their own organization
+// (see resolveOrgScope.js), so the filter would be a no-op (and they lack
+// permission to call /admin/organizations at all).
+const isAdminSession = !isOrgSession() && !isStaffSession();
 
 const statusBadge = (status) => {
     const map = {
@@ -85,6 +92,26 @@ const AdminReports = () => {
             .catch(err => console.error('Failed to fetch child groups:', err));
     }, []);
 
+    // Company/Organization filter — single-select, admin-only (see isAdminSession above)
+    const [orgOptions, setOrgOptions] = useState([]);
+    const orgParam = searchParams.get('org') || '';
+
+    useEffect(() => {
+        if (!isAdminSession) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, []);
+
+    const setOrgFilter = useCallback((orgId) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            if (orgId) next.set('org', orgId);
+            else next.delete('org');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
     // Test order + enabled/disabled state — from Settings → Test Configuration → Test Visibility,
     // so the Reports card order and status badges always match that page.
     const [testConfig, setTestConfig] = useState([]);
@@ -135,10 +162,12 @@ const AdminReports = () => {
     const [hpDataModal, setHpDataModal] = useState({ show: false, rowData: null });
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
-    const fetchOverview = useCallback(async (groupIds) => {
+    const fetchOverview = useCallback(async (groupIds, orgId) => {
         setLoadingOv(true);
         try {
-            const params = groupIds && groupIds.length ? { groupId: groupIds.join(',') } : {};
+            const params = {};
+            if (groupIds && groupIds.length) params.groupId = groupIds.join(',');
+            if (orgId) params.organization_id = orgId;
             const res = await axiosAdmin.get('/games/reports/overview', { params });
             setOverview(res.data.data || []);
         } catch (e) {
@@ -148,7 +177,7 @@ const AdminReports = () => {
         }
     }, []);
 
-    useEffect(() => { fetchOverview(selectedGroupIds); }, [fetchOverview, groupParam]);
+    useEffect(() => { fetchOverview(selectedGroupIds, orgParam); }, [fetchOverview, groupParam, orgParam]);
 
     // ── Apply a game selection (or null) to the local view state ──────────────
     // This is the ONLY place that writes activeGame/detail, and it's driven purely
@@ -156,7 +185,7 @@ const AdminReports = () => {
     // directly from click handlers. That keeps the URL as the single source of
     // truth and avoids a race between local state and router state landing in
     // different render ticks.
-    const showGame = useCallback(async (game, groupIds) => {
+    const showGame = useCallback(async (game, groupIds, orgId) => {
         setActiveGame(game);
         setFilterStatus(null);
         if (!game) {
@@ -168,7 +197,9 @@ const AdminReports = () => {
         }
         setLoadingDt(true);
         try {
-            const params = groupIds && groupIds.length ? { groupId: groupIds.join(',') } : {};
+            const params = {};
+            if (groupIds && groupIds.length) params.groupId = groupIds.join(',');
+            if (orgId) params.organization_id = orgId;
             const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`, { params });
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
         } catch (e) {
@@ -204,8 +235,8 @@ const AdminReports = () => {
     useEffect(() => {
         const gameKey = searchParams.get('game');
         const game = gameKey ? GAME_CATALOG.find(g => g.key === gameKey) : null;
-        showGame(game || null, selectedGroupIds);
-    }, [searchParams, showGame]);
+        showGame(game || null, selectedGroupIds, orgParam);
+    }, [searchParams, showGame]); // eslint-disable-line
 
     // ── Merge overview DB data with catalog ───────────────────────────────────
     const getStats = (key) => overview.find(r => r.game_name === key) || {};
@@ -341,6 +372,25 @@ const AdminReports = () => {
         );
     };
 
+    const CompanyFilterBar = () => {
+        if (!isAdminSession || orgOptions.length === 0) return null;
+        return (
+            <div style={S.groupFilterWrap}>
+                <span style={S.groupFilterLabel}>Company</span>
+                <select
+                    value={orgParam}
+                    onChange={(e) => setOrgFilter(e.target.value)}
+                    style={{ padding: '4px 10px', borderRadius: 999, border: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#334155', background: '#fff' }}
+                >
+                    <option value="">All Companies</option>
+                    {orgOptions.map(o => (
+                        <option key={o.id} value={o.id}>{o.org_name}</option>
+                    ))}
+                </select>
+            </div>
+        );
+    };
+
     // ─────────────────────────────────────────────────────────────────────────
     // DETAIL VIEW
     // ─────────────────────────────────────────────────────────────────────────
@@ -469,6 +519,7 @@ const AdminReports = () => {
                 </div>
 
                 <GroupFilterBar />
+                <CompanyFilterBar />
 
                 <div style={S.topBar}>
                     <div style={{ flex: 1 }}>
@@ -1116,6 +1167,7 @@ const AdminReports = () => {
             <div style={S.pageSub}>Click a test card to view detailed attempt data.</div>
 
             <GroupFilterBar />
+            <CompanyFilterBar />
 
             {loadingOv ? (
                 <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>Loading overview…</div>

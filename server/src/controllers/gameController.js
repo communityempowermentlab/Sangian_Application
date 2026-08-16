@@ -452,7 +452,7 @@ exports.getGameHistory = async (req, res) => {
 //     falling back to timerSeconds for games that don't save a dedicated screentime field)
 exports.getReportOverview = async (req, res) => {
     try {
-        const { groupId } = req.query;
+        const { groupId, organization_id } = req.query;
         const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
 
         let queryStr = `
@@ -468,6 +468,17 @@ exports.getReportOverview = async (req, res) => {
                     WHERE c.child_id = gs.child_id AND cgm.group_id IN (?)
                 )`);
             queryParams.push(groupIds);
+        }
+        // Company/Organization filter — same resolution as getReportDetail's
+        // COALESCE(gs.org_id, c.org_id): prefer the session's own org_id
+        // (assessor-run sessions), falling back to the child's org_id
+        // (self-play) so both kinds of sessions are counted consistently
+        // with what the detail view shows for the same filter.
+        if (organization_id) {
+            conditions.push(`(gs.org_id = ? OR (gs.org_id IS NULL AND EXISTS (
+                    SELECT 1 FROM children c WHERE c.child_id = gs.child_id AND c.org_id = ?
+                )))`);
+            queryParams.push(organization_id, organization_id);
         }
         // Org isolation — an Organization session only ever sees its own
         // children's sessions; Super Admin/staff-with-org_id-NULL see
@@ -543,7 +554,7 @@ exports.getReportOverview = async (req, res) => {
 exports.getReportDetail = async (req, res) => {
     try {
         const { gameName } = req.params;
-        const { child_id, groupId } = req.query;
+        const { child_id, groupId, organization_id } = req.query;
         const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
 
         let gameFilter = [gameName];
@@ -608,6 +619,14 @@ exports.getReportDetail = async (req, res) => {
         if (groupIds.length > 0) {
             queryStr += ' AND EXISTS (SELECT 1 FROM child_group_members cgm WHERE cgm.children_id = c.id AND cgm.group_id IN (?))';
             queryParams.push(groupIds);
+        }
+
+        // Company/Organization filter — `o` is already resolved via
+        // COALESCE(gs.org_id, c.org_id) above, so this covers both
+        // assessor-run and self-play sessions for the selected company.
+        if (organization_id) {
+            queryStr += ' AND o.id = ?';
+            queryParams.push(organization_id);
         }
 
         // Org isolation — same convention as getReportOverview above.
