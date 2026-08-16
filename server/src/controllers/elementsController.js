@@ -123,19 +123,33 @@ const uploadElement = async (req, res) => {
             return res.json({ success: true, message: 'Element uploaded successfully', file_path });
         }
 
-        // If it is a splash screen, we act as if it replaces everything for that language.
-        // For Her Pher (or other multi-image items) replacing one specific image, the old
-        // row is deleted by id first — necessary because a new upload can arrive with a
-        // different file_name than the row it's replacing, so a plain INSERT ... ON
-        // DUPLICATE KEY UPDATE wouldn't reliably land on the same row otherwise.
+        // Replacing one specific image (Her Pher and any other multi-image item) updates
+        // that exact row's file_path IN PLACE, by id — it deliberately never touches
+        // file_name. The row's file_name is its stable slot identity (e.g. "5.png"
+        // always means "the 5th slot" from then on, regardless of what the admin's own
+        // local file happens to be called); the admin listing also sorts by created_at,
+        // so an in-place update keeps a replaced image from jumping to the front of the
+        // list the way a fresh insert would.
         //
-        // The delete and the insert below run in one transaction — previously they were
-        // two independent pool.query() calls, so a dropped connection or client abort
-        // between them could delete the old image and never insert its replacement,
-        // permanently losing that slot (this is exactly what happened to Her Pher V3's
-        // Item 4/5.png in production, discovered because V3's fixed-count invariant made
-        // the gap visible — but the same risk exists for every test using this endpoint).
-        const needsDelete = asset_type === 'splash_screen' || !!replace_id;
+        // This isn't just tidiness: the table's uniqueness is (test_id, asset_type,
+        // language, file_name), so the previous delete-then-insert-with-the-uploaded-
+        // file's-own-name approach meant uploading a locally-named "5.png" to replace
+        // some OTHER slot would silently UPDATE the real "5.png" row instead of the
+        // slot actually being replaced (ON DUPLICATE KEY UPDATE matching on that
+        // coincidental name collision) — deleting the intended slot's row with nothing
+        // ever inserted in its place, and overwriting an unrelated slot's image. This is
+        // exactly what a user reported after finding Her Pher V3 categories intermittently
+        // short by one image. Matching by id side-steps file_name entirely, so a same-
+        // named local file can never collide with a different slot again.
+        if (replace_id) {
+            await pool.query('UPDATE test_elements SET file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [file_path, replace_id]);
+            return res.json({ success: true, message: 'Element uploaded successfully', file_path });
+        }
+
+        // If it is a splash screen, we act as if it replaces everything for that language —
+        // delete+insert run in one transaction (previously two independent pool.query()
+        // calls, so a dropped connection between them could delete the old splash image
+        // and never insert its replacement).
         const insertQuery = `
             INSERT INTO test_elements (test_id, asset_type, language, file_name, file_path)
             VALUES (?, ?, ?, ?, ?)
@@ -144,15 +158,11 @@ const uploadElement = async (req, res) => {
                 updated_at = CURRENT_TIMESTAMP
         `;
 
-        if (needsDelete) {
+        if (asset_type === 'splash_screen') {
             const connection = await pool.getConnection();
             try {
                 await connection.beginTransaction();
-                if (asset_type === 'splash_screen') {
-                    await connection.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
-                } else {
-                    await connection.query('DELETE FROM test_elements WHERE id = ?', [replace_id]);
-                }
+                await connection.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
                 await connection.query(insertQuery, [test_id, asset_type, language, file_name, file_path]);
                 await connection.commit();
             } catch (txError) {
@@ -162,7 +172,14 @@ const uploadElement = async (req, res) => {
                 connection.release();
             }
         } else {
-            await pool.query(insertQuery, [test_id, asset_type, language, file_name, file_path]);
+            // Plain "Add" (a genuinely new row, no replace_id — only reachable for
+            // non-strict tests; Her Pher V3 always requires replace_id). Stores the
+            // multer-generated filename rather than the admin's own local file_name:
+            // guarantees this INSERT always lands as a distinct new row and can never
+            // silently collide with — and overwrite — an unrelated existing image that
+            // happens to share the same original local filename (same class of bug as
+            // the replace path above, for the same unique key).
+            await pool.query(insertQuery, [test_id, asset_type, language, req.file.filename, file_path]);
         }
 
         res.json({ success: true, message: 'Element uploaded successfully', file_path });
