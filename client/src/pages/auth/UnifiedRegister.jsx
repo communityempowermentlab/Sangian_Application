@@ -351,7 +351,7 @@ const UnifiedRegister = () => {
                                 <div className="form-group">
                                     <label htmlFor="ind_gender">Gender<span className="required">*</span></label>
                                     <select id="ind_gender" name="gender" value={indForm.gender} onChange={handleIndChange} className={indErrors.gender ? 'input-error' : ''}>
-                                        <option value="">Select…</option>
+                                        <option value="">Select Gender</option>
                                         {GENDER_OPTIONS.map(([value, label]) => (
                                             <option key={value} value={value}>{label}</option>
                                         ))}
