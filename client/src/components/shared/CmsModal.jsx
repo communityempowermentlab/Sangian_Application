@@ -12,6 +12,26 @@ import '../../pages/CmsPage.css';
 // content, no new backend route.
 const BILINGUAL_PAGES = ['terms', 'privacy'];
 
+// The stored CMS content opens with its own "<h2>{title}</h2>" heading plus
+// a "Last updated: ... | Platform: ..." paragraph — redundant here since
+// the modal already shows the title in its own header bar above. Stripped
+// for display only: this never touches the fetched data, the CMS record,
+// or the standalone /terms-conditions and /privacy-policy pages, which
+// keep rendering exactly as before.
+const stripRedundantHeader = (html, title) => {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    const first = container.firstElementChild;
+    if (first && /^h[1-4]$/i.test(first.tagName) && first.textContent.trim().toLowerCase() === (title || '').trim().toLowerCase()) {
+        first.remove();
+        const next = container.firstElementChild;
+        if (next && next.tagName === 'P' && /last updated/i.test(next.textContent)) {
+            next.remove();
+        }
+    }
+    return container.innerHTML;
+};
+
 const CmsModal = ({ pageKey, label, onClose }) => {
     const { language } = useLanguage();
     const [page, setPage] = useState(null);
@@ -85,7 +105,7 @@ const CmsModal = ({ pageKey, label, onClose }) => {
                     ) : error || !page ? (
                         <p style={{ color: '#dc2626', margin: 0 }}>Failed to load this page. Please try again.</p>
                     ) : (
-                        <div className="cms-body" dangerouslySetInnerHTML={{ __html: page.content }} />
+                        <div className="cms-body" dangerouslySetInnerHTML={{ __html: stripRedundantHeader(page.content, page.title) }} />
                     )}
                 </div>
             </div>
