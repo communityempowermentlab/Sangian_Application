@@ -259,6 +259,50 @@ const updateElementConfig = async (req, res) => {
             return res.status(400).json({ success: false, message: 'This question triggers the drop-rule and cannot be deactivated' });
         }
 
+        // Bagiya's 13 main screens form a cumulative recall chain — a later
+        // screen quizzes items whose names were only ever introduced by a
+        // specific earlier screen, and 4 screens carry score-based early-exit
+        // safety checkpoints keyed to their screen number. Arbitrary
+        // deactivation could silently produce an invalid test or skip a
+        // safety check, so this test can only be SHORTENED FROM THE END:
+        // the active set must always stay a contiguous prefix {1..K}, and
+        // Screen 1 can never be turned off. Screen 12 stands in for the
+        // combined Screens 12-13 unit (13 has no separate config — it's
+        // "12, continued", see AtlantisBagiyaGame.jsx).
+        const BAGIYA_SCREEN_KEY = /^screen_(1[0-2]|[1-9])$/;
+        if (test_id === 'atlantis_bagiya' && BAGIYA_SCREEN_KEY.test(asset_type)) {
+            const screenNum = parseInt(asset_type.slice('screen_'.length), 10);
+            const isDeactivating = config?.active === false;
+
+            if (isDeactivating && screenNum === 1) {
+                return res.status(400).json({ success: false, message: 'Screen 1 cannot be turned off — Bagiya must always have at least one active screen.' });
+            }
+
+            const [screenRows] = await pool.query(
+                "SELECT asset_type, config FROM test_elements WHERE test_id = ? AND asset_type LIKE 'screen\\_%' AND language = ?",
+                [test_id, language]
+            );
+            const activeMap = {};
+            for (let n = 1; n <= 12; n++) activeMap[n] = true;
+            for (const row of screenRows) {
+                const n = parseInt(row.asset_type.slice('screen_'.length), 10);
+                const rowConfig = typeof row.config === 'string' ? JSON.parse(row.config) : row.config;
+                if (rowConfig?.active === false) activeMap[n] = false;
+            }
+
+            if (isDeactivating) {
+                const laterActive = Object.keys(activeMap).some(n => Number(n) > screenNum && activeMap[n]);
+                if (laterActive) {
+                    return res.status(400).json({ success: false, message: 'Bagiya can only be shortened from the end — deactivate the last active screen first, then work backward.' });
+                }
+            } else {
+                const earlierInactive = Object.keys(activeMap).some(n => Number(n) < screenNum && !activeMap[n]);
+                if (earlierInactive) {
+                    return res.status(400).json({ success: false, message: 'Bagiya can only be re-extended from the end — activate the earlier deactivated screens first.' });
+                }
+            }
+        }
+
         const [existing] = await pool.query(
             'SELECT id FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?',
             [test_id, asset_type, language]

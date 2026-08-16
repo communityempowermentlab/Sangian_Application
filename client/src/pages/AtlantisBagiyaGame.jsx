@@ -583,6 +583,12 @@ const AtlantisBagiyaGame = () => {
   const [pauses, setPauses] = useState([]);
 
   // ── Main game state ─────────────────────────────────────
+  // Admin-controlled test length (Elements -> Bagiya Test Length): the highest
+  // main screen number this session should play through, 1-13. Screens 12+13
+  // are one indivisible unit, so 13 only appears here when unit 12 is active;
+  // otherwise this is whatever earlier screen is currently the tail. Defaults
+  // to 13 (today's full-length behavior) until the background fetch below resolves.
+  const [maxReachableScreenNum, setMaxReachableScreenNum] = useState(13);
   const [mainScreenNum, setMainScreenNum] = useState(1);
   const [mainPhase, setMainPhase] = useState('question'); // question|response
   const [subQIndex, setSubQIndex] = useState(0);         // which subQ is active (0-based)
@@ -627,6 +633,7 @@ const AtlantisBagiyaGame = () => {
   // ── Refs (race-condition safe) ──────────────────────────
   const allScoresRef = useRef([]);
   const gameSessionIdRef = useRef(null);
+  const maxReachableScreenNumRef = useRef(13);
   const timerSecondsRef = useRef(0);
   const pausesRef = useRef([]);
   const mainScreenNumRef = useRef(1);
@@ -666,6 +673,7 @@ const AtlantisBagiyaGame = () => {
   // ── Sync refs ───────────────────────────────────────────
   useEffect(() => { allScoresRef.current = allScores; }, [allScores]);
   useEffect(() => { gameSessionIdRef.current = gameSessionId; }, [gameSessionId]);
+  useEffect(() => { maxReachableScreenNumRef.current = maxReachableScreenNum; }, [maxReachableScreenNum]);
   useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
   useEffect(() => { pausesRef.current = pauses; }, [pauses]);
   useEffect(() => { mainScreenNumRef.current = mainScreenNum; }, [mainScreenNum]);
@@ -710,6 +718,38 @@ const AtlantisBagiyaGame = () => {
     checkResume(parsed.child_id);
     fetchActivity(parsed.child_id);
   }, [navigate]);
+
+  // ── Admin-controlled test length ────────────────────────
+  // Screens 1-12 (12 stands in for the combined 12+13 unit) each carry an
+  // optional config.active flag, same test_elements mechanism Rachna's
+  // per-question toggles use. The active set is always enforced server-side
+  // to be a contiguous prefix {1..K}, so the highest active unit is all we
+  // need. Non-blocking: if this hasn't resolved yet, the game proceeds as
+  // if the full 13 screens are active (today's behavior), same accepted
+  // race Rachna's own equivalent fetch has.
+  useEffect(() => {
+    let cancelled = false;
+    axios.get(`${API_URL}/public/elements`, { params: { test_id: 'atlantis_bagiya' } })
+      .then(res => {
+        if (cancelled) return;
+        const screenConfig = {};
+        (res.data.elements || []).forEach(el => {
+          if (el.asset_type?.startsWith('screen_')) screenConfig[el.asset_type] = el;
+        });
+        let highestActiveUnit = 1;
+        for (let n = 1; n <= 12; n++) {
+          const el = screenConfig[`screen_${n}`];
+          const active = el?.config?.active !== false;
+          if (active) highestActiveUnit = n;
+          else break; // contiguous prefix, guaranteed by the backend guard
+        }
+        const computed = highestActiveUnit === 12 ? 13 : highestActiveUnit;
+        setMaxReachableScreenNum(computed);
+        maxReachableScreenNumRef.current = computed;
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const fetchActivity = async (childId) => {
     try {
@@ -799,6 +839,30 @@ const AtlantisBagiyaGame = () => {
 
   const resumeGame = () => {
     const saved = resumeData.saved_state || {};
+    const savedScreenNum = saved.mainScreenNum || 1;
+
+    // Admin may have shortened the test length while this session sat
+    // paused. Resuming into a screen number that's no longer valid would
+    // silently re-enable a dependency chain or checkpoint the shortened
+    // test was meant to retire, so end the session gracefully instead —
+    // same path a checkpoint drop uses. completeGame() reads its state off
+    // refs, which only sync from React state on the NEXT render, so they're
+    // set directly here first.
+    if (savedScreenNum > maxReachableScreenNumRef.current) {
+      gameSessionIdRef.current = resumeData.id;
+      setGameSessionId(resumeData.id);
+      const scores = saved.allScores || [];
+      allScoresRef.current = scores;
+      setAllScores(scores);
+      timerSecondsRef.current = saved.timerSeconds || 0;
+      setTimerSeconds(saved.timerSeconds || 0);
+      pausesRef.current = saved.pauses || [];
+      setPauses(saved.pauses || []);
+      setShowResumeModal(false);
+      completeGame('dropped');
+      return;
+    }
+
     setGameSessionId(resumeData.id);
     setAttemptNo(resumeData.attempt_no || 1);
     const scores = saved.allScores || [];
@@ -806,7 +870,7 @@ const AtlantisBagiyaGame = () => {
     setTimerSeconds(saved.timerSeconds || 0);
     setQTimer(saved.qTimer || 0);
     setPauses(saved.pauses || []);
-    setMainScreenNum(saved.mainScreenNum || 1);
+    setMainScreenNum(savedScreenNum);
     setMainPhase('question');
     setSubQIndex(0);
     setSubQAnswered({});
@@ -1158,7 +1222,7 @@ const AtlantisBagiyaGame = () => {
     }
 
     const nextNum = currentNum + 1;
-    if (nextNum > 13) {
+    if (nextNum > maxReachableScreenNumRef.current) {
       completeGame();
       return;
     }
@@ -1744,7 +1808,7 @@ const AtlantisBagiyaGame = () => {
                     { label: t('game.wrongLabel'),    val: wrongCount, cls: 'red' },
                     { label: t('game.accuracyLabel'), val: `${accuracyPct}%`, sub: `${totalPts} / ${maxPts}`, cls: '', info: true },
                     { label: t('game.totalTimeMetric'), val: formatTime(totalTimeSec), cls: '' },
-                    { label: t('game.screensLabel'),  val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / 13`, cls: '' },
+                    { label: t('game.screensLabel'),  val: `${SCREEN_CONFIGS.findIndex(c => c.num === mainScreenNum) + 1} / ${maxReachableScreenNum}`, cls: '' },
                   ].map((m, i) => (
                     <div key={i} className="ab-metric-box">
                       <label style={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -9,6 +9,7 @@ import AdminAnkganitV2Config from './AdminAnkganitV2Config';
 import AdminAnkganitV3Config from './AdminAnkganitV3Config';
 import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 import RachnaElements from '../components/RachnaElements';
+import BagiyaElements from '../components/BagiyaElements';
 import AudioElementsManager from '../components/AudioElementsManager';
 import ReadingV2ContentManager from '../components/ReadingV2ContentManager';
 
@@ -259,6 +260,8 @@ export default function AdminElements() {
                         </div>
                     </>
                 )}
+
+                {activeTest === 'atlantis_bagiya' && <BagiyaElements />}
 
                 {activeTest === 'atlantis_bagiya' && (
                     <div className="elements-section">
