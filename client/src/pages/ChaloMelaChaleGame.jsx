@@ -425,6 +425,14 @@ const ChaloMelaChaleGame = () => {
   const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
   const { getAudioUrl, ready: audioReady } = useTestAudio('rover_mela');
 
+  // Admin-managed per-language audio (Elements -> Audio Management), falling
+  // back to today's bundled Hindi clips under AUDIO_DIR when nothing's
+  // configured yet — same resolution getAudioUrl already does for splash
+  // (see the <audio src> below). Resolved fresh at each call site rather
+  // than memoized, since playAudio/playSoundEffect run from inside async
+  // demo sequences and event handlers, not JSX render output.
+  const resolveAudio = useCallback((key, file) => getAudioUrl(key, `${AUDIO_DIR}/${file}`), [getAudioUrl]);
+
   // ── Session screentime timer ─────────────────────────────────────────────
   // Starts only when "Start Now" is clicked (or game is resumed); stops when assessment is submitted.
   const [timerSeconds, setTimerSeconds]   = useState(0);
@@ -586,7 +594,7 @@ const ChaloMelaChaleGame = () => {
               handleResult(false, "Timeout"); 
               return { ...prev, timeRemaining: 0 }; 
             }
-            if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
+            if (prev.timeRemaining === 6) playSoundEffect(resolveAudio('timer_warning', 'timer_warning.wav'));
             return { ...prev, timeRemaining: prev.timeRemaining - 1 };
           });
         }, 1000);
@@ -692,10 +700,10 @@ const ChaloMelaChaleGame = () => {
     }
   }, [screen, gameSessionId]);
 
-  const playAudio = useCallback((file, onEnded) => {
+  const playAudio = useCallback((url, onEnded) => {
     if (isStoppedRef.current) return; // don't start new audio after stopAll
     stopAudio();
-    const audio = new Audio(`${AUDIO_DIR}/${file}`);
+    const audio = new Audio(url);
     audioRef.current = audio;
     playingAudiosRef.current.push(audio); // track so stopAll/unmount can kill it
     
@@ -721,8 +729,8 @@ const ChaloMelaChaleGame = () => {
     return audio;
   }, [stopAudio, safeSetTimeout]);
 
-  const playSoundEffect = useCallback((file) => {
-    const sfx = new Audio(`${AUDIO_DIR}/${file}`);
+  const playSoundEffect = useCallback((url) => {
+    const sfx = new Audio(url);
     sfx.play().catch(e => console.log('SFX play failed', e));
   }, []);
 
@@ -748,16 +756,16 @@ const ChaloMelaChaleGame = () => {
     const now = Date.now();
     setQStartTime(now);
     qStartTimeRef.current = now;
-    playSoundEffect('start_trial.wav');
+    playSoundEffect(resolveAudio('start_trial', 'start_trial.wav'));
     timerRef.current = setInterval(() => {
       if (isPausedRef.current) return;
       setQuestionState(prev => {
         if (prev.timeRemaining <= 1) { clearInterval(timerRef.current); handleResult(false, "Timeout"); return { ...prev, timeRemaining: 0 }; }
-        if (prev.timeRemaining === 6) playSoundEffect('timer_warning.wav'); 
+        if (prev.timeRemaining === 6) playSoundEffect(resolveAudio('timer_warning', 'timer_warning.wav'));
         return { ...prev, timeRemaining: prev.timeRemaining - 1 };
       });
     }, 1000);
-  }, [stopAll, playSoundEffect]);
+  }, [stopAll, playSoundEffect, resolveAudio]);
 
   const handleRefresh = useCallback((trialNum) => {
     if (refreshCount >= 1) return;
@@ -781,8 +789,8 @@ const ChaloMelaChaleGame = () => {
       isComplete: false,
       allCoinsDrained: false,
     }));
-    playSoundEffect('start_trial.wav');
-  }, [retakeCount, playSoundEffect]);
+    playSoundEffect(resolveAudio('start_trial', 'start_trial.wav'));
+  }, [retakeCount, playSoundEffect, resolveAudio]);
 
   const initQuestion = useCallback((id, matrix) => {
     stopAll();
@@ -880,7 +888,7 @@ const ChaloMelaChaleGame = () => {
 
     // Play samplea.wav
     let audioFinished = false;
-    playAudio('samplea.wav', () => { audioFinished = true; });
+    playAudio(resolveAudio('sample_a', 'samplea.wav'), () => { audioFinished = true; });
     while(!audioFinished) {
       await new Promise(r => setTimeout(r, 50));
       if (isStoppedRef.current) return;
@@ -897,13 +905,13 @@ const ChaloMelaChaleGame = () => {
     // Step 3: sa_path1.wav, duration 12.75s (movement 2s faster)
     setUnlockedPaths(prev => ({ ...prev, p1: true }));
     // Base stepDelay for p1 is 10750 / 7 = 1536ms
-    await animatePathA(PATH1_SEQ, 'p1', 'sa_path1.wav', 10750, true, 1000, { 3: 1500 - 1536, 4: 500 - 1536 });
+    await animatePathA(PATH1_SEQ, 'p1', resolveAudio('sa_path1', 'sa_path1.wav'), 10750, true, 1000, { 3: 1500 - 1536, 4: 500 - 1536 });
     if (isStoppedRef.current) return;
-    
+
     // Step 4: sa_path2.wav, duration 17.34s (movement 2s faster)
     setUnlockedPaths(prev => ({ ...prev, p2: true }));
     // Base stepDelay is 15340 / 5 = 3068ms. We offset to hit exact target times.
-    await animatePathA(PATH2_SEQ, 'p2', 'sa_path2.wav', 15340, false, 1000, { 1: 1000 - 3068, 2: 1000 - 3068, 3: 1000 - 3068, 4: -500 }); // Don't wait for audio to finish so Path 3 starts 3s earlier
+    await animatePathA(PATH2_SEQ, 'p2', resolveAudio('sa_path2', 'sa_path2.wav'), 15340, false, 1000, { 1: 1000 - 3068, 2: 1000 - 3068, 3: 1000 - 3068, 4: -500 }); // Don't wait for audio to finish so Path 3 starts 3s earlier
     if (isStoppedRef.current) return;
 
     // Wait 0 seconds before path 3
@@ -917,14 +925,14 @@ const ChaloMelaChaleGame = () => {
     // Step 5: sa_path3.wav, duration 33.38s (movement reduced by 4s -> 24380)
     setUnlockedPaths(prev => ({ ...prev, p3: true }));
     // Base stepDelay for p3 is 24380 / 4 = 6095ms. Offsetting indices 0,1,2 to 1000ms.
-    await animatePathA(PATH3_SEQ, 'p3', 'sa_path3.wav', 24380, true, 3000, { 0: 1200 - 6095, 1: 1200 - 6095, 2: 1200 - 6095 });
+    await animatePathA(PATH3_SEQ, 'p3', resolveAudio('sa_path3', 'sa_path3.wav'), 24380, true, 3000, { 0: 1200 - 6095, 1: 1200 - 6095, 2: 1200 - 6095 });
     if (isStoppedRef.current) return;
 
     // Completion
     setActivePath(null);
     setUnlockedPaths(prev => ({ ...prev, tq1: true }));
 
-  }, [playAudio, animatePathA]);
+  }, [playAudio, animatePathA, resolveAudio]);
 
   const startAutoDemoSB = useCallback(async () => {
     isStoppedRef.current = false;
@@ -941,7 +949,7 @@ const ChaloMelaChaleGame = () => {
 
     // Play sampleb.wav
     let audioFinished = false;
-    playAudio('sampleb.wav', () => { audioFinished = true; });
+    playAudio(resolveAudio('sample_b', 'sampleb.wav'), () => { audioFinished = true; });
     while(!audioFinished) {
       await new Promise(r => setTimeout(r, 50));
       if (isStoppedRef.current) return;
@@ -958,9 +966,9 @@ const ChaloMelaChaleGame = () => {
     // Step 3: sb_path1.wav, duration 12.735s
     // Base stepDelay for sbP1 is 12735 / 6 = 2123ms; cells 2-3, 3-4, 4-5, 5-6 tightened to ~1s
     setUnlockedPaths(prev => ({ ...prev, sbP1: true }));
-    await animatePathA(SB_PATH1_SEQ, 'sbP1', 'sb_path1.wav', 12735, true, 0, { 1: 1000 - 2123, 2: 1000 - 2123, 3: 1000 - 2123, 4: 1000 - 2123 });
+    await animatePathA(SB_PATH1_SEQ, 'sbP1', resolveAudio('sb_path1', 'sb_path1.wav'), 12735, true, 0, { 1: 1000 - 2123, 2: 1000 - 2123, 3: 1000 - 2123, 4: 1000 - 2123 });
     if (isStoppedRef.current) return;
-    
+
     // Wait 2 seconds
     elapsed = 0;
     while(elapsed < 2000) {
@@ -972,7 +980,7 @@ const ChaloMelaChaleGame = () => {
     // Step 4: sb_path2.wav, duration 14.015s
     // Base stepDelay for sbP2 is 14015 / 5 = 2803ms; cells 2-3, 3-4, 4-5 tightened to ~1.5s
     setUnlockedPaths(prev => ({ ...prev, sbP2: true }));
-    await animatePathA(SB_PATH2_SEQ, 'sbP2', 'sb_path2.wav', 14015, true, 0, { 1: 1500 - 2803, 2: 1500 - 2803, 3: 1500 - 2803 });
+    await animatePathA(SB_PATH2_SEQ, 'sbP2', resolveAudio('sb_path2', 'sb_path2.wav'), 14015, true, 0, { 1: 1500 - 2803, 2: 1500 - 2803, 3: 1500 - 2803 });
     if (isStoppedRef.current) return;
 
     // Step 5: Wait 2 seconds, then play last_instruction.wav
@@ -984,7 +992,7 @@ const ChaloMelaChaleGame = () => {
     }
 
     audioFinished = false;
-    playAudio('last_instruction.wav', () => { audioFinished = true; });
+    playAudio(resolveAudio('last_instruction', 'last_instruction.wav'), () => { audioFinished = true; });
     while(!audioFinished) {
       await new Promise(r => setTimeout(r, 50));
       if (isStoppedRef.current) return;
@@ -994,7 +1002,7 @@ const ChaloMelaChaleGame = () => {
     setActivePath(null);
     setUnlockedPaths(prev => ({ ...prev, tq3: true }));
 
-  }, [playAudio, animatePathA]);
+  }, [playAudio, animatePathA, resolveAudio]);
 
   // ── Layout effect: runs synchronously BEFORE browser paint ──────────────────
   // This guarantees the button is visually disabled before the user ever sees
@@ -1046,7 +1054,7 @@ const ChaloMelaChaleGame = () => {
     if (!isAdj) return; // silent ignore — no state change, no scoring, no path closure
     if (s.matrix[r][c] === "7-T2") {
       clearInterval(timerRef.current);
-      playSoundEffect('wrong_move.wav');
+      playSoundEffect(resolveAudio('wrong_move', 'wrong_move.wav'));
       setQuestionState(prev => ({ ...prev, allCoinsDrained: true, wrongMovePos: { row: r, col: c }, gameStarted: false }));
       safeSetTimeout(() => handleResult(false, "Hit Weed"), 400);
       return;
@@ -1066,7 +1074,7 @@ const ChaloMelaChaleGame = () => {
     }
 
     setQuestionState(prev => ({ ...prev, path: newPath, moveCount: newMoveCount }));
-    playSoundEffect('move.wav');
+    playSoundEffect(resolveAudio('move', 'move.wav'));
     const isTQ = s.id.startsWith('tq');
     if (cellType === "7-EP") {
       clearInterval(timerRef.current);
@@ -1170,7 +1178,7 @@ const ChaloMelaChaleGame = () => {
       } else { newState.nextUnlocked = true; }
       return newState;
     });
-    if (isSuccess) playSoundEffect('success.wav'); else playSoundEffect('failure.wav');
+    if (isSuccess) playSoundEffect(resolveAudio('success', 'success.wav')); else playSoundEffect(resolveAudio('failure', 'failure.wav'));
   };
 
   const submitAssessmentForm = async () => {

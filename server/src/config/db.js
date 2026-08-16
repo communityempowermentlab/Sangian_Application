@@ -2288,6 +2288,35 @@ const initDb = async () => {
       );
     }
 
+    // Chalo Mela Chalen (rover_mela) — the two demo/teaching paths (A and B)
+    // each narrate an intro clip plus one clip per path segment, followed by
+    // a shared final instruction, then 6 in-game SFX. 'splash' is already
+    // seeded above via GAMES_REGISTRY. See ChaloMelaChaleGame.jsx's
+    // playAudio/playSoundEffect call sites for the matching static fallback
+    // filenames (unchanged, still bundled under AUDIO_DIR).
+    const melaElementSeeds = [
+      { key: 'sample_a', label: 'Demo Path A — Intro', order: 1 },
+      { key: 'sa_path1', label: 'Demo Path A — Path 1', order: 2 },
+      { key: 'sa_path2', label: 'Demo Path A — Path 2', order: 3 },
+      { key: 'sa_path3', label: 'Demo Path A — Path 3', order: 4 },
+      { key: 'sample_b', label: 'Demo Path B — Intro', order: 5 },
+      { key: 'sb_path1', label: 'Demo Path B — Path 1', order: 6 },
+      { key: 'sb_path2', label: 'Demo Path B — Path 2', order: 7 },
+      { key: 'last_instruction', label: 'Final Instruction (Pre-Game)', order: 8 },
+      { key: 'start_trial', label: 'SFX: Trial Start', order: 9 },
+      { key: 'timer_warning', label: 'SFX: Timer Warning (6s Left)', order: 10 },
+      { key: 'wrong_move', label: 'SFX: Wrong Move (Weed)', order: 11 },
+      { key: 'move', label: 'SFX: Move', order: 12 },
+      { key: 'success', label: 'SFX: Success', order: 13 },
+      { key: 'failure', label: 'SFX: Failure', order: 14 },
+    ];
+    for (const seed of melaElementSeeds) {
+      await connection.query(
+        `INSERT IGNORE INTO audio_elements (test_id, element_key, label, display_order) VALUES (?, ?, ?, ?)`,
+        ['rover_mela', seed.key, seed.label, seed.order]
+      );
+    }
+
     // Create child_profile_edit_logs table for tracking admin edits to child profiles
     await connection.query(`
       CREATE TABLE IF NOT EXISTS child_profile_edit_logs (
