@@ -62,6 +62,12 @@ const scopeClause = (orgScope, alias = 'c') => {
 exports.getAllChildren = async (req, res) => {
     try {
         const scope = scopeClause(req.orgScope);
+        // Individual Users are a separate, self-contained section (Admin >
+        // Individuals, and their own "My Account" page) — their linked
+        // child profile must not appear in the Registered Children list,
+        // for Super Admin or any Organization alike. Same exclusion
+        // already applied to admin Reports/Analysis.
+        const whereClauses = ['c.individual_id IS NULL', ...(scope.sql ? [scope.sql] : [])];
         const [children] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo, c.created_at,
                    c.org_id, o.org_name,
@@ -91,7 +97,7 @@ exports.getAllChildren = async (req, res) => {
                 FROM game_sessions
                 GROUP BY child_id
             ) agg ON agg.child_id = c.child_id
-            ${scope.sql ? `WHERE ${scope.sql}` : ''}
+            WHERE ${whereClauses.join(' AND ')}
             ORDER BY c.created_at DESC
         `, scope.params);
         res.status(200).json(children);
