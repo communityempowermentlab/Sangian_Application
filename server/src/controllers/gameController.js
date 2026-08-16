@@ -487,7 +487,11 @@ exports.getReportOverview = async (req, res) => {
             FROM game_sessions gs
         `;
         const queryParams = [];
-        const conditions = [];
+        // Individual Users are a separate, self-contained reporting surface
+        // (their own "My Account" / /individual/reports page) — their
+        // sessions must never appear in the admin Reports/Analysis modules,
+        // for Super Admin or any Organization alike.
+        const conditions = ['gs.individual_id IS NULL'];
         if (groupIds.length > 0) {
             conditions.push(`EXISTS (
                     SELECT 1 FROM children c
@@ -658,6 +662,12 @@ exports.getReportDetail = async (req, res) => {
               -- below). Only join the most recent submission.
               AND ga.id = (SELECT MAX(ga2.id) FROM game_assessments ga2 WHERE ga2.session_id = gs.id)
             WHERE gs.game_name IN (?)
+              -- Individual Users are a separate, self-contained reporting
+              -- surface (their own "My Account" / /individual/reports page)
+              -- — their sessions must never appear in the admin
+              -- Reports/Analysis modules, for Super Admin or any
+              -- Organization alike.
+              AND gs.individual_id IS NULL
         `;
         let queryParams = [gameFilter];
         

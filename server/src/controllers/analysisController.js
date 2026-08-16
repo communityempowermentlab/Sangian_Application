@@ -203,6 +203,14 @@ function parseFilters(req) {
     orgClausesC.push('c.org_id <=> ?');  orgParamsC.push(orgScope.orgId);
   }
 
+  // Individual Users are a separate, self-contained reporting surface (their
+  // own "My Account" / /individual/reports page) — their sessions and their
+  // own child record must never appear in the admin Reports/Analysis
+  // modules, for Super Admin or any Organization alike. Unconditional, not
+  // tied to org scope or any filter param, unlike orgClauses above.
+  const individualClauses = ['gs.individual_id IS NULL'];
+  const individualClausesC = ['c.individual_id IS NULL'];
+
   // Date clauses (on gs.created_at)
   const dateClauses = [], dateParams = [];
   if (startDate) { dateClauses.push('gs.created_at >= ?');          dateParams.push(startDate); }
@@ -285,16 +293,16 @@ function parseFilters(req) {
     groupParams.push(groupIds);
   }
 
-  const allClauses     = [...orgClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const allParams      = [...orgParams,  ...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const allClauses     = [...orgClauses, ...individualClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const allParams      = [...orgParams,                        ...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For gender distribution: skip gender filter so all genders are visible
-  const noGenderClauses = [...orgClauses, ...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const noGenderParams  = [...orgParams,  ...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const noGenderClauses = [...orgClauses, ...individualClauses, ...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noGenderParams  = [...orgParams,                        ...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For age-group distribution: skip age filter so all bands are visible
-  const noAgeClauses = [...orgClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
-  const noAgeParams  = [...orgParams,  ...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
+  const noAgeClauses = [...orgClauses, ...individualClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noAgeParams  = [...orgParams,                        ...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
 
@@ -302,7 +310,7 @@ function parseFilters(req) {
     allClauses, allParams, noGenderClauses, noGenderParams, noAgeClauses, noAgeParams, needsChildJoin,
     // Raw pieces — used by getOverviewV2 to compose custom clause sets (e.g. children-only
     // queries with no date scoping, or a shifted date range for period-over-period trend).
-    orgClauses, orgParams, orgClausesC, orgParamsC,
+    orgClauses, orgParams, orgClausesC, orgParamsC, individualClauses, individualClausesC,
     dateClauses, dateParams, genderClauses, genderParams, statusClauses, statusParams, ageClauses, childClauses, childParams,
     gameClauses, gameParams, groupClauses, groupParams, attemptClauses, attemptParams,
     cGameIntersectionClauses, cGameIntersectionParams
@@ -324,13 +332,15 @@ exports.getMeta = async (req, res) => {
     const { orgScope } = req;
     const orgWhere  = orgScope.isSuperAdmin ? '' : 'AND org_id <=> ?';
     const orgParams = orgScope.isSuperAdmin ? [] : [orgScope.orgId];
+    // Individual Users' sessions are excluded from Reports/Analysis
+    // entirely — see parseFilters' individualClauses for the full rationale.
     const [[row]] = await pool.query(`
       SELECT
         DATE_FORMAT(MIN(start_time), '%Y-%m-%d')  AS minDate,
         DATE_FORMAT(CURDATE(),       '%Y-%m-%d')  AS today,
         COUNT(*)                                   AS totalSessions
       FROM game_sessions
-      WHERE start_time IS NOT NULL ${orgWhere}
+      WHERE start_time IS NOT NULL AND individual_id IS NULL ${orgWhere}
     `, orgParams);
     res.json(row || { minDate: null, today: new Date().toISOString().slice(0, 10), totalSessions: 0 });
   } catch (err) {
@@ -1044,7 +1054,7 @@ exports.getOverviewV2 = async (req, res) => {
       childSearchParams.push(cid, `%${cid}%`);
     }
 
-    const childOnlyClauses = [...f.orgClausesC, ...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const childOnlyClauses = [...f.orgClausesC, ...f.individualClausesC, ...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
     const childOnlyParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [regChildRows] = await pool.query(`
       SELECT c.child_id FROM children c ${toWhere(childOnlyClauses)}
@@ -1052,7 +1062,7 @@ exports.getOverviewV2 = async (req, res) => {
     const totalRegisteredChildren = regChildRows.length;
     const registeredChildrenIds = regChildRows.map(r => r.child_id);
 
-    const noGenderChildClauses = [...f.orgClausesC, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noGenderChildClauses = [...f.orgClausesC, ...f.individualClausesC, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
     const noGenderChildParams  = [...f.orgParamsC, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [genderDistRaw] = await pool.query(`
       SELECT COALESCE(c.gender, 'unknown') AS gender, COUNT(*) AS count
@@ -1060,7 +1070,7 @@ exports.getOverviewV2 = async (req, res) => {
       GROUP BY c.gender
     `, noGenderChildParams);
 
-    const noAgeChildClauses = [...f.orgClausesC, ...f.genderClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
+    const noAgeChildClauses = [...f.orgClausesC, ...f.individualClausesC, ...f.genderClauses, ...childSearchClauses, ...f.groupClauses, ...f.cGameIntersectionClauses];
     const noAgeChildParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams, ...f.cGameIntersectionParams];
     const [ageGroupDistRaw] = await pool.query(`
       SELECT ${AGE_BAND_CASE} AS ageBand, COUNT(*) AS count
