@@ -67,7 +67,9 @@ const uploadElement = async (req, res) => {
         const { replace_id } = req.body;
 
         // Her Pher V3's item0-item8 categories each hold an exact, fixed
-        // image count (server/src/config/herPherV3.js) — enforced here so
+        // image count (server/src/config/herPherV3.js) that can only ever
+        // be provisioned by the initial seed — there is no "add a new one"
+        // case, only swapping an existing image's content. Enforced here so
         // it can't be bypassed via a direct API call, not just the Admin
         // UI. Every other test_id (including this same test_id's own
         // splash_screen/audio_ rows) skips this entirely.
@@ -78,28 +80,21 @@ const uploadElement = async (req, res) => {
                 return res.status(400).json({ success: false, message: 'Invalid element for this test.' });
             }
             if (requiredCount !== undefined) {
-                if (replace_id) {
-                    // Replacing an existing image never changes the count, but
-                    // confirm replace_id actually belongs to this element —
-                    // otherwise an arbitrary id would blindly delete an
-                    // unrelated row (see the DELETE below).
-                    const [replaceRows] = await pool.query(
-                        'SELECT id FROM test_elements WHERE id = ? AND test_id = ? AND asset_type = ?',
-                        [replace_id, test_id, asset_type]
-                    );
-                    if (!replaceRows.length) {
-                        fs.unlinkSync(req.file.path);
-                        return res.status(400).json({ success: false, message: 'Cannot replace: original image not found in this element.' });
-                    }
-                } else {
-                    const [[{ activeCount }]] = await pool.query(
-                        'SELECT COUNT(*) AS activeCount FROM test_elements WHERE test_id = ? AND asset_type = ? AND is_active = 1',
-                        [test_id, asset_type]
-                    );
-                    if (activeCount >= requiredCount) {
-                        fs.unlinkSync(req.file.path);
-                        return res.status(400).json({ success: false, message: `This element can contain exactly ${requiredCount} images. Additional images cannot be added.` });
-                    }
+                if (!replace_id) {
+                    fs.unlinkSync(req.file.path);
+                    return res.status(400).json({ success: false, message: `This element's image count is fixed at exactly ${requiredCount} — upload a replacement for an existing image instead of adding a new one.` });
+                }
+                // Replacing an existing image never changes the count, but
+                // confirm replace_id actually belongs to this element —
+                // otherwise an arbitrary id would blindly delete an
+                // unrelated row (see the DELETE below).
+                const [replaceRows] = await pool.query(
+                    'SELECT id FROM test_elements WHERE id = ? AND test_id = ? AND asset_type = ?',
+                    [replace_id, test_id, asset_type]
+                );
+                if (!replaceRows.length) {
+                    fs.unlinkSync(req.file.path);
+                    return res.status(400).json({ success: false, message: 'Cannot replace: original image not found in this element.' });
                 }
             }
         }

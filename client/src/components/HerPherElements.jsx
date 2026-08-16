@@ -134,22 +134,29 @@ export default function HerPherElements({ elements, loadElements, showToast, gam
                                         ? `${currentCount} / ${category.max} images — ${isComplete ? 'Complete' : 'Incomplete'}`
                                         : `${currentCount} / ${category.max} items`}
                                 </span>
-                                <div>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                        ref={el => fileRefs.current[category.id] = el}
-                                        onChange={(e) => handleFileSelect(category.id, e.target.files[0])}
-                                    />
-                                    <button
-                                        className="admin-btn admin-btn-primary"
-                                        onClick={() => fileRefs.current[category.id]?.click()}
-                                        disabled={uploading === `upload_${category.id}` || currentCount >= category.max}
-                                    >
-                                        {uploading === `upload_${category.id}` ? 'Uploading...' : 'Add Image'}
-                                    </button>
-                                </div>
+                                {/* Strict (V3) categories have a fixed image count that's only
+                                    ever provisioned by the initial seed — there's no "add a new
+                                    one" case, only Replace on an existing image, so this control
+                                    doesn't apply here at all (matches the backend's matching
+                                    rejection in elementsController.js). */}
+                                {!strict && (
+                                    <div>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            ref={el => fileRefs.current[category.id] = el}
+                                            onChange={(e) => handleFileSelect(category.id, e.target.files[0])}
+                                        />
+                                        <button
+                                            className="admin-btn admin-btn-primary"
+                                            onClick={() => fileRefs.current[category.id]?.click()}
+                                            disabled={uploading === `upload_${category.id}` || currentCount >= category.max}
+                                        >
+                                            {uploading === `upload_${category.id}` ? 'Uploading...' : 'Add Image'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
