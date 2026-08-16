@@ -301,20 +301,20 @@ const UnifiedRegister = () => {
                             <form className="register-form" onSubmit={handleSubmit} noValidate>
                                 <div className="form-group">
                                     <label htmlFor="full_name">Full Name<span className="required">*</span></label>
-                                    <input id="full_name" name="full_name" value={indForm.full_name} onChange={handleIndChange} placeholder="Jane Doe" className={indErrors.full_name ? 'input-error' : ''} />
+                                    <input id="full_name" name="full_name" value={indForm.full_name} onChange={handleIndChange} className={indErrors.full_name ? 'input-error' : ''} />
                                     <p className="field-error">{indErrors.full_name}</p>
                                 </div>
 
                                 <div className="form-group">
                                     <label htmlFor="ind_email">Email Address<span className="required">*</span></label>
-                                    <input id="ind_email" name="email" type="email" value={indForm.email} onChange={handleIndChange} placeholder="jane@example.com" className={indErrors.email ? 'input-error' : ''} />
+                                    <input id="ind_email" name="email" type="email" value={indForm.email} onChange={handleIndChange} className={indErrors.email ? 'input-error' : ''} />
                                     <OtpGate channel="email" identifier={indForm.email.trim().toLowerCase()} purpose="individual_registration" isValid={indEmailIsValid} verified={indEmailVerified} onVerified={() => setIndEmailVerified(true)} onAlreadyRegistered={setIndEmailTakenMsg} />
                                     <p className="field-error">{indErrors.email}</p>
                                 </div>
 
                                 <div className="form-group">
                                     <label htmlFor="ind_mobile">Mobile Number<span className="required">*</span></label>
-                                    <input id="ind_mobile" name="mobile" value={indForm.mobile} onChange={handleIndChange} placeholder="9876543210" maxLength={15} inputMode="tel" className={indErrors.mobile ? 'input-error' : ''} />
+                                    <input id="ind_mobile" name="mobile" value={indForm.mobile} onChange={handleIndChange} maxLength={15} inputMode="tel" className={indErrors.mobile ? 'input-error' : ''} />
                                     <OtpGate channel="phone" identifier={indForm.mobile.trim()} purpose="individual_registration" isValid={indMobileIsValid} verified={indMobileVerified} onVerified={() => setIndMobileVerified(true)} onAlreadyRegistered={setIndMobileTakenMsg} />
                                     <p className="field-error">{indErrors.mobile}</p>
                                 </div>
@@ -364,7 +364,7 @@ const UnifiedRegister = () => {
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             id="ind_password" name="password" type={showIndPassword ? 'text' : 'password'}
-                                            value={indForm.password} onChange={handleIndChange} placeholder="••••••••"
+                                            value={indForm.password} onChange={handleIndChange}
                                             autoComplete="new-password" className={indErrors.password ? 'input-error' : ''}
                                             style={{ width: '100%', paddingRight: '38px', boxSizing: 'border-box' }}
                                         />
@@ -417,7 +417,7 @@ const UnifiedRegister = () => {
                             <form className="register-form" onSubmit={handleSubmit} noValidate>
                                 <div className="form-group">
                                     <label htmlFor="org_name">Organization Name<span className="required">*</span></label>
-                                    <input id="org_name" name="org_name" value={orgForm.org_name} onChange={handleOrgChange} placeholder="Community Empowerment Lab" className={orgErrors.org_name ? 'input-error' : ''} />
+                                    <input id="org_name" name="org_name" value={orgForm.org_name} onChange={handleOrgChange} className={orgErrors.org_name ? 'input-error' : ''} />
                                     <p className="field-error">{orgErrors.org_name}</p>
                                 </div>
 
@@ -431,21 +431,21 @@ const UnifiedRegister = () => {
 
                                 <div className="form-group">
                                     <label htmlFor="org_email">Organization Email<span className="required">*</span></label>
-                                    <input id="org_email" name="org_email" type="email" value={orgForm.org_email} onChange={handleOrgChange} placeholder="contact@ngo.org" className={orgErrors.org_email ? 'input-error' : ''} />
+                                    <input id="org_email" name="org_email" type="email" value={orgForm.org_email} onChange={handleOrgChange} className={orgErrors.org_email ? 'input-error' : ''} />
                                     <OtpGate channel="email" identifier={orgForm.org_email.trim().toLowerCase()} purpose="org_registration" isValid={orgEmailIsValid} verified={orgEmailVerified} onVerified={() => setOrgEmailVerified(true)} onAlreadyRegistered={setOrgEmailTakenMsg} />
                                     <p className="field-error">{orgErrors.org_email}</p>
                                 </div>
 
                                 <div className="form-group">
                                     <label htmlFor="org_mobile">Organization Mobile Number<span className="required">*</span></label>
-                                    <input id="org_mobile" name="org_mobile" value={orgForm.org_mobile} onChange={handleOrgChange} placeholder="9876543210" maxLength={15} inputMode="tel" className={orgErrors.org_mobile ? 'input-error' : ''} />
+                                    <input id="org_mobile" name="org_mobile" value={orgForm.org_mobile} onChange={handleOrgChange} maxLength={15} inputMode="tel" className={orgErrors.org_mobile ? 'input-error' : ''} />
                                     <OtpGate channel="phone" identifier={orgForm.org_mobile.trim()} purpose="org_registration" isValid={orgMobileIsValid} verified={orgMobileVerified} onVerified={() => setOrgMobileVerified(true)} onAlreadyRegistered={setOrgMobileTakenMsg} />
                                     <p className="field-error">{orgErrors.org_mobile}</p>
                                 </div>
 
                                 <div className="form-group">
                                     <label htmlFor="address">Address</label>
-                                    <input id="address" name="address" value={orgForm.address} onChange={handleOrgChange} placeholder="Street address" />
+                                    <input id="address" name="address" value={orgForm.address} onChange={handleOrgChange} />
                                 </div>
 
                                 <div className="form-group">
@@ -468,7 +468,7 @@ const UnifiedRegister = () => {
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="contact_person_designation">Contact Person Designation</label>
-                                    <input id="contact_person_designation" name="contact_person_designation" value={orgForm.contact_person_designation} onChange={handleOrgChange} placeholder="Director" />
+                                    <input id="contact_person_designation" name="contact_person_designation" value={orgForm.contact_person_designation} onChange={handleOrgChange} />
                                 </div>
 
                                 <div className="form-group">
