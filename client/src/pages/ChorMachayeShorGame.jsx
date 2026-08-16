@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
+import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -340,6 +341,10 @@ const ChorMachayeShorGame = () => {
 
   const { t, language } = useLanguage();
   const { showLogo, showGameIcon, showGameName, showChildId, showTimer, showScore } = useHeaderConfig();
+  // Elements panel's test_id for this game is 'cognitive_flex_chor' (see
+  // testConfigService.js's GAMES_REGISTRY) — distinct from the GAME_NAME
+  // constant below, which is only for game-session tracking.
+  const { getAudioUrl, ready: audioReady } = useTestAudio('cognitive_flex_chor');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -393,17 +398,45 @@ const ChorMachayeShorGame = () => {
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTarget, setRecordingTarget] = useState(null);
-  const [audioFinished, setAudioFinished] = useState(true);
+  const [audioFinished, setAudioFinished] = useState(false);
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const feedbackTimeoutRef = useRef(null);
+  // Dedicated ref for the splash <audio> tag below — kept separate from
+  // audioRef, which playAudio() reassigns to a fresh Audio object per clip.
+  const splashAudioRef = useRef(null);
+  const splashAudioStartedRef = useRef(false); // gate: play audio only once per splash entry
 
   const [sessionTimerSec, setSessionTimerSec] = useState(0);
   const sessionTimerSecRef = useRef(0);
   const sessionTimerRef = useRef(null);
 
-  // Splash Audio Logic removed as this test has no splash audio file
+  // ─── Splash audio: admin-managed per-language, falling back to the
+  // bundled Hindi clip — same pattern every other game uses. ──────────────
+  useLayoutEffect(() => {
+    if (screen === 'splash') {
+      setAudioFinished(false);
+      splashAudioStartedRef.current = false;
+    }
+  }, [screen]);
+
+  useEffect(() => {
+    if (
+      screen === 'splash' &&
+      !showResumeModal &&
+      !splashAudioStartedRef.current &&
+      splashAudioRef.current &&
+      !audioFinished &&
+      audioReady
+    ) {
+      splashAudioStartedRef.current = true;
+      splashAudioRef.current.load();
+      splashAudioRef.current.play().catch(err => {
+        console.warn('Splash audio autoplay failed:', err);
+      });
+    }
+  }, [screen, showResumeModal, audioFinished, audioReady]);
 
   // ─── StatusBar: hide on native during this game ───────────────────────────
   useEffect(() => {
@@ -1400,9 +1433,23 @@ const ChorMachayeShorGame = () => {
                 <div className="chor-splash-btn-overlay">
                   <button
                     className="chor-btn chor-btn-primary chor-btn-highlight"
+                    disabled={!audioFinished}
+                    style={!audioFinished ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                     onClick={startGame}
                   >
                     {t('game.startNow')}
+                  </button>
+                  <button
+                    className="chor-btn chor-btn-secondary"
+                    onClick={() => {
+                      setAudioFinished(false);
+                      if (splashAudioRef.current) {
+                        splashAudioRef.current.currentTime = 0;
+                        splashAudioRef.current.play().catch(() => setAudioFinished(true));
+                      }
+                    }}
+                  >
+                    {t('game.replayAudio')}
                   </button>
                 </div>
               </div>
@@ -1439,6 +1486,12 @@ const ChorMachayeShorGame = () => {
             </div>
           </div>
         )}
+        <audio
+          ref={splashAudioRef}
+          src={screen === 'splash' ? getAudioUrl('splash', `${AUDIO_DIR}/splash.wav`) : undefined}
+          preload="auto"
+          onEnded={() => setAudioFinished(true)}
+        />
       </div>
     );
   }
@@ -1561,7 +1614,7 @@ const ChorMachayeShorGame = () => {
                 <>
                   <button className="chor-btn chor-btn-primary" style={{ padding: '12px 32px', borderRadius: 999, background: 'linear-gradient(135deg, #4f46e5, #3730a3)', border: 'none', color: '#fff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => {
                     resetGameState();
-                    setAudioFinished(true);
+                    setAudioFinished(false);
                     setScreen('splash');
                     setAssessmentSubmitted(false);
                     setGameSessionId(null);
