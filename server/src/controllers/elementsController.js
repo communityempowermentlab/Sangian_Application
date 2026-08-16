@@ -259,6 +259,16 @@ const updateElementConfig = async (req, res) => {
             return res.status(400).json({ success: false, message: 'This question triggers the drop-rule and cannot be deactivated' });
         }
 
+        // q1/q2/q3 carry rover_mela's hardcoded clinical drop-out rule (their
+        // scores are read directly in ChaloMelaChaleGame.jsx's Next-button
+        // handler) — deactivating any of them would silently be scored as 0
+        // there, wrongly biasing the drop-rule. Locked here as well as in
+        // the admin UI (MelaElements.jsx never renders a toggle for these).
+        const MELA_PROTECTED_KEYS = new Set(['q1', 'q2', 'q3']);
+        if (test_id === 'rover_mela' && MELA_PROTECTED_KEYS.has(asset_type) && config?.active === false) {
+            return res.status(400).json({ success: false, message: 'This question feeds the clinical drop-out rule and cannot be deactivated' });
+        }
+
         // Bagiya's 13 main screens form a cumulative recall chain — a later
         // screen quizzes items whose names were only ever introduced by a
         // specific earlier screen, and 4 screens carry score-based early-exit

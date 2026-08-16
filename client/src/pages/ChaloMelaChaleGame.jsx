@@ -392,6 +392,12 @@ const ChaloMelaChaleGame = () => {
   const [unlockedPaths, setUnlockedPaths] = useState({ p2: false, p3: false, tq1: false, sbP2: false, tq3: false });
   const [completedPaths, setCompletedPaths] = useState({ p1: false, p2: false, p3: false, sbP1: false, sbP2: false });
 
+  // Admin-controlled question activation (Elements -> Question Management).
+  // Background fetch, non-blocking — same pattern TriangleRachnaGame.jsx uses.
+  // If it hasn't resolved yet, everything just behaves as active (today's
+  // default), so there's no new failure mode on slow networks.
+  const [elementOverrides, setElementOverrides] = useState({});
+
   // Generic Question State
   const [questionState, setQuestionState] = useState({
     id: '',
@@ -823,6 +829,30 @@ const ChaloMelaChaleGame = () => {
     qStartTimeRef.current = null;
     safeSetTimeout(() => startTrial(1), 500);
   }, [stopAll, startTrial, safeSetTimeout]);
+
+  // ── Admin-controlled question activation ─────────────────────────────────
+  useEffect(() => {
+    axios.get(`${API_URL}/public/elements`, { params: { test_id: GAME_NAME } })
+      .then(res => {
+        const map = {};
+        (res.data.elements || []).forEach(el => { if (el.asset_type !== 'splash_screen') map[el.asset_type] = el; });
+        setElementOverrides(map);
+      })
+      .catch(() => {}); // silent — falls back to "all active", same as the resolution below assumes
+  }, []);
+
+  const isQuestionActive = (id) => elementOverrides[id]?.config?.active !== false;
+  // tq1/tq3's sub-chains branch off the linear order (q1 -> sampleB demo, not
+  // tq3) so a plain array walk can't express "what's next" for them — these
+  // candidate-list lookups stay explicit. q1/q2 are always active (protected
+  // server-side), so both calls below are guaranteed to resolve to something.
+  const firstActiveOf = (candidateIds) => candidateIds.find(isQuestionActive) ?? null;
+  // The q4..q18 tail IS contiguous and already in play order within
+  // QUESTION_SEQUENCE, so a generic forward walk works for it.
+  const firstActiveFromMainChain = (fromId) => {
+    const idx = QUESTION_SEQUENCE.indexOf(fromId);
+    return QUESTION_SEQUENCE.slice(idx).find(isQuestionActive) ?? null;
+  };
 
   // --- DEMO LOGIC ---
   const animatePathA = useCallback(async (seq, pathKey, audioFile, durationMs, waitForAudio = true, delayBeforeMoveMs = 0, customStepDelays = {}) => {
@@ -1761,16 +1791,33 @@ const ChaloMelaChaleGame = () => {
     const qNum     = parseInt(questionState.id.replace('q', ''), 10) || 0;
     const TOTAL_Q  = QUESTION_SEQUENCE.filter(id => !id.startsWith('tq')).length;
 
+    // Mirrors the Next-button's own resolution below exactly, so the label
+    // can never disagree with where the button actually goes once a
+    // question has been deactivated mid-sequence.
+    const resolveDisplayNextId = () => {
+      const id = questionState.id;
+      if (id === 'tq1') return firstActiveOf(['tq2', 'q1']);
+      if (id === 'tq2') return 'q1';
+      if (id === 'tq3') return firstActiveOf(['tq4', 'q2']);
+      if (id === 'tq4') return 'q2';
+      if (id === 'q1') return null; // special-cased in the label below -> sampleB
+      if (id === 'q2') return 'q3';
+      if (id === 'q3') return firstActiveFromMainChain('q4'); // ignores the drop-check outcome, same as the button itself does for its label
+      const curIdx = QUESTION_SEQUENCE.indexOf(id);
+      return QUESTION_SEQUENCE.slice(curIdx + 1).find(isQuestionActive) ?? null;
+    };
+    const nextDisplayId = resolveDisplayNextId();
+
     return (
       <div className="cm-screen">
         <div className="screen-header">
           <div>
             <div className="screen-subtitle">
-              {QUESTION_CONFIG[questionState.id]?.subtitle || ""}
+              {elementOverrides[questionState.id]?.config?.subtitle ?? QUESTION_CONFIG[questionState.id]?.subtitle ?? ""}
             </div>
           </div>
           <div className="chips">
-            {QUESTION_CONFIG[questionState.id]?.chips?.map(c => (
+            {(elementOverrides[questionState.id]?.config?.chips ?? QUESTION_CONFIG[questionState.id]?.chips ?? []).map(c => (
               <span key={c} className="chip">{c}</span>
             ))}
 
@@ -1838,9 +1885,15 @@ const ChaloMelaChaleGame = () => {
             className={`cm-btn ${questionState.nextUnlocked ? 'cm-btn-primary' : 'cm-btn-disabled'}`}
             disabled={!questionState.nextUnlocked}
             onClick={async () => {
-              if (questionState.id === 'tq1') initQuestion('tq2', MATRIX_TQ2);
+              if (questionState.id === 'tq1') {
+                const id = firstActiveOf(['tq2', 'q1']);
+                initQuestion(id, MATRIX_MAP[id]);
+              }
               else if (questionState.id === 'tq2') initQuestion('q1', MATRIX_Q1);
-              else if (questionState.id === 'tq3') initQuestion('tq4', MATRIX_TQ4);
+              else if (questionState.id === 'tq3') {
+                const id = firstActiveOf(['tq4', 'q2']);
+                initQuestion(id, MATRIX_MAP[id]);
+              }
               else if (questionState.id === 'tq4') initQuestion('q2', MATRIX_Q2);
               else if (questionState.id === 'q1') setScreen('sampleB');
               else if (questionState.id === 'q2') initQuestion('q3', MATRIX_Q3);
@@ -1853,35 +1906,35 @@ const ChaloMelaChaleGame = () => {
                   setScreen('results');
                   await saveToServer('dropped', null, null, 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true);
                 } else {
-                  initQuestion('q4', MATRIX_Q4);
+                  const nextId = firstActiveFromMainChain('q4');
+                  if (nextId) {
+                    initQuestion(nextId, MATRIX_MAP[nextId]);
+                  } else {
+                    setScreen('results');
+                    await saveToServer('completed', allScores, totalScore);
+                  }
                 }
               }
-              else if (questionState.id === 'q4') initQuestion('q5', MATRIX_Q5);
-              else if (questionState.id === 'q5') initQuestion('q6', MATRIX_Q6);
-              else if (questionState.id === 'q6') initQuestion('q7', MATRIX_Q7);
-              else if (questionState.id === 'q7') initQuestion('q8', MATRIX_Q8);
-              else if (questionState.id === 'q8') initQuestion('q9', MATRIX_Q9);
-              else if (questionState.id === 'q9') initQuestion('q10', MATRIX_Q10);
-              else if (questionState.id === 'q10') initQuestion('q11', MATRIX_Q11);
-              else if (questionState.id === 'q11') initQuestion('q12', MATRIX_Q12);
-              else if (questionState.id === 'q12') initQuestion('q13', MATRIX_Q13);
-              else if (questionState.id === 'q13') initQuestion('q14', MATRIX_Q14);
-              else if (questionState.id === 'q14') initQuestion('q15', MATRIX_Q15);
-              else if (questionState.id === 'q15') initQuestion('q16', MATRIX_Q16);
-              else if (questionState.id === 'q16') initQuestion('q17', MATRIX_Q17);
-              else if (questionState.id === 'q17') initQuestion('q18', MATRIX_Q18);
               else {
-                setScreen('results');
-                await saveToServer('completed', allScores, totalScore);
+                // Reachable only for q4..q18 — every earlier id is
+                // intercepted by a branch above. Collapses what used to be
+                // 14 explicit else-if branches + a terminal catch-all into
+                // one forward walk that skips deactivated questions.
+                const curIdx = QUESTION_SEQUENCE.indexOf(questionState.id);
+                const nextId = QUESTION_SEQUENCE.slice(curIdx + 1).find(isQuestionActive) ?? null;
+                if (nextId) {
+                  initQuestion(nextId, MATRIX_MAP[nextId]);
+                } else {
+                  setScreen('results');
+                  await saveToServer('completed', allScores, totalScore);
+                }
               }
             }}
           >
-            {questionState.id === 'tq1' ? t('game.teachingQ2Label')
-              : questionState.id === 'tq2' ? `${t('game.question')} 1`
-              : questionState.id === 'tq3' ? t('game.teachingQ4Label')
-              : questionState.id === 'tq4' ? `${t('game.question')} 2`
-              : questionState.id === 'q1' ? t('game.sampleBLabel')
-              : (questionState.id.startsWith('q') && parseInt(questionState.id.substring(1)) < 18) ? `${t('game.question')} ${parseInt(questionState.id.substring(1)) + 1}`
+            {questionState.id === 'q1' ? t('game.sampleBLabel')
+              : nextDisplayId === 'tq2' ? t('game.teachingQ2Label')
+              : nextDisplayId === 'tq4' ? t('game.teachingQ4Label')
+              : nextDisplayId?.startsWith('q') ? `${t('game.question')} ${nextDisplayId.slice(1)}`
               : t('game.nextQuestion')}
           </button>
         </div>
@@ -2032,7 +2085,11 @@ const ChaloMelaChaleGame = () => {
                 <button
                   style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto' }}
                   className={`pattern-btn ${unlockedPaths.tq1 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
-                  onClick={() => !isAnimating && unlockedPaths.tq1 && initQuestion('tq1', MATRIX_TQ1)}
+                  onClick={() => {
+                    if (isAnimating || !unlockedPaths.tq1) return;
+                    const id = firstActiveOf(['tq1', 'tq2', 'q1']);
+                    initQuestion(id, MATRIX_MAP[id]);
+                  }}
                 >{t('game.teachingQ1Label')}</button>
               </div>
             </div>
@@ -2108,7 +2165,11 @@ const ChaloMelaChaleGame = () => {
                 <button
                   style={{ padding: '14px 36px', fontSize: '1.2rem', minWidth: 'auto' }}
                   className={`pattern-btn ${unlockedPaths.tq3 ? 'pattern-btn-highlight' : 'pattern-btn-disabled'} ${isAnimating ? 'unclickable' : ''}`}
-                  onClick={() => !isAnimating && unlockedPaths.tq3 && initQuestion('tq3', MATRIX_TQ3)}
+                  onClick={() => {
+                    if (isAnimating || !unlockedPaths.tq3) return;
+                    const id = firstActiveOf(['tq3', 'tq4', 'q2']);
+                    initQuestion(id, MATRIX_MAP[id]);
+                  }}
                 >{t('game.teachingQ3Label')}</button>
               </div>
             </div>
