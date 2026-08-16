@@ -314,8 +314,13 @@ const MelaElements = () => {
                       <span style={{ fontSize: '0.8rem', color: '#6b7280' }} title="Feeds the clinical drop-out rule — can't be deactivated">🔒 Required</span>
                     ) : (
                       <button
-                        className={`admin-btn ${active ? 'admin-btn-danger' : 'admin-btn-primary'}`}
-                        style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                        className="admin-btn"
+                        style={{
+                          padding: '0.25rem 0.75rem', fontSize: '0.8rem', width: 'auto', boxShadow: 'none',
+                          background: active ? '#fee2e2' : '#ecfdf5',
+                          border: `1px solid ${active ? '#fecaca' : '#a7f3d0'}`,
+                          color: active ? '#991b1b' : '#065f46',
+                        }}
                         onClick={() => toggleActive(key)}
                       >
                         {active ? 'Deactivate' : 'Activate'}
