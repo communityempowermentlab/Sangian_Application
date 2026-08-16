@@ -123,15 +123,19 @@ const uploadElement = async (req, res) => {
             return res.json({ success: true, message: 'Element uploaded successfully', file_path });
         }
 
-        // If it is a splash screen, we act as if it replaces everything for that language
-        if (asset_type === 'splash_screen') {
-            await pool.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
-        } else if (replace_id) {
-            // For Her Pher or other multi-image items, if we are specifically replacing one image
-            await pool.query('DELETE FROM test_elements WHERE id = ?', [replace_id]);
-        }
-
-        // Insert logic
+        // If it is a splash screen, we act as if it replaces everything for that language.
+        // For Her Pher (or other multi-image items) replacing one specific image, the old
+        // row is deleted by id first — necessary because a new upload can arrive with a
+        // different file_name than the row it's replacing, so a plain INSERT ... ON
+        // DUPLICATE KEY UPDATE wouldn't reliably land on the same row otherwise.
+        //
+        // The delete and the insert below run in one transaction — previously they were
+        // two independent pool.query() calls, so a dropped connection or client abort
+        // between them could delete the old image and never insert its replacement,
+        // permanently losing that slot (this is exactly what happened to Her Pher V3's
+        // Item 4/5.png in production, discovered because V3's fixed-count invariant made
+        // the gap visible — but the same risk exists for every test using this endpoint).
+        const needsDelete = asset_type === 'splash_screen' || !!replace_id;
         const insertQuery = `
             INSERT INTO test_elements (test_id, asset_type, language, file_name, file_path)
             VALUES (?, ?, ?, ?, ?)
@@ -140,7 +144,26 @@ const uploadElement = async (req, res) => {
                 updated_at = CURRENT_TIMESTAMP
         `;
 
-        await pool.query(insertQuery, [test_id, asset_type, language, file_name, file_path]);
+        if (needsDelete) {
+            const connection = await pool.getConnection();
+            try {
+                await connection.beginTransaction();
+                if (asset_type === 'splash_screen') {
+                    await connection.query('DELETE FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?', [test_id, asset_type, language]);
+                } else {
+                    await connection.query('DELETE FROM test_elements WHERE id = ?', [replace_id]);
+                }
+                await connection.query(insertQuery, [test_id, asset_type, language, file_name, file_path]);
+                await connection.commit();
+            } catch (txError) {
+                await connection.rollback();
+                throw txError;
+            } finally {
+                connection.release();
+            }
+        } else {
+            await pool.query(insertQuery, [test_id, asset_type, language, file_name, file_path]);
+        }
 
         res.json({ success: true, message: 'Element uploaded successfully', file_path });
     } catch (error) {
