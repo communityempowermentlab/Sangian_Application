@@ -2258,6 +2258,36 @@ const initDb = async () => {
       }
     }
 
+    // Atlantis Bagiya (atlantis_bagiya) — each of its 17 catalogued creatures
+    // has a "name" prompt (12 of them; the other 5 are unnamed fillers with
+    // no name audio) and a "where is it?" prompt (12 own + the 5 unnamed
+    // ones sharing one "khahai_no_name" clip, matching the actual content
+    // today — see ITEMS in client/src/pages/AtlantisBagiyaGame.jsx), plus 2
+    // shared correct/retry feedback sounds. 'splash' is already seeded
+    // above via GAMES_REGISTRY.
+    const bagiyaNamedStems = [
+      'bird_ba', 'bird_deem', 'bird_jul', 'bird_hoop',
+      'insect_ghesa', 'insect_mogju', 'insect_baigul', 'insect_thooli',
+      'flower_shibagu', 'flower_mulpaki', 'flower_dhulkoma', 'flower_pegeto',
+    ];
+    const bagiyaLabel = (stem) => stem.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+    const bagiyaElementSeeds = [];
+    let bagiyaOrder = 1;
+    for (const stem of bagiyaNamedStems) {
+      bagiyaElementSeeds.push({ key: `name_${stem}`, label: `${bagiyaLabel(stem)} — Name`, order: bagiyaOrder++ });
+      bagiyaElementSeeds.push({ key: `khahai_${stem}`, label: `${bagiyaLabel(stem)} — Where Is It?`, order: bagiyaOrder++ });
+    }
+    bagiyaElementSeeds.push({ key: 'khahai_no_name', label: 'Unnamed Items — Where Is It? (shared)', order: bagiyaOrder++ });
+    bagiyaElementSeeds.push({ key: 'feedback_correct', label: 'Feedback: Correct', order: bagiyaOrder++ });
+    bagiyaElementSeeds.push({ key: 'feedback_correct_final', label: 'Feedback: Correct (Final Question)', order: bagiyaOrder++ });
+    bagiyaElementSeeds.push({ key: 'feedback_retry', label: 'Feedback: Try Again', order: bagiyaOrder++ });
+    for (const seed of bagiyaElementSeeds) {
+      await connection.query(
+        `INSERT IGNORE INTO audio_elements (test_id, element_key, label, display_order) VALUES (?, ?, ?, ?)`,
+        ['atlantis_bagiya', seed.key, seed.label, seed.order]
+      );
+    }
+
     // Create child_profile_edit_logs table for tracking admin edits to child profiles
     await connection.query(`
       CREATE TABLE IF NOT EXISTS child_profile_edit_logs (

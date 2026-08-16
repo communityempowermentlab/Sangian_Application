@@ -641,6 +641,24 @@ const AtlantisBagiyaGame = () => {
   const activeAudioRef = useRef(null);
   const { getAudioUrl, ready: audioReady } = useTestAudio('atlantis_bagiya');
 
+  // Admin-managed per-language audio (Elements -> Audio Management), falling
+  // back to today's bundled Hindi clips when nothing's configured yet — same
+  // resolution getAudioUrl already does for splash below, just applied to
+  // every other clip too. ITEMS' audio/khaHai fields are already full,
+  // resolved paths (e.g. `${AUD}/bird_ba.wav`), used directly as the
+  // fallback. The 5 unnamed items (item.audio === null) share one
+  // 'khahai_no_name' slot instead of an individual one, matching their
+  // existing shared no_name_kha_hai.wav file.
+  const nameAudioUrl = (item) => item?.audio ? getAudioUrl(`name_${item.stem}`, item.audio) : null;
+  const khahaiAudioUrl = (item) => item?.khaHai ? getAudioUrl(item.audio ? `khahai_${item.stem}` : 'khahai_no_name', item.khaHai) : null;
+  const correctAudioUrl = getAudioUrl('feedback_correct', `${AUD}/bilkul_sahi.wav`);
+  // No bundled fallback exists for this one (bilkul_sahi_2.wav was never
+  // actually on disk — a pre-existing gap) — resolves to null until an
+  // Admin uploads real audio for it, same silent no-op playAudio(null)
+  // already handles today.
+  const correctFinalAudioUrl = getAudioUrl('feedback_correct_final', null);
+  const retryAudioUrl = getAudioUrl('feedback_retry', `${AUD}/Dubara koshish karte hai.wav`);
+
   // ── Computed ────────────────────────────────────────────
   const totalScore = allScores.reduce((s, a) => s + a.score, 0);
   const currentConfig = SCREEN_CONFIGS.find(c => c.num === mainScreenNum);
@@ -867,7 +885,7 @@ const AtlantisBagiyaGame = () => {
       if (cfg) {
         const qi = itemByStem[cfg.questionStem];
         if (qi?.audio) {
-          const audio = new Audio(qi.audio);
+          const audio = new Audio(nameAudioUrl(qi));
           activeAudioRef.current = audio;
           audio.play().catch(() => setQuestionAudioDone(true));
           audio.addEventListener('ended', () => setQuestionAudioDone(true));
@@ -886,7 +904,7 @@ const AtlantisBagiyaGame = () => {
       if (cfg && cfg.subQStems[subQIndex]) {
         const item = itemByStem[cfg.subQStems[subQIndex]];
         if (item?.khaHai) {
-          const audio = new Audio(item.khaHai);
+          const audio = new Audio(khahaiAudioUrl(item));
           activeAudioRef.current = audio;
           audio.play().catch(() => setSubQAudioDone(true));
           audio.addEventListener('ended', () => setSubQAudioDone(true));
@@ -912,7 +930,7 @@ const AtlantisBagiyaGame = () => {
   useEffect(() => {
     if (screen === 'practice_q' && practiceItem?.audio) {
       setPracticeAudioDone(false);
-      const audio = new Audio(practiceItem.audio);
+      const audio = new Audio(nameAudioUrl(practiceItem));
       activeAudioRef.current = audio;
       audio.play().catch(() => setPracticeAudioDone(true));
       audio.addEventListener('ended', () => setPracticeAudioDone(true));
@@ -926,7 +944,7 @@ const AtlantisBagiyaGame = () => {
       setPracticeResponseAudioDone(false);
       setPracticeResponseSet(buildResponseSet({ requiredStems: [practiceItem.stem], responseCount: 7 }));
       if (practiceItem.khaHai) {
-        const audio = new Audio(practiceItem.khaHai);
+        const audio = new Audio(khahaiAudioUrl(practiceItem));
         activeAudioRef.current = audio;
         audio.play().catch(() => setPracticeResponseAudioDone(true));
         audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
@@ -942,10 +960,10 @@ const AtlantisBagiyaGame = () => {
     setPracticeAnswered(true);
     if (chosenItem.id === practiceItem.id) {
       setPracticeCorrect(true);
-      playAudio(`${AUD}/bilkul_sahi.wav`);
+      playAudio(correctAudioUrl);
     } else {
       setPracticeCorrect(false);
-      playAudio(`${AUD}/Dubara koshish karte hai.wav`);
+      playAudio(retryAudioUrl);
     }
   };
 
@@ -993,41 +1011,41 @@ const AtlantisBagiyaGame = () => {
   // single-attempt lock (no retry).
   const RETRY_FLOWS = {
     '1_0': (target) => [
-      { audio: target.audio },
+      { audio: nameAudioUrl(target) },
       { delay: 2000 },
       { unhighlight: true },
-      { audio: `${AUD}/Dubara koshish karte hai.wav` },
+      { audio: retryAudioUrl },
       { shuffle: true },
       { delay: 2000 },
-      { audio: target.khaHai },
+      { audio: khahaiAudioUrl(target) },
     ],
     '2_0': (target) => [
-      { audio: target.audio },
+      { audio: nameAudioUrl(target) },
       { delay: 2000 },
       { unhighlight: true },
       { shuffle: true },
-      { audio: target.khaHai },
+      { audio: khahaiAudioUrl(target) },
     ],
     '2_1': (target) => [
-      { audio: target.audio },
+      { audio: nameAudioUrl(target) },
       { delay: 2000 },
       { unhighlight: true },
       { shuffle: true },
-      { audio: target.khaHai },
+      { audio: khahaiAudioUrl(target) },
     ],
     '3_0': (target) => [
-      { audio: target.audio },
+      { audio: nameAudioUrl(target) },
       { delay: 2000 },
       { unhighlight: true },
       { shuffle: true },
-      { audio: target.khaHai },
+      { audio: khahaiAudioUrl(target) },
     ],
     '3_1': (target) => [
-      { audio: target.audio },
+      { audio: nameAudioUrl(target) },
       { delay: 2000 },
       { unhighlight: true },
       { shuffle: true },
-      { audio: target.khaHai },
+      { audio: khahaiAudioUrl(target) },
     ],
   };
 
@@ -1070,9 +1088,9 @@ const AtlantisBagiyaGame = () => {
 
     if (isCorrect) {
       if (mainScreenNumRef.current === 13 && sqIdx === 5) {
-        playAudio(`${AUD}/bilkul_sahi_2.wav`);
+        playAudio(correctFinalAudioUrl);
       } else {
-        playAudio(`${AUD}/bilkul_sahi.wav`);
+        playAudio(correctAudioUrl);
       }
       setGridFeedback({});
       const updAnswered = { ...subQAnsweredRef.current, [sqIdx]: true };
@@ -1109,7 +1127,7 @@ const AtlantisBagiyaGame = () => {
       isRetryingRef.current = true;
       setIsRetrying(true);
       (async () => {
-        const pAudio = target.audio ? playAudioAsync(target.audio) : Promise.resolve();
+        const pAudio = target.audio ? playAudioAsync(nameAudioUrl(target)) : Promise.resolve();
         const pDelay = delay(3000);
         await Promise.all([pAudio, pDelay]);
         setGridFeedback({});
@@ -1471,7 +1489,7 @@ const AtlantisBagiyaGame = () => {
                   className="ab-btn ab-btn-secondary"
                   onClick={() => {
                     setPracticeAudioDone(false);
-                    const audio = new Audio(practiceItem.audio);
+                    const audio = new Audio(nameAudioUrl(practiceItem));
                     activeAudioRef.current = audio;
                     audio.play().catch(() => setPracticeAudioDone(true));
                     audio.addEventListener('ended', () => setPracticeAudioDone(true));
@@ -1520,7 +1538,7 @@ const AtlantisBagiyaGame = () => {
                   disabled={practiceAnswered}
                   onClick={() => {
                     setPracticeResponseAudioDone(false);
-                    const audio = new Audio(practiceItem.khaHai);
+                    const audio = new Audio(khahaiAudioUrl(practiceItem));
                     activeAudioRef.current = audio;
                     audio.play().catch(() => setPracticeResponseAudioDone(true));
                     audio.addEventListener('ended', () => setPracticeResponseAudioDone(true));
@@ -1575,7 +1593,7 @@ const AtlantisBagiyaGame = () => {
                             itemExposureReplaysRef.current[mainScreenNumRef.current] = (itemExposureReplaysRef.current[mainScreenNumRef.current] || 0) + 1;
                             setQuestionAudioDone(false);
                             if (qi?.audio) {
-                              const audio = new Audio(qi.audio);
+                              const audio = new Audio(nameAudioUrl(qi));
                               activeAudioRef.current = audio;
                               audio.play().catch(() => setQuestionAudioDone(true));
                               audio.addEventListener('ended', () => setQuestionAudioDone(true));
@@ -1657,7 +1675,7 @@ const AtlantisBagiyaGame = () => {
                           };
                           
                           if (item?.khaHai) {
-                            const audio = new Audio(item.khaHai);
+                            const audio = new Audio(khahaiAudioUrl(item));
                             activeAudioRef.current = audio;
                             audio.play().catch(handleDone);
                             audio.addEventListener('ended', handleDone);
