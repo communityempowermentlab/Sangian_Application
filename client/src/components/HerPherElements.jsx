@@ -14,7 +14,7 @@ const DEFAULT_CATEGORIES = [
     { id: 'item8', label: 'Item 8 - Transport', min: 10, max: 10 }
 ];
 
-export default function HerPherElements({ elements, loadElements, showToast, gameKey = 'working_memory_herpher', categories = DEFAULT_CATEGORIES }) {
+export default function HerPherElements({ elements, loadElements, showToast, gameKey = 'working_memory_herpher', categories = DEFAULT_CATEGORIES, strict = false }) {
     const CATEGORIES = categories;
     const [uploading, setUploading] = useState(null);
     const fileRefs = useRef({});
@@ -116,27 +116,36 @@ export default function HerPherElements({ elements, loadElements, showToast, gam
             {CATEGORIES.map(category => {
                 // Get all elements for this category
                 const categoryElements = elements.filter(el => el.asset_type === category.id);
-                
+                // Strict (V3) categories have a fixed required count — only the
+                // ACTIVE images count toward it, matching what the game itself
+                // actually draws from (see elementsController.js's matching
+                // server-side enforcement).
+                const activeCount = categoryElements.filter(el => el.is_active).length;
+                const currentCount = strict ? activeCount : categoryElements.length;
+                const isComplete = currentCount === category.max;
+
                 return (
                     <div key={category.id} className="hp-category-block" style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h4 style={{ margin: 0 }}>{category.label}</h4>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <span style={{ fontSize: '0.85rem', color: categoryElements.length !== category.max ? '#ef4444' : '#10b981' }}>
-                                    {categoryElements.length} / {category.max} items
+                                <span style={{ fontSize: '0.85rem', color: isComplete ? '#10b981' : '#ef4444', fontWeight: strict ? 700 : 400 }}>
+                                    {strict
+                                        ? `${currentCount} / ${category.max} images — ${isComplete ? 'Complete' : 'Incomplete'}`
+                                        : `${currentCount} / ${category.max} items`}
                                 </span>
                                 <div>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
+                                    <input
+                                        type="file"
+                                        accept="image/*"
                                         style={{ display: 'none' }}
                                         ref={el => fileRefs.current[category.id] = el}
                                         onChange={(e) => handleFileSelect(category.id, e.target.files[0])}
                                     />
-                                    <button 
-                                        className="admin-btn admin-btn-primary" 
+                                    <button
+                                        className="admin-btn admin-btn-primary"
                                         onClick={() => fileRefs.current[category.id]?.click()}
-                                        disabled={uploading === `upload_${category.id}` || categoryElements.length >= category.max}
+                                        disabled={uploading === `upload_${category.id}` || currentCount >= category.max}
                                     >
                                         {uploading === `upload_${category.id}` ? 'Uploading...' : 'Add Image'}
                                     </button>
@@ -176,13 +185,20 @@ export default function HerPherElements({ elements, loadElements, showToast, gam
                                         >
                                             Replace
                                         </button>
-                                        <button 
-                                            className={`admin-btn ${el.is_active ? 'admin-btn-danger' : 'admin-btn-primary'}`} 
-                                            style={{ flex: 1, padding: '0.25rem', fontSize: '0.75rem' }}
-                                            onClick={() => handleToggleStatus(el.id)}
-                                        >
-                                            {el.is_active ? 'Deactivate' : 'Activate'}
-                                        </button>
+                                        {/* Strict (V3) categories must always hold exactly the required
+                                            number of ACTIVE images — deactivating one would always break
+                                            that with no way to recover from this panel, so the toggle is
+                                            only offered here to re-activate a rare inactive leftover, never
+                                            to deactivate a currently-active image. Use Replace instead. */}
+                                        {(!strict || !el.is_active) && (
+                                            <button
+                                                className={`admin-btn ${el.is_active ? 'admin-btn-danger' : 'admin-btn-primary'}`}
+                                                style={{ flex: 1, padding: '0.25rem', fontSize: '0.75rem' }}
+                                                onClick={() => handleToggleStatus(el.id)}
+                                            >
+                                                {el.is_active ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}

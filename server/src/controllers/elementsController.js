@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const fs = require('fs');
 const path = require('path');
+const { HERPHER_V3_TEST_ID, HERPHER_V3_IMAGE_COUNTS } = require('../config/herPherV3');
 
 const getElements = async (req, res) => {
     try {
@@ -65,6 +66,44 @@ const uploadElement = async (req, res) => {
         
         const { replace_id } = req.body;
 
+        // Her Pher V3's item0-item8 categories each hold an exact, fixed
+        // image count (server/src/config/herPherV3.js) — enforced here so
+        // it can't be bypassed via a direct API call, not just the Admin
+        // UI. Every other test_id (including this same test_id's own
+        // splash_screen/audio_ rows) skips this entirely.
+        if (test_id === HERPHER_V3_TEST_ID) {
+            const requiredCount = HERPHER_V3_IMAGE_COUNTS[asset_type];
+            if (/^item\d+$/.test(asset_type) && requiredCount === undefined) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ success: false, message: 'Invalid element for this test.' });
+            }
+            if (requiredCount !== undefined) {
+                if (replace_id) {
+                    // Replacing an existing image never changes the count, but
+                    // confirm replace_id actually belongs to this element —
+                    // otherwise an arbitrary id would blindly delete an
+                    // unrelated row (see the DELETE below).
+                    const [replaceRows] = await pool.query(
+                        'SELECT id FROM test_elements WHERE id = ? AND test_id = ? AND asset_type = ?',
+                        [replace_id, test_id, asset_type]
+                    );
+                    if (!replaceRows.length) {
+                        fs.unlinkSync(req.file.path);
+                        return res.status(400).json({ success: false, message: 'Cannot replace: original image not found in this element.' });
+                    }
+                } else {
+                    const [[{ activeCount }]] = await pool.query(
+                        'SELECT COUNT(*) AS activeCount FROM test_elements WHERE test_id = ? AND asset_type = ? AND is_active = 1',
+                        [test_id, asset_type]
+                    );
+                    if (activeCount >= requiredCount) {
+                        fs.unlinkSync(req.file.path);
+                        return res.status(400).json({ success: false, message: `This element can contain exactly ${requiredCount} images. Additional images cannot be added.` });
+                    }
+                }
+            }
+        }
+
         // Rachna's question asset_types (question3, teachingQ1, sampleA, ...)
         // are one-row-per-question, like splash_screen, but unlike splash_screen
         // that row may already carry a saved `config` (shape composition) —
@@ -118,11 +157,17 @@ const uploadElement = async (req, res) => {
 const deleteElement = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         // Fetch the file path to delete the physical file if it's an uploaded one
-        const [rows] = await pool.query('SELECT file_path FROM test_elements WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT file_path, test_id, asset_type FROM test_elements WHERE id = ?', [id]);
         if (rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Element not found' });
+        }
+
+        // Her Pher V3's fixed-count elements can't be deleted — that always
+        // drops the count, with no in-UI way to restore it. Use Replace.
+        if (rows[0].test_id === HERPHER_V3_TEST_ID && HERPHER_V3_IMAGE_COUNTS[rows[0].asset_type] !== undefined) {
+            return res.status(400).json({ success: false, message: 'This element requires a fixed image count and cannot have images deleted — use Replace instead.' });
         }
 
         const filePath = rows[0].file_path;
@@ -211,14 +256,33 @@ const updateElementConfig = async (req, res) => {
 const toggleElementStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await pool.query('SELECT is_active FROM test_elements WHERE id = ?', [id]);
+        const [rows] = await pool.query('SELECT test_id, asset_type, is_active FROM test_elements WHERE id = ?', [id]);
         if (rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Element not found' });
         }
-        
-        const newStatus = rows[0].is_active === 1 ? 0 : 1;
+        const { test_id, asset_type, is_active } = rows[0];
+
+        // Her Pher V3's fixed-count elements can't dip below or exceed their
+        // required active count — see uploadElement's matching guard above.
+        if (test_id === HERPHER_V3_TEST_ID) {
+            const requiredCount = HERPHER_V3_IMAGE_COUNTS[asset_type];
+            if (requiredCount !== undefined) {
+                const [[{ activeCount }]] = await pool.query(
+                    'SELECT COUNT(*) AS activeCount FROM test_elements WHERE test_id = ? AND asset_type = ? AND is_active = 1',
+                    [test_id, asset_type]
+                );
+                if (is_active === 1 && activeCount <= requiredCount) {
+                    return res.status(400).json({ success: false, message: `This element requires exactly ${requiredCount} images at all times — replace this image instead of disabling it.` });
+                }
+                if (is_active === 0 && activeCount >= requiredCount) {
+                    return res.status(400).json({ success: false, message: `This element already has its required ${requiredCount} images active.` });
+                }
+            }
+        }
+
+        const newStatus = is_active === 1 ? 0 : 1;
         await pool.query('UPDATE test_elements SET is_active = ? WHERE id = ?', [newStatus, id]);
-        
+
         res.json({ success: true, message: 'Status updated successfully', is_active: newStatus });
     } catch (error) {
         console.error('toggleElementStatus error:', error);

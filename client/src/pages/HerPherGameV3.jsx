@@ -140,10 +140,19 @@ function getPositionsForCount(count, virtualHeight = GRID_HEIGHT_3) {
   return positions;
 }
 
+// Fixed, exact required image count per category — matches the same
+// numbers enforced server-side in server/src/config/herPherV3.js and shown
+// in the Admin panel's HERPHER_V3_CATEGORIES (client/src/pages/
+// AdminElements.jsx). Her Pher V3 only — every other test is unaffected.
+const REQUIRED_COUNTS = {
+  item0: 6, item1: 7, item2: 8, item3: 9, item4: 10,
+  item5: 11, item6: 12, item7: 13, item8: 14,
+};
+
 // Game Data is now built dynamically from API elements
 function buildGameDataFromElements(elements) {
   const r = (pool, n) => randomPick(pool, n);
-  
+
   // Group available images by category (item0 to item8)
   const categoryImages = {};
   for (let i = 0; i <= 8; i++) {
@@ -156,16 +165,30 @@ function buildGameDataFromElements(elements) {
   const getPool = (cat) => categoryImages[cat] && categoryImages[cat].length > 0 ? categoryImages[cat] : [];
 
   return {
-    1: { questionOrder: 1, isSample: true,  imageCount: 6,  category: 'item0', imageIds: r(getPool('item0'), 6) },
-    2: { questionOrder: 2, isSample: false, imageCount: 7,  category: 'item1', imageIds: r(getPool('item1'), 7) },
-    3: { questionOrder: 3, isSample: false, imageCount: 8,  category: 'item2', imageIds: r(getPool('item2'), 8) },
-    4: { questionOrder: 4, isSample: false, imageCount: 9,  category: 'item3', imageIds: r(getPool('item3'), 9) },
-    5: { questionOrder: 5, isSample: false, imageCount: 10, category: 'item4', imageIds: r(getPool('item4'), 10) },
-    6: { questionOrder: 6, isSample: false, imageCount: 11, category: 'item5', imageIds: r(getPool('item5'), 11) },
-    7: { questionOrder: 7, isSample: false, imageCount: 12, category: 'item6', imageIds: r(getPool('item6'), 12) },
-    8: { questionOrder: 8, isSample: false, imageCount: 13, category: 'item7', imageIds: r(getPool('item7'), 13) },
-    9: { questionOrder: 9, isSample: false, imageCount: 14, category: 'item8', imageIds: r(getPool('item8'), 14) },
+    1: { questionOrder: 1, isSample: true,  imageCount: REQUIRED_COUNTS.item0, category: 'item0', imageIds: r(getPool('item0'), REQUIRED_COUNTS.item0) },
+    2: { questionOrder: 2, isSample: false, imageCount: REQUIRED_COUNTS.item1, category: 'item1', imageIds: r(getPool('item1'), REQUIRED_COUNTS.item1) },
+    3: { questionOrder: 3, isSample: false, imageCount: REQUIRED_COUNTS.item2, category: 'item2', imageIds: r(getPool('item2'), REQUIRED_COUNTS.item2) },
+    4: { questionOrder: 4, isSample: false, imageCount: REQUIRED_COUNTS.item3, category: 'item3', imageIds: r(getPool('item3'), REQUIRED_COUNTS.item3) },
+    5: { questionOrder: 5, isSample: false, imageCount: REQUIRED_COUNTS.item4, category: 'item4', imageIds: r(getPool('item4'), REQUIRED_COUNTS.item4) },
+    6: { questionOrder: 6, isSample: false, imageCount: REQUIRED_COUNTS.item5, category: 'item5', imageIds: r(getPool('item5'), REQUIRED_COUNTS.item5) },
+    7: { questionOrder: 7, isSample: false, imageCount: REQUIRED_COUNTS.item6, category: 'item6', imageIds: r(getPool('item6'), REQUIRED_COUNTS.item6) },
+    8: { questionOrder: 8, isSample: false, imageCount: REQUIRED_COUNTS.item7, category: 'item7', imageIds: r(getPool('item7'), REQUIRED_COUNTS.item7) },
+    9: { questionOrder: 9, isSample: false, imageCount: REQUIRED_COUNTS.item8, category: 'item8', imageIds: r(getPool('item8'), REQUIRED_COUNTS.item8) },
   };
+}
+
+// Checks every category actually has its exact required number of active
+// images before the test is allowed to start — the public elements
+// endpoint already filters to is_active=1, so this is the same active pool
+// buildGameDataFromElements draws from. Returns null when fully configured,
+// otherwise a short admin-facing summary of what's short.
+function validateElementConfig(elements) {
+  const shortages = [];
+  for (const [category, required] of Object.entries(REQUIRED_COUNTS)) {
+    const have = elements.filter(el => el.asset_type === category).length;
+    if (have < required) shortages.push(`${category} (${have}/${required})`);
+  }
+  return shortages.length ? shortages.join(', ') : null;
 }
 
 // Scoring rules: for each scored question (key = question slot 2–9)
@@ -221,6 +244,7 @@ const HerPherGameV3 = () => {
   const [GAME_DATA, setGAME_DATA] = useState(null);
   const [allElements, setAllElements] = useState([]);
   const [elementsLoading, setElementsLoading] = useState(true);
+  const [configError, setConfigError] = useState(null);
   const [elementPositionLayouts, setElementPositionLayouts] = useState({});
 
   // Child data
@@ -318,6 +342,7 @@ const HerPherGameV3 = () => {
         const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher_v3`);
         setAllElements(res.data.elements);
         setGAME_DATA(buildGameDataFromElements(res.data.elements));
+        setConfigError(validateElementConfig(res.data.elements));
       } catch (err) {
         console.error('Failed to load elements', err);
       } finally {
@@ -1147,10 +1172,15 @@ const HerPherGameV3 = () => {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
                 <div className="hp-splash-btn-overlay">
+                  {configError && (
+                    <div style={{ color: '#dc2626', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 14px', marginBottom: '10px', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
+                      This test isn't fully set up yet — please contact your administrator.
+                    </div>
+                  )}
                   <button
-                    className={`hp-btn hp-btn-primary ${audioFinished ? 'hp-btn-highlight' : ''}`}
-                    style={{ opacity: !audioFinished ? 0.55 : 1, cursor: !audioFinished ? 'not-allowed' : 'pointer' }}
-                    disabled={!audioFinished}
+                    className={`hp-btn hp-btn-primary ${audioFinished && !configError ? 'hp-btn-highlight' : ''}`}
+                    style={{ opacity: (!audioFinished || configError) ? 0.55 : 1, cursor: (!audioFinished || configError) ? 'not-allowed' : 'pointer' }}
+                    disabled={!audioFinished || !!configError}
                     onClick={() => { unlockAudioContext(); startNewGame(); }}
                   >
                     {t('game.startNow')}

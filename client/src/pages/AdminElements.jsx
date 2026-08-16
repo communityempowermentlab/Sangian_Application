@@ -235,6 +235,7 @@ export default function AdminElements() {
                             showToast={showToast}
                             gameKey={activeTest}
                             categories={activeTest === 'working_memory_herpher_v3' ? HERPHER_V3_CATEGORIES : undefined}
+                            strict={activeTest === 'working_memory_herpher_v3'}
                         />
                         <div className="elements-section">
                             <h3>Screen-wise Element Positioning</h3>
