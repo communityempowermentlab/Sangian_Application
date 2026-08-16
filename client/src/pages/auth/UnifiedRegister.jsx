@@ -67,7 +67,7 @@ const calculateAge = (day, month, year) => {
     return { years, months, days };
 };
 const EMPTY_ORG = {
-    org_name: '', org_type: 'ngo', org_email: '', org_mobile: '',
+    org_name: '', org_type: '', org_email: '', org_mobile: '',
     address: '', city: '', state: '', country: '',
     contact_person_name: '', contact_person_designation: '',
     password: '',
@@ -424,6 +424,7 @@ const UnifiedRegister = () => {
                                 <div className="form-group">
                                     <label htmlFor="org_type">Organization Type</label>
                                     <select id="org_type" name="org_type" value={orgForm.org_type} onChange={handleOrgChange}>
+                                        <option value="">Select Organization Type</option>
                                         {orgTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </select>
                                 </div>
