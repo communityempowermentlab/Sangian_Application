@@ -20,10 +20,10 @@ const HERPHER_V3_CATEGORIES = [
     { id: 'item2', label: 'Item 2 - Sports',           min: 8,  max: 8 },
     { id: 'item3', label: 'Item 3 - Clothes',          min: 9,  max: 9 },
     { id: 'item4', label: 'Item 4 - Households',       min: 10, max: 10 },
-    { id: 'item5', label: 'Item 5 - Vegetables',       min: 11, max: 11 },
+    { id: 'item5', label: 'Item 5 - Villages',         min: 11, max: 11 },
     { id: 'item6', label: 'Item 6 - Kitchen',          min: 12, max: 12 },
-    { id: 'item7', label: 'Item 7 - Animals',          min: 13, max: 13 },
-    { id: 'item8', label: 'Item 8 - Transport',        min: 14, max: 14 },
+    { id: 'item7', label: 'Item 7 - Transport',        min: 13, max: 13 },
+    { id: 'item8', label: 'Item 8 - Animal',           min: 14, max: 14 },
 ];
 
 export default function AdminElements() {
