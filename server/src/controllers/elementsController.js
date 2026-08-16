@@ -313,6 +313,28 @@ const updateElementConfig = async (req, res) => {
             }
         }
 
+        // Chor's 11 items are asset_type 'item1'..'item11'. checkDropCondition
+        // in ChorMachayeShorGame.jsx adapts to whichever items were actually
+        // played (not keyed to fixed ids), so unlike Rachna/Mela there's no
+        // item-specific protection needed here — only the universal "a test
+        // needs at least one active item" sanity check.
+        const CHOR_ITEM_KEYS = Array.from({ length: 11 }, (_, i) => `item${i + 1}`);
+        if (test_id === 'cognitive_flex_chor' && CHOR_ITEM_KEYS.includes(asset_type) && config?.active === false) {
+            const [itemRows] = await pool.query(
+                'SELECT asset_type, config FROM test_elements WHERE test_id = ? AND asset_type IN (?) AND language = ?',
+                [test_id, CHOR_ITEM_KEYS, language]
+            );
+            const activeCount = CHOR_ITEM_KEYS.reduce((count, key) => {
+                if (key === asset_type) return count; // the one being deactivated by this request
+                const row = itemRows.find(r => r.asset_type === key);
+                const rowConfig = row ? (typeof row.config === 'string' ? JSON.parse(row.config) : row.config) : null;
+                return count + (rowConfig?.active !== false ? 1 : 0);
+            }, 0);
+            if (activeCount === 0) {
+                return res.status(400).json({ success: false, message: 'At least one item must remain active — cannot deactivate the last remaining active item.' });
+            }
+        }
+
         const [existing] = await pool.query(
             'SELECT id FROM test_elements WHERE test_id = ? AND asset_type = ? AND language = ?',
             [test_id, asset_type, language]

@@ -11,6 +11,7 @@ import AdminNumberRecallV2Config from './AdminNumberRecallV2Config';
 import RachnaElements from '../components/RachnaElements';
 import BagiyaElements from '../components/BagiyaElements';
 import MelaElements from '../components/MelaElements';
+import ChorElements from '../components/ChorElements';
 import AudioElementsManager from '../components/AudioElementsManager';
 import ReadingV2ContentManager from '../components/ReadingV2ContentManager';
 
@@ -315,6 +316,7 @@ export default function AdminElements() {
                 )}
 
                 {activeTest === 'rover_mela' && <MelaElements />}
+                {activeTest === 'cognitive_flex_chor' && <ChorElements />}
             </div>
 
             {toast && (

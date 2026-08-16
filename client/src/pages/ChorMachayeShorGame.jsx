@@ -455,6 +455,38 @@ const ChorMachayeShorGame = () => {
     };
   }, []);
 
+  // ─── Admin-controlled item activation (Elements panel) ─────────────────────
+  // test_id is 'cognitive_flex_chor' (Elements panel's key for this game, see
+  // testConfigService.js's GAMES_REGISTRY) — deliberately NOT the GAME_NAME
+  // constant above, which is only for game-session tracking. Independent
+  // fetch rather than extending useTestAudio (shared by every audio-enabled
+  // game and already scoped to audio_-prefixed rows only) — one extra cheap
+  // non-blocking GET, isolated, same as Rachna/Mela's own dedicated fetch.
+  const [elementOverrides, setElementOverrides] = useState({});
+  useEffect(() => {
+    axios.get(`${API_URL}/public/elements`, { params: { test_id: 'cognitive_flex_chor' } })
+      .then(res => {
+        const map = {};
+        (res.data.elements || []).forEach(el => { map[el.asset_type] = el; });
+        setElementOverrides(map);
+      })
+      .catch(() => {}); // silent — resolution below just falls through to "active"
+  }, []);
+
+  // GAME_DATA.items must NEVER be filtered/reordered — generateAndSetHouses's
+  // index-dispatch block below and every applyItemNDynamic/determine*
+  // function key off the item's original array position and id.
+  // Deactivation is purely a navigation-layer skip over the intact array.
+  const isItemActive = (id) => elementOverrides[`item${id}`]?.config?.active !== false;
+  const resolveFirstActiveIndex = () => {
+    for (let i = 0; i < GAME_DATA.items.length; i++) if (isItemActive(GAME_DATA.items[i].id)) return i;
+    return null;
+  };
+  const resolveNextActiveIndex = (fromIdx) => {
+    for (let i = fromIdx + 1; i < GAME_DATA.items.length; i++) if (isItemActive(GAME_DATA.items[i].id)) return i;
+    return null;
+  };
+
   useEffect(() => {
     const item = GAME_DATA.items[currentItemIndex];
     if (item && (item.id === 6 || item.id === 7 || item.id === 8 || item.id === 9 || item.id === 10 || item.id === 11) && currentPhase === 1 && correctTouchCount >= 3) {
@@ -625,26 +657,55 @@ const ChorMachayeShorGame = () => {
     setTotalScore(ss.totalScore || 0);
     
     const targetScreen = ss.screen || 'splash';
-    setScreen(targetScreen);
     setShowResumeModal(false);
-    
-    // 2. If resuming into game, initialize houses and timer
+
+    // 2. If resuming into game, the saved item may have been deactivated by
+    // an admin while this session sat paused. GAME_DATA.items is never
+    // filtered (generateAndSetHouses' index-dispatch relies on the raw
+    // array position), so this can only be resolved at the navigation
+    // layer, same as handleNextClick.
     if (targetScreen === 'game') {
-      startTimer();
-      generateAndSetHouses(
-        ss.currentItemIndex || 0,
-        ss.currentMove || 0,
-        ss.currentPhase || 1,
-        ss.lastCorrectPosition !== undefined ? ss.lastCorrectPosition : null,
-        ss.isRuleSelection || false,
-        ss.phase2Rule || null
-      );
+      const savedIdx = ss.currentItemIndex || 0;
+      const savedItem = GAME_DATA.items[savedIdx];
+      const targetIdx = (savedItem && isItemActive(savedItem.id)) ? savedIdx : resolveNextActiveIndex(savedIdx);
+
+      if (targetIdx === null) {
+        // Every item from the saved position onward is now inactive — every
+        // earlier item is already recorded in ss.itemResults, so there's
+        // nothing left to play. End the session gracefully instead of
+        // resuming into a now-nonexistent item.
+        setScreen('results');
+        saveToServer('dropped', ss.itemResults || []);
+        return;
+      }
+
+      setScreen('game');
+      if (targetIdx === savedIdx) {
+        // Saved item is still active — resume exactly where it left off.
+        startTimer();
+        generateAndSetHouses(
+          savedIdx,
+          ss.currentMove || 0,
+          ss.currentPhase || 1,
+          ss.lastCorrectPosition !== undefined ? ss.lastCorrectPosition : null,
+          ss.isRuleSelection || false,
+          ss.phase2Rule || null
+        );
+      } else {
+        // Saved item is now inactive — its saved move/phase/trial progress
+        // belongs to an item we're no longer resuming; start the
+        // forward-walked item fresh.
+        startItem(targetIdx);
+      }
+      return;
     }
+
+    setScreen(targetScreen);
   };
 
   const startGame = () => {
     setScreen('game');
-    startItem(currentItemIndex); // Start from wherever we are
+    startItem(resolveFirstActiveIndex() ?? 0); // fallback only; backend guard means this is never actually null
   };
 
   const playAudio = useCallback((url) => {
@@ -1135,7 +1196,8 @@ const ChorMachayeShorGame = () => {
     setTotalScore(prev => prev + score);
     
     const hasDropped = checkDropCondition(newResults);
-    const status = (currentItemIndex === TOTAL_QUESTIONS - 1 || hasDropped) ? 'completed' : 'in_progress';
+    const isLastActiveItem = resolveNextActiveIndex(currentItemIndex) === null;
+    const status = (isLastActiveItem || hasDropped) ? 'completed' : 'in_progress';
     saveToServer(status, newResults);
     
     if (hasDropped) {
@@ -1187,13 +1249,14 @@ const ChorMachayeShorGame = () => {
     }
     setFeedback(null);
     setNextButtonReady(false);
-    
-    if (checkDropCondition(itemResults) || currentItemIndex + 1 >= TOTAL_QUESTIONS) {
+
+    const nextIdx = resolveNextActiveIndex(currentItemIndex);
+    if (checkDropCondition(itemResults) || nextIdx === null) {
       setScreen('results');
     } else if (currentItemIndex === 0 && currentTrial === 1) {
-      startTrial2();
+      startTrial2(); // unchanged — only reachable when item 1 is active
     } else {
-      startItem(currentItemIndex + 1);
+      startItem(nextIdx);
     }
   };
 
@@ -1725,7 +1788,7 @@ const ChorMachayeShorGame = () => {
                   onClick={handleNextClick} 
                   disabled={!canNext}
                 >
-                  {currentItemIndex === TOTAL_QUESTIONS - 1 || checkDropCondition(itemResults) ? `🏁 ${t('game.finishGame')}` : t('game.nextQuestion')}
+                  {resolveNextActiveIndex(currentItemIndex) === null || checkDropCondition(itemResults) ? `🏁 ${t('game.finishGame')}` : t('game.nextQuestion')}
                 </button>
               </div>
             </div>
