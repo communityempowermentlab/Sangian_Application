@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { GAME_CATALOG } from '../utils/reportExportUtils';
+import { isOrgSession, isStaffSession, getAssignedTests } from '../utils/staffPermissions';
 import OverviewV2Panel from './AdminAnalysisV2Panel';
 import { downloadElementAsPdf } from '../utils/pdfExportUtils';
 import KpiInfoIcon from '../components/KpiInfoIcon';
@@ -1868,9 +1869,18 @@ export default function AdminAnalysis() {
 
   // All tests, ordered as configured in Admin Settings → Test Configuration
   const orderedCatalog = React.useMemo(() => {
-    if (!testOrder?.length) return GAME_CATALOG;
+    let catalog = GAME_CATALOG;
+    // Organization-wise Test Assignment — UX filtering only, mirrors the
+    // server-side enforcement (assignedTestsGuard.js); Super Admin and
+    // unrestricted org/staff sessions see the full catalog exactly as
+    // before this feature.
+    if (isOrgSession() || isStaffSession()) {
+      const assignedTests = getAssignedTests();
+      if (assignedTests !== null) catalog = catalog.filter(g => assignedTests.includes(g.key));
+    }
+    if (!testOrder?.length) return catalog;
     const pos = new Map(testOrder.map((k, i) => [k, i]));
-    return [...GAME_CATALOG].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
+    return [...catalog].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
   }, [testOrder]);
 
   // Fetch meta once on mount → set default date range, then restore whatever

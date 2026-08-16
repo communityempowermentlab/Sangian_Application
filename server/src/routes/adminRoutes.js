@@ -134,6 +134,7 @@ router.post('/organizations/:id/reject',  requireAdminOnly, adminOrgController.r
 router.post('/organizations/:id/suspend', requireAdminOnly, adminOrgController.suspendOrganization);
 router.post('/organizations/:id/activate',requireAdminOnly, adminOrgController.activateOrganization);
 router.put('/organizations/:id/permissions', requireAdminOnly, adminOrgController.updateOrganizationPermissions);
+router.put('/organizations/:id/assigned-tests', requireAdminOnly, adminOrgController.updateOrganizationAssignedTests);
 router.post('/organizations/:id/sessions/:sessionId/force-logout', requireAdminOnly, adminOrgController.forceLogoutOrgSession);
 router.get('/organizations/:id/login-history', requireAdminOnly, adminOrgController.getOrgLoginHistory);
 router.get('/organizations/:id/activity-log', requireAdminOnly, adminOrgController.getOrgActivityLog);

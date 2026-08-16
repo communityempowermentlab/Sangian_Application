@@ -358,6 +358,16 @@ const initMultiTenantSchema = async (connection) => {
   // module at all (fail-closed — see requireAdminOrOrgAuth.js).
   await alterColumn('organizations', 'permissions JSON NULL', 'organizations.permissions');
 
+  // Which tests (GAMES_REGISTRY keys, testConfigService.js) this
+  // organization's children/assessors may access, and what its own Reports/
+  // Analytics views show — deliberately the OPPOSITE default polarity from
+  // permissions above: NULL/missing means UNRESTRICTED (fail-OPEN — every
+  // organization that exists today, and any newly-approved one, keeps
+  // working exactly as before this feature shipped). Only once a Super
+  // Admin explicitly saves a JSON array here (even []) does this become a
+  // real allow-list — see assignedTestsGuard.js.
+  await alterColumn('organizations', 'assigned_tests JSON NULL', 'organizations.assigned_tests');
+
   // Login/logout audit detail for organizations — mirrors staff_login_
   // sessions.logout_status but as an enum specific to how the spec wants
   // logout events classified, plus a failure reason for failed attempts.

@@ -6,6 +6,7 @@ const axios = require('axios');
 const { logStaffActivity } = require('../utils/logStaffActivity');
 const { logOrgActivity } = require('../utils/logOrgActivity');
 const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
+const { getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 
 // Basic JWT Secret for now. Ideally this goes in .env
 const JWT_SECRET = process.env.JWT_SECRET || 'sangian-super-secret-key-123';
@@ -97,6 +98,13 @@ const loginAdmin = async (req, res) => {
                 menuName: 'Login', pageName: 'Login Page', sessionId: sessionResult.insertId,
             });
 
+            // Organization-wise Test Assignment — only meaningful for staff
+            // bound to a specific organization (staff.org_id set); an
+            // org-unbound staff account is treated the same as Super Admin
+            // here (unrestricted, null), matching how resolveOrgScope.js
+            // already treats org-unbound staff as org_id: null server-side.
+            const staffAssignedTests = staff.org_id ? await getOrgAssignedTests(staff.org_id) : null;
+
             return res.status(200).json({
                 message: 'Login successful',
                 token,
@@ -108,6 +116,7 @@ const loginAdmin = async (req, res) => {
                     role: 'staff'
                 },
                 permissions: Array.isArray(staff.permissions) ? staff.permissions : [],
+                assignedTests: staffAssignedTests,
             });
         }
 
@@ -163,6 +172,14 @@ const loginAdmin = async (req, res) => {
                 // — [] until a Super Admin assigns permissions, meaning no
                 // menu is visible yet (fail-closed).
                 permissions: Array.isArray(org.permissions) ? org.permissions : [],
+                // Organization-wise Test Assignment — deliberately left as
+                // `null` (not coerced to []), the opposite polarity from
+                // permissions above: null means unrestricted, an array
+                // (even []) is a real allow-list. Client-side use only (UX
+                // filtering of which game cards show); the real enforcement
+                // is server-side and re-checked fresh on every request —
+                // see assignedTestsGuard.js.
+                assignedTests: Array.isArray(org.assigned_tests) ? org.assigned_tests : null,
             });
         }
 

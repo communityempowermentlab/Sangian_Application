@@ -74,6 +74,21 @@ const AdminLogin = () => {
             } else {
                 localStorage.removeItem('orgPermissions');
             }
+            // Organization-wise Test Assignment — set for org logins and
+            // org-bound staff alike (both come back with assignedTests:
+            // null|array from the server; admin and org-unbound staff never
+            // get this field at all). null/absent means "unrestricted" —
+            // stored as no key at all, not the string "null", so
+            // staffPermissions.js's getAssignedTests() reading getItem()===
+            // null can't be confused with a real (rare) empty-array
+            // restriction. This is UX filtering only — the real enforcement
+            // is server-side, re-checked on every request regardless of
+            // what's cached here (see assignedTestsGuard.js).
+            if (res.data.assignedTests !== null && res.data.assignedTests !== undefined) {
+                localStorage.setItem('assignedTests', JSON.stringify(res.data.assignedTests));
+            } else {
+                localStorage.removeItem('assignedTests');
+            }
             window.location.href = '/admin/dashboard';
         } catch (err) {
             setErrors(prev => ({

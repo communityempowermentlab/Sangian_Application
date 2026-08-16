@@ -3,6 +3,7 @@ const path           = require('path');
 const fs             = require('fs');
 const { UPLOAD_DIR } = require('../middleware/upload');
 const { checkChildEligibility } = require('../utils/validateAssessorChild');
+const { getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 
 const finalizePhoto = (tmpFile, childId) => {
     const ext         = path.extname(tmpFile.filename);
@@ -130,7 +131,41 @@ const lookupChild = async (req, res) => {
     }
 };
 
+// @desc    Which tests (if any) this child's organization has restricted
+//          them to — Organization-wise Test Assignment. Public/unauthenticated
+//          (mirrors registerChild above): the child's own game-selection
+//          screen (Home.jsx) has no admin/assessor auth token to present,
+//          only a child_id it already knows from localStorage, so this
+//          can't be gated behind assessorAuth like lookupChild is.
+// @route   GET /api/children/assigned-tests/:childId
+// @access  Public
+const getAssignedTestsForChild = async (req, res) => {
+    try {
+        const { childId } = req.params;
+        if (!childId) return res.status(400).json({ message: 'Child ID is required.' });
+
+        const [rows] = await pool.query('SELECT org_id FROM children WHERE child_id = ?', [childId.toUpperCase()]);
+        const orgId = rows[0]?.org_id ?? null;
+
+        const assignedTests = await getOrgAssignedTests(orgId);
+        if (assignedTests === null) {
+            return res.status(200).json({ unrestricted: true });
+        }
+        return res.status(200).json({ unrestricted: false, assignedTests });
+    } catch (error) {
+        console.error('getAssignedTestsForChild error:', error);
+        // Fail open on an unexpected error — a transient lookup failure
+        // should never itself be the reason a child can't play a test they
+        // were actually assigned; the real enforcement is server-side at
+        // session-start regardless (startGameSession), so this endpoint
+        // being unavailable only affects which tiles Home.jsx shows, not
+        // what a child can actually start.
+        res.status(200).json({ unrestricted: true });
+    }
+};
+
 module.exports = {
     registerChild,
-    lookupChild
+    lookupChild,
+    getAssignedTestsForChild,
 };

@@ -1,4 +1,6 @@
 const { pool } = require('../config/db');
+const { normalizeGameName } = require('../utils/gameNameAliases');
+const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 
 const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
@@ -340,6 +342,23 @@ exports.getMeta = async (req, res) => {
 // ── GET /api/analysis/overview ────────────────────────────────────────────────
 exports.getOverview = async (req, res) => {
   try {
+    // Organization-wise Test Assignment — if the caller explicitly asked to
+    // filter to specific game(s) via ?gameKey=, reject outright when any of
+    // them isn't assigned, rather than silently returning an empty/partial
+    // breakdown. The unfiltered case (no ?gameKey=) is handled below by
+    // post-filtering byGame instead, since there's no single "requested
+    // game" to reject on.
+    if (!req.orgScope.isSuperAdmin && req.query.gameKey) {
+      const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+      if (assignedTests !== null) {
+        const requested = req.query.gameKey.split(',').filter(Boolean);
+        const disallowed = requested.some(k => !assignedTests.includes(normalizeGameName(k)));
+        if (disallowed) {
+          return res.status(403).json({ error: 'One or more requested tests are not assigned to your organization.' });
+        }
+      }
+    }
+
     const { allClauses, allParams, noGenderClauses, noGenderParams } = parseFilters(req);
     const where        = toWhere(allClauses);
     const noGenderWhere = toWhere(noGenderClauses);
@@ -404,11 +423,18 @@ exports.getOverview = async (req, res) => {
       GROUP BY c.gender
     `, noGenderParams);
 
-    const byGameEnriched = byGame.map(row => ({
+    let byGameEnriched = byGame.map(row => ({
       ...row,
       ...(GAME_META[row.gameKey] || {}),
       completionRate: row.sessions > 0 ? Math.round((row.completed / row.sessions) * 100) : 0,
     }));
+
+    if (!req.orgScope.isSuperAdmin) {
+      const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+      if (assignedTests !== null) {
+        byGameEnriched = byGameEnriched.filter(row => assignedTests.includes(normalizeGameName(row.gameKey)));
+      }
+    }
 
     res.json({
       kpis: { ...kpis, completionRate: Number(kpis.completionRate) || 0 },
@@ -427,6 +453,14 @@ exports.getOverview = async (req, res) => {
 exports.getGameAnalytics = async (req, res) => {
   try {
     const { gameKey } = req.params;
+
+    // Organization-wise Test Assignment — single-game route param, reject
+    // outright if this org hasn't been assigned it.
+    if (!req.orgScope.isSuperAdmin) {
+      const { allowed } = await isGameAssignedToOrg(req.orgScope.orgId, normalizeGameName(gameKey));
+      if (!allowed) return res.status(403).json({ error: 'This test is not assigned to your organization.' });
+    }
+
     const { allClauses, allParams } = parseFilters(req);
     const meta = GAME_META[gameKey] || { title: gameKey, maxScore: 100 };
 
@@ -637,6 +671,14 @@ exports.getGameAnalytics = async (req, res) => {
 exports.getGameSessions = async (req, res) => {
   try {
     const { gameKey } = req.params;
+
+    // Organization-wise Test Assignment — single-game route param, reject
+    // outright if this org hasn't been assigned it.
+    if (!req.orgScope.isSuperAdmin) {
+      const { allowed } = await isGameAssignedToOrg(req.orgScope.orgId, normalizeGameName(gameKey));
+      if (!allowed) return res.status(403).json({ error: 'This test is not assigned to your organization.' });
+    }
+
     const { allClauses, allParams } = parseFilters(req);
     const clauses = [...allClauses, 'gs.game_name = ?'];
     const params  = [...allParams, gameKey];
@@ -710,7 +752,15 @@ exports.getChildrenSessions = async (req, res) => {
       ORDER BY gs.child_id ASC, gs.game_name ASC, gs.created_at ASC
     `, params);
 
-    const enriched = sessions.map(s => ({ ...s, gameTitle: (GAME_META[s.gameKey] || {}).title || s.gameKey }));
+    let enriched = sessions.map(s => ({ ...s, gameTitle: (GAME_META[s.gameKey] || {}).title || s.gameKey }));
+
+    if (!req.orgScope.isSuperAdmin) {
+      const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+      if (assignedTests !== null) {
+        enriched = enriched.filter(s => assignedTests.includes(normalizeGameName(s.gameKey)));
+      }
+    }
+
     res.json({ sessions: enriched });
   } catch (err) {
     console.error('Children sessions error:', err);
@@ -729,6 +779,28 @@ exports.getChildrenSessions = async (req, res) => {
 // of those plus tried a 10th game for the first time, that's "Attempt 1"
 // (9 + 1 first-plays = 10 tests) and "Attempt 2" (4 replays).
 // ==========================================
+// getTopChildren's query bakes one score_<game> column per GAMES_REGISTRY
+// key into a single row (not one row per game), so an unassigned game can't
+// be "filtered out" the way byGame/sessions rows are elsewhere — the only
+// option is to null out that specific column. Mirrors the SORT_MAP above.
+const SCORE_COL_TO_GAME = {
+  score_bagiya: 'atlantis_bagiya',
+  score_lottery: 'number_recall_lottery',
+  score_lottery_v2: 'number_recall_lottery_v2',
+  score_mela: 'rover_mela',
+  score_dhyan: 'auditory_dhyan',
+  score_herpher: 'working_memory_herpher',
+  score_herpher_v2: 'working_memory_herpher_v2',
+  score_herpher_v3: 'working_memory_herpher_v3',
+  score_ankganit: 'numeracy_number_skill',
+  score_ankganit_v2: 'numeracy_number_skill_v2',
+  score_ankganit_v3: 'numeracy_number_skill_v3',
+  score_reading: 'literacy_reading_skill',
+  score_reading_v2: 'literacy_reading_skill_v2',
+  score_chor: 'cognitive_flex_chor',
+  score_rachna: 'triangle_rachna',
+};
+
 exports.getTopChildren = async (req, res) => {
   try {
     const { allClauses, allParams } = parseFilters(req);
@@ -801,7 +873,21 @@ exports.getTopChildren = async (req, res) => {
       LIMIT ? OFFSET ?
     `, [...allParams, limit, offset]);
 
-    res.json({ topChildren });
+    let maskedTopChildren = topChildren;
+    if (!req.orgScope.isSuperAdmin) {
+      const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+      if (assignedTests !== null) {
+        maskedTopChildren = topChildren.map(row => {
+          const masked = { ...row };
+          for (const [col, gameKey] of Object.entries(SCORE_COL_TO_GAME)) {
+            if (!assignedTests.includes(gameKey)) masked[col] = null;
+          }
+          return masked;
+        });
+      }
+    }
+
+    res.json({ topChildren: maskedTopChildren });
   } catch (err) {
     console.error('Analysis top-children error:', err);
     res.status(500).json({ error: 'Failed to fetch top children data' });
@@ -892,6 +978,27 @@ function buildInsights({ ageAnalysis, genderAnalysis, testAnalysis, highlights, 
 exports.getOverviewV2 = async (req, res) => {
   try {
     const f = parseFilters(req);
+
+    // Organization-wise Test Assignment — this whole endpoint's `sd` CTE
+    // (session-detail) is reused as the base for every downstream
+    // aggregation below (KPIs, age/gender/test breakdowns, insights), so
+    // restricting it once here correctly scopes everything at once, rather
+    // than post-filtering each differently-shaped result individually.
+    // Registered-children/demographic queries further down use their own
+    // clause sets (orgClausesC etc., against the `children` table directly,
+    // no game_name column) and are deliberately untouched by this.
+    if (!req.orgScope.isSuperAdmin) {
+      const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+      if (assignedTests !== null) {
+        if (assignedTests.length === 0) {
+          f.allClauses = [...f.allClauses, '1 = 0'];
+        } else {
+          f.allClauses = [...f.allClauses, 'gs.game_name IN (?)'];
+          f.allParams = [...f.allParams, assignedTests];
+        }
+      }
+    }
+
     const where = toWhere(f.allClauses);
 
     const sdSQL = `

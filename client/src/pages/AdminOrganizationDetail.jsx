@@ -76,6 +76,7 @@ const TABS = [
     ['profile', 'Profile'],
     ['password', 'Password'],
     ['permissions', 'Permissions'],
+    ['assigned-tests', 'Assigned Tests'],
     ['login-history', 'Login History'],
     ['activity-log', 'Activity Log'],
     ['edit-history', 'Edit History'],
@@ -95,6 +96,19 @@ const AdminOrganizationDetail = () => {
     const [perms, setPerms] = useState([]);
     const [permsBusy, setPermsBusy] = useState(false);
     const [permsMsg, setPermsMsg] = useState({ type: '', text: '' });
+
+    // Assigned Tests tab — null (server truth) means unrestricted; an array
+    // (even []) means a real, saved allow-list. draftMode/draftKeys are the
+    // in-progress edit, separate from assignedTests (the last-saved value),
+    // so switching into "restrict" mode or unchecking boxes doesn't change
+    // anything until Save is actually clicked.
+    const [assignedTests, setAssignedTests] = useState(null);
+    const [testCatalog, setTestCatalog] = useState([]);
+    const [atLoading, setAtLoading] = useState(false);
+    const [atBusy, setAtBusy] = useState(false);
+    const [atMsg, setAtMsg] = useState({ type: '', text: '' });
+    const [draftMode, setDraftMode] = useState('unrestricted'); // 'unrestricted' | 'restricted'
+    const [draftKeys, setDraftKeys] = useState([]);
 
     // Contact Details (org_email/org_mobile) — separate OTP-gated flow
     const [contactEditing, setContactEditing] = useState(false);
@@ -144,6 +158,10 @@ const AdminOrganizationDetail = () => {
             setOrg(data.organization);
             setForm(data.organization);
             setPerms(Array.isArray(data.organization.permissions) ? data.organization.permissions : []);
+            const savedAssignedTests = Array.isArray(data.organization.assigned_tests) ? data.organization.assigned_tests : null;
+            setAssignedTests(savedAssignedTests);
+            setDraftMode(savedAssignedTests === null ? 'unrestricted' : 'restricted');
+            setDraftKeys(savedAssignedTests || []);
         } catch (error) {
             // 404 means the record genuinely doesn't exist — clear any
             // previously-loaded data so the page falls into the clean
@@ -195,11 +213,27 @@ const AdminOrganizationDetail = () => {
         }
     }, [id]);
 
+    const fetchTestCatalog = useCallback(async () => {
+        setAtLoading(true);
+        try {
+            const { data } = await axiosAdmin.get('/admin/test-config');
+            // Only active tests can be assigned, per spec — an inactive
+            // (globally-disabled) test can't be played by anyone regardless
+            // of org assignment, so offering it here would be misleading.
+            setTestCatalog((data.tests || []).filter(t => t.enabled));
+        } catch (error) {
+            console.error('Failed to load test catalog', error);
+        } finally {
+            setAtLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (tab === 'login-history') fetchSessions();
         if (tab === 'activity-log') fetchActivityLog();
         if (tab === 'edit-history') fetchEditLogs();
-    }, [tab, fetchSessions, fetchActivityLog, fetchEditLogs]);
+        if (tab === 'assigned-tests') fetchTestCatalog();
+    }, [tab, fetchSessions, fetchActivityLog, fetchEditLogs, fetchTestCatalog]);
 
     const handleForceLogout = async (sessionId) => {
         if (!window.confirm('End this session immediately? The organization will be signed out on its next request.')) return;
@@ -316,6 +350,50 @@ const AdminOrganizationDetail = () => {
         } finally {
             setPermsBusy(false);
         }
+    };
+
+    const toggleDraftKey = (key) => {
+        setDraftKeys(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
+
+    // Transitioning FROM unrestricted starts the draft with every currently-
+    // active test already checked — the admin is narrowing down from what's
+    // available today, not building a list from scratch.
+    const startRestricting = () => {
+        setDraftMode('restricted');
+        setDraftKeys(testCatalog.map(t => t.key));
+        setAtMsg({ type: '', text: '' });
+    };
+
+    const saveAssignedTests = async (keys) => {
+        setAtBusy(true);
+        setAtMsg({ type: '', text: '' });
+        try {
+            const { data } = await axiosAdmin.put(`/admin/organizations/${id}/assigned-tests`, { assignedTests: keys });
+            setAssignedTests(data.assignedTests);
+            setDraftMode(data.assignedTests === null ? 'unrestricted' : 'restricted');
+            setDraftKeys(data.assignedTests || []);
+            setAtMsg({ type: 'ok', text: data.message || 'Assigned tests updated.' });
+        } catch (error) {
+            setAtMsg({ type: 'err', text: error.response?.data?.message || 'Failed to update assigned tests.' });
+        } finally {
+            setAtBusy(false);
+        }
+    };
+
+    const handleSaveAssignedTests = () => {
+        if (draftKeys.length === 0) {
+            const confirmed = window.confirm(
+                'No tests are checked — saving now will block this organization from every test until tests are assigned again. Continue?'
+            );
+            if (!confirmed) return;
+        }
+        saveAssignedTests(draftKeys);
+    };
+
+    const handleRemoveRestriction = () => {
+        if (!window.confirm('Remove all test restrictions for this organization? It will regain access to every active test.')) return;
+        saveAssignedTests(null);
     };
 
     if (loading) return <main className="admin-content"><div className="admin-card w12">Loading…</div></main>;
@@ -680,6 +758,68 @@ const AdminOrganizationDetail = () => {
                                 💾 Save Permissions
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {tab === 'assigned-tests' && (
+                    <div className="admin-card w12" style={{ boxShadow: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>Assigned Tests</h4>
+                        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#6b7280' }}>
+                            Restrict which tests this organization's children and assessors can access, and what its
+                            own Reports/Analysis show. Enforced server-side — not just hidden in the menu. Only
+                            currently active tests can be assigned.
+                        </p>
+
+                        {atMsg.text && (
+                            <div style={{
+                                padding: '10px 14px', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', fontWeight: 600,
+                                background: atMsg.type === 'ok' ? '#f0fdf4' : '#fef2f2',
+                                color: atMsg.type === 'ok' ? '#16a34a' : '#dc2626',
+                                border: `1px solid ${atMsg.type === 'ok' ? '#bbf7d0' : '#fecaca'}`,
+                            }}>{atMsg.text}</div>
+                        )}
+
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px',
+                            marginBottom: '16px', fontSize: '13.5px', fontWeight: 600,
+                            background: assignedTests === null ? '#f0fdf4' : '#fffbeb',
+                            color: assignedTests === null ? '#16a34a' : '#b45309',
+                            border: `1px solid ${assignedTests === null ? '#bbf7d0' : '#fde68a'}`,
+                        }}>
+                            {assignedTests === null
+                                ? '🔓 Unrestricted — all active tests are available to this organization.'
+                                : `🔒 Restricted to ${assignedTests.length} test${assignedTests.length === 1 ? '' : 's'}.`}
+                        </div>
+
+                        {atLoading ? (
+                            <p style={{ fontSize: '13px', color: '#6b7280' }}>Loading test catalog…</p>
+                        ) : draftMode === 'unrestricted' ? (
+                            <button className="admin-btn" style={{ background: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', color: '#fff' }} onClick={startRestricting}>
+                                🔒 Restrict This Organization
+                            </button>
+                        ) : (
+                            <>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+                                    {testCatalog.map(({ key, title }) => (
+                                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
+                                            <input type="checkbox" checked={draftKeys.includes(key)} onChange={() => toggleDraftKey(key)} />
+                                            {title}
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <button className="admin-btn" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', color: '#fff' }} disabled={atBusy} onClick={handleSaveAssignedTests}>
+                                        💾 Save Assigned Tests ({draftKeys.length} checked)
+                                    </button>
+                                    {assignedTests !== null && (
+                                        <button className="admin-btn" disabled={atBusy} onClick={handleRemoveRestriction}>
+                                            🔓 Remove Restriction
+                                        </button>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 

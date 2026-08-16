@@ -2,6 +2,8 @@ const { pool } = require('../config/db');
 const requestIp = require('request-ip');
 const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
 const { checkChildEligibility } = require('../utils/validateAssessorChild');
+const { normalizeGameName } = require('../utils/gameNameAliases');
+const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 
 // Rover coin budget per question (t2 + 4 bonus coins) — mirrors client-side ROVER_Q_BUDGET
 const ROVER_Q_BUDGET = {
@@ -97,21 +99,6 @@ const scoreStage = (items, time) => items ? {
     correct: items.filter(i => i.correct).length, total: items.length, time: time ?? null,
 } : null;
 const passFailStage = (pass, time) => pass === undefined || pass === null ? null : { pass: !!pass, time: time ?? null };
-
-// Maps every historical/alternate spelling of a game_name to its canonical catalog key —
-// mirrors the CASE expression previously duplicated inline in the overview SQL query.
-const normalizeGameName = (name) => {
-    if (['Chalo Mela Chale', 'chalo_mela_chale', 'rover_mela', 'Rover Test', 'Rover Game'].includes(name)) return 'rover_mela';
-    if (['chor_machaye_shor', 'cognitive_flex_chor'].includes(name)) return 'cognitive_flex_chor';
-    if (['literacy_reading_skill', 'reading_skill', 'Padh ke batao'].includes(name)) return 'literacy_reading_skill';
-    if (['literacy_reading_skill_v2', 'Padh ke batao - Version 2'].includes(name)) return 'literacy_reading_skill_v2';
-    if (['numeracy_number_skill', 'Ankganit'].includes(name)) return 'numeracy_number_skill';
-    if (['working_memory_herpher', 'Her Pher'].includes(name)) return 'working_memory_herpher';
-    if (['working_memory_herpher_v2', 'Her Pher - Version 2'].includes(name)) return 'working_memory_herpher_v2';
-    if (['working_memory_herpher_v3', 'Her Pher - Version 3'].includes(name)) return 'working_memory_herpher_v3';
-    if (['atlantis_bagiya', 'Bagiya', 'Atlantis Test', 'Atlantis Game'].includes(name)) return 'atlantis_bagiya';
-    return name;
-};
 
 // Start a new game session
 exports.startGameSession = async (req, res) => {
@@ -210,6 +197,29 @@ exports.startGameSession = async (req, res) => {
         );
         if (individualLoginRows.length) {
             traceFields.individual_id = individualLoginRows[0].individual_id;
+        }
+
+        // Organization-wise Test Assignment. traceFields.org_id alone is
+        // NOT enough here — it's only ever populated for assessment_sessions-
+        // or assessor-driven play (see the resolution above); a child who
+        // belongs to an organization but just logs in and plays directly
+        // (the common case) leaves it NULL, exactly as gs.org_id itself
+        // does today. The report/detail queries elsewhere already handle
+        // this by falling back to the child's own org_id for DISPLAY
+        // (COALESCE(gs.org_id, c.org_id)) — this enforcement check mirrors
+        // that same fallback, without changing what actually gets stamped
+        // into the game_sessions row (traceFields.org_id, used in the
+        // INSERT below, is untouched). Uses the full normalizeGameName (not
+        // the partial `normalizedName` above, which only covers 2 of 9
+        // known alt-spelling families and is left untouched for whatever it
+        // already feeds) so a legacy spelling of an assigned game is never
+        // falsely blocked.
+        const effectiveOrgId = traceFields.org_id || eligibility.child.org_id;
+        if (effectiveOrgId) {
+            const { allowed } = await isGameAssignedToOrg(effectiveOrgId, normalizeGameName(game_name));
+            if (!allowed) {
+                return res.status(403).json({ success: false, message: 'This test is not assigned to your organization.' });
+            }
         }
 
         const userAgent = req.headers['user-agent'];
@@ -529,7 +539,7 @@ exports.getReportOverview = async (req, res) => {
             }
         }
 
-        const data = Object.values(buckets).map(b => ({
+        let data = Object.values(buckets).map(b => ({
             game_name: b.game_name,
             total_children: b.children.size,
             total_attempts: b.total_attempts,
@@ -542,6 +552,17 @@ exports.getReportOverview = async (req, res) => {
             avg_game_time: b.gameTimeCount ? Math.round(b.gameTimeSum / b.gameTimeCount) : null,
             avg_screen_time: b.screenTimeCount ? Math.round(b.screenTimeSum / b.screenTimeCount) : null,
         }));
+
+        // Organization-wise Test Assignment — no-op for Super Admin/staff or
+        // an org that's never been curated (getOrgAssignedTests returns null
+        // in both cases); for a restricted org, drop any bucket for a game
+        // that isn't in its allow-list rather than exposing it unfiltered.
+        if (!req.orgScope.isSuperAdmin) {
+            const assignedTests = await getOrgAssignedTests(req.orgScope.orgId);
+            if (assignedTests !== null) {
+                data = data.filter(d => assignedTests.includes(d.game_name));
+            }
+        }
 
         res.status(200).json({ success: true, data });
     } catch (error) {
@@ -563,6 +584,18 @@ exports.getReportDetail = async (req, res) => {
         }
         if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
             gameFilter = ['cognitive_flex_chor', 'chor_machaye_shor'];
+        }
+
+        // Organization-wise Test Assignment — unlike getReportOverview
+        // (which aggregates every game in one query and post-filters), this
+        // endpoint is keyed to exactly one requested game, so a restricted
+        // org querying an unassigned one is rejected outright rather than
+        // silently returning empty rows.
+        if (!req.orgScope.isSuperAdmin) {
+            const { allowed } = await isGameAssignedToOrg(req.orgScope.orgId, normalizeGameName(gameName));
+            if (!allowed) {
+                return res.status(403).json({ success: false, message: 'This test is not assigned to your organization.' });
+            }
         }
 
         let queryStr = `

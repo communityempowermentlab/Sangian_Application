@@ -60,6 +60,22 @@ export const getOrgPermissions = () => {
 
 export const isOrgSession = () => getOrgPermissions() !== null;
 
+// Organization-wise Test Assignment — set on login (AdminLogin.jsx) for
+// both org sessions and org-bound staff sessions alike. `null` means
+// unrestricted (Super Admin, org-unbound staff, or an org that's never
+// been curated) — every game shows, exactly as before this feature. A
+// non-null array is a real allow-list. UX filtering only, same caveat as
+// canSeeModule above — the actual enforcement is server-side and
+// re-checked fresh on every request regardless of this cached value.
+export const getAssignedTests = () => {
+    try {
+        const raw = localStorage.getItem('assignedTests');
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+};
+
 // Nav/UX gating only — same caveat as canSeeModule: the real boundary is
 // the server-side requireAdminOrOrgAuth(moduleKey) check.
 export const canSeeModule = (moduleKey) => {

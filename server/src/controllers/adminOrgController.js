@@ -5,6 +5,7 @@ const email = require('../services/emailService');
 const { isChannelVerified } = require('./otpController');
 const { normalizeIndianMobile } = require('../utils/mobileNumber');
 const { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } = require('../utils/passwordStrength');
+const { GAMES_REGISTRY } = require('../services/testConfigService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -101,7 +102,7 @@ const getOrganizationById = async (req, res) => {
       `SELECT id, org_name, org_type, org_email, org_mobile, address, city, state, country,
               contact_person_name, contact_person_designation, email_verified, mobile_verified,
               registration_status, status, approved_by_admin_id, approved_at, rejection_reason,
-              extra_attributes, permissions, created_at, updated_at
+              extra_attributes, permissions, assigned_tests, created_at, updated_at
        FROM organizations WHERE id = ?`,
       [req.params.id]
     );
@@ -445,6 +446,59 @@ const updateOrganizationPermissions = async (req, res) => {
   }
 };
 
+// @desc  Set which tests (GAMES_REGISTRY keys) this organization's children/
+//        assessors may access, and what its own Reports/Analysis show —
+//        see assignedTestsGuard.js for the enforcement side. Deliberately
+//        accepts null (not just an array, unlike updateOrganizationPermissions
+//        above) — null means "unrestricted, never curated" (the required
+//        default for every organization that already exists), an array
+//        (even []) is a real, explicit allow-list. Body:
+//        { assignedTests: ["atlantis_bagiya", ...] | null }
+// @route PUT /api/admin/organizations/:id/assigned-tests
+const updateOrganizationAssignedTests = async (req, res) => {
+  try {
+    const input = req.body.assignedTests;
+    if (input !== null && !Array.isArray(input)) {
+      return res.status(400).json({ success: false, message: 'assignedTests must be an array or null.' });
+    }
+
+    const [existingRows] = await pool.query('SELECT org_name, assigned_tests FROM organizations WHERE id = ?', [req.params.id]);
+    if (!existingRows.length) return res.status(404).json({ success: false, message: 'Organization not found.' });
+    const previousAssignedTests = Array.isArray(existingRows[0].assigned_tests) ? existingRows[0].assigned_tests : null;
+
+    // Whitelist-filter to known, real test keys so an unrecognized/stale key
+    // can never silently sit in the allow-list doing nothing (or worse,
+    // masking a typo as "assigned but never actually reachable").
+    let sanitized = null;
+    if (input !== null) {
+      const validKeys = new Set(GAMES_REGISTRY.map(g => g.key));
+      sanitized = [...new Set(input.filter(key => validKeys.has(key)))];
+    }
+
+    const [result] = await pool.query(
+      'UPDATE organizations SET assigned_tests = ? WHERE id = ?',
+      [sanitized === null ? null : JSON.stringify(sanitized), req.params.id]
+    );
+    if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Organization not found.' });
+
+    await logOrgActivity({
+      orgId: req.params.id, orgName: existingRows[0].org_name, actorType: 'admin', actorId: req.admin.id, actorName: req.admin.name || req.admin.email,
+      module: 'organizations', actionType: 'assigned_tests_updated',
+      description: sanitized === null ? 'Test assignment restriction removed by Super Admin (organization is now unrestricted)' : 'Organization assigned tests changed by Super Admin',
+      req, previousValue: previousAssignedTests, newValue: sanitized,
+    });
+
+    return res.json({
+      success: true,
+      message: sanitized === null ? 'Restriction removed — organization is now unrestricted.' : 'Assigned tests updated.',
+      assignedTests: sanitized,
+    });
+  } catch (err) {
+    console.error('updateOrganizationAssignedTests error:', err);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
 // @desc  Immediately end one of an organization's active login sessions.
 //        requireAdminOrOrgAuth.js cross-checks every org request's
 //        X-Session-Id against an OPEN org_login_sessions row, so closing it
@@ -648,6 +702,6 @@ module.exports = {
   getAllOrganizations, getOrganizationById, approveOrganization,
   rejectOrganization, suspendOrganization, activateOrganization, updateOrganization, updateOrganizationContact,
   resetOrganizationPassword,
-  updateOrganizationPermissions, forceLogoutOrgSession, getOrgLoginHistory, getOrgActivityLog, getOrgEditLogs,
+  updateOrganizationPermissions, updateOrganizationAssignedTests, forceLogoutOrgSession, getOrgLoginHistory, getOrgActivityLog, getOrgEditLogs,
   ORG_PERMISSION_MODULES,
 };

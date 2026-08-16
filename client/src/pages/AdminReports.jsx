@@ -4,7 +4,7 @@ import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
 import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal } from '../utils/reportExportUtils';
 import { logReportDownload } from '../utils/logActivity';
-import { isOrgSession, isStaffSession } from '../utils/staffPermissions';
+import { isOrgSession, isStaffSession, getAssignedTests } from '../utils/staffPermissions';
 
 // Only a true Super Admin sees data across every company — org/staff
 // sessions are already hard-scoped server-side to their own organization
@@ -123,9 +123,18 @@ const AdminReports = () => {
     }, []);
 
     const orderedCatalog = useMemo(() => {
-        if (!testConfig.length) return GAME_CATALOG;
+        let catalog = GAME_CATALOG;
+        // Organization-wise Test Assignment — UX filtering only, mirrors the
+        // server-side enforcement (assignedTestsGuard.js); Super Admin and
+        // unrestricted org/staff sessions see the full catalog exactly as
+        // before this feature.
+        if (isOrgSession() || isStaffSession()) {
+            const assignedTests = getAssignedTests();
+            if (assignedTests !== null) catalog = catalog.filter(g => assignedTests.includes(g.key));
+        }
+        if (!testConfig.length) return catalog;
         const pos = new Map(testConfig.map((t, i) => [t.key, i]));
-        return [...GAME_CATALOG].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
+        return [...catalog].sort((a, b) => (pos.get(a.key) ?? 999) - (pos.get(b.key) ?? 999));
     }, [testConfig]);
 
     const isTestEnabled = useCallback((key) => {

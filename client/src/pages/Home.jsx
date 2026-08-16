@@ -251,6 +251,12 @@ const Home = () => {
     const [isLoggedIn, setIsLoggedIn]   = useState(false);
     const [childData, setChildData]     = useState(null);
     const [enabledTests, setEnabledTests] = useState(null); // null = not loaded yet
+    // Organization-wise Test Assignment — null = unrestricted (no org, or an
+    // org that's never been curated); an array = this child's org has
+    // explicitly restricted which tests are available. UX filtering only —
+    // startGameSession re-checks this fresh server-side regardless, so a
+    // stale/unfetched value here can never grant access it shouldn't.
+    const [assignedTests, setAssignedTests] = useState(null);
 
     useEffect(() => {
         const childStr = localStorage.getItem('currentChild');
@@ -261,6 +267,9 @@ const Home = () => {
                     setIsLoggedIn(true);
                     setChildData(child);
                     fetchSummaries(child.child_id);
+                    axios.get(`${API_URL}/children/assigned-tests/${child.child_id}`)
+                        .then(({ data }) => setAssignedTests(data.unrestricted ? null : (data.assignedTests || [])))
+                        .catch(() => setAssignedTests(null)); // fail open — real gate is server-side at session start
                 }
             } catch (e) {}
         }
@@ -273,11 +282,14 @@ const Home = () => {
             .catch(() => setElementsData([]));
     }, []);
 
-    // Hide any test the admin has disabled via Settings → Test Configuration.
-    // Before the config loads, show everything so the page isn't empty on slow connections.
+    // Hide any test the admin has disabled via Settings → Test Configuration,
+    // AND (separately) any test this child's organization hasn't been
+    // assigned. Before the config loads, show everything so the page isn't
+    // empty on slow connections.
     const visibleTestModules = enabledTests
         ? testModules
               .filter((test) => enabledTests[test.gameKey]?.enabled !== false)
+              .filter((test) => assignedTests === null || assignedTests.includes(test.gameKey))
               .sort((a, b) => {
                   const orderA = enabledTests[a.gameKey]?.display_order ?? 999;
                   const orderB = enabledTests[b.gameKey]?.display_order ?? 999;
