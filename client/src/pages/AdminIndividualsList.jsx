@@ -92,9 +92,14 @@ const AdminIndividualsList = () => {
                                                         : <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Inactive</span>}
                                                 </td>
                                                 <td>
-                                                    <Link to={`/admin/individuals/${ind.id}`} style={{ fontSize: '13px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
-                                                        ✏️ View / Edit
-                                                    </Link>
+                                                    <div style={{ display: 'flex', gap: '14px' }}>
+                                                        <Link to={`/admin/individuals/${ind.id}`} style={{ fontSize: '13px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+                                                            ✏️ View / Edit
+                                                        </Link>
+                                                        <Link to={`/admin/individuals/${ind.id}/reports`} style={{ fontSize: '13px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+                                                            📊 Report
+                                                        </Link>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))

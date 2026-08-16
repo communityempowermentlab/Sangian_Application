@@ -30,6 +30,17 @@ const GAME_LABELS = {
     'chor_machaye_shor': 'Chor Machaye Shor',
 };
 
+// Duplicated from AdminAnalysis.jsx's GAME_MAX_SCORES (that file exports
+// nothing today) — keep in sync if a game's max score ever changes there.
+const GAME_MAX_SCORES = {
+    atlantis_bagiya: 108, number_recall_lottery: 22, number_recall_lottery_v2: 22,
+    rover_mela: 44, chalo_mela_chale: 44, auditory_dhyan: 33,
+    working_memory_herpher: 25, working_memory_herpher_v2: 16, working_memory_herpher_v3: 25,
+    numeracy_number_skill: 26, numeracy_number_skill_v2: 30,
+    literacy_reading_skill: 22, literacy_reading_skill_v2: 4, numeracy_number_skill_v3: 4,
+    cognitive_flex_chor: 57, chor_machaye_shor: 57, triangle_rachna: 48,
+};
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const MOBILE_RE = /^[6-9]\d{9}$/;
 // Edit form only offers Male/Female — GENDER_LABEL below still covers the
@@ -268,26 +279,15 @@ const AdminIndividualDetail = () => {
     const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
     const canSavePassword = isStrongPassword(newPassword) && passwordsMatch;
 
-    // gameHistory is already sorted newest-first by the API (getGameHistory),
-    // so the first row seen per game_name while iterating in order is that
-    // game's latest attempt — no extra sort needed here.
     const reportsSummary = useMemo(() => {
         const completed = gameHistory.filter(h => h.status === 'completed');
         const scored = completed.filter(h => typeof h.score === 'number' && h.score !== null);
         const avgScore = scored.length ? scored.reduce((s, h) => s + h.score, 0) / scored.length : null;
-
-        const perGame = {};
-        for (const h of gameHistory) {
-            if (!perGame[h.game_name]) perGame[h.game_name] = { game_name: h.game_name, attempts: 0, latest: h };
-            perGame[h.game_name].attempts += 1;
-        }
-
         return {
             totalAttempts: gameHistory.length,
-            distinctGamesCount: Object.keys(perGame).length,
+            distinctGamesCount: new Set(gameHistory.map(h => h.game_name)).size,
             completedCount: completed.length,
             avgScore,
-            perGame: Object.values(perGame),
         };
     }, [gameHistory]);
 
@@ -554,41 +554,52 @@ const AdminIndividualDetail = () => {
                                     ))}
                                 </div>
 
-                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Test-wise Summary</h4>
-                                <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>All Attempts ({reportsSummary.totalAttempts})</h4>
+                                <div style={{ overflowX: 'auto' }}>
                                     <table className="admin-table">
                                         <thead>
                                             <tr>
-                                                <th>Game / Test</th><th>Attempts</th><th>Latest Attempt</th>
-                                                <th>Latest Score</th><th>Latest Status</th><th>Duration</th>
+                                                <th>Game / Test</th><th>Date &amp; Time</th><th>Attempt #</th>
+                                                <th>Score</th><th>Max Score</th><th>Duration</th><th>Status</th><th>Details</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {reportsSummary.perGame.map(g => (
-                                                <tr key={g.game_name}>
-                                                    <td style={{ fontWeight: 600 }}>{GAME_LABELS[g.game_name] || g.game_name}</td>
-                                                    <td>{g.attempts}</td>
-                                                    <td>{fmtDateTime(g.latest.start_time)}</td>
-                                                    <td>{g.latest.score ?? '—'}</td>
+                                            {gameHistory.map(session => (
+                                                <tr key={session.id}>
+                                                    <td style={{ fontWeight: 600 }}>{GAME_LABELS[session.game_name] || session.game_name}</td>
+                                                    <td>{fmtDateTime(session.start_time)}</td>
+                                                    <td style={{ textAlign: 'center' }}>#{session.attempt_no || 1}</td>
+                                                    <td style={{ textAlign: 'center' }}>{session.score ?? '—'}</td>
+                                                    <td style={{ textAlign: 'center' }}>{GAME_MAX_SCORES[session.game_name] ?? '—'}</td>
+                                                    <td>{fmtDuration(gameDuration(session))}</td>
                                                     <td>
-                                                        {g.latest.status === 'completed'
+                                                        {session.status === 'completed'
                                                             ? <span className="admin-tag good">Completed</span>
-                                                            : <span className="admin-tag warn" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>{g.latest.status}</span>}
+                                                            : session.status === 'quit' || session.status === 'dropped' || session.status === 'rejected'
+                                                            ? <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>{session.status}</span>
+                                                            : session.status === 'paused'
+                                                            ? <span className="admin-tag warn" style={{ background: '#fef9c3', color: '#854d0e', borderColor: '#fef08a' }}>Paused</span>
+                                                            : <span className="admin-tag" style={{ background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>{session.status}</span>}
                                                     </td>
-                                                    <td>{fmtDuration(gameDuration(g.latest))}</td>
+                                                    <td>
+                                                        {session.pdf_url ? (
+                                                            <a
+                                                                href={`${API_URL.replace('/api', '')}${session.pdf_url}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                style={{ fontSize: '12px', fontWeight: 700, color: '#4f46e5', textDecoration: 'none' }}
+                                                            >
+                                                                View Details
+                                                            </a>
+                                                        ) : (
+                                                            <span style={{ color: '#cbd5e1', fontSize: '12px' }}>N/A</span>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
-
-                                <Link
-                                    to={`/admin/children/scoreboard/${individual.child_id}`}
-                                    className="admin-btn"
-                                    style={{ textDecoration: 'none', display: 'inline-block' }}
-                                >
-                                    📊 View Full Detailed Report ({reportsSummary.totalAttempts} attempts) →
-                                </Link>
                             </>
                         )}
                     </div>
