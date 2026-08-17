@@ -281,13 +281,10 @@ const AdminIndividualDetail = () => {
 
     const reportsSummary = useMemo(() => {
         const completed = gameHistory.filter(h => h.status === 'completed');
-        const scored = completed.filter(h => typeof h.score === 'number' && h.score !== null);
-        const avgScore = scored.length ? scored.reduce((s, h) => s + h.score, 0) / scored.length : null;
         return {
             totalAttempts: gameHistory.length,
             distinctGamesCount: new Set(gameHistory.map(h => h.game_name)).size,
             completedCount: completed.length,
-            avgScore,
         };
     }, [gameHistory]);
 
@@ -539,7 +536,6 @@ const AdminIndividualDetail = () => {
                                         ['Games Played', reportsSummary.distinctGamesCount],
                                         ['Total Attempts', reportsSummary.totalAttempts],
                                         ['Tests Completed', reportsSummary.completedCount],
-                                        ['Average Score', reportsSummary.avgScore !== null ? reportsSummary.avgScore.toFixed(1) : '—'],
                                     ].map(([label, value]) => (
                                         <div key={label} style={{ flex: '1 1 160px', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: '#fff' }}>
                                             <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, marginBottom: '4px' }}>{label}</div>
