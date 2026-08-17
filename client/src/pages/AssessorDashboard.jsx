@@ -6,6 +6,15 @@ import { GAME_CATALOG } from '../utils/reportExportUtils';
 
 const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
+// Matches AdminReports.jsx's fmtSecs / IndividualReports.jsx's fmtDuration —
+// same "Duration" figure (actual_game_time), same display format.
+const fmtDuration = (v) => {
+    if (v == null) return '—';
+    const s = Math.round(Number(v));
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
+};
+
 // Same catalog AdminReports/report exports use — so the Assessor sees the
 // same friendly game names (e.g. "Ankganit - Version 3") instead of the
 // raw DB key (numeracy_number_skill_v3).
@@ -99,12 +108,13 @@ const AssessorDashboard = () => {
                                         <th style={{ padding: '8px' }}>Game</th>
                                         <th style={{ padding: '8px' }}>Status</th>
                                         <th style={{ padding: '8px' }}>Score</th>
+                                        <th style={{ padding: '8px' }}>Duration</th>
                                         <th style={{ padding: '8px' }}>Started</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {recentActivity.length === 0 ? (
-                                        <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — search for a child to get started.</td></tr>
+                                        <tr><td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>No assessments yet — search for a child to get started.</td></tr>
                                     ) : (
                                         recentActivity.map(row => (
                                             <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -113,6 +123,7 @@ const AssessorDashboard = () => {
                                                 <td style={{ padding: '8px' }}>{gameTitle(row.game_name)}</td>
                                                 <td style={{ padding: '8px' }}>{STATUS_LABEL[row.status] || row.status}</td>
                                                 <td style={{ padding: '8px' }}>{row.status === 'completed' ? (row.score ?? '—') : '—'}</td>
+                                                <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDuration(row.actual_game_time)}</td>
                                                 <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDateTime(row.start_time)}</td>
                                             </tr>
                                         ))

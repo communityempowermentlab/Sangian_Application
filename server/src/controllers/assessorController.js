@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { parseSavedState, computeActualGameTime } = require('./gameController');
 
 const PASSWORD_MIN_LEN = 8;
 // Same admin-managed-account policy as adminAssessorController.js's
@@ -92,13 +93,24 @@ exports.getDashboard = async (req, res) => {
             [assessorId]
         );
 
-        const [recentActivity] = await pool.query(
-            `SELECT gs.id, gs.child_id, c.name AS child_name, gs.game_name, gs.status, gs.score, gs.start_time, gs.end_time
+        const [recentActivityRows] = await pool.query(
+            `SELECT gs.id, gs.child_id, c.name AS child_name, gs.game_name, gs.status, gs.score, gs.start_time, gs.end_time, gs.saved_state
              FROM game_sessions gs LEFT JOIN children c ON c.child_id = gs.child_id
              WHERE gs.assessor_id = ?
              ORDER BY gs.start_time DESC LIMIT 10`,
             [assessorId]
         );
+
+        // Duration — same computeActualGameTime() used for the "Duration"
+        // column in getGameHistory (Individual Detail Reports tab / My
+        // Account), report detail/CSV, and the Average Game Time KPI above,
+        // so this figure matches those exactly rather than drifting.
+        // saved_state itself is dropped from the response — it's internal
+        // session data, not meant for a non-admin client.
+        const recentActivity = recentActivityRows.map(({ saved_state, ...row }) => {
+            const actualTime = computeActualGameTime(parseSavedState(saved_state), row.game_name);
+            return { ...row, actual_game_time: actualTime > 0 ? Math.round(actualTime) : null };
+        });
 
         return res.json({
             success: true,

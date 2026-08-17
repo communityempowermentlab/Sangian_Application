@@ -91,6 +91,13 @@ const computeActualGameTime = (parsedState, gameName) => {
 // (usually well below the continuous session timer), so the two rarely coincide in practice.
 const computeScreenTime = (parsedState) => parsedState?.screentime ?? parsedState?.timerSeconds ?? null;
 
+// Exported so other controllers needing the same "Duration" figure (e.g.
+// assessorController.js's dashboard) can reuse this exact computation
+// instead of re-deriving it and risking drift — see computeActualGameTime's
+// own comment above.
+exports.parseSavedState = parseSavedState;
+exports.computeActualGameTime = computeActualGameTime;
+
 // Shared by the literacy_reading_skill_v2 and numeracy_number_skill_v3 report
 // enrichment below — both are ASER-style adaptive-tree tests whose stages are
 // either "N correct out of a small marked set" (scoreStage) or a single
