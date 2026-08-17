@@ -8,6 +8,7 @@ const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: 
 const AdminAssessorsList = () => {
     const [assessors, setAssessors] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [orgFilter, setOrgFilter] = useState('');
     const [loading, setLoading] = useState(true);
     const isOrg = isOrgSession();
 
@@ -26,10 +27,24 @@ const AdminAssessorsList = () => {
         }
     };
 
+    // Derived from the already-fetched assessors rather than a separate
+    // /admin/organizations call — every row already carries org_id/org_name
+    // from the backend's LEFT JOIN, and this list only ever needs to cover
+    // organizations that actually have assessors.
+    const orgOptions = Object.values(
+        assessors.reduce((acc, a) => {
+            if (a.org_id != null && !acc[a.org_id]) {
+                acc[a.org_id] = { id: a.org_id, name: a.org_name || `Org #${a.org_id}` };
+            }
+            return acc;
+        }, {})
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
     const filteredAssessors = assessors.filter(assessor =>
-        assessor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (assessor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessor.mobile_number?.includes(searchTerm)
+        assessor.mobile_number?.includes(searchTerm)) &&
+        (!orgFilter || String(assessor.org_id) === orgFilter)
     );
 
     const colCount = isOrg ? 8 : 9;
@@ -51,13 +66,27 @@ const AdminAssessorsList = () => {
 
                 <div className="admin-grid" style={{ marginTop: '12px' }}>
                     <div className="admin-card w12" style={{ boxShadow: 'none', background: 'rgba(255,255,255,0.72)' }}>
-                        <div className="admin-search" style={{ marginBottom: '16px', maxWidth: '400px' }}>
-                            <input
-                                type="search"
-                                placeholder="Search name, email, or mobile..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '16px' }}>
+                            <div className="admin-search" style={{ marginBottom: 0, maxWidth: '400px', flex: '1 1 260px' }}>
+                                <input
+                                    type="search"
+                                    placeholder="Search name, email, or mobile..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            {!isOrg && orgOptions.length > 0 && (
+                                <select
+                                    value={orgFilter}
+                                    onChange={(e) => setOrgFilter(e.target.value)}
+                                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#334155', background: '#fff' }}
+                                >
+                                    <option value="">All Organizations</option>
+                                    {orgOptions.map(o => (
+                                        <option key={o.id} value={o.id}>{o.name}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
