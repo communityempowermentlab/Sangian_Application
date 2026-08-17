@@ -49,7 +49,7 @@ function scopeClause(orgScope, alias = '') {
 exports.getAllStaff = async (req, res) => {
     try {
         const {
-            search = '', status = '', sortKey = 'created_at', sortDir = 'desc',
+            search = '', status = '', orgId = '', sortKey = 'created_at', sortDir = 'desc',
             page = 1, limit = 20,
         } = req.query;
 
@@ -63,6 +63,15 @@ exports.getAllStaff = async (req, res) => {
         if (status === 'active' || status === 'inactive') {
             clauses.push('status = ?');
             params.push(status);
+        }
+        // Admin-picked Organization filter — separate from scopeClause below,
+        // which already restricts an org-bound session to its own org_id
+        // regardless of this param; unqualified `org_id` is safe here (only
+        // `staff.org_id` matches, unlike `status`/`name`, which also exist on
+        // the joined `organizations` table).
+        if (orgId) {
+            clauses.push('org_id = ?');
+            params.push(orgId);
         }
         const scope = scopeClause(req.orgScope);
         if (scope.sql) { clauses.push(scope.sql); params.push(...scope.params); }

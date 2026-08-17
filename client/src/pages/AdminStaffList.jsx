@@ -11,6 +11,8 @@ const AdminStaffList = () => {
     const [loading, setLoading]     = useState(true);
     const [search, setSearch]       = useState('');
     const [status, setStatus]       = useState('');
+    const [orgFilter, setOrgFilter] = useState('');
+    const [orgOptions, setOrgOptions] = useState([]);
     const [sortKey, setSortKey]     = useState('created_at');
     const [sortDir, setSortDir]     = useState('desc');
     const [page, setPage]           = useState(1);
@@ -19,11 +21,27 @@ const AdminStaffList = () => {
     const [actionMsg, setActionMsg] = useState(null);
     const limit = 20;
 
+    // Log History is Super-Admin-only server-side (requireAdminOnly) — an
+    // organization session must never see the link either, or it's a dead
+    // link that always 403s.
+    const isAdmin = !isStaffSession() && !isOrgSession();
+
+    // /admin/organizations is itself Super-Admin-only server-side (same
+    // endpoint AdminStaffAdd/Edit already use for their own Organization
+    // picker) — fetched independently of the paginated staff list so the
+    // filter's option set doesn't depend on what's on the current page.
+    useEffect(() => {
+        if (!isAdmin) return;
+        axiosAdmin.get('/admin/organizations')
+            .then(res => setOrgOptions(res.data.organizations || []))
+            .catch(err => console.error('Failed to fetch organizations:', err));
+    }, [isAdmin]);
+
     const fetchStaff = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await axiosAdmin.get('/admin/staff', {
-                params: { search, status, sortKey, sortDir, page, limit },
+                params: { search, status, orgId: orgFilter, sortKey, sortDir, page, limit },
             });
             setStaff(data.staff || []);
             setTotal(data.total || 0);
@@ -32,7 +50,7 @@ const AdminStaffList = () => {
         } finally {
             setLoading(false);
         }
-    }, [search, status, sortKey, sortDir, page]);
+    }, [search, status, orgFilter, sortKey, sortDir, page]);
 
     useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
@@ -65,10 +83,6 @@ const AdminStaffList = () => {
     };
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
-    // Log History is Super-Admin-only server-side (requireAdminOnly) — an
-    // organization session must never see the link either, or it's a dead
-    // link that always 403s.
-    const isAdmin = !isStaffSession() && !isOrgSession();
     // Organization column — shown to Super Admin/staff sessions (who may
     // see records across multiple organizations), hidden for an
     // Organization login since every row is already scoped to their own
@@ -112,6 +126,14 @@ const AdminStaffList = () => {
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                            {isAdmin && orgOptions.length > 0 && (
+                                <select value={orgFilter} onChange={(e) => { setOrgFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                                    <option value="">All Organizations</option>
+                                    {orgOptions.map(o => (
+                                        <option key={o.id} value={o.id}>{o.org_name}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
