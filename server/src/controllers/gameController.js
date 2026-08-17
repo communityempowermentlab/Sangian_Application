@@ -312,12 +312,20 @@ exports.updateGameSession = async (req, res) => {
         // silently clobber a genuinely-completed session back to "In
         // Progress" — this is what was causing completed Ankganit V3
         // assessments to intermittently show as still in progress.
-        // Non-status fields (e.g. saved_state, used by the post-game
-        // questionnaire flag) can still be updated after the fact; only an
-        // actual status change away from the terminal value is blocked.
-        if (TERMINAL_STATUSES.includes(currentStatus) && status && status !== currentStatus) {
-            return res.status(200).json({ success: true, message: 'Session already finalized — status preserved.' });
-        }
+        //
+        // Only the `status` field itself is protected below (effectiveStatus)
+        // — score/progress_level/saved_state/quit_reason in the same request
+        // still apply exactly as requested. This used to return early instead,
+        // silently dropping ALL of those too, not just status: e.g. the
+        // post-game assessment form's final saveProgress(..., 'completed') on
+        // an already-terminal (e.g. dropped) session lost its freshly-frozen
+        // screentime, leaving the DB/Reports figure stuck at whatever an
+        // earlier drop-rule save had captured — while the PDF, generated
+        // client-side regardless of this request's outcome, correctly showed
+        // the later, larger value. Same root cause across every game, since
+        // this is the one shared session-update endpoint.
+        const statusIsLocked = TERMINAL_STATUSES.includes(currentStatus) && status && status !== currentStatus;
+        const effectiveStatus = statusIsLocked ? undefined : status;
 
         // Validation During/Before Score Submission — the most important
         // checkpoint in the Assessor spec's flow. Re-reads children.status
@@ -329,7 +337,11 @@ exports.updateGameSession = async (req, res) => {
         // the child's current organization. On failure, the score is
         // NEVER written: the session is marked 'rejected' instead of
         // 'completed' and the request's score/progress_level are dropped.
-        if (status === 'completed') {
+        // Gated on effectiveStatus (not the raw incoming status) so a late
+        // 'completed' request against an already-terminal session neither
+        // re-runs this check nor risks turning e.g. a legitimately 'dropped'
+        // session into 'rejected'.
+        if (effectiveStatus === 'completed') {
             const eligibility = await checkChildEligibility(existing[0].child_id, existing[0].assessor_id);
             if (!eligibility.ok) {
                 await pool.query(
@@ -345,16 +357,23 @@ exports.updateGameSession = async (req, res) => {
 
         let updateQuery = 'UPDATE game_sessions SET ';
         let updateParams = [];
-        
+
         if (score !== undefined) { updateQuery += 'score = ?, '; updateParams.push(score); }
         if (progress_level !== undefined) { updateQuery += 'progress_level = ?, '; updateParams.push(progress_level); }
-        if (status) { updateQuery += 'status = ?, '; updateParams.push(status); }
+        if (effectiveStatus) { updateQuery += 'status = ?, '; updateParams.push(effectiveStatus); }
         if (quit_reason !== undefined) { updateQuery += 'quit_reason = ?, '; updateParams.push(quit_reason); }
         if (saved_state !== undefined) { updateQuery += 'saved_state = ?, '; updateParams.push(JSON.stringify(saved_state)); }
 
         // If status became terminal (completed, quit, or dropped), mark end_time
-        if (status === 'completed' || status === 'quit' || status === 'dropped') {
+        if (effectiveStatus === 'completed' || effectiveStatus === 'quit' || effectiveStatus === 'dropped') {
             updateQuery += 'end_time = NOW(), ';
+        }
+
+        // A status-only request against an already-terminal session (status
+        // locked, nothing else sent) has nothing left to write — same no-op
+        // outcome the old early-return guard gave that exact case.
+        if (updateParams.length === 0) {
+            return res.status(200).json({ success: true, message: 'Session already finalized — status preserved.' });
         }
 
         // Remove trailing comma and space
