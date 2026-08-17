@@ -122,6 +122,7 @@ const AdminChildrenList = () => {
     const isOrg = isOrgSession();
     const [children, setChildren] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [orgFilter, setOrgFilter] = useState('');
     const [groupFilterIds, setGroupFilterIds] = useState([]);
     const [kpiSegment, setKpiSegment] = useState('all');
     const [demoFilters, setDemoFilters] = useState({ genders: [], ageBands: [], gramSabhas: [], hamlets: [] });
@@ -235,7 +236,22 @@ const AdminChildrenList = () => {
         return sessionFilterIds.includes(child.child_id);
     };
 
-    const filteredChildren = children.filter(c => matchesSearch(c) && matchesDemo(c, null) && matchesSegment(c) && matchesSessionFilter(c));
+    const matchesOrg = (child) => !orgFilter || String(child.org_id) === orgFilter;
+
+    const filteredChildren = children.filter(c => matchesSearch(c) && matchesDemo(c, null) && matchesSegment(c) && matchesSessionFilter(c) && matchesOrg(c));
+
+    // Derived from the already-fetched children rather than a separate
+    // /admin/organizations call — every row already carries org_id/org_name
+    // from the backend's LEFT JOIN (adminChildController.js's getAllChildren),
+    // same pattern as AdminAssessorsList.jsx / AdminChildGroupsList.jsx.
+    const orgOptions = Object.values(
+        children.reduce((acc, c) => {
+            if (c.org_id != null && !acc[c.org_id]) {
+                acc[c.org_id] = { id: c.org_id, name: c.org_name || `Org #${c.org_id}` };
+            }
+            return acc;
+        }, {})
+    ).sort((a, b) => a.name.localeCompare(b.name));
 
     const facetCounts = (dim) => {
         const counts = new Map();
@@ -639,6 +655,20 @@ const AdminChildrenList = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {!isOrg && orgOptions.length > 0 && (
+                                    <select
+                                        aria-label="Filter by organization"
+                                        value={orgFilter}
+                                        onChange={(e) => { setOrgFilter(e.target.value); setCurrentPage(1); }}
+                                        style={{ padding: '10px 12px', borderRadius: '14px', border: '1px solid var(--border)', outline: 'none' }}
+                                    >
+                                        <option value="">All Organizations</option>
+                                        {orgOptions.map(o => (
+                                            <option key={o.id} value={o.id}>{o.name}</option>
+                                        ))}
+                                    </select>
+                                )}
 
                                 <select
                                     aria-label="Page size"
