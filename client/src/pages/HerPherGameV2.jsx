@@ -738,7 +738,7 @@ const HerPherGameV2 = () => {
       // Auto-advance after 1.5s
       setTimeout(() => {
         if (newConsecutiveZeros >= 3) {
-          completeGame();
+          completeGame(true);
         } else {
           moveNext(qData);
         }
@@ -795,7 +795,15 @@ const HerPherGameV2 = () => {
   };
 
   // ──── Complete game ──────────────────────────────────────────────────────────
-  const completeGame = useCallback(() => {
+  // `autoStopped` distinguishes a natural finish (moveNext, all 8 scored items)
+  // from the 3-consecutive-zeros clinical stop rule below (finishQuestion) —
+  // same fix as HerPherGameV3.jsx's completeGame(autoStopped), matching the
+  // status split already used by AtlantisBagiyaGame.jsx, ChaloMelaChaleGame.jsx,
+  // ChorMachayeShorGame.jsx, and NumberSkillGameV2.jsx for their own stop
+  // rules. Purely a status-label/progress_level accuracy fix — the stop
+  // condition, scoring, and score-screen UI (keyed off quitReason) are
+  // unchanged.
+  const completeGame = useCallback((autoStopped = false) => {
     setScreen('score');
     clearInterval(timerRef.current);
     const sessId = gameSessionIdRef.current;
@@ -826,8 +834,12 @@ const HerPherGameV2 = () => {
 
     axios.put(`${API_URL}/games/sessions/update/${sessId}`, {
       score: ts,
-      progress_level: 9,
-      status: 'completed',
+      // Was hardcoded to 9 regardless of what actually happened — always
+      // wrong on an auto-stopped session, and off by one even on a natural
+      // finish (8 scored items: questions 2-9, question 1 is the sample).
+      // Matches HerPherGameV3.jsx's already-correct allScores.length.
+      progress_level: allScores.length,
+      status: autoStopped ? 'dropped' : 'completed',
       saved_state: {
         allScores,
         totalScore: ts,
