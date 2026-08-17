@@ -764,7 +764,7 @@ const HerPherGameV3 = () => {
       // Auto-advance after 1.5s
       setTimeout(() => {
         if (newConsecutiveZeros >= 3) {
-          completeGame();
+          completeGame(true);
         } else {
           moveNext(qData);
         }
@@ -821,7 +821,14 @@ const HerPherGameV3 = () => {
   };
 
   // ──── Complete game ──────────────────────────────────────────────────────────
-  const completeGame = useCallback(() => {
+  // `autoStopped` distinguishes the two ways this is reached: a natural finish
+  // (moveNext, all 8 scored items shown) vs the 3-consecutive-zeros clinical
+  // stop rule below (finishQuestion) — same status split already used for the
+  // equivalent stop rule in AtlantisBagiyaGame.jsx (completeGame('dropped')),
+  // ChaloMelaChaleGame.jsx, ChorMachayeShorGame.jsx, and NumberSkillGameV2.jsx.
+  // Purely a status-label distinction — the stop condition, scoring, and
+  // score-screen UI (which keys off quitReason, not this status) are unchanged.
+  const completeGame = useCallback((autoStopped = false) => {
     setScreen('score');
     clearInterval(timerRef.current);
     const sessId = gameSessionIdRef.current;
@@ -856,7 +863,7 @@ const HerPherGameV3 = () => {
       // a natural finish, lower if the 3-consecutive-zeros auto-stop (see
       // finishQuestion) ended the session early.
       progress_level: allScores.length,
-      status: 'completed',
+      status: autoStopped ? 'dropped' : 'completed',
       saved_state: {
         allScores,
         totalScore: ts,
