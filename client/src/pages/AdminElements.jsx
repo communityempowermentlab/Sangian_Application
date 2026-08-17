@@ -14,6 +14,7 @@ import MelaElements from '../components/MelaElements';
 import ChorElements from '../components/ChorElements';
 import AudioElementsManager from '../components/AudioElementsManager';
 import ReadingV2ContentManager from '../components/ReadingV2ContentManager';
+import AnkganitV3ContentManager from '../components/AnkganitV3ContentManager';
 
 // Her Pher V3 uses a fixed item-wise image count per category (unlike V1/V2's
 // uniform caps) — see HerPherElements.jsx's default CATEGORIES for the shape.
@@ -296,6 +297,7 @@ export default function AdminElements() {
                 {activeTest === 'numeracy_number_skill_v3' && (
                     <div className="elements-section">
                         <AdminAnkganitV3Config />
+                        <AnkganitV3ContentManager languages={languages} showToast={showToast} />
                     </div>
                 )}
 

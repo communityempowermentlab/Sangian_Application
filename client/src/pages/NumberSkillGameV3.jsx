@@ -79,6 +79,54 @@ const NumberSkillGameV3 = () => {
     fetchConfig();
   }, []);
 
+  // Admin-configured, language-specific display content for individual
+  // questions (Admin → Elements → Ankganit V3) — keyed by question id,
+  // scoped to the currently selected language. This ONLY overrides what's
+  // rendered on the active question screens below; the canonical text/
+  // correct_answer/remainder from `categories` above (used for scoring,
+  // saved_state, the results table, and the PDF) is never touched, so
+  // switching languages can't affect scoring, reports, or dashboards.
+  const [contentOverrides, setContentOverrides] = useState({});
+  useEffect(() => {
+    const fetchOverrides = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/public/elements`, { params: { test_id: 'numeracy_number_skill_v3' } });
+        if (res.data.success) {
+          const map = {};
+          (res.data.elements || []).forEach(el => {
+            if (el.language !== language) return;
+            const m = /^q_(\d+)$/.exec(el.asset_type || '');
+            if (!m) return;
+            const display = el.config?.display;
+            if (typeof display === 'string' && display.trim()) map[m[1]] = display.trim();
+          });
+          setContentOverrides(map);
+        }
+      } catch (err) {
+        console.error('Failed to load Ankganit V3 language content', err);
+      }
+    };
+    fetchOverrides();
+  }, [language]);
+
+  // `q` may be a raw question row ({id, text, ...}) or the in-progress
+  // subtraction/division state ({questionId, text, ...}) — both carry a
+  // `.text` fallback so an unconfigured language silently shows the same
+  // canonical content as before, never a blank or wrong-language string.
+  const getQuestionDisplay = (q) => {
+    if (!q) return '';
+    const override = contentOverrides[q.questionId ?? q.id];
+    return override || q.text;
+  };
+
+  // Recognition-category tiles fall back to `title` (the bare number, e.g.
+  // "51") rather than `text` ("Identify number 51"), matching nrBank's
+  // existing title-then-text convention below.
+  const getRecognitionDisplay = (q) => {
+    const override = contentOverrides[q.id];
+    return override || q.title || q.text;
+  };
+
   const subtractionCat = categories.find(c => c.name === CATEGORY_NAMES.subtraction);
   const divisionCat = categories.find(c => c.name === CATEGORY_NAMES.division);
   const recognition99Cat = categories.find(c => c.name === CATEGORY_NAMES.recognition99);
@@ -553,7 +601,11 @@ const NumberSkillGameV3 = () => {
 
   // ── Number Recognition (shared tile-marking UI for both 1–9 and 11–99) ──
   const activeNrCategory = stage === 'number_recognition_99_select' ? recognition99Cat : recognition9Cat;
-  const nrBank = activeNrCategory ? [...activeNrCategory.questions].sort((a, b) => a.display_order - b.display_order).map(q => q.title || q.text) : [];
+  // `key` (canonical title/text) is what all selection/marking state below is
+  // keyed by — unchanged from before, so saved_state/reports/PDF still see
+  // the same canonical values. `display` is the only language-aware part,
+  // used purely for the tile's visible label.
+  const nrBank = activeNrCategory ? [...activeNrCategory.questions].sort((a, b) => a.display_order - b.display_order).map(q => ({ key: q.title || q.text, display: getRecognitionDisplay(q) })) : [];
 
   const toggleNrTileSelection = (text) => {
     const isSelected = nrSelectedTexts.includes(text);
@@ -767,7 +819,11 @@ const NumberSkillGameV3 = () => {
     // Normalize all types of minus/dash characters to standard hyphen
     cleanText = cleanText.replace(/[−–—]/g, '-');
 
-    const isStrictMath = /^\s*\d+\s*[-÷]\s*\d+\s*$/.test(cleanText);
+    // \p{Nd} (Unicode "decimal digit") instead of \d so a language-specific
+    // override using Devanagari/Perso-Arabic/other script digits (e.g.
+    // "५१ - ३५") still gets the fraction-bar/division-bracket layout below,
+    // not just the ASCII 0-9 this originally supported.
+    const isStrictMath = /^\s*\p{Nd}+\s*[-÷]\s*\p{Nd}+\s*$/u.test(cleanText);
 
     if (isStrictMath && cleanText.includes('-')) {
       const parts = cleanText.split('-');
@@ -957,7 +1013,7 @@ const NumberSkillGameV3 = () => {
                         className={`ns3-pair-card ns3-subtraction-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                         onClick={() => toggleSubtractionSelection(q.id)}
                       >
-                        {renderMathQuestion(q.text, '3.2rem', '110px')}
+                        {renderMathQuestion(getQuestionDisplay(q), '3.2rem', '110px')}
                       </div>
                     );
                   })}
@@ -977,7 +1033,7 @@ const NumberSkillGameV3 = () => {
                 <div className="ns3-instruction">{t('game.subtractionQ1RetryInstruction')}</div>
               )}
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(currentSubtractionQuestion.text)}
+                {renderMathQuestion(getQuestionDisplay(currentSubtractionQuestion))}
               </div>
             </div>
 
@@ -1010,7 +1066,7 @@ const NumberSkillGameV3 = () => {
                         className={`ns3-pair-card ns3-division-card ${pendingDivisionSelection === idx ? 'selected' : ''}`}
                         onClick={() => setPendingDivisionSelection(idx)}
                       >
-                        {renderMathQuestion(q.text, '5.5rem')}
+                        {renderMathQuestion(getQuestionDisplay(q), '5.5rem')}
                       </div>
                     );
                   })}
@@ -1027,7 +1083,7 @@ const NumberSkillGameV3 = () => {
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card ns-split-question">
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(division.text)}
+                {renderMathQuestion(getQuestionDisplay(division))}
               </div>
             </div>
 
@@ -1064,27 +1120,27 @@ const NumberSkillGameV3 = () => {
               {(nrBank.length === 10 ? [nrBank.slice(0, 4), nrBank.slice(4, 6), nrBank.slice(6, 10)] : [nrBank])
                 .map((row, rowIdx) => (
                   <div className="ns3-mark-row" key={rowIdx}>
-                    {row.map((text) => {
-                      const isSelected = nrSelectedTexts.includes(text);
-                      const isMarked = text in nrMarks;
+                    {row.map(({ key, display }) => {
+                      const isSelected = nrSelectedTexts.includes(key);
+                      const isMarked = key in nrMarks;
                       return (
                         <div
-                          key={text}
+                          key={key}
                           className={`ns3-mark-tile ${isSelected ? 'ns3-mark-tile-selected' : ''}`}
-                          onClick={() => toggleNrTileSelection(text)}
+                          onClick={() => toggleNrTileSelection(key)}
                           style={{ cursor: isMarked ? 'default' : 'pointer' }}
                         >
-                          <div className="ns3-mark-tile-text">{text}</div>
+                          <div className="ns3-mark-tile-text">{display}</div>
                           <div className={`ns3-mark-toggle-row ${isSelected ? 'visible' : ''}`}>
                             <button
                               aria-label="Mark as correct"
-                              className={`ns3-mark-toggle-btn ${nrMarks[text] === 'correct' ? 'active' : ''}`}
-                              onClick={(e) => { e.stopPropagation(); markNrTile(text, true); }}
+                              className={`ns3-mark-toggle-btn ${nrMarks[key] === 'correct' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markNrTile(key, true); }}
                             >✓</button>
                             <button
                               aria-label="Mark as incorrect"
-                              className={`ns3-mark-toggle-btn ${nrMarks[text] === 'incorrect' ? 'active' : ''}`}
-                              onClick={(e) => { e.stopPropagation(); markNrTile(text, false); }}
+                              className={`ns3-mark-toggle-btn ${nrMarks[key] === 'incorrect' ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); markNrTile(key, false); }}
                             >✗</button>
                           </div>
                         </div>
