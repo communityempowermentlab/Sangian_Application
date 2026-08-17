@@ -7,6 +7,7 @@ const AdminChildGroupsList = () => {
     const [groups, setGroups] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [orgFilter, setOrgFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
     const [loading, setLoading] = useState(true);
     const isOrg = isOrgSession();
 
@@ -41,7 +42,8 @@ const AdminChildGroupsList = () => {
     const filteredGroups = groups.filter(group =>
         (group.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         group.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (!orgFilter || String(group.org_id) === orgFilter)
+        (!orgFilter || String(group.org_id) === orgFilter) &&
+        (!statusFilter || group.status === statusFilter)
     );
 
     return (
@@ -82,6 +84,15 @@ const AdminChildGroupsList = () => {
                                     ))}
                                 </select>
                             )}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#334155', background: '#fff' }}
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
