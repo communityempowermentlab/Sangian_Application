@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useTestAudio } from '../hooks/useTestAudio';
+import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -55,6 +56,21 @@ const NumberSkillGameV2 = () => {
     };
     fetchConfig();
   }, []);
+
+  // Admin-configured, language-specific display content for individual
+  // questions (Admin → Elements → Ankganit V2 → "Language-Specific
+  // Content") — same useTestContent architecture Padh ke Batao V2 and
+  // Ankganit V3 use. This ONLY overrides what's rendered on the active
+  // question screens below; the canonical `text`/`correct_answer`/
+  // `remainder` in `questions` (used for scoring, saved_state, the results
+  // table, and the PDF) is never touched, so switching languages can't
+  // affect scoring, reports, or dashboards.
+  const { getContent } = useTestContent('numeracy_number_skill_v2');
+  const getQuestionDisplay = (q) => {
+    if (!q) return '';
+    const display = getContent(`q_${q.id}`)?.display;
+    return (typeof display === 'string' && display.trim()) ? display.trim() : q.text;
+  };
 
   const [childData, setChildData] = useState(null);
   const [activityData, setActivityData] = useState({ lastPlayed: 'Never', attempts: 0 });
@@ -556,7 +572,11 @@ const NumberSkillGameV2 = () => {
     // Normalize all types of minus/dash characters to standard hyphen
     cleanText = cleanText.replace(/[−–—]/g, '-');
 
-    const isStrictMath = /^\s*\d+\s*[-÷]\s*\d+\s*$/.test(cleanText);
+    // \p{Nd} (Unicode "decimal digit") instead of \d so a language-specific
+    // override using Devanagari/Perso-Arabic/other script digits (e.g.
+    // "५१ - ३५") still gets the fraction-bar/division-bracket layout below,
+    // not just the ASCII 0-9 this originally supported.
+    const isStrictMath = /^\s*\p{Nd}+\s*[-÷]\s*\p{Nd}+\s*$/u.test(cleanText);
 
     if (isStrictMath && cleanText.includes('-')) {
       const parts = cleanText.split('-');
@@ -714,7 +734,7 @@ const NumberSkillGameV2 = () => {
           <div className="ns-screen" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card">
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(questions[questionIndex].text)}
+                {renderMathQuestion(getQuestionDisplay(questions[questionIndex]))}
               </div>
             </div>
             <div className="ns-response-buttons">
@@ -728,7 +748,7 @@ const NumberSkillGameV2 = () => {
           <div className="ns-screen ns-screen-split" style={{ backgroundColor: '#fff' }}>
             <div className="ns-card ns-question-card ns-split-question">
               <div className="ns-question-content" style={{ display: 'flex', justifyContent: 'center' }}>
-                {renderMathQuestion(questions[questionIndex].text)}
+                {renderMathQuestion(getQuestionDisplay(questions[questionIndex]))}
               </div>
             </div>
 

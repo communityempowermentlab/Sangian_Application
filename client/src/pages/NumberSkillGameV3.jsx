@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useTestAudio } from '../hooks/useTestAudio';
+import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -80,34 +81,17 @@ const NumberSkillGameV3 = () => {
   }, []);
 
   // Admin-configured, language-specific display content for individual
-  // questions (Admin → Elements → Ankganit V3) — keyed by question id,
-  // scoped to the currently selected language. This ONLY overrides what's
-  // rendered on the active question screens below; the canonical text/
-  // correct_answer/remainder from `categories` above (used for scoring,
-  // saved_state, the results table, and the PDF) is never touched, so
-  // switching languages can't affect scoring, reports, or dashboards.
-  const [contentOverrides, setContentOverrides] = useState({});
-  useEffect(() => {
-    const fetchOverrides = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/public/elements`, { params: { test_id: 'numeracy_number_skill_v3' } });
-        if (res.data.success) {
-          const map = {};
-          (res.data.elements || []).forEach(el => {
-            if (el.language !== language) return;
-            const m = /^q_(\d+)$/.exec(el.asset_type || '');
-            if (!m) return;
-            const display = el.config?.display;
-            if (typeof display === 'string' && display.trim()) map[m[1]] = display.trim();
-          });
-          setContentOverrides(map);
-        }
-      } catch (err) {
-        console.error('Failed to load Ankganit V3 language content', err);
-      }
-    };
-    fetchOverrides();
-  }, [language]);
+  // questions (Admin → Elements → Ankganit V3 → "Language-Specific
+  // Content") — same useTestContent architecture Padh ke Batao V2 uses for
+  // its letters/words/paragraphs/story (getContent resolves current
+  // language, falling back to the platform's default language before the
+  // caller's own hardcoded value). Rows are named content_q_<questionId>.
+  // This ONLY overrides what's rendered on the active question screens
+  // below; the canonical text/correct_answer/remainder from `categories`
+  // above (used for scoring, saved_state, the results table, and the PDF)
+  // is never touched, so switching languages can't affect scoring, reports,
+  // or dashboards.
+  const { getContent } = useTestContent('numeracy_number_skill_v3');
 
   // `q` may be a raw question row ({id, text, ...}) or the in-progress
   // subtraction/division state ({questionId, text, ...}) — both carry a
@@ -115,16 +99,16 @@ const NumberSkillGameV3 = () => {
   // canonical content as before, never a blank or wrong-language string.
   const getQuestionDisplay = (q) => {
     if (!q) return '';
-    const override = contentOverrides[q.questionId ?? q.id];
-    return override || q.text;
+    const display = getContent(`q_${q.questionId ?? q.id}`)?.display;
+    return (typeof display === 'string' && display.trim()) ? display.trim() : q.text;
   };
 
   // Recognition-category tiles fall back to `title` (the bare number, e.g.
   // "51") rather than `text` ("Identify number 51"), matching nrBank's
   // existing title-then-text convention below.
   const getRecognitionDisplay = (q) => {
-    const override = contentOverrides[q.id];
-    return override || q.title || q.text;
+    const display = getContent(`q_${q.id}`)?.display;
+    return (typeof display === 'string' && display.trim()) ? display.trim() : (q.title || q.text);
   };
 
   const subtractionCat = categories.find(c => c.name === CATEGORY_NAMES.subtraction);

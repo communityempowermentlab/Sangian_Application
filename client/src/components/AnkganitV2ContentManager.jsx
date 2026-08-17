@@ -1,22 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
 
-const TEST_ID = 'numeracy_number_skill_v3';
+const TEST_ID = 'numeracy_number_skill_v2';
 
-// Mirrors NumberSkillGameV3.jsx's own title-then-text fallback, so the
-// placeholder shown here always matches what the player currently sees when
-// no language override is configured. Recognition-category questions store
-// the plain number in `title` (e.g. "51"); subtraction/division questions
-// don't use `title` for display at all — their `text` ("51 - 35", "918 ÷ 7")
-// already IS the on-screen content, so it's used as-is, not string-composed
-// from separate operands (division's dividend/divisor aren't stored as
-// separate columns — only embedded together in `text`).
-const canonicalDisplay = (q) => {
-  const title = (q.title || '').trim();
-  return (title && !title.includes(',')) ? title : (q.text || '').replace(/Identify number\s*-?\s*/ig, '').trim();
-};
+// NumberSkillGameV2.jsx renders every question — recognition, subtraction,
+// division alike — from `.text` alone (no title-based tile bank the way V3's
+// number-recognition screens use), so the placeholder here is always just
+// the stripped `text`.
+const canonicalDisplay = (q) => (q.text || '').replace(/Identify number\s*-?\s*/ig, '').trim();
 
-export default function AnkganitV3ContentManager({ languages, showToast }) {
+export default function AnkganitV2ContentManager({ languages, showToast }) {
   const [collapsed, setCollapsed] = useState(true);
   const [categories, setCategories] = useState([]);
   const [files, setFiles] = useState([]);
@@ -31,18 +24,18 @@ export default function AnkganitV3ContentManager({ languages, showToast }) {
     setLoading(true);
     try {
       const [qRes, elRes] = await Promise.all([
-        axiosAdmin.get('/admin/ankganit-v3'),
+        axiosAdmin.get('/admin/ankganit-v2'),
         axiosAdmin.get(`/admin/elements?test_id=${TEST_ID}`),
       ]);
       if (qRes.data.success) setCategories(qRes.data.categories);
-      // `content_q_<id>` — same content_* convention as Padh ke Batao V2's
-      // element manager, so both are read by the shared useTestContent hook
-      // (NumberSkillGameV3.jsx calls getContent('q_<id>'), which itself
-      // prefixes "content_").
+      // `content_q_<id>` — the same content_* convention Padh ke Batao V2's
+      // element manager uses, read via the shared useTestContent hook
+      // (NumberSkillGameV2.jsx calls getContent('q_<id>'), which prefixes
+      // "content_" itself).
       setFiles((elRes.data.elements || []).filter(e => /^content_q_\d+$/.test(e.asset_type || '')));
     } catch (error) {
-      console.error('Failed to load Ankganit V3 content', error);
-      showToast('Failed to load Ankganit V3 language content', 'error');
+      console.error('Failed to load Ankganit V2 content', error);
+      showToast('Failed to load Ankganit V2 language content', 'error');
     } finally {
       setLoading(false);
     }
