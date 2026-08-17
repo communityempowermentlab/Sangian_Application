@@ -95,7 +95,7 @@ const IndividualReports = () => {
                                             <td style={{ padding: '8px', fontWeight: 600 }}>{gameTitle(row.game_name)}</td>
                                             <td style={{ padding: '8px' }}>#{row.attempt_no}</td>
                                             <td style={{ padding: '8px' }}>{STATUS_LABEL[row.status] || row.status}</td>
-                                            <td style={{ padding: '8px' }}>{row.status === 'completed' ? (row.score ?? '—') : '—'}</td>
+                                            <td style={{ padding: '8px' }}>{row.score ?? '—'}</td>
                                             <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDuration(row.actual_game_time)}</td>
                                             <td style={{ padding: '8px', color: '#6b7280' }}>{fmtDateTime(row.start_time)}</td>
                                             <td style={{ padding: '8px' }}>
