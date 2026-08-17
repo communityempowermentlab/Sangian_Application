@@ -9,6 +9,7 @@ const AdminAssessorsList = () => {
     const [assessors, setAssessors] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [orgFilter, setOrgFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
     const [loading, setLoading] = useState(true);
     const isOrg = isOrgSession();
 
@@ -44,7 +45,8 @@ const AdminAssessorsList = () => {
         (assessor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessor.mobile_number?.includes(searchTerm)) &&
-        (!orgFilter || String(assessor.org_id) === orgFilter)
+        (!orgFilter || String(assessor.org_id) === orgFilter) &&
+        (!statusFilter || assessor.status === statusFilter)
     );
 
     const colCount = isOrg ? 8 : 9;
@@ -87,6 +89,15 @@ const AdminAssessorsList = () => {
                                     ))}
                                 </select>
                             )}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#334155', background: '#fff' }}
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
