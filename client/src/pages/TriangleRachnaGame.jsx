@@ -680,6 +680,12 @@ const TriangleRachnaGame = () => {
     const p = [...pausesRef.current, { questionKey: currentKey, reason: quitReason }];
     setPauses(p);
     pausesRef.current = p; // Apply exact state before saving
+    // Freeze screentime here too, same as submitAssessment's completion path —
+    // without this, the interval kept ticking after saveProgress persisted its
+    // snapshot, so the on-screen chip (and the PDF, a capture of it) kept
+    // climbing past the value already saved to the DB/shown in Admin Reports.
+    clearInterval(sessionTimerRef.current);
+    sessionElapsedRef.current = sessionElapsed;
     saveProgress(questionScores, questionTimes, totalScore, statusType);
     setShowQuitModal(false);
     setQuitReason('');
