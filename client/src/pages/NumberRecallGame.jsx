@@ -6,6 +6,7 @@ import { useLanguage, STT_LANG_MAP } from '../contexts/LanguageContext';
 import { useHeaderConfig } from '../contexts/HeaderConfigContext';
 import { useResponseMatching } from '../contexts/ResponseMatchingContext';
 import { useTestAudio } from '../hooks/useTestAudio';
+import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
@@ -114,6 +115,15 @@ const NumpadPanel = ({
   const { t } = useLanguage();
   const { responseMatchingMode, displayUserInputString } = useResponseMatching();
   const isPartialMatch = responseMatchingMode === 'partial';
+  // Admin-configured, language-specific digit for a numpad tile (Elements ->
+  // Lottery Ka Ticket -> "Language-Specific Content") — display-only, falls
+  // back to the plain digit. The tapped value itself (k.val) is untouched,
+  // so scoring/exactMatch/saved_state are unaffected.
+  const { getContent } = useTestContent(GAME_NAME);
+  const getDigitDisplay = (val) => {
+    const display = getContent(`q_${val}`)?.display;
+    return (typeof display === 'string' && display.trim()) ? display.trim() : String(val);
+  };
   const [selected, setSelected] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayCount, setReplayCount] = useState(0);
@@ -181,14 +191,14 @@ const NumpadPanel = ({
     <div className="nr-panel-wrap">
       {displayUserInputString && (
         <div className="nr-input-display" style={{ visibility: selected.length > 0 ? 'visible' : 'hidden' }}>
-          {selected.join(' ')}
+          {selected.map(getDigitDisplay).join(' ')}
         </div>
       )}
       <div className="nr-numpad-wrap">
         <div className="nr-numpad" style={{ pointerEvents: isInputDisabled ? 'none' : 'auto', opacity: isInputDisabled ? 0.45 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (
             <button key={i} className={`nr-key ${k.cls || ''}`} onClick={() => handleKey(k)}>
-              {k.action === 'clear' ? t('game.clear') : k.label}
+              {k.action === 'clear' ? t('game.clear') : getDigitDisplay(k.val)}
             </button>
           ))}
         </div>
@@ -216,6 +226,12 @@ const NumpadPanel = ({
 const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachingAudioSrc, nextLabel, nextIcon, onNext, onScored }) => {
   const { t } = useLanguage();
   const { displayUserInputString } = useResponseMatching();
+  // Same display-only digit override as NumpadPanel — see its comment above.
+  const { getContent } = useTestContent(GAME_NAME);
+  const getDigitDisplay = (val) => {
+    const display = getContent(`q_${val}`)?.display;
+    return (typeof display === 'string' && display.trim()) ? display.trim() : String(val);
+  };
   const [selected, setSelected] = useState([]);
   const [firstAttemptDone, setFirstAttemptDone] = useState(false);
   const [teachingAudioPlayed, setTeachingAudioPlayed] = useState(false);
@@ -312,14 +328,14 @@ const TeachingScreen = ({ title, chipLabel, audioSrc, correct, maxSelect, teachi
     <div className="nr-panel-wrap">
       {displayUserInputString && (
         <div className="nr-input-display" style={{ visibility: selected.length > 0 ? 'visible' : 'hidden' }}>
-          {selected.join(' ')}
+          {selected.map(getDigitDisplay).join(' ')}
         </div>
       )}
       <div className="nr-numpad-wrap">
         <div className="nr-numpad" style={{ pointerEvents: isWaiting ? 'none' : 'auto', opacity: isWaiting ? 0.5 : 1 }}>
           {NUMPAD_KEYS.map((k, i) => (
             <button key={i} className={`nr-key ${k.cls || ''}`} onClick={() => handleKey(k)}>
-              {k.action === 'clear' ? t('game.clear') : k.label}
+              {k.action === 'clear' ? t('game.clear') : getDigitDisplay(k.val)}
             </button>
           ))}
         </div>
