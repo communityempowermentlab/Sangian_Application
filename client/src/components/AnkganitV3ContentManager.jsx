@@ -17,35 +17,54 @@ const canonicalDisplay = (q) => {
 };
 
 export default function AnkganitV3ContentManager({ languages, showToast }) {
-  const [collapsed, setCollapsed] = useState(true);
   const [categories, setCategories] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [activeLang, setActiveLang] = useState('hi');
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [busyFileId, setBusyFileId] = useState(null);
 
+  // Two independent requests (question bank + saved translations) —
+  // deliberately NOT Promise.all, which fails BOTH the moment either one
+  // does, silently leaving categories empty and rendering nothing with no
+  // visible error and no way to recover short of a full page reload. Each
+  // is handled on its own here, and any failure is shown inline (with a
+  // Retry) instead of only a toast that's easy to miss.
   const loadAll = useCallback(async () => {
     setLoading(true);
-    try {
-      const [qRes, elRes] = await Promise.all([
-        axiosAdmin.get('/admin/ankganit-v3'),
-        axiosAdmin.get(`/admin/elements?test_id=${TEST_ID}`),
-      ]);
-      if (qRes.data.success) setCategories(qRes.data.categories);
-      // `content_q_<id>` — same content_* convention as Padh ke Batao V2's
-      // element manager, so both are read by the shared useTestContent hook
-      // (NumberSkillGameV3.jsx calls getContent('q_<id>'), which itself
-      // prefixes "content_").
-      setFiles((elRes.data.elements || []).filter(e => /^content_q_\d+$/.test(e.asset_type || '')));
-    } catch (error) {
-      console.error('Failed to load Ankganit V3 content', error);
-      showToast('Failed to load Ankganit V3 language content', 'error');
-    } finally {
-      setLoading(false);
+    setLoadError(null);
+    const [qResult, elResult] = await Promise.allSettled([
+      axiosAdmin.get('/admin/ankganit-v3'),
+      axiosAdmin.get(`/admin/elements?test_id=${TEST_ID}`),
+    ]);
+
+    if (qResult.status === 'fulfilled' && qResult.value.data.success) {
+      setCategories(qResult.value.data.categories);
+    } else {
+      console.error('Failed to load Ankganit V3 question bank', qResult.reason);
     }
+
+    // `content_q_<id>` — same content_* convention as Padh ke Batao V2's
+    // element manager, so both are read by the shared useTestContent hook
+    // (NumberSkillGameV3.jsx calls getContent('q_<id>'), which itself
+    // prefixes "content_").
+    if (elResult.status === 'fulfilled') {
+      setFiles((elResult.value.data.elements || []).filter(e => /^content_q_\d+$/.test(e.asset_type || '')));
+    } else {
+      console.error('Failed to load Ankganit V3 saved translations', elResult.reason);
+    }
+
+    if (qResult.status === 'rejected' || elResult.status === 'rejected') {
+      const message = qResult.status === 'rejected'
+        ? (qResult.reason?.response?.data?.message || qResult.reason?.message || 'Failed to load the question bank')
+        : (elResult.reason?.response?.data?.message || elResult.reason?.message || 'Failed to load saved translations');
+      setLoadError(message);
+      showToast('Failed to load Ankganit V3 language content', 'error');
+    }
+    setLoading(false);
   }, [showToast]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -109,19 +128,23 @@ export default function AnkganitV3ContentManager({ languages, showToast }) {
 
   return (
     <div className="elements-section">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setCollapsed(c => !c)}>
-        <h3 style={{ margin: 0 }}>🌐 Language-Specific Content {collapsed ? '▸' : '▾'}</h3>
-      </div>
-      {!collapsed && (
-        <>
-          <p className="elements-desc">
-            Configure exactly what's shown on screen for each question while a language is selected — the Hindi
-            numeral or number-word for "51", the localized subtraction pair, the localized division expression, and
-            so on. This only changes the displayed content; the correct answer used for scoring is never affected.
-            Leave a language unconfigured (or disabled) and the default content shown below is used instead.
-          </p>
-          {loading ? <p>Loading...</p> : (
-            <div style={{ display: 'grid', gap: '18px' }}>
+      <h3 style={{ margin: 0 }}>🌐 Language-Specific Content</h3>
+      <p className="elements-desc">
+        Configure exactly what's shown on screen for each question while a language is selected — the Hindi
+        numeral or number-word for "51", the localized subtraction pair, the localized division expression, and
+        so on. This only changes the displayed content; the correct answer used for scoring is never affected.
+        Leave a language unconfigured (or disabled) and the default content shown below is used instead.
+      </p>
+      {loadError && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', marginBottom: '14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', fontSize: '13px' }}>
+          <span style={{ flex: 1 }}>⚠ {loadError}</span>
+          <button className="admin-btn admin-btn-secondary" style={{ fontSize: '12px', padding: '5px 10px' }} onClick={loadAll} disabled={loading}>
+            Retry
+          </button>
+        </div>
+      )}
+      {loading ? <p>Loading...</p> : (
+        <div style={{ display: 'grid', gap: '18px' }}>
               {categories.map(cat => (
                 <div key={cat.id} className="admin-card">
                   <div className="admin-card-header"><h4 style={{ margin: 0 }}>{cat.name}</h4></div>
@@ -212,9 +235,7 @@ export default function AnkganitV3ContentManager({ languages, showToast }) {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   );
