@@ -310,6 +310,15 @@ const MelaElements = () => {
                     >
                       {questionLabel(key)} {isCustomized && <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#6b7280' }}>(customized)</span>}
                     </span>
+                    {/* Current state, always visible — independent of the action button's
+                        text below, which describes what clicking it will DO (the opposite
+                        of the current state), not what the state currently IS. Showing both
+                        side by side removes the "does 'Activate' mean it's active?" ambiguity
+                        that caused real accidental deactivations during testing. */}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: (active || isProtected) ? '#15803d' : '#6b7280' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: (active || isProtected) ? '#22c55e' : '#9ca3af', display: 'inline-block' }} />
+                      {(active || isProtected) ? 'Active — shows in game' : 'Inactive — skipped in game'}
+                    </span>
                     {isProtected ? (
                       <span style={{ fontSize: '0.8rem', color: '#6b7280' }} title="Feeds the clinical drop-out rule — can't be deactivated">🔒 Required</span>
                     ) : (
