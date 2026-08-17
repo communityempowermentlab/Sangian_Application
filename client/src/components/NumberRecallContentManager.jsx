@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
 
-const TEST_ID = 'number_recall_lottery';
-
-// The numpad's actual tile set (NumberRecallGame.jsx's NUMPAD_KEYS) — note 7
-// is intentionally absent from the game itself, so it's not offered here.
+// The numpad's actual tile set (NumberRecallGame.jsx / NumberRecallGameV2.jsx's
+// identical NUMPAD_KEYS) — note 7 is intentionally absent from the game
+// itself, so it's not offered here.
 const TILE_VALUES = [1, 2, 3, 4, 5, 6, 8, 9, 10];
 
-export default function NumberRecallContentManager({ languages, showToast }) {
+// Shared by both Lottery Ka Ticket versions — V1 (number_recall_lottery) and
+// V2 (number_recall_lottery_v2) use the exact same numpad tile set and
+// content_q_<value> convention, so `testId` is the only thing that differs
+// between them; see AdminElements.jsx's two call sites.
+export default function NumberRecallContentManager({ testId, languages, showToast }) {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -21,7 +24,7 @@ export default function NumberRecallContentManager({ languages, showToast }) {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await axiosAdmin.get(`/admin/elements?test_id=${TEST_ID}`);
+      const res = await axiosAdmin.get(`/admin/elements?test_id=${testId}`);
       setFiles((res.data.elements || []).filter(e => /^content_q_\d+$/.test(e.asset_type || '')));
     } catch (error) {
       console.error('Failed to load Number Recall language content', error);
@@ -30,7 +33,7 @@ export default function NumberRecallContentManager({ languages, showToast }) {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [testId, showToast]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -54,7 +57,7 @@ export default function NumberRecallContentManager({ languages, showToast }) {
     setSaving(true);
     try {
       const res = await axiosAdmin.put('/admin/elements/config', {
-        test_id: TEST_ID, asset_type: `content_q_${value}`, language: activeLang, config: { display: draft.trim() },
+        test_id: testId, asset_type: `content_q_${value}`, language: activeLang, config: { display: draft.trim() },
       });
       if (res.data.success) {
         showToast('Content saved');

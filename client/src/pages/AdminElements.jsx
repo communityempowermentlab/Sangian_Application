@@ -305,12 +305,13 @@ export default function AdminElements() {
                 )}
 
                 {activeTest === 'number_recall_lottery' && (
-                    <NumberRecallContentManager languages={languages} showToast={showToast} />
+                    <NumberRecallContentManager testId="number_recall_lottery" languages={languages} showToast={showToast} />
                 )}
 
                 {activeTest === 'number_recall_lottery_v2' && (
                     <div className="elements-section">
                         <AdminNumberRecallV2Config />
+                        <NumberRecallContentManager testId="number_recall_lottery_v2" languages={languages} showToast={showToast} />
                     </div>
                 )}
 
