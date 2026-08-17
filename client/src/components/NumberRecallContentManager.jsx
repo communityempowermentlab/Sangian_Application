@@ -156,17 +156,34 @@ export default function NumberRecallContentManager({ languages, showToast }) {
                               })}
                             </div>
 
-                            <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                              Digit shown on this tile when "{languages.find(l => l.code === activeLang)?.name || activeLang}" is selected
-                              (default: <strong>{value}</strong>)
-                            </label>
-                            <input
-                              type="text"
-                              value={draft}
-                              onChange={(e) => setDraft(e.target.value)}
-                              placeholder={String(value)}
-                              style={{ width: '100%', fontSize: '15px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                            />
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                              <div style={{ flex: '1 1 260px', minWidth: '200px' }}>
+                                <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                  Digit shown on this tile when "{languages.find(l => l.code === activeLang)?.name || activeLang}" is selected
+                                  (default: <strong>{value}</strong>)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={draft}
+                                  onChange={(e) => setDraft(e.target.value)}
+                                  placeholder={String(value)}
+                                  style={{ width: '100%', fontSize: '15px', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>Preview (as shown on the Numpad)</label>
+                                {/* Mirrors NumberRecallGame.css's .nr-key tile styling, so this is an
+                                    accurate preview of the actual numpad button, not just a text sample. */}
+                                <div style={{
+                                  width: '76px', height: '64px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: '#fff', fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 900,
+                                  background: 'linear-gradient(135deg, #4f9cf9, #2563eb)', border: '2px solid rgba(255,255,255,0.5)',
+                                  boxShadow: '0 6px 16px rgba(37,99,235,0.22), 0 2px 4px rgba(0,0,0,0.06)',
+                                }}>
+                                  {draft.trim() || value}
+                                </div>
+                              </div>
+                            </div>
                             <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
                               {currentFile
                                 ? `Last updated: ${new Date(currentFile.updated_at).toLocaleString('en-IN')}${currentFile.is_active === 0 ? ' — DISABLED' : ''}`
