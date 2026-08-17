@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
+import { isOrgSession } from '../utils/staffPermissions';
 
 const AdminChildGroupsList = () => {
     const [groups, setGroups] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [orgFilter, setOrgFilter] = useState('');
     const [loading, setLoading] = useState(true);
+    const isOrg = isOrgSession();
 
     useEffect(() => {
         fetchGroups();
@@ -22,9 +25,23 @@ const AdminChildGroupsList = () => {
         }
     };
 
+    // Derived from the already-fetched groups rather than a separate
+    // /admin/organizations call — every row already carries org_id/
+    // organization from the backend's LEFT JOIN (getAllGroups' `cg.*, o.org_name
+    // AS organization`), same as AdminAssessorsList.jsx's pattern.
+    const orgOptions = Object.values(
+        groups.reduce((acc, g) => {
+            if (g.org_id != null && !acc[g.org_id]) {
+                acc[g.org_id] = { id: g.org_id, name: g.organization || `Org #${g.org_id}` };
+            }
+            return acc;
+        }, {})
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
     const filteredGroups = groups.filter(group =>
-        group.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        group.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        (group.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!orgFilter || String(group.org_id) === orgFilter)
     );
 
     return (
@@ -44,13 +61,27 @@ const AdminChildGroupsList = () => {
 
                 <div className="admin-grid" style={{ marginTop: '12px' }}>
                     <div className="admin-card w12" style={{ boxShadow: 'none', background: 'rgba(255,255,255,0.72)' }}>
-                        <div className="admin-search" style={{ marginBottom: '16px', maxWidth: '400px' }}>
-                            <input
-                                type="search"
-                                placeholder="Search name or description..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '16px' }}>
+                            <div className="admin-search" style={{ marginBottom: 0, maxWidth: '400px', flex: '1 1 260px' }}>
+                                <input
+                                    type="search"
+                                    placeholder="Search name or description..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            {!isOrg && orgOptions.length > 0 && (
+                                <select
+                                    value={orgFilter}
+                                    onChange={(e) => setOrgFilter(e.target.value)}
+                                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#334155', background: '#fff' }}
+                                >
+                                    <option value="">All Organizations</option>
+                                    {orgOptions.map(o => (
+                                        <option key={o.id} value={o.id}>{o.name}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
