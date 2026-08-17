@@ -59,17 +59,6 @@ const AdminStaffList = () => {
         else { setSortKey(key); setSortDir('asc'); }
     };
 
-    const handleDelete = async (member) => {
-        if (!window.confirm(`Delete staff account "${member.name}"? This can't be undone.`)) return;
-        try {
-            await axiosAdmin.delete(`/admin/staff/${member.id}`);
-            setActionMsg({ type: 'success', text: 'Staff account deleted.' });
-            fetchStaff();
-        } catch (error) {
-            setActionMsg({ type: 'error', text: error.response?.data?.message || 'Failed to delete staff account.' });
-        }
-    };
-
     const submitReset = async () => {
         if (!newPassword) return;
         try {
@@ -121,11 +110,6 @@ const AdminStaffList = () => {
                                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                                 />
                             </div>
-                            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                                <option value="">All Statuses</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
                             {isAdmin && orgOptions.length > 0 && (
                                 <select value={orgFilter} onChange={(e) => { setOrgFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                                     <option value="">All Organizations</option>
@@ -134,6 +118,11 @@ const AdminStaffList = () => {
                                     ))}
                                 </select>
                             )}
+                            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
@@ -187,9 +176,6 @@ const AdminStaffList = () => {
                                                         )}
                                                         {canPerform('staff', 'edit') && (
                                                             <button onClick={() => { setResetTarget(member); setNewPassword(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#7c3aed', padding: 0 }}>🔑 Reset Password</button>
-                                                        )}
-                                                        {canPerform('staff', 'delete') && (
-                                                            <button onClick={() => handleDelete(member)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#dc2626', padding: 0 }}>🗑️ Delete</button>
                                                         )}
                                                     </div>
                                                 </td>
