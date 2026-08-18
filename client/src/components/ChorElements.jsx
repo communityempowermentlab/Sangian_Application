@@ -112,6 +112,15 @@ const ChorElements = () => {
           return (
             <div key={key} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: active ? 1 : 0.6 }}>
               <span style={{ flex: 1, fontWeight: 600 }}>{label}</span>
+              {/* Current state, always visible — independent of the action button's
+                  text below, which describes what clicking it will DO (the opposite
+                  of the current state), not what the state currently IS. Same fix as
+                  MelaElements.jsx's status badge, added after that ambiguity caused
+                  real accidental deactivations during testing there. */}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: active ? '#15803d' : '#6b7280' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: active ? '#22c55e' : '#9ca3af', display: 'inline-block' }} />
+                {active ? 'Active — shows in game' : 'Inactive — skipped in game'}
+              </span>
               {isSoleActive ? (
                 <span style={{ fontSize: '0.8rem', color: '#6b7280' }} title="At least one item must remain active">🔒 Required</span>
               ) : (
