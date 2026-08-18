@@ -1062,7 +1062,9 @@ const ChorMachayeShorGame = () => {
     // Animate correct
     setHouses(prev => prev.map(h => h.currentPosition === house.currentPosition ? { ...h, animationClass: 'correct-response' } : h));
     setTreasurePos(house.currentPosition);
-    showFeedbackMsg(t('game.correctFeedbackChor'), 'correct');
+    // Visual "✔ Correct!" banner hidden per request — everything else about
+    // a correct move (score, animation, treasure icon, applause audio,
+    // milestone/attempt-limit progression below) is unchanged.
     await playAudio(resolveAudio('cm_appalause', 'cm_appalause.wav'));
     await new Promise(r => setTimeout(r, 500));
     setTreasurePos(null);
