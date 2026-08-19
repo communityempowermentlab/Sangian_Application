@@ -166,6 +166,17 @@ const GAME_DATA = {
   ]
 };
 
+// Highest score band an item can award — item 1 sums its two trials'
+// individual maxes (5 + 2 = 7), everything else is a single scoring array
+// (max 5). Used to build the results dashboard's dynamic Total Score, which
+// must shrink when items are deactivated in the admin panel.
+const getItemMaxScore = (item) => {
+  if (item.hasTrials) {
+    return Math.max(...item.scoring.trial1.map(b => b.score)) + Math.max(...item.scoring.trial2.map(b => b.score));
+  }
+  return Math.max(...item.scoring.map(b => b.score));
+};
+
 // =========================
 // Helper Functions (Rule Engine / Utils)
 // =========================
@@ -1578,6 +1589,10 @@ const ChorMachayeShorGame = () => {
     const attempted = itemResults.length;
     const correctCount = itemResults.filter(r => r.completed).length;
     const accuracy = Math.round((correctCount / 18) * 100);
+    // Max achievable score across only the currently active items — shrinks
+    // when items are deactivated in the admin panel (e.g. 8 active items ->
+    // 42), so the big score circle never shows an unreachable denominator.
+    const totalMaxScore = GAME_DATA.items.filter(it => isItemActive(it.id)).reduce((sum, it) => sum + getItemMaxScore(it), 0);
     const tTime = itemResults.reduce((acc, r) => acc + r.timeTaken, 0);
     const tMoves = itemResults.reduce((acc, r) => acc + r.moves, 0);
     const avgTime = attempted > 0 ? Math.round(tTime / attempted) : 0;
@@ -1619,8 +1634,8 @@ const ChorMachayeShorGame = () => {
                 
                 <div className="chor-dash-stat-grid">
                   <div className="chor-big-score-circle">
-                    <span className="score-value">{correctCount}</span>
-                    <span className="score-max">/ 18</span>
+                    <span className="score-value">{totalScore}</span>
+                    <span className="score-max">/ {totalMaxScore}</span>
                   </div>
                   <div className="chor-stat-boxes">
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Correct</div><div className="chor-stat-val text-green">{correctCount}</div></div>
