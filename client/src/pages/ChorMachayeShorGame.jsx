@@ -486,6 +486,14 @@ const ChorMachayeShorGame = () => {
     for (let i = fromIdx + 1; i < GAME_DATA.items.length; i++) if (isItemActive(GAME_DATA.items[i].id)) return i;
     return null;
   };
+  // Rank of an item among only the active ones (1-based) — what the child
+  // sees as "Question N", so deactivating an item never leaves a gap
+  // (e.g. ...4, 6... when item 5 is off) in the displayed sequence.
+  const activeSequenceNumber = (idx) => {
+    let n = 0;
+    for (let i = 0; i <= idx; i++) if (isItemActive(GAME_DATA.items[i].id)) n++;
+    return n;
+  };
 
   useEffect(() => {
     const item = GAME_DATA.items[currentItemIndex];
@@ -1718,7 +1726,7 @@ const ChorMachayeShorGame = () => {
           
           <div className="chor-topbar-center">
              <div className="chor-topbar-screen-title">
-               Question {currentItemIndex + 1}
+               Question {activeSequenceNumber(currentItemIndex)}
                {currentItem.hasTrials && <div className="chor-chip chor-chip-game" style={{ background: '#4f46e5', color: '#fff', borderColor: '#4338ca' }}>Trial {currentTrial}</div>}
                {phaseLabel && <div className="chor-chip chor-chip-splash">{phaseLabel}</div>}
              </div>
