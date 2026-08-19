@@ -1588,7 +1588,11 @@ const ChorMachayeShorGame = () => {
   if (screen === 'results') {
     const attempted = itemResults.length;
     const correctCount = itemResults.filter(r => r.completed).length;
-    const accuracy = Math.round((correctCount / 18) * 100);
+    // Total sub-questions across only the currently active items — item 1
+    // counts as 2 (its two trials), every other item as 1, mirroring how
+    // finalizeItem actually pushes one itemResults entry per item (two for
+    // item 1's trial1/trial2). Shrinks when items are deactivated in admin.
+    const totalActiveQuestions = GAME_DATA.items.filter(it => isItemActive(it.id)).reduce((sum, it) => sum + (it.hasTrials ? 2 : 1), 0);
     // Max achievable score across only the currently active items — shrinks
     // when items are deactivated in the admin panel (e.g. 8 active items ->
     // 42), so the big score circle never shows an unreachable denominator.
@@ -1641,9 +1645,9 @@ const ChorMachayeShorGame = () => {
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Correct</div><div className="chor-stat-val text-green">{correctCount}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Incorrect</div><div className="chor-stat-val text-red">{attempted - correctCount}</div></div>
                     <div className="chor-stat-box">
-                      <div className="chor-stat-box-label">% Accuracy <span className="kpi-formula-icon" data-tooltip="Correct Answers ÷ Total Questions (18) × 100">ⓘ</span></div>
-                      <div className="chor-stat-val">{((correctCount / 18) * 100).toFixed(1)}%</div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{correctCount} / 18</div>
+                      <div className="chor-stat-box-label">% Accuracy <span className="kpi-formula-icon" data-tooltip={`Correct Answers ÷ Total Questions (${totalActiveQuestions}) × 100`}>ⓘ</span></div>
+                      <div className="chor-stat-val">{totalActiveQuestions > 0 ? ((correctCount / totalActiveQuestions) * 100).toFixed(1) : '0.0'}%</div>
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{correctCount} / {totalActiveQuestions}</div>
                     </div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Duration</div><div className="chor-stat-val">{fmtDuration(tTime)}</div></div>
                     <div className="chor-stat-box"><div className="chor-stat-box-label">Avg Time/Q</div><div className="chor-stat-val">{fmtDuration(avgTime)}</div></div>
