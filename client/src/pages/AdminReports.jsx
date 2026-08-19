@@ -592,6 +592,8 @@ const AdminReports = () => {
                                     <th style={{ ...S.th, position: 'sticky', left: 0, zIndex: 2, background: '#f1f5f9', minWidth: 40, width: 40, maxWidth: 40, borderRight: '1px solid #cbd5e1' }}>#</th>
                                     <th style={{ ...S.th, position: 'sticky', left: 40, zIndex: 2, background: '#f1f5f9', minWidth: 100, borderRight: '1px solid #cbd5e1' }} onClick={() => toggleSort('child_id')}>Child ID <SortIcon field="child_id"/></th>
                                     <th style={S.th} onClick={() => toggleSort('child_name')}>Name <SortIcon field="child_name"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('child_dob')}>Date Of Birth <SortIcon field="child_dob"/></th>
+                                    <th style={S.th} onClick={() => toggleSort('child_gender')}>Gender <SortIcon field="child_gender"/></th>
                                     <th style={S.th} onClick={() => toggleSort('organization_name')}>Organization <SortIcon field="organization_name"/></th>
                                     <th style={S.th} onClick={() => toggleSort('assessor_name')}>Assessor <SortIcon field="assessor_name"/></th>
                                     <th style={{ ...S.th, textAlign: 'center' }}>Att. #</th>
@@ -756,6 +758,8 @@ const AdminReports = () => {
                                             <td style={{ ...S.td, position: 'sticky', left: 0, zIndex: 1, background: i % 2 === 0 ? '#fff' : '#f8fafc', minWidth: 40, width: 40, maxWidth: 40, borderRight: '1px solid #e2e8f0' }}>{i + 1}</td>
                                             <td style={{ ...S.td, fontWeight: 600, position: 'sticky', left: 40, zIndex: 1, background: i % 2 === 0 ? '#fff' : '#f8fafc', minWidth: 100, borderRight: '1px solid #e2e8f0' }}>{row.child_id}</td>
                                             <td style={S.td}>{row.child_name}</td>
+                                            <td style={{ ...S.td, textTransform: 'uppercase' }}>{row.child_dob ? new Date(row.child_dob).toISOString().split('T')[0] : '—'}</td>
+                                            <td style={{ ...S.td, textTransform: 'capitalize' }}>{row.child_gender || '—'}</td>
                                             <td style={S.td}>{row.organization_name || '—'}</td>
                                             <td style={S.td}>{row.assessor_name || '—'}</td>
                                             <td style={{ ...S.td, textAlign: 'center' }}>
