@@ -592,6 +592,139 @@ function TrendLabels({ data = [], dateKey = 'date' }) {
   );
 }
 
+// Age-wise Score Distribution — one point per age (7..16, whichever ages
+// actually have data), showing the full spread rather than a single average:
+// a Min-Max range band, a 25th-75th percentile (IQR) band nested inside it,
+// a solid Median line, and a dashed Average line. X position is scaled by
+// actual age value (not just array index), so a gap in the data — e.g. no
+// 9-year-olds — reads as a visual gap rather than being silently compressed.
+// Tooltip mechanic mirrors TrendLine above (hover state in viewport coords,
+// portal-to-body positioning) since the same "transformed ancestors break
+// position:fixed" problem applies here too.
+function AgeScoreDistributionChart({ data = [], color = '#4f46e5' }) {
+  const [hover, setHover] = React.useState(null); // { idx, x, y }
+  const [hidden, setHidden] = React.useState(() => new Set());
+  if (!data.length) return <div className="ana-chart-empty">No age data available for the selected filters</div>;
+
+  const W = 460, H = 220;
+  const marginLeft = 40, marginRight = 12, marginTop = 10, marginBottom = 28;
+  const plotW = W - marginLeft - marginRight;
+  const plotH = H - marginTop - marginBottom;
+
+  const ages = data.map(d => d.age);
+  const ageMin = Math.min(...ages), ageMax = Math.max(...ages);
+  const ageSpan = ageMax - ageMin;
+  const yMax = Math.max(...data.map(d => d.max), 1) * 1.08;
+
+  const xScale = (age) => ageSpan === 0 ? marginLeft + plotW / 2 : marginLeft + ((age - ageMin) / ageSpan) * plotW;
+  const yScale = (v) => marginTop + plotH - (v / yMax) * plotH;
+
+  const xs = data.map(d => xScale(d.age));
+  const canDrawLines = data.length >= 2;
+
+  const linePoints = (key) => xs.map((x, i) => `${x.toFixed(1)},${yScale(data[i][key]).toFixed(1)}`).join(' ');
+  const bandPath = (loKey, hiKey) => {
+    const top = xs.map((x, i) => `${x.toFixed(1)},${yScale(data[i][hiKey]).toFixed(1)}`);
+    const bottom = xs.map((x, i) => `${x.toFixed(1)},${yScale(data[i][loKey]).toFixed(1)}`).reverse();
+    return `${top.join(' ')} ${bottom.join(' ')}`;
+  };
+
+  const toggle = (key) => setHidden(prev => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
+
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fracX = ((e.clientX - rect.left) / rect.width) * W;
+    // nearest age by x-distance, not by index — x spacing follows real age
+    // values, so an evenly-spaced index lookup (like TrendLine's) would be wrong.
+    let bestIdx = 0, bestDist = Infinity;
+    xs.forEach((x, i) => { const d = Math.abs(x - fracX); if (d < bestDist) { bestDist = d; bestIdx = i; } });
+    setHover({ idx: bestIdx, x: e.clientX, y: e.clientY });
+  };
+
+  const hoverIdx = hover?.idx ?? null;
+  const hovered = hoverIdx != null ? data[hoverIdx] : null;
+  const flipX = hover ? hover.x > window.innerWidth - 240 : false;
+  const flipY = hover ? hover.y < 180 : false;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(yMax * f));
+
+  const LEGEND = [
+    { key: 'range',   label: 'Min–Max Range',       swatch: <span className="ana-agedist-swatch" style={{ background: '#94a3b8', opacity: 0.35 }} /> },
+    { key: 'iqr',     label: '25th–75th Percentile', swatch: <span className="ana-agedist-swatch" style={{ background: color, opacity: 0.28 }} /> },
+    { key: 'median',  label: 'Median',                swatch: <span className="ana-agedist-legend-line" style={{ background: color }} /> },
+    { key: 'average', label: 'Average',               swatch: <span className="ana-agedist-legend-line ana-agedist-legend-dashed" style={{ borderColor: '#f59e0b' }} /> },
+  ];
+
+  return (
+    <div>
+      <div style={{ position: 'relative' }} onMouseMove={handleMove} onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="ana-agedist-svg" preserveAspectRatio="none">
+          {yTicks.map((t, i) => (
+            <g key={i}>
+              <line x1={marginLeft} y1={yScale(t)} x2={W - marginRight} y2={yScale(t)} stroke="#e2e8f0" strokeWidth="1" />
+              <text x={marginLeft - 6} y={yScale(t)} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="#94a3b8">{fmt(t)}</text>
+            </g>
+          ))}
+          {canDrawLines && !hidden.has('range') && (
+            <polygon points={bandPath('min', 'max')} fill="#94a3b8" opacity="0.28" />
+          )}
+          {canDrawLines && !hidden.has('iqr') && (
+            <polygon points={bandPath('p25', 'p75')} fill={color} opacity="0.28" />
+          )}
+          {canDrawLines && !hidden.has('median') && (
+            <polyline points={linePoints('median')} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          )}
+          {canDrawLines && !hidden.has('average') && (
+            <polyline points={linePoints('avgScore')} fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 3" />
+          )}
+          {hoverIdx != null && (
+            <line x1={xs[hoverIdx]} y1={marginTop} x2={xs[hoverIdx]} y2={marginTop + plotH} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
+          )}
+          {!hidden.has('median') && data.map((d, i) => (
+            <circle key={`m${i}`} cx={xs[i]} cy={yScale(d.median)} r={i === hoverIdx ? 4 : 2.5} fill={color} />
+          ))}
+          {!hidden.has('average') && data.map((d, i) => (
+            <circle key={`a${i}`} cx={xs[i]} cy={yScale(d.avgScore)} r={i === hoverIdx ? 3.5 : 2} fill="#f59e0b" />
+          ))}
+          {data.map((d, i) => (
+            <text key={`x${i}`} x={xs[i]} y={H - 8} textAnchor="middle" fontSize="9" fill="#64748b">{d.age}</text>
+          ))}
+        </svg>
+        {hovered && createPortal(
+          <div style={{
+            position: 'fixed',
+            left: hover.x + (flipX ? -14 : 14),
+            top: hover.y + (flipY ? 14 : -12),
+            transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '0' : '-100%'})`,
+            background: '#1e293b', color: '#fff', borderRadius: '8px', padding: '8px 12px',
+            fontSize: '12px', lineHeight: '1.6', whiteSpace: 'nowrap', pointerEvents: 'none',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 10000,
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: '2px' }}>Age {hovered.age} · {hovered.n} participant{hovered.n === 1 ? '' : 's'}</div>
+            <div><span style={{ color: '#f59e0b' }}>●</span> Average: <strong>{fmt(hovered.avgScore, 1)}</strong></div>
+            <div><span style={{ color }}>●</span> Median: <strong>{fmt(hovered.median, 1)}</strong></div>
+            <div>25th–75th Percentile: <strong>{fmt(hovered.p25, 1)} – {fmt(hovered.p75, 1)}</strong></div>
+            <div>Min–Max: <strong>{fmt(hovered.min, 1)} – {fmt(hovered.max, 1)}</strong></div>
+          </div>,
+          document.body
+        )}
+      </div>
+      <div className="ana-agedist-legend">
+        {LEGEND.map(l => (
+          <button key={l.key} type="button" className={`ana-agedist-legend-item${hidden.has(l.key) ? ' ana-agedist-legend-hidden' : ''}`} onClick={() => toggle(l.key)}>
+            {l.swatch}
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Cohort-level auto-generated insights over a Question-wise Performance
 // breakdown — same {icon, text} shape and markup as the Executive Analytics
 // tab's InsightsList (AdminAnalysisV2Panel.jsx), reusing its anv2-insights-*
@@ -1179,7 +1312,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const {
     kpis, scoreDist, quitReasons = [], genderBreakdown = [],
     dailyTrend = [], assessmentDist = {}, behaviorFreq = {},
-    attemptBuckets = {}, categoryBreakdown = [], categoryInsights = [],
+    attemptBuckets = {}, categoryBreakdown = [], categoryInsights = [], ageDistribution = [],
   } = data;
 
   // scoreDist is an ordered array of [label, count, description?] tuples from the
@@ -1761,6 +1894,21 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
               </tbody>
             </table>
           </div>
+        </Card>
+      )}
+
+      {ageDistribution.length > 0 && (
+        <Card
+          title="Age-wise Score Distribution"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Age-wise Score Distribution",
+            definition: `Full spread of ${gameMeta.title} scores at each participant age — not just an average — so a wide band at an age means scores vary a lot among children that age, while a narrow band means they're consistent.`,
+            formula: "Median/Average lines are the typical score at that age. The Min-Max band spans every score recorded. The 25th-75th Percentile band (nested inside it) shows where the middle half of scores fall — 25% of children at that age scored below the band, 25% scored above it. Percentiles use linear interpolation (the standard method).",
+            eligibility: ["Only ages with at least one scored session are shown", "Matches all selected filters (Date, Gender, Group)"]
+          }}
+        >
+          <AgeScoreDistributionChart data={ageDistribution} color={gameMeta.color} />
         </Card>
       )}
 

@@ -962,6 +962,47 @@ exports.getGameAnalytics = async (req, res) => {
 
     const categoryInsights = buildCategoryInsights(categoryBreakdown, { skipDropOff: gameKey === 'numeracy_number_skill_v3' });
 
+    // Age-wise Score Distribution — MySQL has no PERCENTILE_CONT, and unlike
+    // medianScore above (one number for the whole game), this needs a
+    // separate percentile per age bucket, so it's simplest and most
+    // reliable to fetch raw (age, score) pairs once and compute stats in JS.
+    const ageWhere = toWhere([...clauses, 'gs.score IS NOT NULL']);
+    const [ageScoreRows] = await pool.query(`
+      SELECT ${AGE_BAND_CASE} AS ageBand, gs.score AS score
+      FROM game_sessions gs ${CHILD_JOIN} ${ageWhere}
+    `, params);
+    const ageGroups = {};
+    for (const row of ageScoreRows) {
+      if (!row.ageBand) continue;
+      (ageGroups[row.ageBand] ||= []).push(Number(row.score));
+    }
+    // Linear interpolation (the standard method — same as numpy/Excel
+    // PERCENTILE.INC default) between the two ranked values straddling the
+    // target position.
+    const percentile = (sorted, p) => {
+      const n = sorted.length;
+      const pos = (n - 1) * p;
+      const lo = Math.floor(pos), hi = Math.ceil(pos);
+      return lo === hi ? sorted[lo] : sorted[lo] + (pos - lo) * (sorted[hi] - sorted[lo]);
+    };
+    const ageDistribution = Object.keys(ageGroups)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(age => {
+        const scores = ageGroups[age].sort((a, b) => a - b);
+        const n = scores.length;
+        const avgScore = scores.reduce((s, v) => s + v, 0) / n;
+        return {
+          age, n,
+          avgScore: Math.round(avgScore * 100) / 100,
+          median: Math.round(percentile(scores, 0.5) * 100) / 100,
+          p25: Math.round(percentile(scores, 0.25) * 100) / 100,
+          p75: Math.round(percentile(scores, 0.75) * 100) / 100,
+          min: scores[0],
+          max: scores[n - 1],
+        };
+      });
+
     // Recent 20 sessions
     const [recentSessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName,
@@ -995,6 +1036,7 @@ exports.getGameAnalytics = async (req, res) => {
       attemptBuckets,
       categoryBreakdown,
       categoryInsights,
+      ageDistribution,
       recentSessions,
     });
   } catch (err) {
