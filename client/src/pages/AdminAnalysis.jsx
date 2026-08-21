@@ -1216,7 +1216,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
   const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3' || gameKey === 'triangle_rachna'
     || gameKey === 'numeracy_number_skill_v3' || gameKey === 'literacy_reading_skill_v2'
-    || gameKey === 'rover_mela' || gameKey === 'cognitive_flex_chor';
+    || gameKey === 'rover_mela' || gameKey === 'cognitive_flex_chor' || gameKey === 'number_recall_lottery_v2';
   const showTargetImageCol = gameKey === 'triangle_rachna';
   // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
   // image-matching mechanic (correctCount/missedImages/incorrectSelections)

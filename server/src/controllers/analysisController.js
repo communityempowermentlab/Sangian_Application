@@ -925,6 +925,39 @@ exports.getGameAnalytics = async (req, res) => {
         ORDER BY avgScore DESC
       `, params);
       categoryBreakdown = rankAndTier(catRows);
+    } else if (gameKey === 'number_recall_lottery_v2') {
+      // This gameKey's saved_state has TWO different historical shapes —
+      // real data, not a hypothetical: older sessions used the same field
+      // names as number_recall_lottery V1 (qId/timeTaken/userResponse/
+      // correctAnswer), while the current NumberRecallGameV2.jsx code (the
+      // only version that exists today) saves question/duration_ms/
+      // user_response/expected_response instead. COALESCE merges both so
+      // old and new sessions roll up into the same per-question rows
+      // instead of the newer field names just silently returning nothing.
+      // question is a string like "Q1" — SUBSTRING strips the "Q" so it
+      // merges numerically with the older qId (a plain number).
+      const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      const [catRows] = await pool.query(`
+        SELECT
+          COALESCE(CAST(SUBSTRING(jt.question, 2) AS UNSIGNED), jt.qId)          AS category,
+          COUNT(*)                                                              AS attempts,
+          ROUND(AVG(jt.score), 2)                                               AS avgScore,
+          NULL AS avgCorrectCount,
+          ROUND(AVG(COALESCE(jt.duration_ms, jt.timeTaken)), 2)                 AS avgTimeTakenSec,
+          NULL AS accuracyPct, NULL AS missRatePct, NULL AS perfectRatePct
+        FROM game_sessions gs ${CHILD_JOIN},
+        JSON_TABLE(gs.saved_state, '$.allScores[*]' COLUMNS (
+          question NVARCHAR(20) PATH '$.question',
+          qId INT PATH '$.qId',
+          score INT PATH '$.score',
+          duration_ms DECIMAL(10,2) PATH '$.duration_ms',
+          timeTaken DECIMAL(10,2) PATH '$.timeTaken'
+        )) AS jt
+        ${catWhere} AND COALESCE(CAST(SUBSTRING(jt.question, 2) AS UNSIGNED), jt.qId) IS NOT NULL
+        GROUP BY COALESCE(CAST(SUBSTRING(jt.question, 2) AS UNSIGNED), jt.qId)
+        ORDER BY AVG(jt.score) DESC
+      `, params);
+      categoryBreakdown = rankAndTier(catRows);
     }
 
     const categoryInsights = buildCategoryInsights(categoryBreakdown, { skipDropOff: gameKey === 'numeracy_number_skill_v3' });
