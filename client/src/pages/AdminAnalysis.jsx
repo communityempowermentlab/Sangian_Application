@@ -932,10 +932,11 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
 
       <Card title="Participant Assessment Progress">
         <div className={loading ? 'ana-faded' : ''}>
-          <TrendLine data={dailyTrend} valueKey="completed" color="#22c55e" primaryLabel="Completed Assessments" />
+          <TrendLine data={dailyTrend} valueKey="sessions" color="#4f46e5" secondKey="completed" secondColor="#22c55e" primaryLabel="Total Assessments" secondaryLabel="Completed Assessments" />
           <TrendLabels data={dailyTrend} />
           <div className="ana-trend-legend">
-            <span><span className="ana-dot" style={{ background: '#22c55e' }} /> Completed Assessments</span>
+            <span><span className="ana-dot" style={{ background: '#4f46e5' }} /> Total Assessments</span>
+            <span><span className="ana-dot ana-dot-dash" style={{ background: '#22c55e' }} /> Completed Assessments</span>
           </div>
         </div>
       </Card>
@@ -1333,10 +1334,11 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
 
       <Card title="Participant Assessment Progress">
         <div className={loading ? 'ana-faded' : ''}>
-          <TrendLine data={dailyTrend} valueKey="completed" color="#22c55e" primaryLabel="Completed Assessments" />
+          <TrendLine data={dailyTrend} valueKey="sessions" color={gameMeta.color} secondKey="completed" secondColor="#22c55e" primaryLabel="Total Assessments" secondaryLabel="Completed Assessments" />
           <TrendLabels data={dailyTrend} />
           <div className="ana-trend-legend">
-            <span><span className="ana-dot" style={{ background: '#22c55e' }} /> Completed Assessments</span>
+            <span><span className="ana-dot" style={{ background: gameMeta.color }} /> Total Assessments</span>
+            <span><span className="ana-dot ana-dot-dash" style={{ background: '#22c55e' }} /> Completed Assessments</span>
           </div>
         </div>
       </Card>
