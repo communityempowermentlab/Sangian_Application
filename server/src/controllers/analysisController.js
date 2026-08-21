@@ -162,13 +162,29 @@ function buildBucketDefs(gameKey, maxScore) {
 const AGE_YEARS = Array.from({ length: 10 }, (_, i) => 7 + i); // [7, 8, ..., 16]
 const AGE_MAP = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, [y, y]]));
 
-// Games whose saved_state.allScores[] entries carry a per-question `category`
-// tag — only these support the question-category breakdown. Her Pher tags
-// item1..item8 (image-matching questions); Rachna tags its own question keys
-// (question3..question27) and has no correctCount/expectedImages/missedImages/
-// incorrectSelections fields, so those columns come back NULL for it — the
-// frontend already renders NULL as '—'.
-const CATEGORY_BREAKDOWN_GAMES = new Set(['working_memory_herpher', 'working_memory_herpher_v2', 'triangle_rachna']);
+// Games whose saved_state.allScores[] entries carry a per-question identifier
+// this query can group by — either a real `category` tag (Her Pher: item1..
+// item8 image-matching questions) or just a `qId` (COALESCE(category, qId)
+// falls back to qId for every other game here, giving one row per question
+// instead of a category rollup). Only Her Pher (V1-V3) also carries
+// correctCount/expectedImages/missedImages/incorrectSelections — those columns
+// come back NULL for the rest, and the frontend already renders NULL as '—'.
+// Deliberately excluded (verified against real saved_state, not just game
+// source): rover_mela (Chalo Mela Chalen) saves no per-question data at all;
+// literacy_reading_skill_v2 and numeracy_number_skill_v3 use an adaptive
+// level/stage structure incompatible with this flat-array query;
+// cognitive_flex_chor uses saved_state.itemResults, a different field
+// entirely; number_recall_lottery_v2 uses different field names
+// (question/duration_ms instead of qId/timeTaken) that this query can't read.
+const CATEGORY_BREAKDOWN_GAMES = new Set([
+  'working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3',
+  'triangle_rachna',
+  'literacy_reading_skill',
+  'numeracy_number_skill', 'numeracy_number_skill_v2',
+  'number_recall_lottery',
+  'atlantis_bagiya',
+  'auditory_dhyan',
+]);
 
 // Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
 // as a GROUP BY key — generated from AGE_YEARS so it can't drift out of sync.
@@ -483,6 +499,59 @@ exports.getOverview = async (req, res) => {
   }
 };
 
+// Cohort-level auto-generated insights over the question-wise performance
+// breakdown — same {icon, text} shape and spirit as buildInsights() above,
+// just scoped to one game's per-question rows instead of the whole platform.
+function buildCategoryInsights(categoryBreakdown) {
+  const insights = [];
+  if (!categoryBreakdown || categoryBreakdown.length < 2) return insights;
+
+  const byScore = [...categoryBreakdown].sort((a, b) => a.avgScore - b.avgScore);
+  const hardest = byScore[0];
+  const easiest = byScore[byScore.length - 1];
+  if (hardest.avgScore !== easiest.avgScore) {
+    insights.push({ icon: '🧗', text: `Question "${hardest.category}" is the hardest — average score ${hardest.avgScore}, may need review.` });
+    insights.push({ icon: '✅', text: `Question "${easiest.category}" is the easiest — average score ${easiest.avgScore}.` });
+  }
+
+  const withAccuracy = categoryBreakdown.filter(r => r.accuracyPct != null);
+  if (withAccuracy.length >= 2) {
+    const lowestAccuracy = [...withAccuracy].sort((a, b) => a.accuracyPct - b.accuracyPct)[0];
+    if (lowestAccuracy.accuracyPct < 50) {
+      insights.push({ icon: '🎯', text: `Question "${lowestAccuracy.category}" has the lowest accuracy at ${lowestAccuracy.accuracyPct}% — fewer than half the expected matches are found on average.` });
+    }
+  }
+
+  const withMissRate = categoryBreakdown.filter(r => r.missRatePct != null);
+  if (withMissRate.length) {
+    const highestMiss = [...withMissRate].sort((a, b) => b.missRatePct - a.missRatePct)[0];
+    if (highestMiss.missRatePct >= 40) {
+      insights.push({ icon: '⚠️', text: `Question "${highestMiss.category}" has a high miss rate (${highestMiss.missRatePct}%) — children are frequently missing expected items here.` });
+    }
+  }
+
+  // Drop-off — only surfaces where attempts materially decrease across
+  // questions (auto-stop mechanics like Her Pher/Rachna); flat-array games
+  // where every question gets roughly the same attempt count stay quiet here.
+  const attemptCounts = categoryBreakdown.map(r => r.attempts);
+  const maxAttempts = Math.max(...attemptCounts);
+  const minAttempts = Math.min(...attemptCounts);
+  if (maxAttempts > 0 && (maxAttempts - minAttempts) / maxAttempts >= 0.3) {
+    const lowestReach = [...categoryBreakdown].sort((a, b) => a.attempts - b.attempts)[0];
+    const dropPct = Math.round((1 - lowestReach.attempts / maxAttempts) * 100);
+    insights.push({ icon: '🚪', text: `Question "${lowestReach.category}" is reached by ${dropPct}% fewer children than the most-reached question — some children are quitting or auto-stopping before this point.` });
+  }
+
+  const scores = categoryBreakdown.map(r => r.avgScore);
+  const scoreRange = Math.max(...scores) - Math.min(...scores);
+  const meanScore = scores.reduce((s, v) => s + v, 0) / scores.length;
+  if (meanScore > 0 && scoreRange / meanScore >= 0.5) {
+    insights.push({ icon: '📊', text: `Scores vary widely across questions (${Math.min(...scores)}–${Math.max(...scores)}), suggesting some are materially harder than others.` });
+  }
+
+  return insights;
+}
+
 // ── GET /api/analysis/game/:gameKey ──────────────────────────────────────────
 exports.getGameAnalytics = async (req, res) => {
   try {
@@ -634,9 +703,10 @@ exports.getGameAnalytics = async (req, res) => {
       else                     attemptBuckets['10+']++;
     }
 
-    // Question-category breakdown (item1..item8) — only for games that tag
-    // each saved_state.allScores[] entry with a `category`. Ranked easiest to
-    // hardest by avg score; item0 (unscored sample question) is excluded.
+    // Question-wise performance — one row per category (Her Pher) or per
+    // question (everything else, via the qId fallback — see
+    // CATEGORY_BREAKDOWN_GAMES above). Ranked easiest to hardest by avg
+    // score; item0 (Her Pher's unscored sample question) is excluded.
     let categoryBreakdown = [];
     if (CATEGORY_BREAKDOWN_GAMES.has(gameKey)) {
       const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
@@ -683,6 +753,8 @@ exports.getGameAnalytics = async (req, res) => {
       }));
     }
 
+    const categoryInsights = buildCategoryInsights(categoryBreakdown);
+
     // Recent 20 sessions
     const [recentSessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName,
@@ -715,6 +787,7 @@ exports.getGameAnalytics = async (req, res) => {
       behaviorFreq,
       attemptBuckets,
       categoryBreakdown,
+      categoryInsights,
       recentSessions,
     });
   } catch (err) {

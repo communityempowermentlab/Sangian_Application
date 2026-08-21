@@ -67,6 +67,17 @@ const CATEGORY_NAMES = {
   question24: 'Item 21', question25: 'Item 22', question26: 'Item 23', question27: 'Item 24',
 };
 
+// Friendly label for a question-wise-performance row. Her Pher/Rachna have
+// real names in CATEGORY_NAMES above; every other game just has a raw qId
+// (a bare number like "4", or a compound key like Bagiya's "r13_q6") — for
+// those we don't have a hand-authored label, so show "Question N" for a
+// plain numeric id and the raw key as-is otherwise, rather than a blank dash.
+function getCategoryLabel(category) {
+  if (CATEGORY_NAMES[category]) return CATEGORY_NAMES[category];
+  if (/^\d+$/.test(String(category))) return `Question ${category}`;
+  return category;
+}
+
 // Rachna's target-image filename doesn't always match the question key —
 // question11/12 reuse the teaching_question11/12 art (see getTargetImageName
 // in TriangleRachnaGame.jsx, which this mirrors).
@@ -189,7 +200,7 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
   URL.revokeObjectURL(url);
 }
 
-// Mirrors exactly the columns the on-screen Question Category Breakdown
+// Mirrors exactly the columns the on-screen Question-wise Performance
 // table shows for this game (see the flags computed in GamePanel) so the
 // export never claims data the table itself hides.
 async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSessions, cols) {
@@ -197,7 +208,7 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
   const XLSX = await import('xlsx');
 
   const headers = [
-    'Rank', 'Category', 'Cat-Name',
+    'Rank', 'Question ID', 'Question',
     ...(showTargetImageCol ? ['Target Image URL'] : []),
     ...(showChildrenReachedCol ? ['Children Reached', '% Reached'] : []),
     'Difficulty', 'Avg Score',
@@ -207,7 +218,7 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
   const rows = categoryBreakdown.map(row => [
     row.rank,
     row.category,
-    CATEGORY_NAMES[row.category] || '—',
+    getCategoryLabel(row.category),
     ...(showTargetImageCol ? [`${window.location.origin}${getRachnaTargetImage(row.category)}`] : []),
     ...(showChildrenReachedCol ? [
       row.attempts,
@@ -559,6 +570,21 @@ function TrendLabels({ data = [], dateKey = 'date' }) {
       <span>{formatDateOnly(data[0]?.[dateKey])}</span>
       <span>{formatDateOnly(data[data.length - 1]?.[dateKey])}</span>
     </div>
+  );
+}
+
+// Cohort-level auto-generated insights over a Question-wise Performance
+// breakdown — same {icon, text} shape and markup as the Executive Analytics
+// tab's InsightsList (AdminAnalysisV2Panel.jsx), reusing its anv2-insights-*
+// CSS classes (defined once in AdminAnalysis.css, shared by both files).
+function CategoryInsightsList({ insights }) {
+  if (!insights?.length) return null;
+  return (
+    <ul className="anv2-insights-list" style={{ padding: '14px 16px 0' }}>
+      {insights.map((ins, i) => (
+        <li key={i}><span className="anv2-insight-icon">{ins.icon}</span><span>{ins.text}</span></li>
+      ))}
+    </ul>
   );
 }
 
@@ -1134,7 +1160,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const {
     kpis, scoreDist, quitReasons = [], genderBreakdown = [],
     dailyTrend = [], assessmentDist = {}, behaviorFreq = {},
-    attemptBuckets = {}, categoryBreakdown = [],
+    attemptBuckets = {}, categoryBreakdown = [], categoryInsights = [],
   } = data;
 
   // scoreDist is an ordered array of [label, count, description?] tuples from the
@@ -1169,13 +1195,13 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const attemptEntries  = Object.entries(attemptBuckets);
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
-  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'triangle_rachna';
+  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3' || gameKey === 'triangle_rachna';
   const showTargetImageCol = gameKey === 'triangle_rachna';
   // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
   // image-matching mechanic (correctCount/missedImages/incorrectSelections)
-  // that only Her Pher V2 has — Rachna's own columns are always '—', so its
-  // Children Reached column shouldn't also turn on those unrelated icons.
-  const showHerPherV2InfoIcons = gameKey === 'working_memory_herpher_v2';
+  // that only Her Pher V2/V3 have — Rachna's own columns are always '—', so
+  // its Children Reached column shouldn't also turn on those unrelated icons.
+  const showHerPherV2InfoIcons = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3';
   // Avg Correct/Accuracy/Miss Rate/Perfect Rate only mean anything for games
   // whose allScores[] entries carry correctCount/expectedImages/etc (Her
   // Pher's image-matching mechanic) — data-driven so it hides itself for any
@@ -1462,7 +1488,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
         <Card
           title={
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
-              <span>Question Category Breakdown</span>
+              <span>Question-wise Performance</span>
               {csvExportEnabled && (
                 <span style={{ display: 'flex', gap: '8px' }}>
                   <button
@@ -1474,7 +1500,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       });
                       logReportDownload({
                         module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
-                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'Excel',
+                        reportName: 'Question-wise Performance', reportType: gameMeta.key, format: 'Excel',
                         filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
                       });
                     }}
@@ -1488,11 +1514,11 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       exportElementAsImage(
                         'category-breakdown-table',
                         `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
-                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question-wise Performance`, filters, groupOptions)
                       );
                       logReportDownload({
                         module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
-                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'Image',
+                        reportName: 'Question-wise Performance', reportType: gameMeta.key, format: 'Image',
                         filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
                       });
                     }}
@@ -1506,11 +1532,11 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                       exportElementAsPDF(
                         'category-breakdown-table',
                         `${(gameMeta.title || 'game').replace(/[^a-zA-Z0-9]/g, '_')}_category_breakdown`,
-                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question Category Breakdown`, filters, groupOptions)
+                        buildFilterSummaryLines(`${gameMeta.title || 'Game'} — Question-wise Performance`, filters, groupOptions)
                       );
                       logReportDownload({
                         module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
-                        reportName: 'Question Category Breakdown', reportType: gameMeta.key, format: 'PDF',
+                        reportName: 'Question-wise Performance', reportType: gameMeta.key, format: 'PDF',
                         filters, dateRangeStart: filters?.startDate, dateRangeEnd: filters?.endDate,
                       });
                     }}
@@ -1523,20 +1549,21 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           }
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Question Category Breakdown",
-            definition: "Per-question performance across the game's question categories, ranked from easiest to hardest.",
-            formula: "Children Reached = number of sessions (matching all filters) that completed this question — naturally decreases for later questions since some children quit or auto-stop before reaching them. % Reached = Children Reached ÷ Total Tests (the game's total session count for the same filters) × 100. Avg Score = mean per-question score across those sessions. Miss Rate = missed images ÷ expected images, summed across attempts. Perfect Rate = share of attempts with a flawless match (0 missed, 0 incorrect). Difficulty tier = position-based thirds by avg score.",
-            eligibility: ["Matches all selected filters", "Only available for games with per-question category data (Her Pher, Rachna)"]
+            name: "Question-wise Performance",
+            definition: "Performance broken down by individual question (or question category, for games that group them), ranked from easiest to hardest.",
+            formula: "Children Reached = number of sessions (matching all filters) that reached this question — naturally decreases for later questions since some children quit before reaching them; only shown for games where this varies meaningfully. % Reached = Children Reached ÷ Total Tests (the game's total session count for the same filters) × 100. Avg Score = mean per-question score across those sessions. Avg Correct / Accuracy % / Miss Rate % / Perfect Rate % (Her Pher only) = based on its image-matching mechanic. Difficulty tier = position-based thirds by avg score.",
+            eligibility: ["Matches all selected filters", "Only available for games with per-question performance data"]
           }}
           noPad
         >
+          <CategoryInsightsList insights={categoryInsights} />
           <div className="ana-table-wrap" id="category-breakdown-table">
             <table className="ana-table">
               <thead>
                 <tr>
                   <th>Rank</th>
-                  <th>Category</th>
-                  <th>Cat-Name</th>
+                  <th>Question ID</th>
+                  <th>Question</th>
                   {showTargetImageCol && <th>Target Image</th>}
                   {showChildrenReachedCol && <th>Children Reached</th>}
                   {showChildrenReachedCol && <th>% Reached</th>}
@@ -1655,7 +1682,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <tr key={row.category}>
                     <td><span className="ana-rank">{row.rank}</span></td>
                     <td style={{ fontWeight: 600 }}>{row.category}</td>
-                    <td>{CATEGORY_NAMES[row.category] || '—'}</td>
+                    <td>{getCategoryLabel(row.category)}</td>
                     {showTargetImageCol && (
                       <td>
                         <a href={getRachnaTargetImage(row.category)} target="_blank" rel="noreferrer">
