@@ -109,8 +109,8 @@ const AGE_CHIP_OPTIONS = Array.from({ length: 10 }, (_, i) => {
 // the per-game Recent Sessions table. '6+' catches everything beyond, since
 // per-game replay counts trail off fast in practice.
 const ATTEMPT_CHIP_OPTIONS = [
-  { key: '1',  label: '1st Attempt', color: '#0891b2' },
-  { key: '2',  label: '2nd Attempt', color: '#0891b2' },
+  { key: '1',  label: 'Baseline (Visit 1)', color: '#0891b2' },
+  { key: '2',  label: 'Retest (Visit 2)', color: '#0891b2' },
   { key: '3',  label: '3rd Attempt', color: '#0891b2' },
   { key: '4',  label: '4th Attempt', color: '#0891b2' },
   { key: '5',  label: '5th Attempt', color: '#0891b2' },
@@ -782,12 +782,12 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
       <div className="ana-kpi-row">
         <KpiCard 
           icon="🎮" 
-          label="Total Sessions"  
-          value={fmt(kpis.totalSessions)}  
+          label="Total Assessments"
+          value={fmt(kpis.totalSessions)}
           color="#4f46e5"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Total Sessions",
+            name: "Total Assessments",
             definition: "Total number of test sessions started by eligible children.",
             formula: "Count of all test sessions",
             eligibility: ["Matches all selected filters (Date, Age, Gender, Group)"]
@@ -795,12 +795,12 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
         />
         <KpiCard 
           icon="👦" 
-          label="Unique Children" 
-          value={fmt(kpis.uniqueChildren)} 
+          label="Participants Assessed"
+          value={fmt(kpis.uniqueChildren)}
           color="#0891b2"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Unique Children",
+            name: "Participants Assessed",
             definition: "Total number of distinct children who started at least one test.",
             formula: "Count of distinct child IDs",
             eligibility: ["Child has at least one session matching the selected filters"]
@@ -834,10 +834,10 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             eligibility: ["Only COMPLETED sessions are included"]
           }}
         />
-        <KpiCard 
-          icon="⏱️" 
-          label="Avg Duration"    
-          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} 
+        <KpiCard
+          icon="⏱️"
+          label="Avg Duration"
+          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'}
           color="#f59e0b"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
@@ -847,15 +847,43 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             eligibility: ["Only COMPLETED sessions are included"]
           }}
         />
+        <KpiCard
+          icon="🎯"
+          label="Mean Score"
+          value={fmt(kpis.meanScoreAll, 1)}
+          sub="across all tests"
+          color="#14b8a6"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Score",
+            definition: "Mean absolute score achieved, averaged across every test in the study — incomplete sessions count as 0.",
+            formula: "Sum of Scores of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters (Date, Age, Gender, Group)"]
+          }}
+        />
+        <KpiCard
+          icon="⏳"
+          label="Mean Assessment Duration"
+          value={kpis.meanDurationAllMins ? `${fmt(kpis.meanDurationAllMins, 1)} min` : '—'}
+          sub="across all tests"
+          color="#0ea5e9"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Assessment Duration",
+            definition: "Mean active time taken per test, averaged across every test in the study — incomplete sessions count as 0.",
+            formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters (Date, Age, Gender, Group)"]
+          }}
+        />
       </div>
 
       <div className="ana-grid-2">
-        <Card 
-          title="Sessions by Test" 
+        <Card
+          title="Assessments by Test"
           stretch
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Sessions by Test",
+            name: "Assessments by Test",
             definition: "Number of test sessions started for each game.",
             formula: "Count of test sessions grouped by test",
             eligibility: ["Matches all selected filters"]
@@ -881,7 +909,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
         </Card>
 
         <div className="ana-col-gap">
-          <Card title="Session Status">
+          <Card title="Assessment Status">
             {statusSegs.length === 0
               ? <div className="ana-card-body"><div className="ana-chart-empty">No status data</div></div>
               : <div className="ana-donut-row">
@@ -890,7 +918,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
                 </div>
             }
           </Card>
-          <Card title="Gender Distribution">
+          <Card title="Participant Sex wise Distribution">
             {genderSegs.length === 0
               ? <div className="ana-card-body"><div className="ana-chart-empty">No gender data</div></div>
               : <div className="ana-donut-row">
@@ -902,13 +930,12 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
         </div>
       </div>
 
-      <Card title="Daily Activity Trend">
+      <Card title="Participant Assessment Progress">
         <div className={loading ? 'ana-faded' : ''}>
-          <TrendLine data={dailyTrend} valueKey="sessions" color="#4f46e5" secondKey="completed" secondColor="#22c55e" />
+          <TrendLine data={dailyTrend} valueKey="completed" color="#22c55e" primaryLabel="Completed Assessments" />
           <TrendLabels data={dailyTrend} />
           <div className="ana-trend-legend">
-            <span><span className="ana-dot" style={{ background: '#4f46e5' }} /> Sessions</span>
-            <span><span className="ana-dot ana-dot-dash" style={{ background: '#22c55e' }} /> Completed</span>
+            <span><span className="ana-dot" style={{ background: '#22c55e' }} /> Completed Assessments</span>
           </div>
         </div>
       </Card>
@@ -1186,17 +1213,45 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             eligibility: ["Only COMPLETED sessions are included"]
           }}
         />
-        <KpiCard 
-          icon="⏱️" 
-          label="Avg Duration"    
-          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'} 
-          color="#f59e0b" 
+        <KpiCard
+          icon="⏱️"
+          label="Avg Duration"
+          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'}
+          color="#f59e0b"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Average Duration",
             definition: "Average active time taken to complete this game.",
             formula: "Sum of timerSeconds of completed tests ÷ Number of completed tests",
             eligibility: ["Only COMPLETED sessions are included"]
+          }}
+        />
+        <KpiCard
+          icon="🎯"
+          label="Mean Score"
+          value={fmt(kpis.meanScoreAll, 1)}
+          sub="across all tests"
+          color="#14b8a6"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Score",
+            definition: `Mean score achieved by children on ${gameMeta.title}, averaged across every test — incomplete sessions count as 0.`,
+            formula: "Sum of Scores of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters"]
+          }}
+        />
+        <KpiCard
+          icon="⏳"
+          label="Mean Assessment Duration"
+          value={kpis.meanDurationAllMins ? `${fmt(kpis.meanDurationAllMins, 1)} min` : '—'}
+          sub="across all tests"
+          color="#0ea5e9"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Assessment Duration",
+            definition: `Mean active time taken per test of ${gameMeta.title}, averaged across every test — incomplete sessions count as 0.`,
+            formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters"]
           }}
         />
       </div>
@@ -1276,13 +1331,12 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
         </Card>
       </div>
 
-      <Card title="Daily Sessions Trend">
+      <Card title="Participant Assessment Progress">
         <div className={loading ? 'ana-faded' : ''}>
-          <TrendLine data={dailyTrend} valueKey="sessions" color={gameMeta.color} secondKey="completed" secondColor="#22c55e" />
+          <TrendLine data={dailyTrend} valueKey="completed" color="#22c55e" primaryLabel="Completed Assessments" />
           <TrendLabels data={dailyTrend} />
           <div className="ana-trend-legend">
-            <span><span className="ana-dot" style={{ background: gameMeta.color }} /> Sessions</span>
-            <span><span className="ana-dot ana-dot-dash" style={{ background: '#22c55e' }} /> Completed</span>
+            <span><span className="ana-dot" style={{ background: '#22c55e' }} /> Completed Assessments</span>
           </div>
         </div>
       </Card>
@@ -1727,17 +1781,17 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
     <div className="ana-filter-panel">
       <div className="ana-filter-row">
         <div className="ana-filter-field">
-          <span className="ana-filter-label">From Date</span>
+          <span className="ana-filter-label">Assessment From</span>
           <input type="date" value={pending.startDate}
             onChange={e => onChange(p => ({ ...p, startDate: e.target.value }))} />
         </div>
         <div className="ana-filter-field">
-          <span className="ana-filter-label">To Date</span>
+          <span className="ana-filter-label">Assessment To</span>
           <input type="date" value={pending.endDate}
             onChange={e => onChange(p => ({ ...p, endDate: e.target.value }))} />
         </div>
         <div className="ana-filter-field ana-filter-child">
-          <span className="ana-filter-label">Child (ID / Name)</span>
+          <span className="ana-filter-label">Participant ID / Name</span>
           <input type="text" placeholder="Search…" value={pending.childId}
             onChange={e => onChange(p => ({ ...p, childId: e.target.value }))}
             onKeyDown={e => e.key === 'Enter' && onApply()} />
@@ -1745,7 +1799,7 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
       </div>
 
       <div className="ana-filter-row">
-        <ChipGroup label="Gender"
+        <ChipGroup label="Sex"
           options={[{ key: 'male', label: 'Male', color: '#3b82f6' }, { key: 'female', label: 'Female', color: '#ec4899' }]}
           selected={pending.genders}
           onToggle={v => toggle('genders', v)}
@@ -1757,13 +1811,13 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
           onToggle={v => toggle('ageGroups', v)}
         />
         <span className="ana-filter-sep" />
-        <ChipGroup label="Status"
+        <ChipGroup label="Assessment Status"
           options={STATUS_CHIP_OPTIONS}
           selected={pending.statuses}
           onToggle={v => toggle('statuses', v)}
         />
         <span className="ana-filter-sep" />
-        <ChipGroup label="Attempt"
+        <ChipGroup label="Assessment Visit"
           options={ATTEMPT_CHIP_OPTIONS}
           selected={pending.attempts}
           onToggle={v => toggle('attempts', v)}
@@ -1781,7 +1835,7 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
         {(activeTab === 'overall' || activeTab === 'overall-v2') && (
           <>
             <span className="ana-filter-sep" />
-            <ChipGroup label="Test"
+            <ChipGroup label="Assessment"
               options={catalog.map(g => ({ key: g.key, label: g.title, color: g.color }))}
               selected={pending.gameKeys}
               onToggle={v => toggle('gameKeys', v)}
@@ -1792,12 +1846,12 @@ function FilterBar({ pending, onChange, onApply, onReset, meta, activeTab, hasCh
           <>
             <span className="ana-filter-sep" />
             <div className="ana-chip-group">
-              <span className="ana-chip-label">Test Group</span>
+              <span className="ana-chip-label">Assessment Group</span>
               <button
                 className={`ana-chip${pending.gameKeys.length === 0 ? ' active' : ''}`}
                 onClick={() => onChange(p => ({ ...p, gameKeys: [] }))}
               >
-                All Tests
+                All Assessments
               </button>
               {testGroups.map(g => {
                 const isActive = pending.gameKeys.length === g.gameKeys.length && g.gameKeys.every(k => pending.gameKeys.includes(k));
@@ -2078,7 +2132,7 @@ export default function AdminAnalysis() {
           <div className="ana-panel-header">
             <h2 className="ana-panel-title">
               {activeTab === 'overall'
-                ? 'Platform Overview'
+                ? 'Study Overview'
                 : activeTab === 'overall-v2'
                 ? 'Overall V2 — Executive Analytics'
                 : <>{activeGame?.icon} {activeGame?.title} Analytics</>

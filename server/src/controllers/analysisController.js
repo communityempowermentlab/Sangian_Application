@@ -382,7 +382,9 @@ exports.getOverview = async (req, res) => {
         CAST(SUM(gs.status IN ('quit','dropped')) AS UNSIGNED)        AS droppedSessions,
         ROUND(AVG(gs.score), 1)                                        AS avgScore,
         ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 1) AS avgDurationMins,
-        ROUND(SUM(gs.status = 'completed') / NULLIF(COUNT(*),0) * 100, 0) AS completionRate
+        ROUND(SUM(gs.status = 'completed') / NULLIF(COUNT(*),0) * 100, 0) AS completionRate,
+        ROUND(SUM(COALESCE(gs.score, 0)) / NULLIF(COUNT(*),0), 1)     AS meanScoreAll,
+        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, allParams);
 
@@ -447,7 +449,12 @@ exports.getOverview = async (req, res) => {
     }
 
     res.json({
-      kpis: { ...kpis, completionRate: Number(kpis.completionRate) || 0 },
+      kpis: {
+        ...kpis,
+        completionRate:      Number(kpis.completionRate)      || 0,
+        meanScoreAll:        Number(kpis.meanScoreAll)         || 0,
+        meanDurationAllMins: Number(kpis.meanDurationAllMins)  || 0,
+      },
       byGame: byGameEnriched,
       dailyTrend,
       statusDist,
@@ -489,7 +496,9 @@ exports.getGameAnalytics = async (req, res) => {
         ROUND(AVG(gs.score), 2)                                              AS avgScore,
         MAX(gs.score)                                                        AS maxScoreAchieved,
         ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 2) AS avgDurationMins,
-        ROUND(SUM(gs.status='completed') / NULLIF(COUNT(*),0) * 100, 1)    AS completionRate
+        ROUND(SUM(gs.status='completed') / NULLIF(COUNT(*),0) * 100, 1)    AS completionRate,
+        ROUND(SUM(COALESCE(gs.score, 0)) / NULLIF(COUNT(*),0), 2)          AS meanScoreAll,
+        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 2) AS meanDurationAllMins
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, params);
 
@@ -658,9 +667,11 @@ exports.getGameAnalytics = async (req, res) => {
       kpis: {
         ...kpis,
         completionRate:  Number(kpis.completionRate)  || 0,
-        avgScorePct:     meta.maxScore > 0 ? Math.round((Number(kpis.avgScore) / meta.maxScore) * 100) : 0,
-        avgScore:        Number(kpis.avgScore)        || 0,
-        avgDurationMins: Number(kpis.avgDurationMins) || 0,
+        avgScorePct:         meta.maxScore > 0 ? Math.round((Number(kpis.avgScore) / meta.maxScore) * 100) : 0,
+        avgScore:            Number(kpis.avgScore)            || 0,
+        avgDurationMins:     Number(kpis.avgDurationMins)     || 0,
+        meanScoreAll:        Number(kpis.meanScoreAll)        || 0,
+        meanDurationAllMins: Number(kpis.meanDurationAllMins) || 0,
       },
       scoreDist,
       quitReasons,
@@ -1037,7 +1048,9 @@ exports.getOverviewV2 = async (req, res) => {
         CAST(SUM(status = 'completed') AS UNSIGNED)  AS totalAssessmentsCompleted,
         CAST(SUM(attemptNo >= 2) AS UNSIGNED)         AS totalRepeatAssessments,
         ROUND(AVG(scorePct), 1)                       AS avgOverallScorePct,
-        ROUND(AVG(durationSec) / 60, 1)                AS avgCompletionTimeMins
+        ROUND(AVG(durationSec) / 60, 1)                AS avgCompletionTimeMins,
+        ROUND(SUM(COALESCE(scorePct, 0)) / NULLIF(COUNT(*),0), 1)      AS meanScorePctAll,
+        ROUND(SUM(COALESCE(durationSec, 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins
       FROM sd
     `, f.allParams);
 
@@ -1316,6 +1329,8 @@ exports.getOverviewV2 = async (req, res) => {
         uniqueChildren: Number(sessionKpis.uniqueChildren) || 0,
         avgOverallScorePct: sessionKpis.avgOverallScorePct != null ? Number(sessionKpis.avgOverallScorePct) : null,
         avgCompletionTimeMins: sessionKpis.avgCompletionTimeMins != null ? Number(sessionKpis.avgCompletionTimeMins) : null,
+        meanScorePctAll: sessionKpis.meanScorePctAll != null ? Number(sessionKpis.meanScorePctAll) : null,
+        meanDurationAllMins: sessionKpis.meanDurationAllMins != null ? Number(sessionKpis.meanDurationAllMins) : null,
         genderDist: genderDistRaw.map(r => ({ gender: r.gender, count: Number(r.count) })),
         ageGroupDist: ageGroupDistRaw.filter(r => r.ageBand).map(r => ({ ageBand: r.ageBand, count: Number(r.count) })),
       },

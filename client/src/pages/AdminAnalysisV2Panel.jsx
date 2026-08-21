@@ -435,11 +435,11 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
             ]
           }}
         />
-        <KpiCard 
-          icon="⏱️" 
-          label="Avg Completion Time"      
-          value={fmtMins(kpis.avgCompletionTimeMins)} 
-          color="#f59e0b" 
+        <KpiCard
+          icon="⏱️"
+          label="Avg Completion Time"
+          value={fmtMins(kpis.avgCompletionTimeMins)}
+          color="#f59e0b"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Average Completion Time",
@@ -450,6 +450,40 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
               "Paused time is NOT included (timer is paused in-game)"
             ],
             notes: "This represents active play time per game."
+          }}
+        />
+        <KpiCard
+          icon="🎯"
+          label="Mean Score"
+          value={fmtPct(kpis.meanScorePctAll)}
+          sub="% of max, across all tests"
+          color="#14b8a6"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Score",
+            definition: "Mean score percentage, averaged across every test — incomplete sessions count as 0%.",
+            formula: "Sum of Score % of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: [
+              "ALL sessions are included, not just completed ones",
+              "Child matches selected filters"
+            ]
+          }}
+        />
+        <KpiCard
+          icon="⏳"
+          label="Mean Assessment Duration"
+          value={fmtMins(kpis.meanDurationAllMins)}
+          sub="across all tests"
+          color="#0ea5e9"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Mean Assessment Duration",
+            definition: "Mean active time taken per test, averaged across every test — incomplete sessions count as 0.",
+            formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
+            eligibility: [
+              "ALL sessions are included, not just completed ones",
+              "Paused time is NOT included (timer is paused in-game)"
+            ]
           }}
         />
       </div>
