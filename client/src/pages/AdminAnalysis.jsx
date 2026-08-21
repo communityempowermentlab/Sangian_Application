@@ -79,7 +79,13 @@ const CATEGORY_NAMES = {
 // (a bare number like "4", or a compound key like Bagiya's "r13_q6") — for
 // those we don't have a hand-authored label, so show "Question N" for a
 // plain numeric id and the raw key as-is otherwise, rather than a blank dash.
-function getCategoryLabel(category) {
+// `catName` (when present) is a name the backend already resolved itself —
+// e.g. Chor Machaye Shor's admin-configurable item names, straight from
+// saved_state.itemResults[].itemName — which takes priority over the
+// static maps below since it's the actual, current, per-row name rather
+// than a hand-authored guess.
+function getCategoryLabel(category, catName) {
+  if (catName) return catName;
   if (CATEGORY_NAMES[category]) return CATEGORY_NAMES[category];
   if (/^\d+$/.test(String(category))) return `Question ${category}`;
   return category;
@@ -211,7 +217,7 @@ function exportSessionsCSV(sessions, gameMeta, maxGameScore) {
 // table shows for this game (see the flags computed in GamePanel) so the
 // export never claims data the table itself hides.
 async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSessions, cols) {
-  const { showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics } = cols;
+  const { showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics, showChorMetrics } = cols;
   const XLSX = await import('xlsx');
 
   const headers = [
@@ -220,12 +226,13 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
     ...(showChildrenReachedCol ? ['Children Reached', '% Reached'] : []),
     'Difficulty', 'Avg Score',
     ...(showCorrectnessMetrics ? ['Avg Correct', 'Accuracy %', 'Miss Rate %', 'Perfect Rate %'] : []),
+    ...(showChorMetrics ? ['Avg Moves', 'Avg Mistakes', 'Completion %'] : []),
     'Avg Time (sec)',
   ];
   const rows = categoryBreakdown.map(row => [
     row.rank,
     row.category,
-    getCategoryLabel(row.category),
+    getCategoryLabel(row.category, row.catName),
     ...(showTargetImageCol ? [`${window.location.origin}${getRachnaTargetImage(row.category)}`] : []),
     ...(showChildrenReachedCol ? [
       row.attempts,
@@ -238,6 +245,11 @@ async function exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, totalSe
       row.accuracyPct ?? '',
       row.missRatePct ?? '',
       row.perfectRatePct ?? '',
+    ] : []),
+    ...(showChorMetrics ? [
+      row.avgMoves ?? '',
+      row.avgMistakes ?? '',
+      row.completionPct ?? '',
     ] : []),
     row.avgTimeTakenSec ?? '',
   ]);
@@ -1203,7 +1215,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
   const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3' || gameKey === 'triangle_rachna'
-    || gameKey === 'numeracy_number_skill_v3' || gameKey === 'literacy_reading_skill_v2';
+    || gameKey === 'numeracy_number_skill_v3' || gameKey === 'literacy_reading_skill_v2'
+    || gameKey === 'rover_mela' || gameKey === 'cognitive_flex_chor';
   const showTargetImageCol = gameKey === 'triangle_rachna';
   // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
   // image-matching mechanic (correctCount/missedImages/incorrectSelections)
@@ -1217,6 +1230,12 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   // instead of hardcoding a gameKey list that can go stale.
   const showCorrectnessMetrics = categoryBreakdown.some(r =>
     r.avgCorrectCount != null || r.accuracyPct != null || r.missRatePct != null || r.perfectRatePct != null
+  );
+  // Avg Moves/Mistakes/Completion % are Chor Machaye Shor-specific (its
+  // itemResults[] mechanic, not image-matching) — data-driven for the same
+  // reason as showCorrectnessMetrics above.
+  const showChorMetrics = categoryBreakdown.some(r =>
+    r.avgMoves != null || r.avgMistakes != null || r.completionPct != null
   );
 
   return (
@@ -1504,7 +1523,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                     style={{ fontSize: '12px' }}
                     onClick={() => {
                       exportCategoryBreakdownExcel(categoryBreakdown, gameMeta, kpis.totalSessions, {
-                        showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics,
+                        showTargetImageCol, showChildrenReachedCol, showCorrectnessMetrics, showChorMetrics,
                       });
                       logReportDownload({
                         module: 'analysis', menuName: 'Analysis', pageName: `${gameMeta.title || 'Game'} — Category Breakdown`,
@@ -1682,6 +1701,9 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                     </span>
                   </th>
                   )}
+                  {showChorMetrics && <th>Avg Moves</th>}
+                  {showChorMetrics && <th>Avg Mistakes</th>}
+                  {showChorMetrics && <th>Completion %</th>}
                   <th>Avg Time</th>
                 </tr>
               </thead>
@@ -1690,7 +1712,7 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                   <tr key={row.category}>
                     <td><span className="ana-rank">{row.rank}</span></td>
                     <td style={{ fontWeight: 600 }}>{row.category}</td>
-                    <td>{getCategoryLabel(row.category)}</td>
+                    <td>{getCategoryLabel(row.category, row.catName)}</td>
                     {showTargetImageCol && (
                       <td>
                         <a href={getRachnaTargetImage(row.category)} target="_blank" rel="noreferrer">
@@ -1730,6 +1752,9 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
                     {showCorrectnessMetrics && <td>{row.accuracyPct != null ? `${row.accuracyPct}%` : '—'}</td>}
                     {showCorrectnessMetrics && <td>{row.missRatePct != null ? `${row.missRatePct}%` : '—'}</td>}
                     {showCorrectnessMetrics && <td>{row.perfectRatePct != null ? `${row.perfectRatePct}%` : '—'}</td>}
+                    {showChorMetrics && <td>{fmt(row.avgMoves, 1)}</td>}
+                    {showChorMetrics && <td>{fmt(row.avgMistakes, 1)}</td>}
+                    {showChorMetrics && <td>{row.completionPct != null ? `${row.completionPct}%` : '—'}</td>}
                     <td>{row.avgTimeTakenSec != null ? `${fmt(row.avgTimeTakenSec, 1)}s` : '—'}</td>
                   </tr>
                 ))}

@@ -164,21 +164,21 @@ const AGE_MAP = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, [y, y]]));
 
 // Games whose saved_state.allScores[] entries carry a per-question identifier
 // this query can group by — either a real `category` tag (Her Pher: item1..
-// item8 image-matching questions) or just a `qId` (COALESCE(category, qId)
-// falls back to qId for every other game here, giving one row per question
-// instead of a category rollup). Only Her Pher (V1-V3) also carries
-// correctCount/expectedImages/missedImages/incorrectSelections — those columns
-// come back NULL for the rest, and the frontend already renders NULL as '—'.
+// item8 image-matching questions), a `qId`, or (rover_mela only) a plain
+// `id` — COALESCE(category, qId, id) picks whichever field a given game
+// actually uses, giving one row per question when there's no true category
+// concept. Only Her Pher (V1-V3) also carries correctCount/expectedImages/
+// missedImages/incorrectSelections — those columns come back NULL for the
+// rest, and the frontend already renders NULL as '—'.
 // Not in this set (verified against real saved_state, not just game source):
-// rover_mela (Chalo Mela Chalen) saves no per-question data at all — no
-// breakdown is possible. literacy_reading_skill_v2 and
-// numeracy_number_skill_v3 use an adaptive level/stage structure this
-// flat-array query can't read — they get their own dedicated query branches
-// below instead (see the `gameKey === 'numeracy_number_skill_v3'` /
-// `'literacy_reading_skill_v2'` branches further down). cognitive_flex_chor
-// (saved_state.itemResults, different fields entirely) and
-// number_recall_lottery_v2 (different field names — question/duration_ms
-// instead of qId/timeTaken) remain unimplemented.
+// literacy_reading_skill_v2 and numeracy_number_skill_v3 use an adaptive
+// level/stage structure this flat-array query can't read — they get their
+// own dedicated query branches below instead (see the
+// `gameKey === 'numeracy_number_skill_v3'` / `'literacy_reading_skill_v2'`
+// branches further down). cognitive_flex_chor (saved_state.itemResults,
+// different fields entirely) and number_recall_lottery_v2 (different field
+// names — question/duration_ms instead of qId/timeTaken) remain
+// unimplemented.
 const CATEGORY_BREAKDOWN_GAMES = new Set([
   'working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3',
   'triangle_rachna',
@@ -187,6 +187,7 @@ const CATEGORY_BREAKDOWN_GAMES = new Set([
   'number_recall_lottery',
   'atlantis_bagiya',
   'auditory_dhyan',
+  'rover_mela',
 ]);
 
 // Same boundary logic as AGE_MAP, expressed as a SQL CASE so it can be used
@@ -731,6 +732,9 @@ exports.getGameAnalytics = async (req, res) => {
         accuracyPct: row.accuracyPct != null ? Number(row.accuracyPct) : null,
         missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,
         perfectRatePct: row.perfectRatePct != null ? Number(row.perfectRatePct) : null,
+        avgMoves: row.avgMoves != null ? Number(row.avgMoves) : null,
+        avgMistakes: row.avgMistakes != null ? Number(row.avgMistakes) : null,
+        completionPct: row.completionPct != null ? Number(row.completionPct) : null,
         rank: i + 1,
         difficulty: i < tierSize ? 'Easy' : i >= n - tierSize ? 'Hard' : 'Moderate',
       }));
@@ -739,9 +743,15 @@ exports.getGameAnalytics = async (req, res) => {
     let categoryBreakdown = [];
     if (CATEGORY_BREAKDOWN_GAMES.has(gameKey)) {
       const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      // COALESCE(category, qId, id) — rover_mela's allScores[] entries key
+      // each question by `id` (e.g. "q1".."q18"), not `category`/`qId` like
+      // every other game here; tq1..tq4 are its teaching/practice questions
+      // (excluded the same way the game's own scoring code already excludes
+      // them — see ChaloMelaChaleGame.jsx's `nonTQScores` filter), same
+      // spirit as excluding Her Pher's unscored item0 below.
       const [catRows] = await pool.query(`
         SELECT
-          COALESCE(jt.category, jt.qId)                                           AS category,
+          COALESCE(jt.category, jt.qId, jt.id)                                    AS category,
           COUNT(*)                                                                AS attempts,
           ROUND(AVG(jt.score), 2)                                                 AS avgScore,
           ROUND(AVG(jt.correctCount), 2)                                          AS avgCorrectCount,
@@ -753,6 +763,7 @@ exports.getGameAnalytics = async (req, res) => {
         JSON_TABLE(gs.saved_state, '$.allScores[*]' COLUMNS (
           category NVARCHAR(50) PATH '$.category',
           qId NVARCHAR(50) PATH '$.qId',
+          id NVARCHAR(50) PATH '$.id',
           score INT PATH '$.score',
           correctCount INT PATH '$.correctCount',
           timeTaken DECIMAL(10,2) PATH '$.timeTaken',
@@ -760,8 +771,10 @@ exports.getGameAnalytics = async (req, res) => {
           missedImages JSON PATH '$.missedImages',
           incorrectSelections JSON PATH '$.incorrectSelections'
         )) AS jt
-        ${catWhere} AND COALESCE(jt.category, jt.qId) IS NOT NULL AND COALESCE(jt.category, jt.qId) != 'item0'
-        GROUP BY COALESCE(jt.category, jt.qId)
+        ${catWhere} AND COALESCE(jt.category, jt.qId, jt.id) IS NOT NULL
+          AND COALESCE(jt.category, jt.qId, jt.id) != 'item0'
+          AND COALESCE(jt.category, jt.qId, jt.id) NOT LIKE 'tq%'
+        GROUP BY COALESCE(jt.category, jt.qId, jt.id)
         ORDER BY AVG(jt.score) DESC
       `, params);
       categoryBreakdown = rankAndTier(catRows);
@@ -875,6 +888,42 @@ exports.getGameAnalytics = async (req, res) => {
 
         ORDER BY avgScore DESC
       `, [...params, ...params, ...params, ...params, ...params, ...params]);
+      categoryBreakdown = rankAndTier(catRows);
+    } else if (gameKey === 'cognitive_flex_chor') {
+      // This game saves saved_state.itemResults[], not allScores[] — a
+      // different top-level field with its own shape (itemId/itemName/
+      // moves/mistakes/completed instead of qId/category/correctCount).
+      // Item 1 is the only item with two trials (a rule-switch retest —
+      // confirmed its trial 2 scores far lower than trial 1 on real data,
+      // a genuinely different condition), so rows are grouped by
+      // (itemId, trial), matching how numeracy V3 keeps its q1/q2 separate.
+      const gWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      const [catRows] = await pool.query(`
+        SELECT CONCAT(jt.itemId, '_t', jt.trial) AS category,
+               MAX(jt.itemName) AS catName,
+               COUNT(*) AS attempts,
+               ROUND(AVG(jt.score), 2) AS avgScore,
+               NULL AS avgCorrectCount,
+               ROUND(AVG(jt.timeTaken), 2) AS avgTimeTakenSec,
+               NULL AS accuracyPct, NULL AS missRatePct, NULL AS perfectRatePct,
+               ROUND(AVG(jt.moves), 2) AS avgMoves,
+               ROUND(AVG(jt.mistakes), 2) AS avgMistakes,
+               ROUND(SUM(jt.completed = true) / COUNT(*) * 100, 1) AS completionPct
+        FROM game_sessions gs ${CHILD_JOIN},
+        JSON_TABLE(gs.saved_state, '$.itemResults[*]' COLUMNS (
+          itemId INT PATH '$.itemId',
+          trial INT PATH '$.trial',
+          itemName NVARCHAR(100) PATH '$.itemName',
+          score INT PATH '$.score',
+          moves INT PATH '$.moves',
+          mistakes INT PATH '$.mistakes',
+          completed JSON PATH '$.completed',
+          timeTaken DECIMAL(10,2) PATH '$.timeTaken'
+        )) AS jt
+        ${gWhere} AND jt.itemId IS NOT NULL
+        GROUP BY jt.itemId, jt.trial
+        ORDER BY avgScore DESC
+      `, params);
       categoryBreakdown = rankAndTier(catRows);
     }
 
