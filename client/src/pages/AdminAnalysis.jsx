@@ -875,6 +875,34 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters (Date, Age, Gender, Group)"]
           }}
         />
+        <KpiCard
+          icon="📐"
+          label="Median Score"
+          value={fmt(kpis.medianScore, 1)}
+          sub="middle value, across all tests"
+          color="#a855f7"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Median Score",
+            definition: "The middle score when every completed test's score is sorted from lowest to highest — less skewed by outliers than the mean.",
+            formula: "Middle value of sorted scores (average of the two middle values if the count is even)",
+            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters (Date, Age, Gender, Group)"]
+          }}
+        />
+        <KpiCard
+          icon="📏"
+          label="SD of Score"
+          value={fmt(kpis.sdScore, 1)}
+          sub="spread of scores, across all tests"
+          color="#f43f5e"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Standard Deviation of Score",
+            definition: "How much individual scores typically vary from the average — a low value means scores cluster tightly around the mean, a high value means they're spread out.",
+            formula: "Population standard deviation of all recorded scores: √(Σ(score − mean)² ÷ N)",
+            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters (Date, Age, Gender, Group)"]
+          }}
+        />
       </div>
 
       <div className="ana-grid-2">
@@ -1162,12 +1190,12 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
       <div className="ana-kpi-row">
         <KpiCard
           icon="👦"
-          label="Unique Children"
+          label="Children Assessed"
           value={fmt(kpis.uniqueChildren)}
           color="#0891b2"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Unique Children",
+            name: "Children Assessed",
             definition: "Total number of distinct children who started this game.",
             formula: "Count of distinct child IDs",
             eligibility: ["Child has at least one session matching the selected filters"]
@@ -1175,12 +1203,12 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
         />
         <KpiCard
           icon="🎮"
-          label="Total Tests"
+          label="Total Assessments"
           value={fmt(kpis.totalSessions)}
           color={gameMeta.color}
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Total Tests",
+            name: "Total Assessments",
             definition: "Total number of test sessions started for this specific game.",
             formula: "Count of all test sessions",
             eligibility: ["Matches all selected filters"]
@@ -1253,6 +1281,34 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             definition: `Mean active time taken per test of ${gameMeta.title}, averaged across every test — incomplete sessions count as 0.`,
             formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
             eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters"]
+          }}
+        />
+        <KpiCard
+          icon="📐"
+          label="Median Score"
+          value={fmt(kpis.medianScore, 1)}
+          sub="middle value, across all tests"
+          color="#a855f7"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Median Score",
+            definition: `The middle score when every completed ${gameMeta.title} session's score is sorted from lowest to highest — less skewed by outliers than the mean.`,
+            formula: "Middle value of sorted scores (average of the two middle values if the count is even)",
+            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters"]
+          }}
+        />
+        <KpiCard
+          icon="📏"
+          label="SD of Score"
+          value={fmt(kpis.sdScore, 1)}
+          sub="spread of scores, across all tests"
+          color="#f43f5e"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Standard Deviation of Score",
+            definition: `How much individual scores on ${gameMeta.title} typically vary from the average — a low value means scores cluster tightly around the mean, a high value means they're spread out.`,
+            formula: "Population standard deviation of all recorded scores: √(Σ(score − mean)² ÷ N)",
+            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters"]
           }}
         />
       </div>

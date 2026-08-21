@@ -384,9 +384,24 @@ exports.getOverview = async (req, res) => {
         ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 1) AS avgDurationMins,
         ROUND(SUM(gs.status = 'completed') / NULLIF(COUNT(*),0) * 100, 0) AS completionRate,
         ROUND(SUM(COALESCE(gs.score, 0)) / NULLIF(COUNT(*),0), 1)     AS meanScoreAll,
-        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins
+        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins,
+        ROUND(STDDEV_POP(gs.score), 1)                                 AS sdScore
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, allParams);
+
+    // Median Score — MySQL has no built-in MEDIAN()/PERCENTILE_CONT, so rank
+    // scores and average the middle one (or two, for an even count).
+    const medianClauses = [...allClauses, 'gs.score IS NOT NULL'];
+    const [[medianRow]] = await pool.query(`
+      SELECT ROUND(AVG(score), 1) AS medianScore FROM (
+        SELECT gs.score,
+               ROW_NUMBER() OVER (ORDER BY gs.score) AS rn,
+               COUNT(*) OVER ()                       AS cnt
+        FROM game_sessions gs ${CHILD_JOIN} ${toWhere(medianClauses)}
+      ) ranked
+      WHERE rn IN (FLOOR((cnt + 1) / 2), CEIL((cnt + 1) / 2))
+    `, allParams);
+    kpis.medianScore = medianRow.medianScore != null ? Number(medianRow.medianScore) : null;
 
     // Per-game breakdown
     const [byGame] = await pool.query(`
@@ -454,6 +469,8 @@ exports.getOverview = async (req, res) => {
         completionRate:      Number(kpis.completionRate)      || 0,
         meanScoreAll:        Number(kpis.meanScoreAll)         || 0,
         meanDurationAllMins: Number(kpis.meanDurationAllMins)  || 0,
+        sdScore:             kpis.sdScore != null ? Number(kpis.sdScore) : null,
+        medianScore:         kpis.medianScore != null ? Number(kpis.medianScore) : null,
       },
       byGame: byGameEnriched,
       dailyTrend,
@@ -498,9 +515,24 @@ exports.getGameAnalytics = async (req, res) => {
         ROUND(AVG(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time))) / 60, 2) AS avgDurationMins,
         ROUND(SUM(gs.status='completed') / NULLIF(COUNT(*),0) * 100, 1)    AS completionRate,
         ROUND(SUM(COALESCE(gs.score, 0)) / NULLIF(COUNT(*),0), 2)          AS meanScoreAll,
-        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 2) AS meanDurationAllMins
+        ROUND(SUM(COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time), 0)) / NULLIF(COUNT(*),0) / 60, 2) AS meanDurationAllMins,
+        ROUND(STDDEV_POP(gs.score), 2)                                      AS sdScore
       FROM game_sessions gs ${CHILD_JOIN} ${where}
     `, params);
+
+    // Median Score — MySQL has no built-in MEDIAN()/PERCENTILE_CONT, so rank
+    // scores and average the middle one (or two, for an even count).
+    const medianClauses = [...clauses, 'gs.score IS NOT NULL'];
+    const [[medianRow]] = await pool.query(`
+      SELECT ROUND(AVG(score), 2) AS medianScore FROM (
+        SELECT gs.score,
+               ROW_NUMBER() OVER (ORDER BY gs.score) AS rn,
+               COUNT(*) OVER ()                       AS cnt
+        FROM game_sessions gs ${CHILD_JOIN} ${toWhere(medianClauses)}
+      ) ranked
+      WHERE rn IN (FLOOR((cnt + 1) / 2), CEIL((cnt + 1) / 2))
+    `, params);
+    kpis.medianScore = medianRow.medianScore != null ? Number(medianRow.medianScore) : null;
 
     // Score distribution — 5 equal buckets. Not restricted to completed
     // sessions: in games like Padh ke Batao, completion implies a near-perfect
@@ -672,6 +704,8 @@ exports.getGameAnalytics = async (req, res) => {
         avgDurationMins:     Number(kpis.avgDurationMins)     || 0,
         meanScoreAll:        Number(kpis.meanScoreAll)        || 0,
         meanDurationAllMins: Number(kpis.meanDurationAllMins) || 0,
+        sdScore:             kpis.sdScore != null ? Number(kpis.sdScore) : null,
+        medianScore:         kpis.medianScore != null ? Number(kpis.medianScore) : null,
       },
       scoreDist,
       quitReasons,
@@ -1050,9 +1084,25 @@ exports.getOverviewV2 = async (req, res) => {
         ROUND(AVG(scorePct), 1)                       AS avgOverallScorePct,
         ROUND(AVG(durationSec) / 60, 1)                AS avgCompletionTimeMins,
         ROUND(SUM(COALESCE(scorePct, 0)) / NULLIF(COUNT(*),0), 1)      AS meanScorePctAll,
-        ROUND(SUM(COALESCE(durationSec, 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins
+        ROUND(SUM(COALESCE(durationSec, 0)) / NULLIF(COUNT(*),0) / 60, 1) AS meanDurationAllMins,
+        ROUND(STDDEV_POP(scorePct), 1)                 AS sdScorePct
       FROM sd
     `, f.allParams);
+
+    // Median Score % — MySQL has no built-in MEDIAN()/PERCENTILE_CONT, so
+    // rank scores and average the middle one (or two, for an even count).
+    const [[medianRow]] = await pool.query(`
+      ${sdSQL}
+      SELECT ROUND(AVG(scorePct), 1) AS medianScorePct FROM (
+        SELECT scorePct,
+               ROW_NUMBER() OVER (ORDER BY scorePct) AS rn,
+               COUNT(*) OVER ()                       AS cnt
+        FROM sd
+        WHERE scorePct IS NOT NULL
+      ) ranked
+      WHERE rn IN (FLOOR((cnt + 1) / 2), CEIL((cnt + 1) / 2))
+    `, f.allParams);
+    sessionKpis.medianScorePct = medianRow.medianScorePct != null ? Number(medianRow.medianScorePct) : null;
 
     // ── Registered children + demographic distributions — these come from the
     // `children` table directly (not date-scoped by session activity, since
@@ -1331,6 +1381,8 @@ exports.getOverviewV2 = async (req, res) => {
         avgCompletionTimeMins: sessionKpis.avgCompletionTimeMins != null ? Number(sessionKpis.avgCompletionTimeMins) : null,
         meanScorePctAll: sessionKpis.meanScorePctAll != null ? Number(sessionKpis.meanScorePctAll) : null,
         meanDurationAllMins: sessionKpis.meanDurationAllMins != null ? Number(sessionKpis.meanDurationAllMins) : null,
+        sdScorePct: sessionKpis.sdScorePct != null ? Number(sessionKpis.sdScorePct) : null,
+        medianScorePct: sessionKpis.medianScorePct != null ? Number(sessionKpis.medianScorePct) : null,
         genderDist: genderDistRaw.map(r => ({ gender: r.gender, count: Number(r.count) })),
         ageGroupDist: ageGroupDistRaw.filter(r => r.ageBand).map(r => ({ ageBand: r.ageBand, count: Number(r.count) })),
       },

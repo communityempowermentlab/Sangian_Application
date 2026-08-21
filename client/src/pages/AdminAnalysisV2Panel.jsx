@@ -486,6 +486,40 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
             ]
           }}
         />
+        <KpiCard
+          icon="📐"
+          label="Median Score"
+          value={fmtPct(kpis.medianScorePct)}
+          sub="middle value, across all tests"
+          color="#a855f7"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Median Score",
+            definition: "The middle score % when every completed test is sorted from lowest to highest — less skewed by outliers than the mean.",
+            formula: "Middle value of sorted score %s (average of the two middle values if the count is even)",
+            eligibility: [
+              "Only sessions with a recorded score are included",
+              "Child matches selected filters"
+            ]
+          }}
+        />
+        <KpiCard
+          icon="📏"
+          label="SD of Score"
+          value={fmtPct(kpis.sdScorePct)}
+          sub="spread of scores, across all tests"
+          color="#f43f5e"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Standard Deviation of Score",
+            definition: "How much individual score %s typically vary from the average — a low value means scores cluster tightly around the mean, a high value means they're spread out.",
+            formula: "Population standard deviation of all recorded score %s: √(Σ(score% − mean)² ÷ N)",
+            eligibility: [
+              "Only sessions with a recorded score are included",
+              "Child matches selected filters"
+            ]
+          }}
+        />
       </div>
 
       <div className="ana-grid-2">
