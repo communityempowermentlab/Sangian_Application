@@ -65,6 +65,13 @@ const CATEGORY_NAMES = {
   question16: 'Item 13', question17: 'Item 14', question18: 'Item 15', question19: 'Item 16',
   question20: 'Item 17', question21: 'Item 18', question22: 'Item 19', question23: 'Item 20',
   question24: 'Item 21', question25: 'Item 22', question26: 'Item 23', question27: 'Item 24',
+  // numeracy_number_skill_v3's Number Recognition stages and
+  // literacy_reading_skill_v2's stages have no per-item id in saved_state
+  // (see analysisController.js's dedicated query branches for those two
+  // gameKeys) — each row here is a whole stage, not a single question.
+  number_recognition_9: 'Number Recognition (1–9)', number_recognition_99: 'Number Recognition (10–99)',
+  letters: 'Letters', words: 'Words', words_retry: 'Words (Retry)',
+  paragraph: 'Paragraph', paragraph_retry: 'Paragraph (Retry)', story: 'Story',
 };
 
 // Friendly label for a question-wise-performance row. Her Pher/Rachna have
@@ -1195,7 +1202,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
   const attemptEntries  = Object.entries(attemptBuckets);
   const maxAttempt      = Math.max(...attemptEntries.map(([, v]) => v), 1);
   const maxCategoryScore = Math.max(...categoryBreakdown.map(c => Number(c.avgScore) || 0), 0.01);
-  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3' || gameKey === 'triangle_rachna';
+  const showChildrenReachedCol = gameKey === 'working_memory_herpher_v2' || gameKey === 'working_memory_herpher_v3' || gameKey === 'triangle_rachna'
+    || gameKey === 'numeracy_number_skill_v3' || gameKey === 'literacy_reading_skill_v2';
   const showTargetImageCol = gameKey === 'triangle_rachna';
   // Avg Correct / Miss Rate / Perfect Rate info-icon tooltips describe the
   // image-matching mechanic (correctCount/missedImages/incorrectSelections)

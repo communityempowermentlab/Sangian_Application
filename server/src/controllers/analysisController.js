@@ -169,13 +169,16 @@ const AGE_MAP = Object.fromEntries(AGE_YEARS.map(y => [`${y}`, [y, y]]));
 // instead of a category rollup). Only Her Pher (V1-V3) also carries
 // correctCount/expectedImages/missedImages/incorrectSelections — those columns
 // come back NULL for the rest, and the frontend already renders NULL as '—'.
-// Deliberately excluded (verified against real saved_state, not just game
-// source): rover_mela (Chalo Mela Chalen) saves no per-question data at all;
-// literacy_reading_skill_v2 and numeracy_number_skill_v3 use an adaptive
-// level/stage structure incompatible with this flat-array query;
-// cognitive_flex_chor uses saved_state.itemResults, a different field
-// entirely; number_recall_lottery_v2 uses different field names
-// (question/duration_ms instead of qId/timeTaken) that this query can't read.
+// Not in this set (verified against real saved_state, not just game source):
+// rover_mela (Chalo Mela Chalen) saves no per-question data at all — no
+// breakdown is possible. literacy_reading_skill_v2 and
+// numeracy_number_skill_v3 use an adaptive level/stage structure this
+// flat-array query can't read — they get their own dedicated query branches
+// below instead (see the `gameKey === 'numeracy_number_skill_v3'` /
+// `'literacy_reading_skill_v2'` branches further down). cognitive_flex_chor
+// (saved_state.itemResults, different fields entirely) and
+// number_recall_lottery_v2 (different field names — question/duration_ms
+// instead of qId/timeTaken) remain unimplemented.
 const CATEGORY_BREAKDOWN_GAMES = new Set([
   'working_memory_herpher', 'working_memory_herpher_v2', 'working_memory_herpher_v3',
   'triangle_rachna',
@@ -502,7 +505,7 @@ exports.getOverview = async (req, res) => {
 // Cohort-level auto-generated insights over the question-wise performance
 // breakdown — same {icon, text} shape and spirit as buildInsights() above,
 // just scoped to one game's per-question rows instead of the whole platform.
-function buildCategoryInsights(categoryBreakdown) {
+function buildCategoryInsights(categoryBreakdown, { skipDropOff = false } = {}) {
   const insights = [];
   if (!categoryBreakdown || categoryBreakdown.length < 2) return insights;
 
@@ -532,14 +535,21 @@ function buildCategoryInsights(categoryBreakdown) {
 
   // Drop-off — only surfaces where attempts materially decrease across
   // questions (auto-stop mechanics like Her Pher/Rachna); flat-array games
-  // where every question gets roughly the same attempt count stay quiet here.
-  const attemptCounts = categoryBreakdown.map(r => r.attempts);
-  const maxAttempts = Math.max(...attemptCounts);
-  const minAttempts = Math.min(...attemptCounts);
-  if (maxAttempts > 0 && (maxAttempts - minAttempts) / maxAttempts >= 0.3) {
-    const lowestReach = [...categoryBreakdown].sort((a, b) => a.attempts - b.attempts)[0];
-    const dropPct = Math.round((1 - lowestReach.attempts / maxAttempts) * 100);
-    insights.push({ icon: '🚪', text: `Question "${lowestReach.category}" is reached by ${dropPct}% fewer children than the most-reached question — some children are quitting or auto-stopping before this point.` });
+  // where every question gets roughly the same attempt count stay quiet
+  // here. skipDropOff covers numeracy_number_skill_v3: its subtraction/
+  // division rows are keyed by questionId, and each session only ever
+  // shows ONE question drawn from an 8-item catalog per slot, so low
+  // per-question attempt counts there reflect catalog rotation, not
+  // children quitting — "reached by N% fewer children" would be false.
+  if (!skipDropOff) {
+    const attemptCounts = categoryBreakdown.map(r => r.attempts);
+    const maxAttempts = Math.max(...attemptCounts);
+    const minAttempts = Math.min(...attemptCounts);
+    if (maxAttempts > 0 && (maxAttempts - minAttempts) / maxAttempts >= 0.3) {
+      const lowestReach = [...categoryBreakdown].sort((a, b) => a.attempts - b.attempts)[0];
+      const dropPct = Math.round((1 - lowestReach.attempts / maxAttempts) * 100);
+      insights.push({ icon: '🚪', text: `Question "${lowestReach.category}" is reached by ${dropPct}% fewer children than the most-reached question — some children are quitting or auto-stopping before this point.` });
+    }
   }
 
   const scores = categoryBreakdown.map(r => r.avgScore);
@@ -707,6 +717,25 @@ exports.getGameAnalytics = async (req, res) => {
     // question (everything else, via the qId fallback — see
     // CATEGORY_BREAKDOWN_GAMES above). Ranked easiest to hardest by avg
     // score; item0 (Her Pher's unscored sample question) is excluded.
+    // rankAndTier() is shared by every source below so rank/difficulty stay
+    // consistent regardless of which query produced the rows.
+    const rankAndTier = (catRows) => {
+      const n = catRows.length;
+      const tierSize = Math.ceil(n / 3);
+      return catRows.map((row, i) => ({
+        ...row,
+        attempts: Number(row.attempts),
+        avgScore: Number(row.avgScore),
+        avgCorrectCount: row.avgCorrectCount != null ? Number(row.avgCorrectCount) : null,
+        avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
+        accuracyPct: row.accuracyPct != null ? Number(row.accuracyPct) : null,
+        missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,
+        perfectRatePct: row.perfectRatePct != null ? Number(row.perfectRatePct) : null,
+        rank: i + 1,
+        difficulty: i < tierSize ? 'Easy' : i >= n - tierSize ? 'Hard' : 'Moderate',
+      }));
+    };
+
     let categoryBreakdown = [];
     if (CATEGORY_BREAKDOWN_GAMES.has(gameKey)) {
       const catWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
@@ -735,25 +764,121 @@ exports.getGameAnalytics = async (req, res) => {
         GROUP BY COALESCE(jt.category, jt.qId)
         ORDER BY AVG(jt.score) DESC
       `, params);
+      categoryBreakdown = rankAndTier(catRows);
+    } else if (gameKey === 'numeracy_number_skill_v3') {
+      // Adaptive-level game — no flat allScores[] array. subtraction.q1/q2
+      // and division carry a real, stable questionId (a fixed DB catalog
+      // row — see ankganit_v3_questions), so those get a true per-question
+      // rollup. Number Recognition's saved shape has no per-tile id (just
+      // an array of {text,correct} marks), so it gets one stage-level row
+      // each instead — same shape/columns as a "question", just courser
+      // grain, honest to what the data actually supports.
+      const gWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      const [catRows] = await pool.query(`
+        SELECT questionId AS category, COUNT(*) AS attempts, ROUND(AVG(correct), 2) AS avgScore,
+               NULL AS avgCorrectCount, ROUND(AVG(timeTaken), 2) AS avgTimeTakenSec,
+               NULL AS accuracyPct, NULL AS missRatePct, NULL AS perfectRatePct
+        FROM (
+          SELECT gs.id,
+                 JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.subtraction.q1.questionId')) AS questionId,
+                 JSON_EXTRACT(gs.saved_state, '$.subtraction.q1.finalCorrect') = true AS correct,
+                 CAST(COALESCE(JSON_EXTRACT(gs.saved_state, '$.subtraction.q1.firstAttempt.timeTaken'), 0) AS DECIMAL(10,2)) +
+                 CAST(COALESCE(JSON_EXTRACT(gs.saved_state, '$.subtraction.q1.retryAttempt.timeTaken'), 0) AS DECIMAL(10,2)) AS timeTaken
+          FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.subtraction.q1.questionId') IS NOT NULL
+          UNION ALL
+          SELECT gs.id,
+                 JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.subtraction.q2.questionId')),
+                 JSON_EXTRACT(gs.saved_state, '$.subtraction.q2.finalCorrect') = true,
+                 CAST(JSON_EXTRACT(gs.saved_state, '$.subtraction.q2.firstAttempt.timeTaken') AS DECIMAL(10,2))
+          FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.subtraction.q2.questionId') IS NOT NULL
+          UNION ALL
+          SELECT gs.id,
+                 JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.division.questionId')),
+                 JSON_EXTRACT(gs.saved_state, '$.division.finalCorrect') = true,
+                 CAST(JSON_EXTRACT(gs.saved_state, '$.division.firstAttempt.timeTaken') AS DECIMAL(10,2))
+          FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.division.questionId') IS NOT NULL
+        ) q
+        GROUP BY questionId
 
-      // Difficulty tier — thirds by rank (easiest/hardest thirds, remainder moderate)
-      const n = catRows.length;
-      const tierSize = Math.ceil(n / 3);
-      categoryBreakdown = catRows.map((row, i) => ({
-        ...row,
-        attempts: Number(row.attempts),
-        avgScore: Number(row.avgScore),
-        avgCorrectCount: row.avgCorrectCount != null ? Number(row.avgCorrectCount) : null,
-        avgTimeTakenSec: row.avgTimeTakenSec != null ? Number(row.avgTimeTakenSec) : null,
-        accuracyPct: row.accuracyPct != null ? Number(row.accuracyPct) : null,
-        missRatePct: row.missRatePct != null ? Number(row.missRatePct) : null,
-        perfectRatePct: row.perfectRatePct != null ? Number(row.perfectRatePct) : null,
-        rank: i + 1,
-        difficulty: i < tierSize ? 'Easy' : i >= n - tierSize ? 'Hard' : 'Moderate',
-      }));
+        UNION ALL
+
+        SELECT 'number_recognition_9', COUNT(*), ROUND(AVG(JSON_EXTRACT(gs.saved_state, '$.numberRecognition9.pass') = true), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.numberRecognition9.timeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.numberRecognition9') IS NOT NULL
+
+        UNION ALL
+
+        SELECT 'number_recognition_99', COUNT(*), ROUND(AVG(JSON_EXTRACT(gs.saved_state, '$.numberRecognition99.pass') = true), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.numberRecognition99.timeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.numberRecognition99') IS NOT NULL
+
+        ORDER BY avgScore DESC
+      `, [...params, ...params, ...params, ...params, ...params]);
+      categoryBreakdown = rankAndTier(catRows);
+    } else if (gameKey === 'literacy_reading_skill_v2') {
+      // Same situation as numeracy V3 — no flat allScores[], and unlike
+      // numeracy this game has NO stable per-item id anywhere (the
+      // word/letter banks are plain text with no catalog id, and the
+      // paragraph/story stages have only one or two fixed items). So every
+      // row here is stage-level (pass rate + avg time for Letters, Words,
+      // Words Retry, Paragraph, Paragraph Retry, Story), not per-word —
+      // an honest match to what the saved data actually supports.
+      const gWhere = toWhere([...clauses, 'JSON_VALID(gs.saved_state)']);
+      const [catRows] = await pool.query(`
+        SELECT 'letters' AS category, COUNT(*) AS attempts,
+               ROUND(AVG((SELECT COUNT(*) FROM JSON_TABLE(gs.saved_state, '$.selectedLetters[*]' COLUMNS (correct JSON PATH '$.correct')) t WHERE t.correct = true) / NULLIF(JSON_LENGTH(gs.saved_state, '$.selectedLetters'), 0)), 2) AS avgScore,
+               NULL AS avgCorrectCount, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.lettersTimeTaken') AS DECIMAL(10,2))), 2) AS avgTimeTakenSec,
+               NULL AS accuracyPct, NULL AS missRatePct, NULL AS perfectRatePct
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_LENGTH(gs.saved_state, '$.selectedLetters') > 0
+
+        UNION ALL
+
+        SELECT 'words', COUNT(*),
+               ROUND(AVG((SELECT COUNT(*) FROM JSON_TABLE(gs.saved_state, '$.selectedWords[*]' COLUMNS (correct JSON PATH '$.correct')) t WHERE t.correct = true) / NULLIF(JSON_LENGTH(gs.saved_state, '$.selectedWords'), 0)), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.wordsTimeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_LENGTH(gs.saved_state, '$.selectedWords') > 0
+
+        UNION ALL
+
+        SELECT 'words_retry', COUNT(*),
+               ROUND(AVG((SELECT COUNT(*) FROM JSON_TABLE(gs.saved_state, '$.selectedWordsRetry[*]' COLUMNS (correct JSON PATH '$.correct')) t WHERE t.correct = true) / NULLIF(JSON_LENGTH(gs.saved_state, '$.selectedWordsRetry'), 0)), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.wordsRetryTimeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_LENGTH(gs.saved_state, '$.selectedWordsRetry') > 0
+
+        UNION ALL
+
+        SELECT 'paragraph', COUNT(*),
+               ROUND(AVG(JSON_EXTRACT(gs.saved_state, '$.paragraphResult.pass') = true), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.paragraphResult.timeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.paragraphResult') IS NOT NULL
+
+        UNION ALL
+
+        SELECT 'paragraph_retry', COUNT(*),
+               ROUND(AVG(JSON_EXTRACT(gs.saved_state, '$.paragraphRetryResult.pass') = true), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.paragraphRetryResult.timeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.paragraphRetryResult') IS NOT NULL
+
+        UNION ALL
+
+        SELECT 'story', COUNT(*),
+               ROUND(AVG(JSON_EXTRACT(gs.saved_state, '$.storyResult.pass') = true), 2),
+               NULL, ROUND(AVG(CAST(JSON_EXTRACT(gs.saved_state, '$.storyResult.timeTaken') AS DECIMAL(10,2))), 2),
+               NULL, NULL, NULL
+        FROM game_sessions gs ${CHILD_JOIN} ${gWhere} AND JSON_EXTRACT(gs.saved_state, '$.storyResult') IS NOT NULL
+
+        ORDER BY avgScore DESC
+      `, [...params, ...params, ...params, ...params, ...params, ...params]);
+      categoryBreakdown = rankAndTier(catRows);
     }
 
-    const categoryInsights = buildCategoryInsights(categoryBreakdown);
+    const categoryInsights = buildCategoryInsights(categoryBreakdown, { skipDropOff: gameKey === 'numeracy_number_skill_v3' });
 
     // Recent 20 sessions
     const [recentSessions] = await pool.query(`
