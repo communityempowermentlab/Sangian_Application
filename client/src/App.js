@@ -213,6 +213,17 @@ const IndividualDetailRedirect = () => {
 // or external links still land somewhere valid.
 const IndividualLoginRedirect = () => <Navigate to="/login" replace />;
 
+// Terms & Conditions, Privacy Policy, Help & Support, and Organization
+// Types moved from the standalone Meta page into Settings (AdminSettings.jsx
+// tabs terms/privacy/help_support/org_types) — these keep any bookmarked
+// /admin/meta/* URLs working. Deliberately NOT nested under this route
+// table's moduleKey="meta" RequireStaffPermission group (see below): a
+// staff account granted "settings" but not "meta" should still land on the
+// content via /admin/settings' own moduleKey="settings" check, rather than
+// being blocked here before ever reaching it.
+const META_TO_SETTINGS_TAB = { terms: 'terms', privacy: 'privacy', help: 'help_support', 'org-types': 'org_types' };
+const MetaSettingsRedirect = ({ tabKey }) => <Navigate to={`/admin/settings?tab=${META_TO_SETTINGS_TAB[tabKey]}`} replace />;
+
 // Standard public layout with Navbar + Footer
 const PublicLayout = () => (
     <>
@@ -340,9 +351,18 @@ function App() {
                                     <Route path="docs"                   element={<AdminDocs />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="meta" />}>
-                                    <Route path="meta"                   element={<Navigate to="/admin/meta/terms" replace />} />
+                                    <Route path="meta"                   element={<Navigate to="/admin/meta/contact" replace />} />
                                     <Route path="meta/:tabKey"           element={<AdminMeta />} />
                                 </Route>
+                                {/* Old bookmarks for the four tabs that moved into Settings — see
+                                    MetaSettingsRedirect above for why these sit outside the
+                                    moduleKey="meta" group. React Router ranks these literal
+                                    segments above the moduleKey="meta" group's meta/:tabKey
+                                    regardless of declaration order, so they take priority. */}
+                                <Route path="meta/terms"             element={<MetaSettingsRedirect tabKey="terms" />} />
+                                <Route path="meta/privacy"           element={<MetaSettingsRedirect tabKey="privacy" />} />
+                                <Route path="meta/help"              element={<MetaSettingsRedirect tabKey="help" />} />
+                                <Route path="meta/org-types"         element={<MetaSettingsRedirect tabKey="org-types" />} />
                                 <Route element={<RequireStaffPermission moduleKey="help-support" />}>
                                     <Route path="help-support"           element={<AdminHelpSupport />} />
                                 </Route>

@@ -8,6 +8,12 @@ import { getAdminLogoUrl } from '../services/photoUtils';
 import AdminLanguageSettingsTab from './AdminLanguageSettingsTab';
 import AdminTestConfigTab from './AdminTestConfigTab';
 import AdminNotificationsTab from './AdminNotificationsTab';
+// Terms & Conditions, Privacy Policy, Help & Support, and Organization
+// Types moved here from the standalone Meta page (AdminMeta.jsx) — that
+// file still owns their implementation and CSS (Contact Us, which stayed
+// under Meta, also uses AdminMeta.css), so both are imported from there.
+import { CmsEditor, HelpFaqAdmin, OrgTypesAdmin } from './AdminMeta';
+import './AdminMeta.css';
 
 // ─── Sidebar menu items ──────────────────────────────────────────────────────
 
@@ -21,6 +27,10 @@ const SETTINGS_MENU = [
     { key: 'admin_profile',     icon: '👤', label: 'Update Profile',       color: '#059669', available: true  },
     { key: 'languages',         icon: '🌐', label: 'Languages',            color: '#0ea5e9', available: true  },
     { key: 'test_config',       icon: '🧪', label: 'Test Configuration',   color: '#dc2626', available: true  },
+    { key: 'terms',             icon: '📄', label: 'Terms & Conditions',   color: '#4f46e5', available: true  },
+    { key: 'privacy',           icon: '🔒', label: 'Privacy Policy',       color: '#4f46e5', available: true  },
+    { key: 'help_support',      icon: '🎫', label: 'Help & Support',       color: '#7c3aed', available: true  },
+    { key: 'org_types',         icon: '🏷️', label: 'Organization Types',   color: '#059669', available: true  },
     { key: 'integrations',      icon: '🔗', label: 'Integrations',        color: '#6366f1', available: false },
     { key: 'preferences',       icon: '🎨', label: 'Preferences',       color: '#0891b2', available: false },
     { key: 'security',          icon: '🔒', label: 'Security',          color: '#374151', available: false },
@@ -2149,6 +2159,10 @@ const CONTENT_MAP = {
     languages:         <AdminLanguageSettingsTab />,
     test_config:       <AdminTestConfigTab />,
     notifications:     <AdminNotificationsTab />,
+    terms:             <CmsEditor pageKey="terms" />,
+    privacy:           <CmsEditor pageKey="privacy" />,
+    help_support:      <HelpFaqAdmin />,
+    org_types:         <OrgTypesAdmin />,
 };
 
 const AdminSettings = () => {

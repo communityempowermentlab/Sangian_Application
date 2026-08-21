@@ -4,6 +4,9 @@ import axiosAdmin from '../services/axiosAdmin';
 import { useAdminNotification } from '../contexts/AdminNotificationContext';
 import './AdminMeta.css';
 
+// Terms & Conditions, Privacy Policy, Help & Support, and Organization
+// Types moved to Settings (AdminSettings.jsx) — Contact Us and the Analysis
+// placeholder stay here since only those four were asked to move.
 const SIDEBAR_ITEMS = [
     {
         group: 'Analytics',
@@ -14,16 +17,7 @@ const SIDEBAR_ITEMS = [
     {
         group: 'Documents',
         items: [
-            { key: 'terms',   icon: '📄', label: 'Terms & Conditions', type: 'cms'     },
-            { key: 'privacy', icon: '🔒', label: 'Privacy Policy',      type: 'cms'     },
-            { key: 'contact', icon: '📬', label: 'Contact Us',          type: 'contact' },
-            { key: 'help',    icon: '🎫', label: 'Help & Support',      type: 'faq'     },
-        ],
-    },
-    {
-        group: 'Organizations',
-        items: [
-            { key: 'org-types', icon: '🏷️', label: 'Organization Types', type: 'org-types' },
+            { key: 'contact', icon: '📬', label: 'Contact Us', type: 'contact' },
         ],
     },
 ];
@@ -52,7 +46,12 @@ const CMS_LANGUAGES = [
     { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
 ];
 
-const CmsEditor = ({ pageKey }) => {
+// Named exports — Terms/Privacy (this component), Help & Support, and
+// Organization Types moved to live under Settings (AdminSettings.jsx);
+// this file keeps their implementation (and stays the route for the
+// Contact Us panel, which did NOT move) rather than relocating them to
+// their own files, to keep the diff small.
+export const CmsEditor = ({ pageKey }) => {
     const editorRef      = useRef(null);
     const pendingContent = useRef('');
 
@@ -671,7 +670,7 @@ const FAQ_LANGUAGES = [
     { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
 ];
 
-const HelpFaqAdmin = () => {
+export const HelpFaqAdmin = () => {
     const [lang,    setLang]    = useState('en');
     const [title,   setTitle]   = useState('');
     const [faqs,    setFaqs]    = useState([]);
@@ -847,7 +846,7 @@ const HelpFaqAdmin = () => {
 // (AdminOrganizationDetail.jsx, via /api/admin/org-types). Reuses the
 // meta-faq-* list/form styling since the shape (an orderable list of
 // simple items with add/edit/delete) is the same as the FAQ editor above.
-const OrgTypesAdmin = () => {
+export const OrgTypesAdmin = () => {
     const [types, setTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -1047,24 +1046,15 @@ const AdminMeta = () => {
                     <div>
                         <h2 className="meta-main-title">{activeItem.label}</h2>
                         <p className="meta-main-sub">
-                            {activeItem.type === 'cms'       ? 'Edit content, SEO meta, and publish status for this page.' :
-                             activeItem.type === 'contact'   ? 'Manage contact info, page description, and form submissions.' :
-                             activeItem.type === 'faq'       ? 'Manage bilingual FAQ and page content for the Help & Support page.' :
-                             activeItem.type === 'org-types' ? 'Manage the Organization Type options offered at registration and in org editing.' :
+                            {activeItem.type === 'contact' ? 'Manage contact info, page description, and form submissions.' :
                              'Reserved for future development.'}
                         </p>
                     </div>
                 </div>
 
-                {activeItem.type === 'cms'
-                    ? <CmsEditor key={activeItem.key} pageKey={activeItem.key} />
-                    : activeItem.type === 'contact'
-                        ? <ContactAdmin key="contact" newMessageCount={newMessageCount} onStatusChange={refreshCount} />
-                        : activeItem.type === 'faq'
-                            ? <HelpFaqAdmin key="help-faq" />
-                            : activeItem.type === 'org-types'
-                                ? <OrgTypesAdmin key="org-types" />
-                                : <PlaceholderPanel item={activeItem} />
+                {activeItem.type === 'contact'
+                    ? <ContactAdmin key="contact" newMessageCount={newMessageCount} onStatusChange={refreshCount} />
+                    : <PlaceholderPanel item={activeItem} />
                 }
             </main>
         </div>
