@@ -1,22 +1,25 @@
 import { API_URL } from '../services/api';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminLogin.css';
 
+// `key` matches GAMES_REGISTRY in server/src/services/testConfigService.js —
+// used to filter this showcase against the admin's Settings → Test
+// Configuration enabled/disabled state (see enabledTests below).
 const GAMES = [
-    { icon: '🧠', title: 'Bagiya',     tag: '',                 color: '#6366f1', img: '/assets/images/bagiya/bagiya.jpg' },
-    { icon: '🎟️', title: 'Lottery Ka Ticket',        tag: '',                 color: '#f59e0b', img: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
-    { icon: '🗺️', title: 'Chalo Mela Chalen',           tag: '',                 color: '#10b981', img: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
-    { icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6', img: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
-    { icon: '🔄', title: 'Her Pher',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
-    { icon: '🔄', title: 'Her Pher V2',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
-    { icon: '🔄', title: 'Her Pher V3',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
-    { icon: '🔢', title: 'Ankganit',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
-    { icon: '🔢', title: 'Ankganit - Version 3',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill_v3/number_skill.jpg' },
-    { icon: '📖', title: 'Padh ke batao',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
-    { icon: '📖', title: 'Padh ke batao - Version 2',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
-    { icon: '⚡', title: 'Chor Machaye Shor',       tag: '',                 color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
-    { icon: '🔺', title: 'Rachna',      tag: 'Construction',     color: '#ef4444', img: '/assets/images/rachna/rachna.jpg' },
+    { key: 'atlantis_bagiya',           icon: '🧠', title: 'Bagiya',     tag: '',                 color: '#6366f1', img: '/assets/images/bagiya/bagiya.jpg' },
+    { key: 'number_recall_lottery',     icon: '🎟️', title: 'Lottery Ka Ticket',        tag: '',                 color: '#f59e0b', img: '/assets/images/lottery_ka_ticket/lottery_ka_ticket.jpg' },
+    { key: 'rover_mela',                icon: '🗺️', title: 'Chalo Mela Chalen',           tag: '',                 color: '#10b981', img: '/assets/images/chalo_mela_chale/chalo_mela_chale.jpg' },
+    { key: 'auditory_dhyan',            icon: '👂', title: 'Dhyan Kahan Hai',   tag: '',                 color: '#8b5cf6', img: '/assets/images/dhyan_kahan_hai/dhyan_kahan_hai.jpg' },
+    { key: 'working_memory_herpher',    icon: '🔄', title: 'Her Pher',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher/her_pher.jpg' },
+    { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher V2',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
+    { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher V3',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
+    { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
+    { key: 'numeracy_number_skill_v3',  icon: '🔢', title: 'Ankganit - Version 3',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill_v3/number_skill.jpg' },
+    { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
+    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
+    { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       tag: '',                 color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
+    { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',      tag: 'Construction',     color: '#ef4444', img: '/assets/images/rachna/rachna.jpg' },
 ];
 
 const AdminLogin = () => {
@@ -24,6 +27,21 @@ const AdminLogin = () => {
     const [errors, setErrors]         = useState({ email: false, passcode: false, server: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPass, setShowPass]     = useState(false);
+    const [enabledTests, setEnabledTests] = useState(null);
+
+    // Show only tests the admin has left enabled in Settings → Test
+    // Configuration. Before this loads (or on error), show everything so
+    // the showcase isn't empty on slow connections — same fail-open
+    // pattern as Home.jsx's visibleTestModules.
+    useEffect(() => {
+        axios.get(`${API_URL}/public/test-config`)
+            .then(({ data }) => setEnabledTests(data))
+            .catch(() => setEnabledTests({}));
+    }, []);
+
+    const visibleGames = enabledTests
+        ? GAMES.filter((g) => enabledTests[g.key]?.enabled !== false)
+        : GAMES;
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email.trim());
 
@@ -115,7 +133,7 @@ const AdminLogin = () => {
 
                     {/* Game Cards Grid */}
                     <div className="al-games-grid">
-                        {GAMES.map((g, i) => (
+                        {visibleGames.map((g, i) => (
                             <div
                                 key={g.title}
                                 className="al-game-card"
@@ -252,7 +270,7 @@ const AdminLogin = () => {
 
                     {/* Game dots strip */}
                     <div className="al-game-dots">
-                        {GAMES.map(g => (
+                        {visibleGames.map(g => (
                             <div key={g.title} className="al-dot" style={{ background: g.color }} title={g.title} />
                         ))}
                     </div>
