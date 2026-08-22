@@ -7,8 +7,13 @@ import './ContactPage.css';
 const ContactPage = () => {
     const { language, t } = useLanguage();
 
-    const [info,      setInfo]      = useState(null);
-    const [infoErr,   setInfoErr]   = useState(false);
+    const [info,        setInfo]        = useState(null);
+    const [infoErr,     setInfoErr]     = useState(false);
+    // Languages beyond English/Hindi store their description as their own
+    // cms_pages row ('contact_<lang>') — same mechanism as Terms/Privacy's
+    // per-language pages (see CmsPublicPage.jsx). en/hi keep reading
+    // info.content/info.content_hi below, unchanged.
+    const [descOverride, setDescOverride] = useState(null);
     const [form,      setForm]      = useState({ name: '', email: '', phone: '', subject: '', message: '', website: '' });
     const [errors,    setErrors]    = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -20,6 +25,15 @@ const ContactPage = () => {
             .then(({ data }) => setInfo(data.info))
             .catch(() => setInfoErr(true));
     }, []);
+
+    useEffect(() => {
+        if (language === 'en' || language === 'hi') { setDescOverride(null); return; }
+        let cancelled = false;
+        axios.get(`${API_URL}/public/cms/contact_${language}`)
+            .then(({ data }) => { if (!cancelled) setDescOverride(data.page?.content || null); })
+            .catch(() => { if (!cancelled) setDescOverride(null); });
+        return () => { cancelled = true; };
+    }, [language]);
 
     useEffect(() => {
         document.title = t('contact.docTitle');
@@ -88,7 +102,7 @@ const ContactPage = () => {
                                 dangerouslySetInnerHTML={{
                                     __html: (language === 'hi' && info.content_hi)
                                         ? info.content_hi
-                                        : info.content
+                                        : (descOverride || info.content)
                                 }}
                             />
                         </div>

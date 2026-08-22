@@ -118,6 +118,8 @@ const TicketDetailPanel = ({ ticketId, onClose, onRefreshList }) => {
     const [saving,    setSaving]   = useState(false);
     const [sending,   setSending]  = useState(false);
     const [toast,     setToast]    = useState(null);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [sharing,        setSharing]        = useState(false);
     const fileRef   = useRef(null);
     const threadRef = useRef(null);
 
@@ -153,6 +155,20 @@ const TicketDetailPanel = ({ ticketId, onClose, onRefreshList }) => {
             showToast('Failed to update status.', 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const shareStatus = async () => {
+        setSharing(true);
+        try {
+            const { data } = await axiosAdmin.post(`/admin/tickets/${ticketId}/share-status`);
+            setShareModalOpen(false);
+            showToast(data.message || 'Status shared with customer.', data.success ? 'success' : 'error');
+        } catch (err) {
+            setShareModalOpen(false);
+            showToast(err.response?.data?.error || 'Failed to share status.', 'error');
+        } finally {
+            setSharing(false);
         }
     };
 
@@ -227,6 +243,12 @@ const TicketDetailPanel = ({ ticketId, onClose, onRefreshList }) => {
                             disabled={saving || status === ticket.status}
                         >
                             {saving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button
+                            className="ahs-share-status-btn"
+                            onClick={() => setShareModalOpen(true)}
+                        >
+                            📤 Share Status with Customer
                         </button>
                     </div>
 
@@ -311,6 +333,28 @@ const TicketDetailPanel = ({ ticketId, onClose, onRefreshList }) => {
                 </>
             ) : (
                 <div className="ahs-error">Failed to load ticket.</div>
+            )}
+
+            {shareModalOpen && (
+                <div className="admin-modal-overlay" onClick={() => !sharing && setShareModalOpen(false)}>
+                    <div className="admin-modal" onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <div className="admin-modal-icon">📤</div>
+                            <div>
+                                <div className="admin-modal-title">Share Ticket Status</div>
+                                <div className="admin-modal-subtitle">Are you sure you want to share the current status of this ticket with the customer?</div>
+                            </div>
+                        </div>
+                        <div className="admin-modal-actions">
+                            <button className="admin-btn admin-btn-ghost" onClick={() => setShareModalOpen(false)} disabled={sharing}>
+                                Cancel
+                            </button>
+                            <button className="admin-btn admin-btn-primary" onClick={shareStatus} disabled={sharing}>
+                                {sharing ? 'Sending…' : 'OK, Send Notification'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -778,7 +822,9 @@ const ContentTab = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MAIN AdminHelpSupport
+// MAIN AdminHelpSupport — rendered as the "Support" tab inside AdminMeta
+// (client/src/pages/AdminMeta.jsx); no own <main>/shell wrapper since the
+// Meta page's sidebar layout supplies the surrounding padding/background.
 // ══════════════════════════════════════════════════════════════════════════════
 const AdminHelpSupport = () => {
     const [activeTab,      setActiveTab]      = useState('tickets'); // 'tickets' | 'content'
@@ -786,7 +832,7 @@ const AdminHelpSupport = () => {
     const listRefreshRef = useRef(null);
 
     return (
-        <main className="admin-main ahs-shell">
+        <>
             {/* Top tab bar */}
             <div className="ahs-tab-bar">
                 <button
@@ -819,7 +865,7 @@ const AdminHelpSupport = () => {
             ) : (
                 <ContentTab />
             )}
-        </main>
+        </>
     );
 };
 

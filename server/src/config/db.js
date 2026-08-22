@@ -1759,6 +1759,61 @@ const initDb = async () => {
       )
     `);
 
+    // Per-language overrides for a notification_templates row — a trigger
+    // with no row here for a given language just falls back to the base
+    // (English) subject/heading/body_html above (see emailService.getTemplate).
+    // This is what lets one trigger_key (e.g. 'contact_thank_you') cover every
+    // language instead of needing a separate _en/_hi/_mr/... trigger each.
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS notification_template_translations (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        trigger_key VARCHAR(100) NOT NULL,
+        language    VARCHAR(10)  NOT NULL,
+        subject     VARCHAR(500) NOT NULL,
+        heading     VARCHAR(255) NOT NULL,
+        body_html   LONGTEXT NOT NULL,
+        updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_trigger_lang (trigger_key, language),
+        FOREIGN KEY (trigger_key) REFERENCES notification_templates(trigger_key) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    // One-time migration: the Contact Form "Thank You" email used to be two
+    // separate triggers (contact_thank_you_en / contact_thank_you_hi), which
+    // showed up as two rows to manage in Settings → Notifications for what is
+    // really one email. Merge them into a single 'contact_thank_you' trigger,
+    // moving the Hindi row's live content into the translations table above
+    // instead of discarding it. Safe to run on every restart — it's a no-op
+    // once 'contact_thank_you' exists (fresh installs seed it directly below).
+    const [[alreadyMerged]] = await connection.query(
+      "SELECT id FROM notification_templates WHERE trigger_key = 'contact_thank_you'"
+    );
+    if (!alreadyMerged) {
+      const [[legacyEnRow]] = await connection.query(
+        "SELECT * FROM notification_templates WHERE trigger_key = 'contact_thank_you_en'"
+      );
+      if (legacyEnRow) {
+        const [[legacyHiRow]] = await connection.query(
+          "SELECT * FROM notification_templates WHERE trigger_key = 'contact_thank_you_hi'"
+        );
+        await connection.query(
+          `UPDATE notification_templates
+           SET trigger_key = 'contact_thank_you', trigger_label = 'Contact Form – Thank You',
+               description = 'Sent to the sender after submitting the Contact Us form. Edit additional languages from this notification\\'s own screen.'
+           WHERE trigger_key = 'contact_thank_you_en'`
+        );
+        if (legacyHiRow) {
+          await connection.query(
+            `INSERT INTO notification_template_translations (trigger_key, language, subject, heading, body_html)
+             VALUES ('contact_thank_you', 'hi', ?, ?, ?)
+             ON DUPLICATE KEY UPDATE subject = VALUES(subject), heading = VALUES(heading), body_html = VALUES(body_html)`,
+            [legacyHiRow.subject, legacyHiRow.heading, legacyHiRow.body_html]
+          );
+          await connection.query("DELETE FROM notification_templates WHERE trigger_key = 'contact_thank_you_hi'");
+        }
+      }
+    }
+
     // Bridged rows start from whatever the legacy tables are already set to,
     // so upgrading an existing install never silently flips an email on/off.
     const [[helpEmailRow]] = await connection.query('SELECT send_user_email, send_admin_email, send_on_admin_reply, send_on_user_reply FROM help_email_settings WHERE id = 1');
@@ -1935,8 +1990,37 @@ const initDb = async () => {
         available_variables: ['ticket_id', 'status_label'], bridged_setting: 'help_email_settings.send_user_email', recipient_note: null,
       },
       {
-        trigger_key: 'contact_thank_you_en', trigger_label: 'Contact Form – Thank You (English)', category: 'Contact Form',
-        description: 'Sent to the sender after submitting the Contact Us form (English).',
+        // Manual "Share Status with Customer" button on the Ticket Details
+        // page — distinct from ticket_status_changed above, which fires
+        // automatically only when status actually changes. This one re-sends
+        // whatever the current status is, whenever an admin clicks it.
+        // Deliberately not in notification_template_translations — always
+        // English regardless of the customer's selected language.
+        trigger_key: 'ticket_status_shared', trigger_label: 'Support Ticket – Status Shared (Manual)', category: 'Support Ticket',
+        description: 'Sent when an admin clicks "Share Status with Customer" on the Ticket Details page. Always English, regardless of the customer\'s selected language.',
+        status: 'on',
+        subject: 'Update on Your Support Ticket {{ticket_id}}',
+        heading: 'Ticket Status: {{status_label}}',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Here's the current status of your support ticket.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Ticket ID</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:15px;font-weight:800;color:#4f46e5">{{ticket_id}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{subject}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Status</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#16a34a;font-weight:700">{{status_label}}</td></tr>
+        </table>
+        <p style="color:#374151;font-size:14px;line-height:1.6">{{status_description}}</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you have any questions, just reply to your ticket from the Help &amp; Support page.</p>`,
+        available_variables: ['ticket_id', 'subject', 'status_label', 'status_description', 'email'], bridged_setting: null, recipient_note: null,
+      },
+      {
+        // One trigger for every language now — see the migration above and
+        // notification_template_translations. This row is the English/
+        // default content; other languages are edited from this same
+        // notification's screen (Settings → Notifications) as overrides.
+        trigger_key: 'contact_thank_you', trigger_label: 'Contact Form – Thank You', category: 'Contact Form',
+        description: 'Sent to the sender after submitting the Contact Us form. Edit additional languages from this notification\'s own screen.',
         status: onOff(contactEmailRow?.send_sender_email ?? 1),
         subject: 'Thank You for Reaching Out – Sangian Support',
         heading: 'Thank You, {{name}}!',
@@ -1946,20 +2030,6 @@ const initDb = async () => {
         </div>
         <p style="color:#374151;font-size:14px;line-height:1.6">We typically respond within <strong>1–2 business days</strong> at the email address you provided.</p>
         <p style="color:#6b7280;font-size:13px;line-height:1.6">In the meantime, feel free to explore our assessment platform or check our Help &amp; Support section for quick answers.</p>`,
-        available_variables: ['name'], bridged_setting: 'contact_email_settings.send_sender_email', recipient_note: null,
-      },
-      {
-        trigger_key: 'contact_thank_you_hi', trigger_label: 'Contact Form – Thank You (Hindi)', category: 'Contact Form',
-        description: 'Sent to the sender after submitting the Contact Us form (Hindi).',
-        status: onOff(contactEmailRow?.send_sender_email ?? 1),
-        subject: 'आपसे संपर्क करने के लिए धन्यवाद – संगियान सपोर्ट',
-        heading: 'धन्यवाद, {{name}}!',
-        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">आपका संदेश कम्युनिटी एम्पावरमेंट लैब टीम को सफलतापूर्वक प्राप्त हो गया है।</p>
-        <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid #4f46e5">
-          <p style="margin:0;color:#4f46e5;font-size:15px;font-weight:700">✅ आपका संदेश सफलतापूर्वक भेज दिया गया है।</p>
-        </div>
-        <p style="color:#374151;font-size:14px;line-height:1.6">हम आमतौर पर <strong>1–2 कार्य दिवसों</strong> के भीतर आपके ईमेल पते पर उत्तर देते हैं।</p>
-        <p style="color:#6b7280;font-size:13px;line-height:1.6">इस दौरान, त्वरित उत्तरों के लिए हमारा सहायता और समर्थन अनुभाग देखें।</p>`,
         available_variables: ['name'], bridged_setting: 'contact_email_settings.send_sender_email', recipient_note: null,
       },
       {
@@ -1985,6 +2055,31 @@ const initDb = async () => {
         available_variables: ['name', 'email', 'phone', 'subject', 'message', 'admin_panel_url'], bridged_setting: 'contact_email_settings.send_admin_email',
         recipient_note: 'Sent to the admin address configured in Settings → Contact Us Email.',
       },
+      {
+        // Manual "Share Status with Customer" button on a Contact Us
+        // message's detail panel (Meta → Contact Us → Message Inbox) —
+        // same idea as ticket_status_shared, for the 3-value contact_messages
+        // status enum. Always English — not in
+        // notification_template_translations, deliberately not
+        // language-specific.
+        trigger_key: 'contact_status_shared', trigger_label: 'Contact Form – Status Shared (Manual)', category: 'Contact Form',
+        description: 'Sent when an admin clicks "Share Status with Customer" on a Contact Us message. Always English, regardless of the customer\'s selected language.',
+        status: 'on',
+        subject: 'Update on Your Message to Sangian Support',
+        heading: 'Status: {{status_label}}',
+        body_html: `<p style="color:#374151;font-size:15px;line-height:1.6">Hi {{name}}, here's the current status of your message to us.</p>
+        <table style="width:100%;margin:20px 0;border-collapse:collapse">
+          <tr><td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;width:120px">Reference</td>
+              <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-top:none;font-size:15px;font-weight:800;color:#4f46e5">#{{reference}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Subject</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#1f2937">{{subject}}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af">Status</td>
+              <td style="padding:10px 14px;border:1px solid #e5e7eb;border-top:none;font-size:14px;color:#16a34a;font-weight:700">{{status_label}}</td></tr>
+        </table>
+        <p style="color:#374151;font-size:14px;line-height:1.6">{{status_description}}</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">If you have any questions, just reply to this email or reach out via our Contact Us page.</p>`,
+        available_variables: ['reference', 'name', 'subject', 'status_label', 'status_description', 'email'], bridged_setting: null, recipient_note: null,
+      },
     ];
 
     for (const t of notificationSeeds) {
@@ -1995,6 +2090,24 @@ const initDb = async () => {
         [t.trigger_key, t.trigger_label, t.category, t.description, t.status, t.subject, t.heading, t.body_html, JSON.stringify(t.available_variables), t.bridged_setting, t.recipient_note]
       );
     }
+
+    // Seed the Hindi translation for the Contact Form thank-you email on a
+    // fresh install (an upgrade instead carries its real Hindi content over
+    // via the migration above, so this INSERT IGNORE is a no-op there).
+    await connection.query(
+      `INSERT IGNORE INTO notification_template_translations (trigger_key, language, subject, heading, body_html)
+       VALUES ('contact_thank_you', 'hi', ?, ?, ?)`,
+      [
+        'आपसे संपर्क करने के लिए धन्यवाद – संगियान सपोर्ट',
+        'धन्यवाद, {{name}}!',
+        `<p style="color:#374151;font-size:15px;line-height:1.6">आपका संदेश कम्युनिटी एम्पावरमेंट लैब टीम को सफलतापूर्वक प्राप्त हो गया है।</p>
+        <div style="margin:20px 0;padding:16px 20px;background:#eef2ff;border-radius:10px;border-left:4px solid #4f46e5">
+          <p style="margin:0;color:#4f46e5;font-size:15px;font-weight:700">✅ आपका संदेश सफलतापूर्वक भेज दिया गया है।</p>
+        </div>
+        <p style="color:#374151;font-size:14px;line-height:1.6">हम आमतौर पर <strong>1–2 कार्य दिवसों</strong> के भीतर आपके ईमेल पते पर उत्तर देते हैं।</p>
+        <p style="color:#6b7280;font-size:13px;line-height:1.6">इस दौरान, त्वरित उत्तरों के लिए हमारा सहायता और समर्थन अनुभाग देखें।</p>`,
+      ]
+    );
 
     // Create test_elements table for managing static assets (splash screens, etc.)
     await connection.query(`

@@ -81,9 +81,21 @@ const send = async (to, subject, html, senderOverride) => {
 // before anything reaches send(). See server/src/config/db.js for the
 // table/seed and server/src/controllers/notificationController.js for the
 // CRUD behind the admin UI.
-const getTemplate = async (triggerKey) => {
+// status/sender/available_variables always come from the base (English) row
+// — only subject/heading/body_html can be overridden per language, via
+// notification_template_translations. No override row for a language (or no
+// `language` passed) just falls back to the base content, same as the
+// Contact Us page description / CmsPublicPage.jsx pattern.
+const getTemplate = async (triggerKey, language) => {
     const [[row]] = await pool.query('SELECT * FROM notification_templates WHERE trigger_key = ?', [triggerKey]);
-    return row || null;
+    if (!row) return null;
+    if (!language || language === 'en') return row;
+
+    const [[translation]] = await pool.query(
+        'SELECT subject, heading, body_html FROM notification_template_translations WHERE trigger_key = ? AND language = ?',
+        [triggerKey, language]
+    );
+    return translation ? { ...row, ...translation } : row;
 };
 
 const renderTemplate = (str, vars) => (str || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
@@ -91,8 +103,8 @@ const renderTemplate = (str, vars) => (str || '').replace(/\{\{\s*(\w+)\s*\}\}/g
     return vars[key] === null || vars[key] === undefined ? '' : String(vars[key]);
 });
 
-const sendFromTemplate = async (triggerKey, to, vars) => {
-    const template = await getTemplate(triggerKey);
+const sendFromTemplate = async (triggerKey, to, vars, language) => {
+    const template = await getTemplate(triggerKey, language);
     if (!template) {
         console.warn(`📧 [EMAIL SKIPPED — unknown trigger "${triggerKey}"] To: ${to}`);
         return { delivered: false, reason: 'template_not_found' };
@@ -175,9 +187,57 @@ const sendStatusChanged = (email, ticket_id, status) => sendFromTemplate(
     'ticket_status_changed', email, { ticket_id, status_label: STATUS_LABELS[status] || status }
 );
 
+// ── Status shared with customer (admin-triggered, English only) ──────────────
+// "Share Status with Customer" button on the Ticket Details page — unlike
+// sendStatusChanged (which fires automatically when status actually
+// changes), this is a manual re-send of whatever the current status already
+// is. No `language` arg is ever passed to sendFromTemplate here, so it
+// always resolves the base (English) row — deliberately not
+// language-specific, per the feature spec.
+const STATUS_DESCRIPTIONS = {
+    open:             'Your ticket has been received and is in our queue.',
+    in_progress:      'Our support team is actively working on your ticket.',
+    waiting_for_user: "We're waiting for additional information from you to proceed.",
+    resolved:         'Your ticket has been resolved. If you need further assistance, feel free to reply.',
+    closed:           'This ticket has been closed.',
+};
+
+const sendTicketStatusShared = (email, { ticket_id, subject, status }) => sendFromTemplate(
+    'ticket_status_shared', email, {
+        ticket_id, subject,
+        status_label:       STATUS_LABELS[status] || status,
+        status_description: STATUS_DESCRIPTIONS[status] || '',
+        email,
+    }
+);
+
+// ── Contact form — status shared with customer (admin-triggered, English
+// only) ────────────────────────────────────────────────────────────────────
+// "Share Status with Customer" on a Contact Us message's detail panel — same
+// idea as sendTicketStatusShared above, for contact_messages' own 3-value
+// status enum instead of the ticket system's 5-value one.
+const CONTACT_STATUS_LABELS = { new: 'New', in_progress: 'In Progress', resolved: 'Resolved' };
+const CONTACT_STATUS_DESCRIPTIONS = {
+    new:         'Your message has been received and is in our queue.',
+    in_progress: 'Our team is actively working on your request.',
+    resolved:    'Your request has been resolved. If you need anything else, feel free to reach out again.',
+};
+
+const sendContactStatusShared = (email, { reference, name, subject, status }) => sendFromTemplate(
+    'contact_status_shared', email, {
+        reference, name, subject,
+        status_label:       CONTACT_STATUS_LABELS[status] || status,
+        status_description: CONTACT_STATUS_DESCRIPTIONS[status] || '',
+        email,
+    }
+);
+
 // ── Contact form — thank-you to sender ───────────────────────────────────────
+// One trigger for every language now (see notification_template_translations)
+// — `lang` is whichever language the sender had selected on the Contact Us
+// page; an unrecognized/untranslated code just falls back to English.
 const sendContactThankYou = (email, name, lang = 'en') => sendFromTemplate(
-    lang === 'hi' ? 'contact_thank_you_hi' : 'contact_thank_you_en', email, { name }
+    'contact_thank_you', email, { name }, lang
 );
 
 // ── Contact form — admin notification ────────────────────────────────────────
@@ -188,4 +248,4 @@ const sendContactAdminNotification = (adminEmail, { name, email, phone, subject,
     }
 );
 
-module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendOrgApproved, sendOrgRejected, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendContactThankYou, sendContactAdminNotification };
+module.exports = { sendOtp, sendIndividualWelcome, sendOrgRegistrationReceived, sendOrgApproved, sendOrgRejected, sendTicketCreated, sendNewTicketAdmin, sendAdminReply, sendUserReply, sendStatusChanged, sendTicketStatusShared, sendContactThankYou, sendContactAdminNotification, sendContactStatusShared };

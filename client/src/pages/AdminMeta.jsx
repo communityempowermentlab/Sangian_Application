@@ -2,11 +2,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { useAdminNotification } from '../contexts/AdminNotificationContext';
+import { getLanguageIcon } from '../utils/languageIcons';
+import AdminHelpSupport from './AdminHelpSupport';
 import './AdminMeta.css';
 
-// Terms & Conditions, Privacy Policy, Help & Support, and Organization
-// Types moved to Settings (AdminSettings.jsx) — Contact Us and the Analysis
-// placeholder stay here since only those four were asked to move.
+// Terms & Conditions, Privacy Policy, Help & Support (FAQ content), and
+// Organization Types moved to Settings (AdminSettings.jsx) — Contact Us and
+// the Analysis placeholder stay here since only those four were asked to
+// move. The Support ticketing module (formerly its own /admin/help-support
+// nav item) moved in here too, as its own sidebar tab.
 const SIDEBAR_ITEMS = [
     {
         group: 'Analytics',
@@ -18,6 +22,12 @@ const SIDEBAR_ITEMS = [
         group: 'Documents',
         items: [
             { key: 'contact', icon: '📬', label: 'Contact Us', type: 'contact' },
+        ],
+    },
+    {
+        group: 'Support',
+        items: [
+            { key: 'support', icon: '🎫', label: 'Support', type: 'support' },
         ],
     },
 ];
@@ -37,13 +47,59 @@ const TOOLBAR = [
     { cmd: 'removeFormat',        label: '✕',  title: 'Clear formatting' },
 ];
 
+// Shared by every rich-text editor on this page (Terms/Privacy CmsEditor,
+// each language of the Contact Us page description) — one TOOLBAR, one
+// place that renders it against whichever exec(cmd, val) the caller wires up.
+const RichTextToolbar = ({ onCmd }) => (
+    <div className="meta-editor-toolbar">
+        {TOOLBAR.map((item, i) =>
+            item.sep ? <div key={i} className="meta-toolbar-sep" /> : (
+                <button key={item.cmd + (item.val ?? '')} title={item.title}
+                    className="meta-toolbar-btn" style={item.style}
+                    onMouseDown={e => { e.preventDefault(); onCmd(item.cmd, item.val ?? null); }}>
+                    {item.label}
+                </button>
+            )
+        )}
+    </div>
+);
+
+// Fallback shown before /admin/translations/languages resolves (or if the
+// session lacks 'multilingual' permission to call it) — matches exactly
+// what this editor supported before multilingual descriptions existed, so
+// nothing regresses for sessions that never get the full list.
+const FALLBACK_DESC_LANGUAGES = [
+    { code: 'english', shortCode: 'en', label: 'English' },
+    { code: 'hindi',   shortCode: 'hi', label: 'Hindi'    },
+];
+
 const BILINGUAL_CMS_PAGES = ['terms', 'privacy'];
+// Mirrors server/translations/language-settings.json (English + the 22
+// scheduled Indian languages) — keep in sync if that file's language list changes.
 const CMS_LANGUAGES = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'hi', label: 'Hindi',   flag: '🇮🇳' },
-    { code: 'mr', label: 'Marathi', flag: '🇮🇳' },
-    { code: 'te', label: 'Telugu',  flag: '🇮🇳' },
-    { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
+    { code: 'en',  label: 'English',   flag: '🇬🇧' },
+    { code: 'hi',  label: 'Hindi',     flag: '🇮🇳' },
+    { code: 'as',  label: 'Assamese',  flag: '🇮🇳' },
+    { code: 'bn',  label: 'Bengali',   flag: '🇮🇳' },
+    { code: 'brx', label: 'Bodo',      flag: '🇮🇳' },
+    { code: 'doi', label: 'Dogri',     flag: '🇮🇳' },
+    { code: 'gu',  label: 'Gujarati',  flag: '🇮🇳' },
+    { code: 'kn',  label: 'Kannada',   flag: '🇮🇳' },
+    { code: 'ks',  label: 'Kashmiri',  flag: '🇮🇳' },
+    { code: 'kok', label: 'Konkani',   flag: '🇮🇳' },
+    { code: 'mai', label: 'Maithili',  flag: '🇮🇳' },
+    { code: 'ml',  label: 'Malayalam', flag: '🇮🇳' },
+    { code: 'mni', label: 'Manipuri',  flag: '🇮🇳' },
+    { code: 'mr',  label: 'Marathi',   flag: '🇮🇳' },
+    { code: 'ne',  label: 'Nepali',    flag: '🇮🇳' },
+    { code: 'or',  label: 'Odia',      flag: '🇮🇳' },
+    { code: 'pa',  label: 'Punjabi',   flag: '🇮🇳' },
+    { code: 'sa',  label: 'Sanskrit',  flag: '🇮🇳' },
+    { code: 'sat', label: 'Santali',   flag: '🇮🇳' },
+    { code: 'sd',  label: 'Sindhi',    flag: '🇮🇳' },
+    { code: 'ta',  label: 'Tamil',     flag: '🇮🇳' },
+    { code: 'te',  label: 'Telugu',    flag: '🇮🇳' },
+    { code: 'ur',  label: 'Urdu',      flag: '🇮🇳' },
 ];
 
 // Named exports — Terms/Privacy (this component), Help & Support, and
@@ -95,7 +151,19 @@ export const CmsEditor = ({ pageKey }) => {
                 }
                 pendingContent.current = p.content ?? '';
             })
-            .catch(() => { pendingContent.current = ''; })
+            .catch(() => {
+                // No content saved for this language yet — start from a blank slate
+                // instead of leaving the previous language's title on screen.
+                setTitle('');
+                if (editorLang === 'en') {
+                    setStatus(1);
+                    setMetaTitle('');
+                    setMetaDescription('');
+                    setMetaKeywords('');
+                    setSlug('');
+                }
+                pendingContent.current = '';
+            })
             .finally(() => setLoading(false));
     }, [activeKey]);
 
@@ -352,7 +420,52 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
         title: '', contact_email: '', contact_phone: '', contact_address: '', contact_map_link: '', status: 1,
     });
 
+    // ── Page description — multilingual (en/hi keep their dedicated
+    // contact_info columns above; every other enabled language is stored as
+    // its own cms_pages row ('contact_<shortCode>'), same mechanism the
+    // Terms/Privacy CmsEditor already uses. ──────────────────────────────────
+    const [descLangs, setDescLangs] = useState(FALLBACK_DESC_LANGUAGES);
+    const [descLang,  setDescLang]  = useState('en');
+    const extraEditorRef    = useRef(null);
+    const extraContentCache = useRef({});   // { [shortCode]: html }
+    const extraPending      = useRef('');
+    const [extraLoading, setExtraLoading] = useState(false);
+
     const showInfoToast = (type, msg) => { setInfoToast({ type, msg }); setTimeout(() => setInfoToast(null), 3500); };
+
+    // Full enabled-language list from Settings ▸ Languages. Staff sessions
+    // without the 'multilingual' grant get a 403 here — that's fine, they
+    // just keep the English/Hindi-only fallback rather than erroring out.
+    useEffect(() => {
+        axiosAdmin.get('/admin/translations/languages')
+            .then(({ data }) => {
+                const enabled = (data.languages || []).filter(l => l.enabled);
+                if (enabled.length) setDescLangs(enabled);
+            })
+            .catch(() => {});
+    }, []);
+
+    // Load the active extra-language editor's content (en/hi load as part of
+    // the /admin/contact-info fetch below instead).
+    useEffect(() => {
+        if (descLang === 'en' || descLang === 'hi') return;
+        if (extraContentCache.current[descLang] !== undefined) {
+            extraPending.current = extraContentCache.current[descLang];
+            if (extraEditorRef.current) extraEditorRef.current.innerHTML = extraPending.current;
+            return;
+        }
+        setExtraLoading(true);
+        axiosAdmin.get(`/cms/contact_${descLang}`)
+            .then(({ data }) => { extraContentCache.current[descLang] = data.page?.content || ''; })
+            .catch(() => { extraContentCache.current[descLang] = ''; })
+            .finally(() => setExtraLoading(false));
+    }, [descLang]);
+
+    useEffect(() => {
+        if (descLang === 'en' || descLang === 'hi' || extraLoading) return;
+        extraPending.current = extraContentCache.current[descLang] || '';
+        if (extraEditorRef.current) extraEditorRef.current.innerHTML = extraPending.current;
+    }, [extraLoading, descLang]);
 
     useEffect(() => {
         if (tab !== 'info') return;
@@ -375,24 +488,59 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
             .finally(() => setInfoLoading(false));
     }, [tab]);
 
+    // Only the active language's editor is mounted at a time (see the
+    // description tab bar below), so a fresh DOM node needs its cached
+    // content re-applied on *every* switch into en/hi, not just on the
+    // initial load.
     useEffect(() => {
-        if (!infoLoading) {
-            if (infoEditorRef.current)   infoEditorRef.current.innerHTML   = infoContent.current;
-            if (infoEditorHiRef.current) infoEditorHiRef.current.innerHTML = infoContentHi.current;
-        }
-    }, [infoLoading]);
+        if (infoLoading) return;
+        if (descLang === 'en' && infoEditorRef.current)   infoEditorRef.current.innerHTML   = infoContent.current;
+        if (descLang === 'hi' && infoEditorHiRef.current) infoEditorHiRef.current.innerHTML = infoContentHi.current;
+    }, [infoLoading, descLang]);
 
-    const execInfoCmd   = useCallback((cmd, val = null) => { infoEditorRef.current?.focus();   document.execCommand(cmd, false, val); }, []);
-    const execInfoCmdHi = useCallback((cmd, val = null) => { infoEditorHiRef.current?.focus(); document.execCommand(cmd, false, val); }, []);
+    const execInfoCmd    = useCallback((cmd, val = null) => { infoEditorRef.current?.focus();   document.execCommand(cmd, false, val); }, []);
+    const execInfoCmdHi  = useCallback((cmd, val = null) => { infoEditorHiRef.current?.focus(); document.execCommand(cmd, false, val); }, []);
+    const execExtraCmd   = useCallback((cmd, val = null) => { extraEditorRef.current?.focus();  document.execCommand(cmd, false, val); }, []);
+
+    // Switching tabs unmounts whichever editor was showing — capture its
+    // live edits into the matching cache first, or they're lost the moment
+    // React tears down that DOM node.
+    const switchDescLang = (nextLang) => {
+        if (nextLang === descLang) return;
+        if (descLang === 'en' && infoEditorRef.current) {
+            infoContent.current = infoEditorRef.current.innerHTML;
+        } else if (descLang === 'hi' && infoEditorHiRef.current) {
+            infoContentHi.current = infoEditorHiRef.current.innerHTML;
+        } else if (descLang !== 'en' && descLang !== 'hi' && extraEditorRef.current) {
+            extraContentCache.current[descLang] = extraEditorRef.current.innerHTML;
+        }
+        setDescLang(nextLang);
+    };
 
     const saveContactInfo = async () => {
         setInfoSaving(true);
         try {
+            // The active tab's editor is live in the DOM; every other
+            // language's last-known value lives in its cache ref instead
+            // (see switchDescLang) — read whichever is authoritative.
+            const liveEn = descLang === 'en' ? infoEditorRef.current?.innerHTML   : undefined;
+            const liveHi = descLang === 'hi' ? infoEditorHiRef.current?.innerHTML : undefined;
             await axiosAdmin.post('/admin/contact-info', {
                 ...infoFields,
-                content:    infoEditorRef.current?.innerHTML   ?? '',
-                content_hi: infoEditorHiRef.current?.innerHTML ?? '',
+                content:    liveEn ?? infoContent.current   ?? '',
+                content_hi: liveHi ?? infoContentHi.current ?? '',
             });
+            // The currently-open extra-language tab (anything past en/hi)
+            // saves alongside it, as its own cms_pages row.
+            if (descLang !== 'en' && descLang !== 'hi') {
+                const html = extraEditorRef.current?.innerHTML ?? '';
+                extraContentCache.current[descLang] = html;
+                await axiosAdmin.post('/cms/update', {
+                    page_key: `contact_${descLang}`,
+                    title:    infoFields.title || 'Contact Us',
+                    content:  html,
+                });
+            }
             showInfoToast('success', 'Contact info saved!');
         } catch { showInfoToast('error', 'Failed to save.'); }
         finally { setInfoSaving(false); }
@@ -421,6 +569,26 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
         setMsgs(m => m.map(x => x.id === id ? { ...x, status } : x));
         if (selected?.id === id) setSelected(s => ({ ...s, status }));
         onStatusChange?.();
+    };
+
+    // ── Share status with customer ──────────────────────────────────────────
+    const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [sharing,        setSharing]        = useState(false);
+    const [shareToast,     setShareToast]     = useState(null);
+    const showShareToast = (type, msg) => { setShareToast({ type, msg }); setTimeout(() => setShareToast(null), 3500); };
+
+    const shareStatus = async () => {
+        setSharing(true);
+        try {
+            const { data } = await axiosAdmin.post(`/admin/contact-messages/${selected.id}/share-status`);
+            setShareModalOpen(false);
+            showShareToast(data.success ? 'success' : 'error', data.message || 'Status shared with customer.');
+        } catch (err) {
+            setShareModalOpen(false);
+            showShareToast('error', err.response?.data?.message || 'Failed to share status.');
+        } finally {
+            setSharing(false);
+        }
     };
 
     return (
@@ -506,47 +674,49 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
                             </div>
                         </div>
 
-                        {/* Page description editor — English */}
+                        {/* Page description editor — one language at a time, tab bar
+                            sourced from Settings ▸ Languages so every enabled
+                            language gets an editor, not just English/Hindi. */}
                         <div className="meta-seo-section">
-                            <div className="meta-seo-toggle" style={{ cursor: 'default' }}>
-                                🇬🇧 Page Description (English) <span className="meta-seo-toggle-hint">Shown when language is set to English</span>
+                            <div className="meta-lang-bar" style={{ padding: '10px 12px 0', border: 'none' }}>
+                                <span className="meta-lang-label">Page Description:</span>
+                                <div className="meta-lang-toggle" style={{ flexWrap: 'wrap' }}>
+                                    {descLangs.map(l => (
+                                        <button key={l.shortCode}
+                                            className={`meta-lang-btn ${descLang === l.shortCode ? 'active' : ''}`}
+                                            onClick={() => switchDescLang(l.shortCode)}>
+                                            {getLanguageIcon(l.shortCode)} {l.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <span className="meta-lang-note">Shown when a visitor's site language matches this tab.</span>
                             </div>
                             <div className="meta-seo-fields" style={{ padding: '10px 12px 12px' }}>
-                                <div className="meta-editor-toolbar">
-                                    {TOOLBAR.map((item, i) =>
-                                        item.sep ? <div key={i} className="meta-toolbar-sep" /> : (
-                                            <button key={item.cmd + (item.val ?? '')} title={item.title}
-                                                className="meta-toolbar-btn" style={item.style}
-                                                onMouseDown={e => { e.preventDefault(); execInfoCmd(item.cmd, item.val ?? null); }}>
-                                                {item.label}
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                                <div ref={infoEditorRef} className="meta-editor-body" style={{ minHeight: '120px' }}
-                                    contentEditable suppressContentEditableWarning spellCheck />
-                            </div>
-                        </div>
-
-                        {/* Page description editor — Hindi */}
-                        <div className="meta-seo-section">
-                            <div className="meta-seo-toggle" style={{ cursor: 'default' }}>
-                                🇮🇳 Page Description (Hindi) <span className="meta-seo-toggle-hint">Shown when language is set to Hindi</span>
-                            </div>
-                            <div className="meta-seo-fields" style={{ padding: '10px 12px 12px' }}>
-                                <div className="meta-editor-toolbar">
-                                    {TOOLBAR.map((item, i) =>
-                                        item.sep ? <div key={i} className="meta-toolbar-sep" /> : (
-                                            <button key={item.cmd + (item.val ?? '')} title={item.title}
-                                                className="meta-toolbar-btn" style={item.style}
-                                                onMouseDown={e => { e.preventDefault(); execInfoCmdHi(item.cmd, item.val ?? null); }}>
-                                                {item.label}
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                                <div ref={infoEditorHiRef} className="meta-editor-body" style={{ minHeight: '120px' }}
-                                    contentEditable suppressContentEditableWarning spellCheck />
+                                {descLang === 'en' && (
+                                    <>
+                                        <RichTextToolbar onCmd={execInfoCmd} />
+                                        <div ref={infoEditorRef} className="meta-editor-body" style={{ minHeight: '120px' }}
+                                            contentEditable suppressContentEditableWarning spellCheck />
+                                    </>
+                                )}
+                                {descLang === 'hi' && (
+                                    <>
+                                        <RichTextToolbar onCmd={execInfoCmdHi} />
+                                        <div ref={infoEditorHiRef} className="meta-editor-body" style={{ minHeight: '120px' }}
+                                            contentEditable suppressContentEditableWarning spellCheck />
+                                    </>
+                                )}
+                                {descLang !== 'en' && descLang !== 'hi' && (
+                                    extraLoading ? (
+                                        <div className="meta-editor-loading"><div className="meta-spinner" /><span>Loading…</span></div>
+                                    ) : (
+                                        <>
+                                            <RichTextToolbar onCmd={execExtraCmd} />
+                                            <div ref={extraEditorRef} className="meta-editor-body" style={{ minHeight: '120px' }}
+                                                contentEditable suppressContentEditableWarning spellCheck />
+                                        </>
+                                    )
+                                )}
                             </div>
                         </div>
 
@@ -563,6 +733,12 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
             {/* ── Messages tab ────────────────────────────────────────── */}
             {tab === 'messages' && (
                 <div className="contact-msgs-wrap">
+                    {shareToast && (
+                        <div className={`meta-toast meta-toast--${shareToast.type}`}>
+                            {shareToast.type === 'success' ? '✅' : '❌'} {shareToast.msg}
+                        </div>
+                    )}
+
                     {/* Filter bar */}
                     <div className="contact-msgs-toolbar">
                         <div className="contact-msgs-filters">
@@ -645,6 +821,12 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
                                                 );
                                             })}
                                         </div>
+                                        <button
+                                            className="ahs-share-status-btn"
+                                            onClick={() => setShareModalOpen(true)}
+                                        >
+                                            📤 Share Status with Customer
+                                        </button>
                                     </div>
                                 </div>
                             ) : (
@@ -657,19 +839,33 @@ const ContactAdmin = ({ newMessageCount = 0, onStatusChange }) => {
                     )}
                 </div>
             )}
+
+            {shareModalOpen && (
+                <div className="admin-modal-overlay" onClick={() => !sharing && setShareModalOpen(false)}>
+                    <div className="admin-modal" onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <div className="admin-modal-icon">📤</div>
+                            <div>
+                                <div className="admin-modal-title">Share Ticket Status</div>
+                                <div className="admin-modal-subtitle">Are you sure you want to share the current status of this ticket with the customer?</div>
+                            </div>
+                        </div>
+                        <div className="admin-modal-actions">
+                            <button className="admin-btn admin-btn-ghost" onClick={() => setShareModalOpen(false)} disabled={sharing}>
+                                Cancel
+                            </button>
+                            <button className="admin-btn admin-btn-primary" onClick={shareStatus} disabled={sharing}>
+                                {sharing ? 'Sending…' : 'OK, Send Notification'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 // ── FAQ Editor ────────────────────────────────────────────────────────────────
-const FAQ_LANGUAGES = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'hi', label: 'Hindi',   flag: '🇮🇳' },
-    { code: 'mr', label: 'Marathi', flag: '🇮🇳' },
-    { code: 'te', label: 'Telugu',  flag: '🇮🇳' },
-    { code: 'kn', label: 'Kannada', flag: '🇮🇳' },
-];
-
 export const HelpFaqAdmin = () => {
     const [lang,    setLang]    = useState('en');
     const [title,   setTitle]   = useState('');
@@ -698,7 +894,7 @@ export const HelpFaqAdmin = () => {
                     setFaqs(Array.isArray(parsed) ? parsed : []);
                 } catch { setFaqs([]); }
             })
-            .catch(() => { setFaqs([]); })
+            .catch(() => { setTitle(''); setFaqs([]); })
             .finally(() => setLoading(false));
     }, [lang]);
 
@@ -760,7 +956,7 @@ export const HelpFaqAdmin = () => {
             <div className="meta-lang-bar" style={{ marginBottom: 16 }}>
                 <span className="meta-lang-label">Language:</span>
                 <div className="meta-lang-toggle">
-                    {FAQ_LANGUAGES.map(l => (
+                    {CMS_LANGUAGES.map(l => (
                         <button key={l.code} className={`meta-lang-btn ${lang === l.code ? 'active' : ''}`} onClick={() => setLang(l.code)}>{l.flag} {l.label}</button>
                     ))}
                 </div>
@@ -783,7 +979,7 @@ export const HelpFaqAdmin = () => {
 
             <div className="meta-faq-topbar">
                 <p className="meta-faq-hint">
-                    These FAQs appear on the public <strong>/help</strong> page ({lang === 'hi' ? 'Hindi' : 'English'}). Changes save immediately.
+                    These FAQs appear on the public <strong>/help</strong> page ({CMS_LANGUAGES.find(l => l.code === lang)?.label || lang}). Changes save immediately.
                 </p>
                 <button className="meta-faq-add-btn" onClick={openNew} disabled={saving}>+ Add FAQ</button>
             </div>
@@ -1003,7 +1199,7 @@ const PlaceholderPanel = ({ item }) => (
 const AdminMeta = () => {
     const { tabKey } = useParams();
     const navigate = useNavigate();
-    const { newMessageCount, refreshCount } = useAdminNotification();
+    const { newMessageCount, refreshCount, activeTicketCount } = useAdminNotification();
 
     const flatItems = SIDEBAR_ITEMS.flatMap(g => g.items);
     const activeItem = flatItems.find(i => i.key === tabKey);
@@ -1033,6 +1229,11 @@ const AdminMeta = () => {
                                             {newMessageCount > 99 ? '99+' : newMessageCount}
                                         </span>
                                     )}
+                                    {item.key === 'support' && activeTicketCount > 0 && (
+                                        <span className="meta-sidebar-badge">
+                                            {activeTicketCount > 99 ? '99+' : activeTicketCount}
+                                        </span>
+                                    )}
                                 </span>
                             </button>
                         ))}
@@ -1047,6 +1248,7 @@ const AdminMeta = () => {
                         <h2 className="meta-main-title">{activeItem.label}</h2>
                         <p className="meta-main-sub">
                             {activeItem.type === 'contact' ? 'Manage contact info, page description, and form submissions.' :
+                             activeItem.type === 'support' ? 'Manage support tickets, and the Help page\'s content and FAQ.' :
                              'Reserved for future development.'}
                         </p>
                     </div>
@@ -1054,6 +1256,8 @@ const AdminMeta = () => {
 
                 {activeItem.type === 'contact'
                     ? <ContactAdmin key="contact" newMessageCount={newMessageCount} onStatusChange={refreshCount} />
+                    : activeItem.type === 'support'
+                    ? <AdminHelpSupport key="support" />
                     : <PlaceholderPanel item={activeItem} />
                 }
             </main>

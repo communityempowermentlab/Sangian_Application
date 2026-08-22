@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axiosAdmin from '../services/axiosAdmin';
+import { getLanguageIcon } from '../utils/languageIcons';
+
+const FALLBACK_LANGUAGES = [{ code: 'english', shortCode: 'en', label: 'English' }];
+const EMPTY_TRANSLATION = { subject: '', heading: '', body_html: '' };
+
+// Triggers that are deliberately always-English regardless of the
+// recipient's selected language (the sender never passes a `language` to
+// sendFromTemplate for these) — hiding the language tabs here avoids an
+// admin adding a translation that would silently never be used.
+const NON_TRANSLATABLE_TRIGGERS = ['ticket_status_shared', 'contact_status_shared'];
 
 // Sample values used only for the client-side "Preview" render — never sent
 // anywhere, just substituted into {{var}} placeholders so an Admin can see
@@ -40,16 +50,40 @@ const NotificationEditPanel = ({ triggerKey, onBack, onSaved }) => {
     const [showPreview, setShowPreview] = useState(false);
     const [toast, setToast] = useState(null);
 
+    // Every trigger can carry per-language overrides for subject/heading/body
+    // (see notification_template_translations) — English above is always the
+    // base row; other languages only need to fill these three fields in.
+    const [languages,    setLanguages]    = useState(FALLBACK_LANGUAGES);
+    const [activeLang,   setActiveLang]   = useState('en');
+    const [translations, setTranslations] = useState({}); // { [shortCode]: {subject,heading,body_html} }
+    const [transSaving,  setTransSaving]  = useState(false);
+
     const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
     useEffect(() => {
+        axiosAdmin.get('/admin/translations/languages')
+            .then(({ data }) => {
+                const enabled = (data.languages || []).filter(l => l.enabled);
+                if (enabled.length) setLanguages(enabled);
+            })
+            .catch(() => {}); // keep the English-only fallback (e.g. no 'multilingual' grant)
+    }, []);
+
+    const load = useCallback(() => {
         setLoading(true);
+        setActiveLang('en');
         axiosAdmin.get(`/admin/notifications/${triggerKey}`)
-            .then(({ data }) => setNotif(data.notification))
+            .then(({ data }) => {
+                setNotif(data.notification);
+                const map = {};
+                (data.translations || []).forEach(t => { map[t.language] = t; });
+                setTranslations(map);
+            })
             .catch(() => showToast('error', 'Failed to load notification.'))
             .finally(() => setLoading(false));
-        // eslint-disable-next-line
     }, [triggerKey]);
+
+    useEffect(() => { load(); }, [load]);
 
     const save = async () => {
         setSaving(true);
@@ -63,6 +97,21 @@ const NotificationEditPanel = ({ triggerKey, onBack, onSaved }) => {
         } catch (err) {
             showToast('error', err.response?.data?.error || 'Failed to save notification.');
         } finally { setSaving(false); }
+    };
+
+    const activeTranslation = translations[activeLang] || EMPTY_TRANSLATION;
+    const setActiveTranslation = (updater) => {
+        setTranslations(prev => ({ ...prev, [activeLang]: updater(prev[activeLang] || EMPTY_TRANSLATION) }));
+    };
+
+    const saveTranslation = async () => {
+        setTransSaving(true);
+        try {
+            const { data } = await axiosAdmin.put(`/admin/notifications/${triggerKey}/translations/${activeLang}`, activeTranslation);
+            showToast('success', data.cleared ? 'Cleared — this language now falls back to English.' : 'Translation saved!');
+        } catch (err) {
+            showToast('error', err.response?.data?.error || 'Failed to save translation.');
+        } finally { setTransSaving(false); }
     };
 
     if (loading || !notif) return (
@@ -108,26 +157,97 @@ const NotificationEditPanel = ({ triggerKey, onBack, onSaved }) => {
                 </div>
             )}
 
-            <div style={{ marginBottom: '18px' }}>
-                <label style={labelStyle}>Subject</label>
-                <input style={fieldStyle} value={notif.subject} onChange={e => setNotif(n => ({ ...n, subject: e.target.value }))} />
-            </div>
+            {NON_TRANSLATABLE_TRIGGERS.includes(triggerKey) && (
+                <div style={{ marginBottom: '20px', padding: '10px 14px', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '12.5px', color: '#4b5563' }}>
+                    🌐 This email is always sent in English, regardless of the customer's selected language.
+                </div>
+            )}
 
-            <div style={{ marginBottom: '18px' }}>
-                <label style={labelStyle}>Heading</label>
-                <input style={fieldStyle} value={notif.heading} onChange={e => setNotif(n => ({ ...n, heading: e.target.value }))} />
-                <div style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af' }}>The large title shown inside the email, below the Sangian header bar.</div>
-            </div>
+            {/* Language tabs — English is this trigger's base row; every
+                other language is an optional override for subject/heading/
+                body only (status, sender, variables stay global). */}
+            {languages.length > 1 && !NON_TRANSLATABLE_TRIGGERS.includes(triggerKey) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
+                    {languages.map(l => {
+                        const hasOverride = l.shortCode !== 'en' && !!translations[l.shortCode];
+                        return (
+                            <button key={l.shortCode}
+                                onClick={() => setActiveLang(l.shortCode)}
+                                style={{
+                                    padding: '6px 12px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700,
+                                    border: `1.5px solid ${activeLang === l.shortCode ? '#4f46e5' : '#e5e7eb'}`,
+                                    background: activeLang === l.shortCode ? '#eef2ff' : '#fff',
+                                    color: activeLang === l.shortCode ? '#4338ca' : '#6b7280',
+                                    cursor: 'pointer', fontFamily: 'inherit',
+                                }}
+                            >
+                                {getLanguageIcon(l.shortCode)} {l.label}{hasOverride ? ' ✓' : ''}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
-            <div style={{ marginBottom: '18px' }}>
-                <label style={labelStyle}>Body (HTML)</label>
-                <textarea
-                    rows={12}
-                    style={{ ...fieldStyle, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '12.5px', lineHeight: 1.6, resize: 'vertical' }}
-                    value={notif.body_html}
-                    onChange={e => setNotif(n => ({ ...n, body_html: e.target.value }))}
-                />
-            </div>
+            {activeLang === 'en' ? (
+                <>
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Subject</label>
+                        <input style={fieldStyle} value={notif.subject} onChange={e => setNotif(n => ({ ...n, subject: e.target.value }))} />
+                    </div>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Heading</label>
+                        <input style={fieldStyle} value={notif.heading} onChange={e => setNotif(n => ({ ...n, heading: e.target.value }))} />
+                        <div style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af' }}>The large title shown inside the email, below the Sangian header bar.</div>
+                    </div>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Body (HTML)</label>
+                        <textarea
+                            rows={12}
+                            style={{ ...fieldStyle, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '12.5px', lineHeight: 1.6, resize: 'vertical' }}
+                            value={notif.body_html}
+                            onChange={e => setNotif(n => ({ ...n, body_html: e.target.value }))}
+                        />
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div style={{ marginBottom: '14px', padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', fontSize: '12.5px', color: '#92400e' }}>
+                        ✏️ Overrides the English content above when this trigger fires for a {languages.find(l => l.shortCode === activeLang)?.label || activeLang}-language recipient. Leave all three fields blank and save to clear the override and fall back to English.
+                    </div>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Subject</label>
+                        <input style={fieldStyle} value={activeTranslation.subject} onChange={e => setActiveTranslation(t => ({ ...t, subject: e.target.value }))} />
+                    </div>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Heading</label>
+                        <input style={fieldStyle} value={activeTranslation.heading} onChange={e => setActiveTranslation(t => ({ ...t, heading: e.target.value }))} />
+                    </div>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Body (HTML)</label>
+                        <textarea
+                            rows={12}
+                            style={{ ...fieldStyle, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '12.5px', lineHeight: 1.6, resize: 'vertical' }}
+                            value={activeTranslation.body_html}
+                            onChange={e => setActiveTranslation(t => ({ ...t, body_html: e.target.value }))}
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
+                        <button
+                            onClick={saveTranslation}
+                            disabled={transSaving}
+                            style={{ padding: '9px 20px', borderRadius: '10px', border: 'none', background: '#4f46e5', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: transSaving ? 'not-allowed' : 'pointer', opacity: transSaving ? 0.7 : 1, fontFamily: 'inherit' }}
+                        >
+                            {transSaving ? '⏳ Saving…' : `💾 Save ${languages.find(l => l.shortCode === activeLang)?.label || activeLang}`}
+                        </button>
+                    </div>
+                </>
+            )}
 
             {variables.length > 0 && (
                 <div style={{ marginBottom: '18px' }}>
@@ -143,16 +263,18 @@ const NotificationEditPanel = ({ triggerKey, onBack, onSaved }) => {
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px', marginBottom: '8px' }}>
-                <div style={{ marginBottom: '18px' }}>
-                    <label style={labelStyle}>Sender Name (optional)</label>
-                    <input style={fieldStyle} value={notif.sender_name || ''} onChange={e => setNotif(n => ({ ...n, sender_name: e.target.value }))} placeholder="Uses SMTP default if blank" />
+            {activeLang === 'en' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px', marginBottom: '8px' }}>
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Sender Name (optional)</label>
+                        <input style={fieldStyle} value={notif.sender_name || ''} onChange={e => setNotif(n => ({ ...n, sender_name: e.target.value }))} placeholder="Uses SMTP default if blank" />
+                    </div>
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={labelStyle}>Sender Email (optional)</label>
+                        <input style={fieldStyle} value={notif.sender_email || ''} onChange={e => setNotif(n => ({ ...n, sender_email: e.target.value }))} placeholder="Uses SMTP default if blank" />
+                    </div>
                 </div>
-                <div style={{ marginBottom: '18px' }}>
-                    <label style={labelStyle}>Sender Email (optional)</label>
-                    <input style={fieldStyle} value={notif.sender_email || ''} onChange={e => setNotif(n => ({ ...n, sender_email: e.target.value }))} placeholder="Uses SMTP default if blank" />
-                </div>
-            </div>
+            )}
 
             <button
                 onClick={() => setShowPreview(v => !v)}
@@ -164,24 +286,28 @@ const NotificationEditPanel = ({ triggerKey, onBack, onSaved }) => {
             {showPreview && (
                 <div style={{ marginBottom: '24px', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
                     <div style={{ padding: '10px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>
-                        Subject: {renderPreview(notif.subject)}
+                        Subject: {renderPreview(activeLang === 'en' ? notif.subject : (activeTranslation.subject || notif.subject))}
                     </div>
                     <div style={{ padding: '20px', background: '#fff' }}>
-                        <h2 style={{ margin: '0 0 16px', fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>{renderPreview(notif.heading)}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: renderPreview(notif.body_html) }} />
+                        <h2 style={{ margin: '0 0 16px', fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>
+                            {renderPreview(activeLang === 'en' ? notif.heading : (activeTranslation.heading || notif.heading))}
+                        </h2>
+                        <div dangerouslySetInnerHTML={{ __html: renderPreview(activeLang === 'en' ? notif.body_html : (activeTranslation.body_html || notif.body_html)) }} />
                     </div>
                 </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
-                <button
-                    onClick={save}
-                    disabled={saving}
-                    style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#4f46e5', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
-                >
-                    {saving ? '⏳ Saving…' : '💾 Save Notification'}
-                </button>
-            </div>
+            {activeLang === 'en' && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+                    <button
+                        onClick={save}
+                        disabled={saving}
+                        style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#4f46e5', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                    >
+                        {saving ? '⏳ Saving…' : '💾 Save Notification'}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

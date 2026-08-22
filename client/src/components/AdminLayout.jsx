@@ -40,7 +40,6 @@ const PAGE_LABELS = [
     [/^\/admin\/reports/, 'Reports'],
     [/^\/admin\/docs/, 'Docs'],
     [/^\/admin\/meta/, 'Meta'],
-    [/^\/admin\/help-support/, 'Support'],
     [/^\/admin\/multilingual/, 'Multilingual'],
     [/^\/admin\/elements/, 'Elements'],
     [/^\/admin\/staff\/add/, 'Add Staff'],
@@ -70,7 +69,6 @@ const AdminLayoutInner = () => {
         location.pathname.includes('/admin/meta')          ? 'meta'         :
         location.pathname.includes('/admin/reports')       ? 'reports'      :
         location.pathname.includes('/admin/docs')          ? 'docs'         :
-        location.pathname.includes('/admin/help-support')  ? 'help-support' :
         location.pathname.includes('/admin/multilingual')  ? 'multilingual' :
         location.pathname.includes('/admin/elements')      ? 'elements'     :
         location.pathname.includes('/admin/staff')          ? 'staff'        :
@@ -311,27 +309,18 @@ const AdminLayoutInner = () => {
                             </Link>
                         )}
 
-                        {/* Meta tab — badge shows unread contact messages */}
+                        {/* Support tab (Meta section) — badge sums the sidebar's own
+                            badges: unread contact messages + active tickets. */}
                         {canSeeModule('meta') && (
                             <Link
                                 to="/admin/meta"
                                 className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'meta' ? 'active' : ''}`}
                             >
-                                🗂️ Meta
-                                {newMessageCount > 0 && (
-                                    <span className="admin-nav-badge">{newMessageCount > 99 ? '99+' : newMessageCount}</span>
-                                )}
-                            </Link>
-                        )}
-
-                        {canSeeModule('help-support') && (
-                            <Link
-                                to="/admin/help-support"
-                                className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'help-support' ? 'active' : ''}`}
-                            >
-                                🎫 Support
-                                {activeTicketCount > 0 && (
-                                    <span className="admin-nav-badge">{activeTicketCount > 99 ? '99+' : activeTicketCount}</span>
+                                🗂️ Support
+                                {(newMessageCount + activeTicketCount) > 0 && (
+                                    <span className="admin-nav-badge">
+                                        {(newMessageCount + activeTicketCount) > 99 ? '99+' : newMessageCount + activeTicketCount}
+                                    </span>
                                 )}
                             </Link>
                         )}

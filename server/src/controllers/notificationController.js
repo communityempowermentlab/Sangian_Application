@@ -20,9 +20,61 @@ const getNotificationByKey = async (req, res) => {
     try {
         const [[row]] = await pool.query('SELECT * FROM notification_templates WHERE trigger_key = ?', [req.params.triggerKey]);
         if (!row) return res.status(404).json({ error: 'Notification not found.' });
-        return res.json({ notification: row });
+        const [translations] = await pool.query(
+            'SELECT language, subject, heading, body_html FROM notification_template_translations WHERE trigger_key = ?',
+            [req.params.triggerKey]
+        );
+        return res.json({ notification: row, translations });
     } catch (err) {
         console.error('getNotificationByKey error:', err);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+// @route PUT /api/admin/notifications/:triggerKey/translations/:lang
+// Upserts one language's subject/heading/body_html override. All three
+// blank clears the override instead (falls back to the English row) —
+// see deleteNotificationTranslation.
+const upsertNotificationTranslation = async (req, res) => {
+    try {
+        const { triggerKey, lang } = req.params;
+        const { subject, heading, body_html } = req.body;
+
+        if (!subject?.trim() && !heading?.trim() && !body_html?.trim()) {
+            await pool.query(
+                'DELETE FROM notification_template_translations WHERE trigger_key = ? AND language = ?',
+                [triggerKey, lang]
+            );
+            return res.json({ success: true, cleared: true });
+        }
+        if (!subject?.trim() || !heading?.trim() || !body_html?.trim()) {
+            return res.status(400).json({ error: 'Subject, heading and body are required (or leave all three blank to fall back to English).' });
+        }
+
+        await pool.query(
+            `INSERT INTO notification_template_translations (trigger_key, language, subject, heading, body_html)
+             VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE subject = VALUES(subject), heading = VALUES(heading), body_html = VALUES(body_html)`,
+            [triggerKey, lang, subject.trim(), heading.trim(), body_html]
+        );
+        return res.json({ success: true });
+    } catch (err) {
+        console.error('upsertNotificationTranslation error:', err);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+// @route DELETE /api/admin/notifications/:triggerKey/translations/:lang
+const deleteNotificationTranslation = async (req, res) => {
+    try {
+        const { triggerKey, lang } = req.params;
+        await pool.query(
+            'DELETE FROM notification_template_translations WHERE trigger_key = ? AND language = ?',
+            [triggerKey, lang]
+        );
+        return res.json({ success: true });
+    } catch (err) {
+        console.error('deleteNotificationTranslation error:', err);
         return res.status(500).json({ error: 'Server error.' });
     }
 };
@@ -82,4 +134,7 @@ const updateNotificationStatus = async (req, res) => {
     }
 };
 
-module.exports = { getAllNotifications, getNotificationByKey, updateNotification, updateNotificationStatus };
+module.exports = {
+    getAllNotifications, getNotificationByKey, updateNotification, updateNotificationStatus,
+    upsertNotificationTranslation, deleteNotificationTranslation,
+};

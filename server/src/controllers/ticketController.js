@@ -408,6 +408,35 @@ const adminUpdateStatus = async (req, res) => {
     }
 };
 
+// ── POST /api/admin/tickets/:ticket_id/share-status ───────────────────────────
+// "Share Status with Customer" button on the Ticket Details page — a manual
+// re-send of the ticket's current status, independent of adminUpdateStatus
+// above (which only emails when the status actually changes).
+const adminShareStatus = async (req, res) => {
+    try {
+        const { ticket_id } = req.params;
+        const [[ticket]] = await pool.query(
+            'SELECT ticket_id, email, title, status FROM tickets WHERE ticket_id = ?', [ticket_id]
+        );
+        if (!ticket) return res.status(404).json({ error: 'Ticket not found.' });
+
+        const result = await email.sendTicketStatusShared(ticket.email, {
+            ticket_id: ticket.ticket_id, subject: ticket.title, status: ticket.status,
+        });
+        if (!result.delivered) {
+            const message = result.reason === 'disabled'
+                ? 'This notification is turned off in Settings → Notifications.'
+                : 'Failed to send the email — check SMTP settings.';
+            return res.json({ success: false, message });
+        }
+
+        return res.json({ success: true, message: 'Status shared with the customer.' });
+    } catch (err) {
+        console.error('adminShareStatus error:', err);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
 // ── POST /api/admin/tickets/:ticket_id/reply ──────────────────────────────────
 const adminReply = async (req, res) => {
     try {
@@ -485,6 +514,6 @@ const adminActiveTicketCount = async (_req, res) => {
 module.exports = {
     sendOtp, verifyOtp, requireVerifiedEmail,
     createTicket, getMyTickets, getTicketDetail, replyToTicket,
-    adminGetTickets, adminGetTicket, adminUpdateStatus, adminReply, adminTicketStats,
+    adminGetTickets, adminGetTicket, adminUpdateStatus, adminShareStatus, adminReply, adminTicketStats,
     adminActiveTicketCount,
 };

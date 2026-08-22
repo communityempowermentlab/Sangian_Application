@@ -1,5 +1,5 @@
 const { pool } = require('../config/db');
-const { sendContactThankYou, sendContactAdminNotification } = require('../services/emailService');
+const { sendContactThankYou, sendContactAdminNotification, sendContactStatusShared } = require('../services/emailService');
 const { syncNotificationTemplates } = require('../utils/notificationBridge');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,7 +59,10 @@ const submitContact = async (req, res) => {
             try {
                 const [[settings]] = await pool.query('SELECT * FROM contact_email_settings LIMIT 1');
                 if (!settings) return;
-                const lang = (req.body.lang === 'hi') ? 'hi' : 'en';
+                // Any of the shortCodes from Settings → Languages — an
+                // untranslated one just falls back to English content
+                // (see emailService.getTemplate).
+                const lang = /^[a-z]{2,3}$/.test(req.body.lang || '') ? req.body.lang : 'en';
                 if (settings.send_sender_email) {
                     sendContactThankYou(email.trim(), name.trim(), lang).catch(() => {});
                 }
@@ -169,6 +172,31 @@ const updateMessageStatus = async (req, res) => {
     }
 };
 
+// "Share Status with Customer" button on a message's detail panel — a
+// manual re-send of the message's current status, independent of
+// updateMessageStatus above (which never emails the customer).
+const shareMessageStatus = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [[msg]] = await pool.query('SELECT id, name, email, subject, status FROM contact_messages WHERE id = ?', [id]);
+        if (!msg) return res.status(404).json({ success: false, message: 'Message not found.' });
+
+        const result = await sendContactStatusShared(msg.email, {
+            reference: msg.id, name: msg.name, subject: msg.subject, status: msg.status,
+        });
+        if (!result.delivered) {
+            const message = result.reason === 'disabled'
+                ? 'This notification is turned off in Settings → Notifications.'
+                : 'Failed to send the email — check SMTP settings.';
+            return res.json({ success: false, message });
+        }
+
+        res.json({ success: true, message: 'Status shared with the customer.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 const deleteMessage = async (req, res) => {
     const { id } = req.params;
     try {
@@ -230,7 +258,7 @@ const getNewMessageCount = async (req, res) => {
 module.exports = {
     submitContact, getPublicContactInfo,
     getContactInfo, updateContactInfo,
-    getMessages, updateMessageStatus, deleteMessage,
+    getMessages, updateMessageStatus, shareMessageStatus, deleteMessage,
     getContactEmailSettings, updateContactEmailSettings,
     getNewMessageCount,
 };

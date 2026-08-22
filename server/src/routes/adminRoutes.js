@@ -91,6 +91,7 @@ router.get('/contact-info',                    adminAuth, contactController.getC
 router.post('/contact-info',                   adminAuth, contactController.updateContactInfo);
 router.get('/contact-messages',                adminAuth, contactController.getMessages);
 router.post('/contact-messages/update-status', adminAuth, contactController.updateMessageStatus);
+router.post('/contact-messages/:id/share-status', adminAuth, contactController.shareMessageStatus);
 router.delete('/contact-messages/:id',         adminAuth, contactController.deleteMessage);
 router.get('/contact-email-settings',          adminAuth, contactController.getContactEmailSettings);
 router.post('/contact-email-settings',         adminAuth, contactController.updateContactEmailSettings);
@@ -105,6 +106,7 @@ router.get('/tickets/stats',                   adminAuth, ticketController.admin
 router.get('/tickets',                         adminAuth, ticketController.adminGetTickets);
 router.get('/tickets/:ticket_id',              adminAuth, ticketController.adminGetTicket);
 router.post('/tickets/:ticket_id/status',      adminAuth, ticketController.adminUpdateStatus);
+router.post('/tickets/:ticket_id/share-status', adminAuth, ticketController.adminShareStatus);
 router.post('/tickets/:ticket_id/reply',       adminAuth, ticketUpload.array('attachments', 3), ticketController.adminReply);
 
 // ── SMTP settings ─────────────────────────────────────────────────────────────
@@ -121,6 +123,8 @@ router.get('/notifications',              adminAuth, notificationController.getA
 router.get('/notifications/:triggerKey',  adminAuth, notificationController.getNotificationByKey);
 router.put('/notifications/:triggerKey',  adminAuth, notificationController.updateNotification);
 router.patch('/notifications/:triggerKey/status', adminAuth, notificationController.updateNotificationStatus);
+router.put('/notifications/:triggerKey/translations/:lang',    adminAuth, notificationController.upsertNotificationTranslation);
+router.delete('/notifications/:triggerKey/translations/:lang', adminAuth, notificationController.deleteNotificationTranslation);
 
 // ── Organization approval queue — Super Admin only (requireAdminOnly, not a
 // grantable staff module — see adminOrgController.js) ─────────────────────

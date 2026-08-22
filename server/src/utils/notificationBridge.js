@@ -15,8 +15,7 @@ const NOTIFICATION_BRIDGE = {
   ticket_created_admin:       { table: 'help_email_settings',    column: 'send_admin_email' },
   ticket_admin_reply:         { table: 'help_email_settings',    column: 'send_on_admin_reply' },
   ticket_user_reply:          { table: 'help_email_settings',    column: 'send_on_user_reply' },
-  contact_thank_you_en:       { table: 'contact_email_settings', column: 'send_sender_email' },
-  contact_thank_you_hi:       { table: 'contact_email_settings', column: 'send_sender_email' },
+  contact_thank_you:          { table: 'contact_email_settings', column: 'send_sender_email' },
   contact_admin_notification: { table: 'contact_email_settings', column: 'send_admin_email' },
 };
 

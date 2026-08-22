@@ -338,6 +338,21 @@
     white-space: nowrap;
 }
 .ahs-status-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ahs-share-status-btn {
+    padding: 7.5px 16px;
+    border-radius: 9px;
+    border: 1.5px solid #4f46e5;
+    background: #fff;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.ahs-share-status-btn:hover { background: #eef2ff; }
 .ahs-status-btn:not(:disabled):hover { opacity: 0.88; }
 
 /* ── Thread ──────────────────────────────────────────────────────────────── */

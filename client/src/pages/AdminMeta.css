@@ -1159,13 +1159,14 @@
 }
 .meta-lang-toggle {
     display: flex;
+    flex-wrap: wrap;
     gap: 3px;
     background: #e5e7eb;
     border-radius: 8px;
     padding: 3px;
 }
 .meta-lang-btn {
-    padding: 5px 18px;
+    padding: 5px 12px;
     border-radius: 6px;
     border: none;
     background: transparent;

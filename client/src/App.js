@@ -49,7 +49,6 @@ import AdminChildGroupEdit from './pages/AdminChildGroupEdit';
 import AdminScreenshots from './pages/AdminScreenshots';
 import AdminAnalysis from './pages/AdminAnalysis';
 import AdminMeta from './pages/AdminMeta';
-import AdminHelpSupport from './pages/AdminHelpSupport';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ContactPage from './pages/ContactPage';
@@ -98,7 +97,6 @@ const ADMIN_TITLES = {
     '/admin/settings':       'Settings | Admin Panel',
     '/admin/multilingual':   'Multilingual | Admin Panel',
     '/admin/meta':           'Meta | Admin Panel',
-    '/admin/help-support':   'Help & Support | Admin Panel',
 };
 
 // ── SEOManager — runs on every route change, applies full SEO config ──────────
@@ -363,9 +361,10 @@ function App() {
                                 <Route path="meta/privacy"           element={<MetaSettingsRedirect tabKey="privacy" />} />
                                 <Route path="meta/help"              element={<MetaSettingsRedirect tabKey="help" />} />
                                 <Route path="meta/org-types"         element={<MetaSettingsRedirect tabKey="org-types" />} />
-                                <Route element={<RequireStaffPermission moduleKey="help-support" />}>
-                                    <Route path="help-support"           element={<AdminHelpSupport />} />
-                                </Route>
+                                {/* Old bookmark — Support moved inside the Meta section as its
+                                    own sidebar tab (AdminMeta.jsx), same pattern as the
+                                    meta/terms-style redirects above. */}
+                                <Route path="help-support"           element={<Navigate to="/admin/meta/support" replace />} />
                                 <Route element={<RequireStaffPermission moduleKey="settings" />}>
                                     <Route path="settings"               element={<SettingsRoute />} />
                                 </Route>
