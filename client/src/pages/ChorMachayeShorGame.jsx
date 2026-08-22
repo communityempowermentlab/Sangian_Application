@@ -1137,8 +1137,7 @@ const ChorMachayeShorGame = () => {
       setCurrentPhase(nextPhase);
       setCorrectTouchCount(0);
       setIsRuleSelection(true);
-      
-      showFeedbackMsg(t('game.foundPattern'), 'correct');
+
       setPhaseLabel(`Phase ${nextPhase}: Rule Changed`);
       setTargetLabel(`Phase ${nextPhase} Target: ${Array.isArray(item.consecutiveRequired) ? item.consecutiveRequired[nextPhase - 1] : item.consecutiveRequired} Correct in a row`);
       await new Promise(r => setTimeout(r, 2000));
@@ -1154,7 +1153,6 @@ const ChorMachayeShorGame = () => {
         setTotalScore(prev => prev + score);
         
         saveToServer('in_progress', newResults);
-        showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
         await playAudio(resolveAudio('cm_thief_caught', 'cm_thief_caught.wav'));
         setNextButtonReady(true);
       } else {
@@ -1226,7 +1224,6 @@ const ChorMachayeShorGame = () => {
       setInteractionLocked(true);
       setNextButtonReady(true);
     } else if (success) {
-      showFeedbackMsg('🎊 Thief Caught!', 'correct', 0);
       await playAudio(resolveAudio('cm_thief_caught', 'cm_thief_caught.wav'));
       setNextButtonReady(true);
     } else {
@@ -1245,11 +1242,10 @@ const ChorMachayeShorGame = () => {
     setCurrentPhase(nextPhase);
     setCorrectTouchCount(0);
     setIsRuleSelection(true);
-    
-    showFeedbackMsg(t('game.foundPattern'), 'correct');
+
     setPhaseLabel(`Phase ${nextPhase}: Rule Changed`);
     setTargetLabel(`Phase ${nextPhase} Target: ${Array.isArray(item.consecutiveRequired) ? item.consecutiveRequired[nextPhase - 1] : item.consecutiveRequired} Correct in a row`);
-    
+
     await new Promise(r => setTimeout(r, 2000));
     await shuffleHouses(currentMove, nextPhase, lastCorrectPosition, true, phase2Rule);
     setInteractionLocked(false);
@@ -1769,12 +1765,6 @@ const ChorMachayeShorGame = () => {
 
         <main className="chor-main">
           <div className="chor-screen">
-
-            {phase1CompletedPending && (
-              <div className="phase1-complete-banner">
-                🎉 Phase 1 Completed! Click Phase 2 to continue.
-              </div>
-            )}
 
             <div className="chor-houses-wrapper">
               <div className="chor-houses-container">
