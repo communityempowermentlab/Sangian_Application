@@ -9,6 +9,7 @@ const AdminChildGroupsList = () => {
     const [orgFilter, setOrgFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [loading, setLoading] = useState(true);
+    const [noAccess, setNoAccess] = useState(false);
     const isOrg = isOrgSession();
 
     useEffect(() => {
@@ -21,6 +22,7 @@ const AdminChildGroupsList = () => {
             setGroups(response.data);
         } catch (error) {
             console.error('Failed to fetch child groups:', error);
+            if (error.response?.status === 403) setNoAccess(true);
         } finally {
             setLoading(false);
         }
@@ -111,6 +113,12 @@ const AdminChildGroupsList = () => {
                                 <tbody>
                                     {loading ? (
                                         <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>Loading child groups...</td></tr>
+                                    ) : noAccess ? (
+                                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: 8 }}>🔒</div>
+                                            <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>Access Restricted</div>
+                                            <div style={{ fontSize: '13px' }}>You don't have permission to view child groups. Contact your administrator if you believe this is a mistake.</div>
+                                        </td></tr>
                                     ) : filteredGroups.length === 0 ? (
                                         <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>No child groups found.</td></tr>
                                     ) : (
