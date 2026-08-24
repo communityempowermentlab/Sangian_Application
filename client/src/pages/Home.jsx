@@ -153,12 +153,12 @@ const Home = () => {
         {
             id: 6,
             gameKey: 'numeracy_number_skill',
-            title: t('home.games.numeracy.title'),
+            title: t('home.games.numeracy.title') + ' - V0',
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
             startUrl: "/games/number_skill",
             image: getElementImage('numeracy_number_skill'),
-            shortTitle: t('home.games.numeracy.title'),
+            shortTitle: t('home.games.numeracy.title') + ' - V0',
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"

@@ -118,7 +118,7 @@ const GAME_KEY_TO_ID = {
 const GAME_SECTION_LABELS = {
     game_bagiya: 'Bagiya', game_lottery: 'Lottery Ka Ticket', game_mela: 'Chalo Mela Chalen',
     game_rachna: 'Rachna', game_dhyan: 'Dhyan Kahan Hai', game_herpher: 'Her Pher',
-    game_chor: 'Chor Machaye Shor', game_numeracy: 'Ankganit (Numeracy)', game_literacy: 'Padh ke Batao (Literacy)',
+    game_chor: 'Chor Machaye Shor', game_numeracy: 'Ankganit - V0 (Numeracy)', game_literacy: 'Padh ke Batao (Literacy)',
     game_common: 'Games - Common',
 };
 

@@ -34,7 +34,7 @@ const GAME_CATALOG = [
     { key: 'working_memory_herpher', icon: '🔄', title: 'Her Pher',           color: '#0891b2', image: '/assets/images/her_pher/her_pher.jpg' },
     { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher V2',           color: '#0891b2', image: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher V3',           color: '#0891b2', image: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
-    { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',           color: '#4f46e5', image: '/assets/images/number_skill/number_skill.jpg' },
+    { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit - V0',           color: '#4f46e5', image: '/assets/images/number_skill/number_skill.jpg' },
     { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke batao - V0',      color: '#059669', image: '/assets/images/reading_skill/reading_skill.jpg' },
     { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao', color: '#059669', image: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
     { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor',  color: '#dc2626', image: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
@@ -3097,7 +3097,7 @@ const STATUS_META = {
 };
 
 const GAME_DISPLAY = {
-    numeracy_number_skill:  'Ankganit',
+    numeracy_number_skill:  'Ankganit - V0',
     literacy_reading_skill: 'Padh ke batao - V0',
     literacy_reading_skill_v2: 'Padh ke batao',
     number_recall_lottery:  'Lottery Ka Ticket',
