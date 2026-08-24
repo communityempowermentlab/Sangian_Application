@@ -18,8 +18,8 @@ const GAMES_REGISTRY = [
     { key: 'cognitive_flex_chor',    title: 'Chor Machaye Shor', category: 'Cognitive Test' },
     { key: 'auditory_dhyan',         title: 'Dhyan Kahan Hai',   category: 'Attention Test' },
     { key: 'numeracy_number_skill',  title: 'Ankganit - V0',     category: 'Academic Test'  },
-    { key: 'literacy_reading_skill', title: 'Padh ke Batao',     category: 'Academic Test'  },
-    { key: 'literacy_reading_skill_v2', title: 'Padh ke Batao - Version 2', category: 'Academic Test' },
+    { key: 'literacy_reading_skill', title: 'Padh ke Batao - V0', category: 'Academic Test'  },
+    { key: 'literacy_reading_skill_v2', title: 'Padh ke Batao', category: 'Academic Test' },
     { key: 'numeracy_number_skill_v2', title: 'Ankganit - Version 2', category: 'Academic Test' },
     { key: 'numeracy_number_skill_v3', title: 'Ankganit - Version 3', category: 'Academic Test' },
 ];

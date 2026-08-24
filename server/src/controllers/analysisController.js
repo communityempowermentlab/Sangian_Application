@@ -3,8 +3,8 @@ const { normalizeGameName } = require('../utils/gameNameAliases');
 const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 
 const GAME_META = {
-  literacy_reading_skill:   { title: 'Padh ke Batao',      tag: 'Literacy',         color: '#059669', maxScore: 22 },
-  literacy_reading_skill_v2: { title: 'Padh ke Batao - Version 2', tag: 'Literacy', color: '#059669', maxScore: 4 },
+  literacy_reading_skill:   { title: 'Padh ke Batao - V0', tag: 'Literacy',         color: '#059669', maxScore: 22 },
+  literacy_reading_skill_v2: { title: 'Padh ke Batao',     tag: 'Literacy',         color: '#059669', maxScore: 4 },
   numeracy_number_skill:    { title: 'Ankganit - V0',       tag: 'Numeracy',         color: '#7c3aed', maxScore: 26 },
   number_recall_lottery:    { title: 'Lottery Ka Ticket',  tag: 'Auditory Span',    color: '#f59e0b', maxScore: 22 },
   number_recall_lottery_v2: { title: 'Lottery Ka Ticket - Version 2', tag: 'Auditory Span', color: '#f59e0b', maxScore: 22 },
