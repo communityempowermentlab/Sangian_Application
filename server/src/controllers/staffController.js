@@ -27,9 +27,22 @@ function isPasswordStrong(pw) {
     return typeof pw === 'string' && pw.length >= PASSWORD_MIN_LEN && /[A-Za-z]/.test(pw) && /[0-9]/.test(pw);
 }
 
+// Mirrors ADMIN_MODULES in staffPermissions.js — meta/help-support/
+// multilingual/elements/settings are deliberately excluded so a staff
+// account can never be granted them, even via a crafted request; those
+// menus are Super-Admin-only. Same whitelist-on-save pattern as
+// ORG_PERMISSION_MODULES in adminOrgController.js.
+const STAFF_PERMISSION_MODULES = [
+    'dashboard', 'organizations', 'children', 'assessors', 'child-groups',
+    'staff', 'individuals', 'reports', 'analysis', 'docs',
+];
+
 function normalizePermissions(permissions) {
     if (!Array.isArray(permissions)) return [];
-    return permissions.filter(p => typeof p === 'string' && p.trim()).map(p => p.trim());
+    return [...new Set(permissions
+        .filter(p => typeof p === 'string' && p.trim())
+        .map(p => p.trim())
+        .filter(p => STAFF_PERMISSION_MODULES.includes(p)))];
 }
 
 // Same org-isolation convention as adminChildController.js's scopeClause —

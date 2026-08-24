@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { canSeeModule } from '../utils/staffPermissions';
+import { canSeeModule, isStaffSession } from '../utils/staffPermissions';
 
 /**
  * Wraps an individual protected admin route with a menu-permission check.
@@ -20,9 +20,15 @@ import { canSeeModule } from '../utils/staffPermissions';
  * canSeeModule() returns true unconditionally for an admin session
  * (staffPermissions is absent), so this is a no-op for the existing admin
  * role — it only ever restricts a staff session.
+ *
+ * blockStaff: for Meta/Multilingual/Elements/Settings — modules that are no
+ * longer offered in ADMIN_MODULES (staffPermissions.js) or grantable
+ * server-side (staffController.js's normalizePermissions whitelist) — this
+ * hard-blocks any staff session outright, even one with a stale grant from
+ * before that change. Never affects an org session.
  */
-const RequireStaffPermission = ({ moduleKey }) => {
-    if (!canSeeModule(moduleKey)) {
+const RequireStaffPermission = ({ moduleKey, blockStaff }) => {
+    if ((blockStaff && isStaffSession()) || !canSeeModule(moduleKey)) {
         return (
             <div style={{ padding: '60px 24px', textAlign: 'center', color: '#64748b' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔒</div>

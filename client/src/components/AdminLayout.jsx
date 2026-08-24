@@ -310,8 +310,10 @@ const AdminLayoutInner = () => {
                         )}
 
                         {/* Support tab (Meta section) — badge sums the sidebar's own
-                            badges: unread contact messages + active tickets. */}
-                        {canSeeModule('meta') && (
+                            badges: unread contact messages + active tickets.
+                            Super-Admin-only: hard-blocked for staff regardless of any
+                            stale 'meta' grant (see ADMIN_MODULES in staffPermissions.js). */}
+                        {!isStaffSession() && canSeeModule('meta') && (
                             <Link
                                 to="/admin/meta"
                                 className={`admin-menu-item admin-menu-item--badged ${activeGroup === 'meta' ? 'active' : ''}`}
@@ -325,7 +327,7 @@ const AdminLayoutInner = () => {
                             </Link>
                         )}
 
-                        {canSeeModule('multilingual') && (
+                        {!isStaffSession() && canSeeModule('multilingual') && (
                             <Link
                                 to="/admin/multilingual"
                                 className={`admin-menu-item ${activeGroup === 'multilingual' ? 'active' : ''}`}
@@ -334,7 +336,7 @@ const AdminLayoutInner = () => {
                             </Link>
                         )}
 
-                        {canSeeModule('elements') && (
+                        {!isStaffSession() && canSeeModule('elements') && (
                             <Link
                                 to="/admin/elements"
                                 className={`admin-menu-item ${activeGroup === 'elements' ? 'active' : ''}`}
@@ -343,7 +345,7 @@ const AdminLayoutInner = () => {
                             </Link>
                         )}
 
-                        {canSeeModule('settings') && (
+                        {!isStaffSession() && canSeeModule('settings') && (
                             <Link
                                 to="/admin/settings"
                                 className={`admin-menu-item ${activeGroup === 'settings' ? 'active' : ''}`}

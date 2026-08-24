@@ -8,6 +8,11 @@
 // hard-locked to Super Admin at the nav (AdminLayout.jsx checks
 // isStaffSession() directly, not this grant) and the API (requireAdminOnly),
 // so granting them to a staff account has no functional effect.
+// Meta, Support, Multilingual, Elements, and Settings are deliberately
+// excluded — those menus are Super-Admin-only and can never be granted to
+// a staff account (server-side whitelist in staffController.js's
+// normalizePermissions enforces the same restriction, so this isn't just
+// a UI hide).
 export const ADMIN_MODULES = [
     { key: 'dashboard',     label: 'Dashboard' },
     { key: 'organizations', label: 'Organizations' },
@@ -19,11 +24,6 @@ export const ADMIN_MODULES = [
     { key: 'reports',       label: 'Reports' },
     { key: 'analysis',      label: 'Analysis' },
     { key: 'docs',          label: 'Docs' },
-    { key: 'meta',          label: 'Meta' },
-    { key: 'help-support',  label: 'Support' },
-    { key: 'multilingual',  label: 'Multilingual' },
-    { key: 'elements',      label: 'Elements' },
-    { key: 'settings',      label: 'Settings' },
 ];
 
 // Reads the current session's Staff Management module grants.

@@ -347,7 +347,7 @@ function App() {
                                 <Route element={<RequireStaffPermission moduleKey="docs" />}>
                                     <Route path="docs"                   element={<AdminDocs />} />
                                 </Route>
-                                <Route element={<RequireStaffPermission moduleKey="meta" />}>
+                                <Route element={<RequireStaffPermission moduleKey="meta" blockStaff />}>
                                     <Route path="meta"                   element={<Navigate to="/admin/meta/contact" replace />} />
                                     <Route path="meta/:tabKey"           element={<AdminMeta />} />
                                 </Route>
@@ -364,13 +364,13 @@ function App() {
                                     own sidebar tab (AdminMeta.jsx), same pattern as the
                                     meta/terms-style redirects above. */}
                                 <Route path="help-support"           element={<Navigate to="/admin/meta/support" replace />} />
-                                <Route element={<RequireStaffPermission moduleKey="settings" />}>
+                                <Route element={<RequireStaffPermission moduleKey="settings" blockStaff />}>
                                     <Route path="settings"               element={<SettingsRoute />} />
                                 </Route>
-                                <Route element={<RequireStaffPermission moduleKey="elements" />}>
+                                <Route element={<RequireStaffPermission moduleKey="elements" blockStaff />}>
                                     <Route path="elements"               element={<AdminElements />} />
                                 </Route>
-                                <Route element={<RequireStaffPermission moduleKey="multilingual" />}>
+                                <Route element={<RequireStaffPermission moduleKey="multilingual" blockStaff />}>
                                     <Route path="multilingual"           element={<AdminMultilingual />} />
                                 </Route>
                                 <Route element={<RequireStaffPermission moduleKey="staff" />}>
