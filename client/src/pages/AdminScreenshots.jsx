@@ -19,8 +19,8 @@ const GAMES = [
   { key: 'numeracy_number_skill',  name: 'Ankganit',          nameHi: 'अंकगणित',         emoji: '🔢' },
   { key: 'numeracy_number_skill_v2',  name: 'Ankganit - Version 2', nameHi: 'अंकगणित - संस्करण 2', emoji: '🔢' },
   { key: 'numeracy_number_skill_v3',  name: 'Ankganit - Version 3', nameHi: 'अंकगणित - संस्करण 3', emoji: '🔢' },
-  { key: 'literacy_reading_skill', name: 'Padh ke batao',     nameHi: 'पढ़ के बताओ',     emoji: '📖' },
-  { key: 'literacy_reading_skill_v2', name: 'Padh ke batao - Version 2', nameHi: 'पढ़ के बताओ - संस्करण 2', emoji: '📖' },
+  { key: 'literacy_reading_skill', name: 'Padh ke batao - V0',     nameHi: 'पढ़ के बताओ - V0',     emoji: '📖' },
+  { key: 'literacy_reading_skill_v2', name: 'Padh ke batao', nameHi: 'पढ़ के बताओ', emoji: '📖' },
 ];
 
 const SCREEN_TYPES = [

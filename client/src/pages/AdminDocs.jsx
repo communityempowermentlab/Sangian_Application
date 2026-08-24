@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import { API_URL } from '../services/api';
@@ -35,8 +35,8 @@ const GAME_CATALOG = [
     { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher V2',           color: '#0891b2', image: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher V3',           color: '#0891b2', image: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
     { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit',           color: '#4f46e5', image: '/assets/images/number_skill/number_skill.jpg' },
-    { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke batao',      color: '#059669', image: '/assets/images/reading_skill/reading_skill.jpg' },
-    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2', color: '#059669', image: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
+    { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke batao - V0',      color: '#059669', image: '/assets/images/reading_skill/reading_skill.jpg' },
+    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao', color: '#059669', image: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
     { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor',  color: '#dc2626', image: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
     { key: 'triangle_rachna',        icon: '🔺', title: 'Rachna',             color: '#e11d48', image: '/assets/images/rachna/rachna.jpg' },
 ];
@@ -1820,7 +1820,7 @@ const renderMarkdown = (text) => {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameClick, onSectionClick }) => {
+const Sidebar = ({ catalog, expandedGame, selectedGame, selectedSection, onHome, onGameClick, onSectionClick }) => {
     const gameRowRef = useRef({});
 
     const handleGameClick = (game) => {
@@ -1863,7 +1863,7 @@ const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameCl
             </div>
 
             {/* Accordion list */}
-            {GAME_CATALOG.map(game => {
+            {catalog.map(game => {
                 const isExpanded  = expandedGame === game.key;
                 const isActiveGame = selectedGame?.key === game.key;
                 return (
@@ -1883,7 +1883,7 @@ const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameCl
                             onMouseEnter={e => { if (!isActiveGame || selectedSection) e.currentTarget.style.background = 'rgba(15,23,42,0.03)'; }}
                             onMouseLeave={e => { if (!isActiveGame || selectedSection) e.currentTarget.style.background = 'transparent'; }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
                                 <span style={{ fontSize: '1rem', flexShrink: 0 }}>{game.icon}</span>
                                 <span style={{
                                     fontSize: '0.83rem', fontWeight: isActiveGame ? 700 : 500,
@@ -1893,14 +1893,25 @@ const Sidebar = ({ expandedGame, selectedGame, selectedSection, onHome, onGameCl
                                     {game.title}
                                 </span>
                             </div>
-                            <span style={{
-                                fontSize: '0.58rem', color: isExpanded ? T.accent : T.faint,
-                                transform: isExpanded ? 'rotate(90deg)' : 'none',
-                                transition: 'transform 0.22s ease, color 0.15s',
-                                display: 'inline-block', flexShrink: 0, marginLeft: '4px',
-                            }}>
-                                ▶
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: '6px' }}>
+                                <span style={{
+                                    fontSize: '0.56rem', fontWeight: 700, padding: '2px 7px',
+                                    borderRadius: '999px', letterSpacing: '0.03em',
+                                    background: game.enabled ? 'rgba(16,185,129,0.1)' : 'rgba(220,38,38,0.08)',
+                                    color: game.enabled ? '#059669' : '#dc2626',
+                                    border: `1px solid ${game.enabled ? 'rgba(16,185,129,0.25)' : 'rgba(220,38,38,0.2)'}`,
+                                }}>
+                                    {game.enabled ? 'ON' : 'OFF'}
+                                </span>
+                                <span style={{
+                                    fontSize: '0.58rem', color: isExpanded ? T.accent : T.faint,
+                                    transform: isExpanded ? 'rotate(90deg)' : 'none',
+                                    transition: 'transform 0.22s ease, color 0.15s',
+                                    display: 'inline-block',
+                                }}>
+                                    ▶
+                                </span>
+                            </div>
                         </button>
 
                         {/* Sub-sections accordion */}
@@ -2006,7 +2017,7 @@ const OBJECTIVE_CARDS = [
     { icon: '📋', title: 'Gameplay Manuals',         color: '#8b5cf6', desc: 'Game-wise operational manuals — gameplay instructions, scene flow, scoring methods, cutoff references, sound behavior, animations, and assessment logic.' },
 ];
 
-const LandingPage = ({ onGameClick }) => {
+const LandingPage = ({ catalog, onGameClick }) => {
     const [hoveredGame, setHoveredGame]   = useState(null);
     const [hoveredObj, setHoveredObj]     = useState(null);
     const gameSectionRef = useRef(null);
@@ -2127,7 +2138,7 @@ const LandingPage = ({ onGameClick }) => {
                             and assessment flows from the selected game section in the left sidebar — without searching or losing navigation context.
                         </p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '14px' }}>
-                            {GAME_CATALOG.map(game => {
+                            {catalog.map(game => {
                                 const hov = hoveredGame === game.key;
                                 return (
                                     <button
@@ -2169,9 +2180,20 @@ const LandingPage = ({ onGameClick }) => {
 
                                         {/* Card body */}
                                         <div style={{ padding: '12px 13px 11px', borderTop: `3px solid ${game.color}` }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '7px' }}>
-                                                <span style={{ fontSize: '1rem' }}>{game.icon}</span>
-                                                <span style={{ fontSize: '0.84rem', fontWeight: 700, color: hov ? game.color : T.text }}>{game.title}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '7px', marginBottom: '7px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', overflow: 'hidden', minWidth: 0 }}>
+                                                    <span style={{ fontSize: '1rem', flexShrink: 0 }}>{game.icon}</span>
+                                                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: hov ? game.color : T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{game.title}</span>
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '0.56rem', fontWeight: 700, padding: '2px 7px', flexShrink: 0,
+                                                    borderRadius: '999px', letterSpacing: '0.03em',
+                                                    background: game.enabled ? 'rgba(16,185,129,0.1)' : 'rgba(220,38,38,0.08)',
+                                                    color: game.enabled ? '#059669' : '#dc2626',
+                                                    border: `1px solid ${game.enabled ? 'rgba(16,185,129,0.25)' : 'rgba(220,38,38,0.2)'}`,
+                                                }}>
+                                                    {game.enabled ? 'ON' : 'OFF'}
+                                                </span>
                                             </div>
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginBottom: hov ? '7px' : '0' }}>
                                                 {GAME_SECTIONS.slice(0, 5).map(s => (
@@ -3076,8 +3098,8 @@ const STATUS_META = {
 
 const GAME_DISPLAY = {
     numeracy_number_skill:  'Ankganit',
-    literacy_reading_skill: 'Padh ke batao',
-    literacy_reading_skill_v2: 'Padh ke batao - Version 2',
+    literacy_reading_skill: 'Padh ke batao - V0',
+    literacy_reading_skill_v2: 'Padh ke batao',
     number_recall_lottery:  'Lottery Ka Ticket',
     number_recall_lottery_v2:  'Lottery Ka Ticket - Version 2',
     atlantis_bagiya:        'Bagiya',
@@ -4825,7 +4847,32 @@ const AdminDocs = () => {
     const gameParam = searchParams.get('game');
     const sectionParam = searchParams.get('section');
 
-    const selectedGame = gameParam ? GAME_CATALOG.find(g => g.key === gameParam) || null : null;
+    // Mirrors the Test Configuration order/status (Settings → Test Configuration →
+    // Test Visibility) so the docs sidebar and landing grid always match it.
+    const [testConfigList, setTestConfigList] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        axios.get(`${API_URL}/admin/test-config`, authHeader())
+            .then(res => { if (!cancelled) setTestConfigList(res.data.tests || []); })
+            .catch(err => console.error('Failed to load test configuration order:', err));
+        return () => { cancelled = true; };
+    }, []);
+
+    const orderedGameCatalog = useMemo(() => {
+        if (!testConfigList) return GAME_CATALOG.map(g => ({ ...g, enabled: true }));
+        const statusByKey = {};
+        testConfigList.forEach((t, i) => { statusByKey[t.key] = { enabled: t.enabled, order: i }; });
+        return [...GAME_CATALOG]
+            .map(g => ({ ...g, enabled: statusByKey[g.key]?.enabled ?? true }))
+            .sort((a, b) => {
+                const orderA = statusByKey[a.key]?.order ?? Number.MAX_SAFE_INTEGER;
+                const orderB = statusByKey[b.key]?.order ?? Number.MAX_SAFE_INTEGER;
+                return orderA - orderB;
+            });
+    }, [testConfigList]);
+
+    const selectedGame = gameParam ? orderedGameCatalog.find(g => g.key === gameParam) || null : null;
     const expandedGame = selectedGame ? selectedGame.key : null;
     const selectedSection = (selectedGame && sectionParam) 
         ? GAME_SECTIONS.find(s => s.key === sectionParam) || null 
@@ -4850,6 +4897,7 @@ const AdminDocs = () => {
     return (
         <div style={{ display: 'flex', height: 'calc(100vh - 120px)', fontFamily: T.font, overflow: 'hidden' }}>
             <Sidebar
+                catalog={orderedGameCatalog}
                 expandedGame={expandedGame}
                 selectedGame={selectedGame}
                 selectedSection={selectedSection}
@@ -4869,7 +4917,7 @@ const AdminDocs = () => {
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                     {!selectedGame ? (
                         <div style={{ flex: 1, overflowY: 'auto' }}>
-                            <LandingPage onGameClick={handleGameClick} />
+                            <LandingPage catalog={orderedGameCatalog} onGameClick={handleGameClick} />
                         </div>
                     ) : !selectedSection ? (
                         <div style={{ flex: 1, overflowY: 'auto' }}>

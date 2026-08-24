@@ -192,12 +192,12 @@ const Home = () => {
         {
             id: 7,
             gameKey: 'literacy_reading_skill',
-            title: t('home.games.literacy.title'),
+            title: t('home.games.literacy.title') + ' - V0',
             subtitle: t('home.games.literacy.sub'),
             desc: t('home.games.literacy.desc'),
             startUrl: "/games/reading_skill",
             image: getElementImage('literacy_reading_skill'),
-            shortTitle: t('home.games.literacy.title'),
+            shortTitle: t('home.games.literacy.title') + ' - V0',
             local: t('home.games.literacy.local'),
             tag: t('home.games.literacy.tag'),
             tagClass: "test-tag test-tag-academic"
@@ -205,12 +205,12 @@ const Home = () => {
         {
             id: 701,
             gameKey: 'literacy_reading_skill_v2',
-            title: t('home.games.literacy.title') + t('common.version2'),
+            title: t('home.games.literacy.title'),
             subtitle: t('home.games.literacy.sub'),
             desc: t('home.games.literacy.desc'),
             startUrl: "/games/reading_skill_v2",
             image: getElementImage('literacy_reading_skill_v2'),
-            shortTitle: t('home.games.literacy.title') + t('common.version2'),
+            shortTitle: t('home.games.literacy.title'),
             local: t('home.games.literacy.local'),
             tag: t('home.games.literacy.tag'),
             tagClass: "test-tag test-tag-academic"

@@ -3,8 +3,8 @@ import axios from 'axios';
 import { API_URL } from '../services/api';
 
 const GAME_LABELS = {
-    'literacy_reading_skill': 'Padh ke batao',
-    'literacy_reading_skill_v2': 'Padh ke batao - Version 2',
+    'literacy_reading_skill': 'Padh ke batao - V0',
+    'literacy_reading_skill_v2': 'Padh ke batao',
     'numeracy_number_skill': 'Ankganit',
     'numeracy_number_skill_v3': 'Ankganit - Version 3',
     'number_recall_lottery': 'Lottery Ka Ticket',

@@ -631,7 +631,7 @@ const ReadingSkillGame = () => {
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="rs-divider"></div>}
           {showGameIcon && <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Reading Skill" className="rs-test-logo" />}
-          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}</span>}
+          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')} - V0</span>}
         </div>
         <div className="rs-topbar-center">
           {screen === 'game' && currentQuestion && (
@@ -656,7 +656,7 @@ const ReadingSkillGame = () => {
         {screen === 'splash' && (
           <div className="rs-screen rs-screen-splash">
             <div className="rs-splash-cover">
-              <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao" className="rs-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
+              <img src="/assets/images/reading_skill/reading_skill.jpg" alt="Padh ke batao - V0" className="rs-splash-img-full" onError={e => { e.target.style.display = 'none'; }} />
               <div className="rs-splash-btn-overlay">
                 <button
                   className={`rs-btn rs-btn-primary ${audioFinished ? 'rs-btn-highlight' : ''}`}

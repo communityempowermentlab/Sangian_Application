@@ -828,7 +828,7 @@ const ReadingSkillGameV2 = () => {
           {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="rs-brand-img" />}
           {showLogo && (showGameIcon || showGameName) && <div className="rs-divider"></div>}
           {showGameIcon && <img src="/assets/images/reading_skill_v2/reading_skill_v2.jpg" alt="Reading Skill" className="rs-test-logo" />}
-          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}{t('common.version2')}</span>}
+          {showGameName && <span className="rs-test-title">{t('home.games.literacy.title')}</span>}
         </div>
         <div className="rs-topbar-center">
           {screen === 'game' && (

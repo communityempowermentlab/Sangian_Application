@@ -4,8 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { API_URL } from '../services/api';
 
 const GAME_LABELS = {
-    'literacy_reading_skill': 'Padh ke batao',
-    'literacy_reading_skill_v2': 'Padh ke batao - Version 2',
+    'literacy_reading_skill': 'Padh ke batao - V0',
+    'literacy_reading_skill_v2': 'Padh ke batao',
     'numeracy_number_skill': 'Ankganit',
     'numeracy_number_skill_v2': 'Ankganit V2',
     'numeracy_number_skill_v3': 'Ankganit V3',

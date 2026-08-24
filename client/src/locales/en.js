@@ -338,7 +338,7 @@ export const en = {
     "testFinished": "Test finished successfully",
     "nextQuestion": "Next Question",
     "requiredStar": "* (Required)",
-    "welcomeLiteracy": "Welcome to Padh ke batao",
+    "welcomeLiteracy": "Welcome to Padh ke batao - V0",
     "doneReading": "Done Reading",
     "assessorStopped": "Assessor stopped:",
     "questionNo": "Question No.",

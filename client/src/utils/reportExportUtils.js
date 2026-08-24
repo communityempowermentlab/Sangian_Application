@@ -11,8 +11,8 @@ export const GAME_CATALOG = [
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit',        local: '',    tag: '',                 color: '#7c3aed' },
     { key: 'numeracy_number_skill_v2',  icon: '🔢', title: 'Ankganit - Version 2', local: '', tag: '', color: '#7c3aed' },
     { key: 'numeracy_number_skill_v3',  icon: '🔢', title: 'Ankganit - Version 3', local: '', tag: '', color: '#7c3aed' },
-    { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao',        local: '',   tag: '',                 color: '#059669' },
-    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao - Version 2', local: '', tag: '', color: '#059669' },
+    { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao - V0',        local: '',   tag: '',                 color: '#059669' },
+    { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao', local: '', tag: '', color: '#059669' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       local: '',tag: '',                color: '#dc2626' },
     { key: 'triangle_rachna',           icon: '🔺', title: 'Rachna',             local: '',           tag: '',     color: '#ef4444' },
 ];
