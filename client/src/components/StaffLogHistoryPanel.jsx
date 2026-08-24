@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { ADMIN_MODULES } from '../utils/staffPermissions';
-import ActivityDetailsModal from '../components/ActivityDetailsModal';
+import ActivityDetailsModal from './ActivityDetailsModal';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('en-IN', { hour12: false }) : '—';
@@ -273,8 +272,8 @@ const ActivityHistoryTab = ({ logs, total, loading, page, setPage,
     );
 };
 
-const AdminStaffLoginHistory = () => {
-    const { id } = useParams();
+// ── Panel entry point — rendered as the "Log History" tab on AdminStaffEdit ──
+const StaffLogHistoryPanel = ({ id }) => {
     const [tab, setTab] = useState('login');
     const [staffInfo, setStaffInfo] = useState(null);
     const [actionMsg, setActionMsg] = useState(null);
@@ -543,64 +542,56 @@ const AdminStaffLoginHistory = () => {
     const sessionOptions = useMemo(() => sessions.map(s => ({ id: s.id, login_time: s.login_time })), [sessions]);
 
     return (
-        <main className="admin-content" aria-label="Staff Log History">
-            <div className="admin-card w12">
-                <div style={{ marginBottom: 16 }}>
-                    <Link to="/admin/staff" style={{ fontSize: 13, color: 'var(--primary)', textDecoration: 'none' }}>← Back to Staff List</Link>
-                    <h3 style={{ fontSize: '18px', margin: '6px 0 4px 0' }}>Log History{staffInfo ? ` — ${staffInfo.name}` : ''}</h3>
-                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '13px' }}>{staffInfo?.email}</p>
+        <div>
+            {actionMsg && (
+                <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: actionMsg.type === 'success' ? '#dcfce7' : '#fee2e2', color: actionMsg.type === 'success' ? '#166534' : '#991b1b' }}>
+                    {actionMsg.text}
                 </div>
+            )}
 
-                {actionMsg && (
-                    <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: actionMsg.type === 'success' ? '#dcfce7' : '#fee2e2', color: actionMsg.type === 'success' ? '#166534' : '#991b1b' }}>
-                        {actionMsg.text}
-                    </div>
-                )}
-
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #e5e7eb' }}>
-                    {[['login', '🔑 Login History'], ['activity', '📋 Activity History']].map(([key, label]) => (
-                        <button
-                            key={key}
-                            onClick={() => setTab(key)}
-                            style={{
-                                padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
-                                fontSize: 14, fontWeight: 700, color: tab === key ? 'var(--primary)' : '#64748b',
-                                borderBottom: tab === key ? '3px solid var(--primary)' : '3px solid transparent',
-                                marginBottom: -2,
-                            }}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-
-                {tab === 'login' ? (
-                    <LoginHistoryTab
-                        id={id} staffInfo={staffInfo} sessions={sessions} summary={loginSummary} total={loginTotal}
-                        loading={loginLoading} page={loginPage} setPage={setLoginPage}
-                        search={loginSearch} setSearch={setLoginSearch}
-                        startDate={loginStart} setStartDate={setLoginStart}
-                        endDate={loginEnd} setEndDate={setLoginEnd}
-                        sortKey={loginSortKey} sortDir={loginSortDir} toggleSort={toggleLoginSort}
-                        onForceLogout={handleForceLogout}
-                        exportExcel={exportLoginExcel} exportPDF={exportLoginPDF} exporting={exporting}
-                    />
-                ) : (
-                    <ActivityHistoryTab
-                        logs={logs} total={activityTotal} loading={activityLoading} page={actPage} setPage={setActPage}
-                        search={actSearch} setSearch={setActSearch}
-                        startDate={actStart} setStartDate={setActStart}
-                        endDate={actEnd} setEndDate={setActEnd}
-                        module={actModule} setModule={setActModule}
-                        actionType={actActionType} setActionType={setActActionType}
-                        sessionId={actSessionId} setSessionId={setActSessionId} sessionOptions={sessionOptions}
-                        sortKey={actSortKey} sortDir={actSortDir} toggleSort={toggleActSort}
-                        exportExcel={exportActivityExcel} exportPDF={exportActivityPDF} exporting={exporting}
-                    />
-                )}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #e5e7eb' }}>
+                {[['login', '🔑 Login History'], ['activity', '📋 Activity History']].map(([key, label]) => (
+                    <button
+                        key={key}
+                        onClick={() => setTab(key)}
+                        style={{
+                            padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: 14, fontWeight: 700, color: tab === key ? 'var(--primary)' : '#64748b',
+                            borderBottom: tab === key ? '3px solid var(--primary)' : '3px solid transparent',
+                            marginBottom: -2,
+                        }}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
-        </main>
+
+            {tab === 'login' ? (
+                <LoginHistoryTab
+                    id={id} staffInfo={staffInfo} sessions={sessions} summary={loginSummary} total={loginTotal}
+                    loading={loginLoading} page={loginPage} setPage={setLoginPage}
+                    search={loginSearch} setSearch={setLoginSearch}
+                    startDate={loginStart} setStartDate={setLoginStart}
+                    endDate={loginEnd} setEndDate={setLoginEnd}
+                    sortKey={loginSortKey} sortDir={loginSortDir} toggleSort={toggleLoginSort}
+                    onForceLogout={handleForceLogout}
+                    exportExcel={exportLoginExcel} exportPDF={exportLoginPDF} exporting={exporting}
+                />
+            ) : (
+                <ActivityHistoryTab
+                    logs={logs} total={activityTotal} loading={activityLoading} page={actPage} setPage={setActPage}
+                    search={actSearch} setSearch={setActSearch}
+                    startDate={actStart} setStartDate={setActStart}
+                    endDate={actEnd} setEndDate={setActEnd}
+                    module={actModule} setModule={setActModule}
+                    actionType={actActionType} setActionType={setActActionType}
+                    sessionId={actSessionId} setSessionId={setActSessionId} sessionOptions={sessionOptions}
+                    sortKey={actSortKey} sortDir={actSortDir} toggleSort={toggleActSort}
+                    exportExcel={exportActivityExcel} exportPDF={exportActivityPDF} exporting={exporting}
+                />
+            )}
+        </div>
     );
 };
 
-export default AdminStaffLoginHistory;
+export default StaffLogHistoryPanel;

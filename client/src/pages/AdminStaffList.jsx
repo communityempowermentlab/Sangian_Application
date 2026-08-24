@@ -18,9 +18,6 @@ const AdminStaffList = () => {
     const [page, setPage]           = useState(1);
     const limit = 20;
 
-    // Log History is Super-Admin-only server-side (requireAdminOnly) — an
-    // organization session must never see the link either, or it's a dead
-    // link that always 403s.
     const isAdmin = !isStaffSession() && !isOrgSession();
 
     // /admin/organizations is itself Super-Admin-only server-side (same
@@ -137,21 +134,12 @@ const AdminStaffList = () => {
                                                         ? <span className="admin-tag good">Active</span>
                                                         : <span className="admin-tag warn" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca' }}>Inactive</span>}
                                                 </td>
-                                                <td>
-                                                    {isAdmin ? (
-                                                        <Link to={`/admin/staff/${member.id}/log-history`} style={{ color: 'var(--primary)', textDecoration: 'none' }}>
-                                                            {fmtDate(member.last_login)}
-                                                        </Link>
-                                                    ) : fmtDate(member.last_login)}
-                                                </td>
+                                                <td>{fmtDate(member.last_login)}</td>
                                                 <td>{fmtDate(member.created_at)}</td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                                         {canPerform('staff', 'edit') && (
                                                             <Link to={`/admin/staff/edit/${member.id}`} style={{ textDecoration: 'none', fontSize: '13px', color: 'var(--primary)' }}>✏️ Edit</Link>
-                                                        )}
-                                                        {isAdmin && (
-                                                            <Link to={`/admin/staff/${member.id}/log-history`} style={{ textDecoration: 'none', fontSize: '13px', color: '#0369a1' }}>📜 Log History</Link>
                                                         )}
                                                     </div>
                                                 </td>

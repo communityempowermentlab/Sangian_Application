@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { ADMIN_MODULES, isOrgSession, isStaffSession } from '../utils/staffPermissions';
+import StaffLogHistoryPanel from '../components/StaffLogHistoryPanel';
 
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e5e7eb', outline: 'none', boxSizing: 'border-box' };
 const labelStyle = { display: 'block', fontWeight: '600', marginBottom: '6px', fontSize: '14px' };
@@ -139,6 +140,21 @@ const AdminStaffEdit = () => {
                     >
                         Reset Password
                     </button>
+                    {isAdminSession && (
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('logHistory')}
+                            style={{
+                                padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
+                                fontSize: '14px', fontWeight: 600,
+                                color: activeTab === 'logHistory' ? 'var(--primary)' : '#6b7280',
+                                borderBottom: activeTab === 'logHistory' ? '2px solid var(--primary)' : '2px solid transparent',
+                                marginBottom: '-1px',
+                            }}
+                        >
+                            📜 Log History
+                        </button>
+                    )}
                 </div>
 
                 {activeTab === 'profile' && (
@@ -240,6 +256,10 @@ const AdminStaffEdit = () => {
                             </button>
                         </form>
                     </div>
+                )}
+
+                {activeTab === 'logHistory' && isAdminSession && (
+                    <StaffLogHistoryPanel id={id} />
                 )}
             </div>
         </main>

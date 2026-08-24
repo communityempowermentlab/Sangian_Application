@@ -66,7 +66,6 @@ import AdminStaffEdit from './pages/AdminStaffEdit';
 import AdminStaffProfile from './pages/AdminStaffProfile';
 import AdminStaffActivityLog from './pages/AdminStaffActivityLog';
 import AdminStaffAttendance from './pages/AdminStaffAttendance';
-import AdminStaffLoginHistory from './pages/AdminStaffLoginHistory';
 import AdminOrganizationsList from './pages/AdminOrganizationsList';
 import AdminIndividualsList from './pages/AdminIndividualsList';
 import AdminIndividualDetail from './pages/AdminIndividualDetail';
@@ -380,12 +379,10 @@ function App() {
                                     <Route path="staff/edit/:id"         element={<AdminStaffEdit />} />
                                     <Route path="staff/attendance"       element={<AdminStaffAttendance />} />
                                 </Route>
-                                {/* Staff Log History (Login History + Activity History) — always
-                                    administrator-only, never gated by the 'staff' module grant
-                                    (see RequireAdminOnly). */}
+                                {/* Staff Log History (Login History + Activity History) now lives as
+                                    a tab on AdminStaffEdit — always administrator-only there too. */}
                                 <Route element={<RequireAdminOnly />}>
                                     <Route path="staff/activity-log"      element={<AdminStaffActivityLog />} />
-                                    <Route path="staff/:id/log-history"   element={<AdminStaffLoginHistory />} />
                                     {/* Organization approval queue — Super Admin only, not a
                                         grantable staff module (see requireAdminOnly server-side). */}
                                     <Route path="organizations"           element={<AdminOrganizationsList />} />
