@@ -16,8 +16,8 @@ const fmtDuration = (v) => {
 };
 
 // Same catalog AdminReports/report exports use — so the Assessor sees the
-// same friendly game names (e.g. "Ankganit - Version 3") instead of the
-// raw DB key (numeracy_number_skill_v3).
+// same friendly game names (e.g. "Ankganit - V1") instead of the
+// raw DB key (numeracy_number_skill_v2).
 const GAME_TITLE_BY_KEY = Object.fromEntries(GAME_CATALOG.map(g => [g.key, g.title]));
 const gameTitle = (key) => GAME_TITLE_BY_KEY[key] || key;
 

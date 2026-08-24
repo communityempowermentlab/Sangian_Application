@@ -15,7 +15,7 @@ const GAMES = [
     { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher V2',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher V3',       tag: '',                 color: '#0891b2', img: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
     { key: 'numeracy_number_skill',     icon: '🔢', title: 'Ankganit - V0',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill/number_skill.jpg' },
-    { key: 'numeracy_number_skill_v3',  icon: '🔢', title: 'Ankganit - Version 3',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill_v3/number_skill.jpg' },
+    { key: 'numeracy_number_skill_v3',  icon: '🔢', title: 'Ankganit',        tag: '',                 color: '#7c3aed', img: '/assets/images/number_skill_v3/number_skill.jpg' },
     { key: 'literacy_reading_skill',    icon: '📖', title: 'Padh ke batao - V0',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill/reading_skill.jpg' },
     { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao',        tag: '',                 color: '#059669', img: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
     { key: 'cognitive_flex_chor',       icon: '⚡', title: 'Chor Machaye Shor',       tag: '',                 color: '#dc2626', img: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },

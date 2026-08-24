@@ -166,12 +166,12 @@ const Home = () => {
         {
             id: 601,
             gameKey: 'numeracy_number_skill_v2',
-            title: t('home.games.numeracy.title') + t('common.version2'),
+            title: t('home.games.numeracy.title') + ' - V1',
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
             startUrl: "/games/number_skill_v2",
             image: getElementImage('numeracy_number_skill_v2'),
-            shortTitle: t('home.games.numeracy.title') + t('common.version2'),
+            shortTitle: t('home.games.numeracy.title') + ' - V1',
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"
@@ -179,12 +179,12 @@ const Home = () => {
         {
             id: 602,
             gameKey: 'numeracy_number_skill_v3',
-            title: t('home.games.numeracy.title') + t('common.version3'),
+            title: t('home.games.numeracy.title'),
             subtitle: t('home.games.numeracy.sub'),
             desc: t('home.games.numeracy.desc'),
             startUrl: "/games/number_skill_v3",
             image: getElementImage('numeracy_number_skill_v3'),
-            shortTitle: t('home.games.numeracy.title') + t('common.version3'),
+            shortTitle: t('home.games.numeracy.title'),
             local: t('home.games.numeracy.local'),
             tag: t('home.games.numeracy.tag'),
             tagClass: "test-tag test-tag-academic"
