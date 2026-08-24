@@ -11,7 +11,7 @@ const GAME_LABELS = {
   'number_recall_lottery':   'Lottery Ka Ticket',
   'number_recall_lottery_v2': 'Lottery Ka Ticket - Version 2',
   'atlantis_bagiya':         'Bagiya',
-  'working_memory_herpher':  'Her Pher',
+  'working_memory_herpher':  'Her Pher - V0',
   'auditory_dhyan':          'Dhyan Kahan Hai',
   'triangle_rachna':         'Rachna',
   'rover_mela':              'Chalo Mela Chalen',

@@ -114,12 +114,12 @@ const Home = () => {
         {
             id: 5,
             gameKey: 'working_memory_herpher',
-            title: t('home.games.herpher.title') + " " + t('home.games.herpher.local'),
+            title: t('home.games.herpher.title') + ' - V0' + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
             startUrl: "/games/her_pher",
             image: getElementImage('working_memory_herpher'),
-            shortTitle: t('home.games.herpher.title'),
+            shortTitle: t('home.games.herpher.title') + ' - V0',
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"
@@ -127,12 +127,12 @@ const Home = () => {
         {
             id: 5.1,
             gameKey: 'working_memory_herpher_v2',
-            title: t('home.games.herpher.title') + t('common.version2') + " " + t('home.games.herpher.local'),
+            title: t('home.games.herpher.title') + ' - V1' + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
             startUrl: "/games/her_pher_v2",
             image: getElementImage('working_memory_herpher_v2'),
-            shortTitle: t('home.games.herpher.title') + t('common.version2'),
+            shortTitle: t('home.games.herpher.title') + ' - V1',
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"
@@ -140,12 +140,12 @@ const Home = () => {
         {
             id: 5.2,
             gameKey: 'working_memory_herpher_v3',
-            title: t('home.games.herpher.title') + t('common.version3') + " " + t('home.games.herpher.local'),
+            title: t('home.games.herpher.title') + " " + t('home.games.herpher.local'),
             subtitle: t('home.games.herpher.sub'),
             desc: t('home.games.herpher.desc'),
             startUrl: "/games/her_pher_v3",
             image: getElementImage('working_memory_herpher_v3'),
-            shortTitle: t('home.games.herpher.title') + t('common.version3'),
+            shortTitle: t('home.games.herpher.title'),
             local: t('home.games.herpher.local'),
             tag: t('home.games.herpher.tag'),
             tagClass: "test-tag"

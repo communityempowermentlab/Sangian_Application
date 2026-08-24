@@ -1109,7 +1109,7 @@ const HerPherGameV3 = () => {
             {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />}
             {showLogo && (showGameIcon || showGameName) && <div className="hp-divider"></div>}
             {showGameIcon && <img src="/assets/images/her_pher_v3/her_pher_v3.jpg" alt="Her Pher" className="hp-test-logo" />}
-            {showGameName && <span className="hp-test-title">{t('home.games.herpher.title')}{t('common.version3')}</span>}
+            {showGameName && <span className="hp-test-title">{t('home.games.herpher.title')}</span>}
           </div>
 
           <div className="hp-topbar-center">

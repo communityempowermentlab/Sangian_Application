@@ -222,7 +222,7 @@ export const en = {
     "welcomeLottery": "Welcome to Lottery Ka Ticket",
     "welcomeMela": "Welcome to Chalo Mela Chalen",
     "welcomeDhyan": "Welcome to Dhyan Kahan Hai",
-    "welcomeHerPher": "Welcome to Her Pher",
+    "welcomeHerPher": "Welcome to Her Pher - V0",
     "welcomeRachna": "Welcome to Rachna",
     "welcomeChor": "Welcome to Chor Machaye Shor",
     "notScored": "Not Scored",

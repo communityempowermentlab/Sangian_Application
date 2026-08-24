@@ -1058,7 +1058,7 @@ const HerPherGame = () => {
             {showLogo && <img src="/cel_admin_logo.png" alt="CEL Logo" className="hp-brand-img" />}
             {showLogo && (showGameIcon || showGameName) && <div className="hp-divider"></div>}
             {showGameIcon && <img src="/assets/images/her_pher/her_pher.jpg" alt="Her Pher" className="hp-test-logo" />}
-            {showGameName && <span className="hp-test-title">{t('home.games.herpher.title')}</span>}
+            {showGameName && <span className="hp-test-title">{t('home.games.herpher.title')} - V0</span>}
           </div>
 
           <div className="hp-topbar-center">
