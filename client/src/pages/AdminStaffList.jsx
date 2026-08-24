@@ -16,9 +16,6 @@ const AdminStaffList = () => {
     const [sortKey, setSortKey]     = useState('created_at');
     const [sortDir, setSortDir]     = useState('desc');
     const [page, setPage]           = useState(1);
-    const [resetTarget, setResetTarget] = useState(null);
-    const [newPassword, setNewPassword] = useState('');
-    const [actionMsg, setActionMsg] = useState(null);
     const limit = 20;
 
     // Log History is Super-Admin-only server-side (requireAdminOnly) — an
@@ -59,18 +56,6 @@ const AdminStaffList = () => {
         else { setSortKey(key); setSortDir('asc'); }
     };
 
-    const submitReset = async () => {
-        if (!newPassword) return;
-        try {
-            await axiosAdmin.put(`/admin/staff/${resetTarget.id}/reset-password`, { newPassword });
-            setActionMsg({ type: 'success', text: `Password reset for ${resetTarget.name}.` });
-            setResetTarget(null);
-            setNewPassword('');
-        } catch (error) {
-            setActionMsg({ type: 'error', text: error.response?.data?.message || 'Failed to reset password.' });
-        }
-    };
-
     const totalPages = Math.max(1, Math.ceil(total / limit));
     // Organization column — shown to Super Admin/staff sessions (who may
     // see records across multiple organizations), hidden for an
@@ -92,12 +77,6 @@ const AdminStaffList = () => {
                         </Link>
                     )}
                 </div>
-
-                {actionMsg && (
-                    <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, background: actionMsg.type === 'success' ? '#dcfce7' : '#fee2e2', color: actionMsg.type === 'success' ? '#166534' : '#991b1b' }}>
-                        {actionMsg.text}
-                    </div>
-                )}
 
                 <div className="admin-grid" style={{ marginTop: '12px' }}>
                     <div className="admin-card w12" style={{ boxShadow: 'none', background: 'rgba(255,255,255,0.72)' }}>
@@ -174,9 +153,6 @@ const AdminStaffList = () => {
                                                         {isAdmin && (
                                                             <Link to={`/admin/staff/${member.id}/log-history`} style={{ textDecoration: 'none', fontSize: '13px', color: '#0369a1' }}>📜 Log History</Link>
                                                         )}
-                                                        {canPerform('staff', 'edit') && (
-                                                            <button onClick={() => { setResetTarget(member); setNewPassword(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#7c3aed', padding: 0 }}>🔑 Reset Password</button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -196,25 +172,6 @@ const AdminStaffList = () => {
                     </div>
                 </div>
             </div>
-
-            {resetTarget && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setResetTarget(null)}>
-                    <div style={{ background: '#fff', borderRadius: 12, padding: 24, width: 380 }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ marginTop: 0 }}>Reset Password — {resetTarget.name}</h3>
-                        <input
-                            type="text"
-                            placeholder="New password (min 8 chars, letter + number)"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 16, boxSizing: 'border-box' }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button onClick={() => setResetTarget(null)} className="admin-btn">Cancel</button>
-                            <button onClick={submitReset} className="admin-btn admin-btn-primary">Reset Password</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </main>
     );
 };

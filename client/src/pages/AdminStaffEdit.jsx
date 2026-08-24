@@ -15,12 +15,17 @@ const isAdminSession = !isOrgSession() && !isStaffSession();
 const AdminStaffEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('profile');
     const [formData, setFormData] = useState({ name: '', email: '', mobile: '', status: 'active', org_id: '' });
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orgOptions, setOrgOptions] = useState([]);
+    const [newPassword, setNewPassword] = useState('');
+    const [pwError, setPwError] = useState('');
+    const [pwSuccess, setPwSuccess] = useState('');
+    const [pwSubmitting, setPwSubmitting] = useState(false);
 
     useEffect(() => {
         if (!isAdminSession) return;
@@ -80,6 +85,23 @@ const AdminStaffEdit = () => {
         }
     };
 
+    const submitReset = async (e) => {
+        e.preventDefault();
+        setPwError('');
+        setPwSuccess('');
+        if (!newPassword) return;
+        setPwSubmitting(true);
+        try {
+            await axiosAdmin.put(`/admin/staff/${id}/reset-password`, { newPassword });
+            setPwSuccess('Password reset successfully.');
+            setNewPassword('');
+        } catch (err) {
+            setPwError(err.response?.data?.message || 'Failed to reset password.');
+        } finally {
+            setPwSubmitting(false);
+        }
+    };
+
     if (loading) return <main className="admin-content"><div className="admin-card w9">Loading...</div></main>;
 
     return (
@@ -87,9 +109,40 @@ const AdminStaffEdit = () => {
             <div className="admin-card w9">
                 <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ fontSize: '20px', margin: '0 0 8px 0' }}>✏️ Edit Staff</h3>
-                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>Update account details and menu permissions.</p>
+                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>Update account details, menu permissions, and password.</p>
                 </div>
 
+                <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e7eb', marginBottom: '24px' }}>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('profile')}
+                        style={{
+                            padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: '14px', fontWeight: 600,
+                            color: activeTab === 'profile' ? 'var(--primary)' : '#6b7280',
+                            borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent',
+                            marginBottom: '-1px',
+                        }}
+                    >
+                        Edit Profile
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('password')}
+                        style={{
+                            padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: '14px', fontWeight: 600,
+                            color: activeTab === 'password' ? 'var(--primary)' : '#6b7280',
+                            borderBottom: activeTab === 'password' ? '2px solid var(--primary)' : '2px solid transparent',
+                            marginBottom: '-1px',
+                        }}
+                    >
+                        Reset Password
+                    </button>
+                </div>
+
+                {activeTab === 'profile' && (
+                <>
                 {error && (
                     <div style={{ padding: '12px 16px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
                         ⚠️ {error}
@@ -150,6 +203,44 @@ const AdminStaffEdit = () => {
                         </Link>
                     </div>
                 </form>
+                </>
+                )}
+
+                {activeTab === 'password' && (
+                    <div style={{ maxWidth: '420px' }}>
+                        <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: '14px' }}>
+                            Set a new password for this staff account. They'll use it the next time they log in.
+                        </p>
+
+                        {pwError && (
+                            <div style={{ padding: '12px 16px', background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
+                                ⚠️ {pwError}
+                            </div>
+                        )}
+                        {pwSuccess && (
+                            <div style={{ padding: '12px 16px', background: '#dcfce7', border: '1px solid #bbf7d0', color: '#166534', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
+                                ✅ {pwSuccess}
+                            </div>
+                        )}
+
+                        <form onSubmit={submitReset}>
+                            <div className="form-group" style={{ marginBottom: '20px' }}>
+                                <label style={labelStyle}>New Password <span style={{ color: '#dc2626' }}>*</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="Min 8 chars, letter + number"
+                                    value={newPassword}
+                                    onChange={(e) => { setNewPassword(e.target.value); if (pwError) setPwError(''); }}
+                                    style={inputStyle}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" disabled={pwSubmitting || !newPassword} style={{ padding: '12px 24px', borderRadius: '10px', background: 'var(--primary)', color: '#ffffff', fontWeight: 'bold', border: 'none', cursor: (pwSubmitting || !newPassword) ? 'not-allowed' : 'pointer', opacity: (pwSubmitting || !newPassword) ? 0.7 : 1 }}>
+                                {pwSubmitting ? 'Resetting...' : 'Reset Password'}
+                            </button>
+                        </form>
+                    </div>
+                )}
             </div>
         </main>
     );
