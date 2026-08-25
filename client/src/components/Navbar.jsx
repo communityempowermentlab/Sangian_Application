@@ -1,11 +1,10 @@
-import { API_URL } from '../services/api';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getChildPhotoOrDefault } from '../services/photoUtils';
 import { getLanguageIcon } from '../utils/languageIcons';
 import { isAssessorSession, getAssessorInfo, assessorLogout } from '../utils/assessorSession';
 import { isIndividualSession, getIndividualInfo, individualLogout } from '../utils/individualSession';
+import { endChildSession } from '../utils/endChildSession';
 
 const Navbar = () => {
     const [currentUser, setCurrentUser] = useState(null);
@@ -21,23 +20,9 @@ const Navbar = () => {
         }
     }, []);
 
-    const endChildSession = async () => {
-        try {
-            const sessionId = localStorage.getItem('sessionId');
-            if (sessionId) {
-                await axios.post(`${API_URL}/sessions/end/${sessionId}`);
-            }
-        } catch (e) {
-            console.error("Logout session error:", e);
-        } finally {
-            localStorage.removeItem('currentChild');
-            localStorage.removeItem('sessionId');
-            setCurrentUser(null);
-        }
-    };
-
     const handleLogout = async () => {
         await endChildSession();
+        setCurrentUser(null);
         window.location.href = '/';
     };
 
