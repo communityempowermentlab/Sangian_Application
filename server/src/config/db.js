@@ -305,6 +305,14 @@ const initMultiTenantSchema = async (connection) => {
   await alterColumn('children', 'supervisor_id INT NULL AFTER org_id', 'children.supervisor_id');
   await alterColumn('children', 'volunteer_id INT NULL AFTER supervisor_id', 'children.volunteer_id');
 
+  // Which Assessor self-registered this child via the Assessor Dashboard's
+  // "Add New Child" (assessorController.js's addChild) — distinct from
+  // supervisor_id above (a different actor role in the assessment-session
+  // chain) and from game_sessions.assessor_id (which assessor conducted a
+  // given game, not who registered the child). NULL for every child added
+  // by Admin/Staff/Organization, same convention as org_id.
+  await alterColumn('children', 'created_by_assessor_id INT NULL AFTER org_id', 'children.created_by_assessor_id');
+
   // Org-scope assessors, same convention as children.org_id — NULL
   // preserves every pre-existing assessor row as Super-Admin-managed
   // (unchanged); only assessors created by/for an organization going

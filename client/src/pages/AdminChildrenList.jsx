@@ -737,6 +737,9 @@ const AdminChildrenList = () => {
                                                     {getMissingFields(child).length > 0 && (
                                                         <span title={`Missing: ${getMissingFields(child).join(', ')}`} style={{ marginLeft: '6px', cursor: 'help', fontSize: '12px' }}>⚠️</span>
                                                     )}
+                                                    {child.created_by_assessor_name && (
+                                                        <span title={`Added by Assessor: ${child.created_by_assessor_name}`} style={{ marginLeft: '6px', cursor: 'help', fontSize: '12px' }}>🧑‍💼</span>
+                                                    )}
                                                 </td>
                                                 {/* Ensure date format visually matches 2018-05-10 safely */}
                                                 <td>{child.dob ? new Date(child.dob).toISOString().split('T')[0] : ''}</td>

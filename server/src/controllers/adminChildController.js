@@ -27,6 +27,10 @@ const logChildActivity = async (req, orgId, actionType, description, extra = {})
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Rename the temp upload file to <childId>_<ts>.<ext> and return the new filename. */
+// Exported (in addition to the local const use below) so
+// assessorController.js's addChild can reuse the exact same file-handling
+// logic rather than duplicating it — purely additive, doesn't change how
+// this file uses them itself.
 const finalizePhoto = (tmpFile, childId) => {
     const ext         = path.extname(tmpFile.filename);
     const newFilename = `${childId}_${Date.now()}${ext}`;
@@ -41,6 +45,9 @@ const deletePhoto = (filename) => {
     const filePath = path.join(UPLOAD_DIR, filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 };
+
+exports.finalizePhoto = finalizePhoto;
+exports.deletePhoto = deletePhoto;
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 
@@ -70,7 +77,7 @@ exports.getAllChildren = async (req, res) => {
         const whereClauses = ['c.individual_id IS NULL', ...(scope.sql ? [scope.sql] : [])];
         const [children] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo, c.created_at,
-                   c.org_id, o.org_name,
+                   c.org_id, o.org_name, c.created_by_assessor_id, ca.name AS created_by_assessor_name,
                    (SELECT login_time FROM login_sessions ls
                     WHERE ls.child_id = c.child_id AND ls.status = 'success'
                     ORDER BY login_time DESC LIMIT 1) AS last_login,
@@ -87,6 +94,7 @@ exports.getAllChildren = async (req, res) => {
                    agg.last_activity                   AS last_activity
             FROM children c
             LEFT JOIN organizations o ON c.org_id = o.id
+            LEFT JOIN assessors ca ON ca.id = c.created_by_assessor_id
             LEFT JOIN (
                 SELECT child_id,
                        COUNT(*)                                                          AS total_sessions,
@@ -202,7 +210,7 @@ exports.getChildById = async (req, res) => {
         const scope = scopeClause(req.orgScope);
         const [rows] = await pool.query(`
             SELECT c.child_id, c.name, c.dob, c.gender, c.mobile, c.father_name, c.mother_name, c.remarks, c.gram_sabha, c.hamlet, c.status, c.photo,
-                   c.org_id, o.org_name,
+                   c.org_id, o.org_name, c.created_by_assessor_id, ca.name AS created_by_assessor_name,
                    (SELECT GROUP_CONCAT(cg.id ORDER BY cg.name)
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
                     WHERE cgm.children_id = c.id) AS group_ids,
@@ -210,6 +218,7 @@ exports.getChildById = async (req, res) => {
                     FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
                     WHERE cgm.children_id = c.id) AS group_names
             FROM children c LEFT JOIN organizations o ON o.id = c.org_id
+            LEFT JOIN assessors ca ON ca.id = c.created_by_assessor_id
             WHERE c.child_id = ? ${scope.sql ? `AND ${scope.sql}` : ''}
         `, [childId, ...scope.params]);
 

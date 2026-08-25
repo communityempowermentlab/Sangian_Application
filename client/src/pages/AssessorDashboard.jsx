@@ -73,9 +73,14 @@ const AssessorDashboard = () => {
                     </h1>
                     <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Here's your assessment workload and progress at a glance.</p>
                 </div>
-                <Link to="/assessor/search-child" className="btn modal-btn-primary" style={{ padding: '10px 22px', borderRadius: '10px', textDecoration: 'none' }}>
-                    🔍 Search Child / Start Assessment
-                </Link>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <Link to="/assessor/add-child" className="btn" style={{ padding: '10px 22px', borderRadius: '10px', textDecoration: 'none', background: '#fff', border: '1px solid #d1d5db', color: '#374151' }}>
+                        ➕ Add New Child
+                    </Link>
+                    <Link to="/assessor/search-child" className="btn modal-btn-primary" style={{ padding: '10px 22px', borderRadius: '10px', textDecoration: 'none' }}>
+                        🔍 Search Child / Start Assessment
+                    </Link>
+                </div>
             </div>
 
             {error && (

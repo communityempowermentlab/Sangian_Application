@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import UnifiedLogin from './pages/UnifiedLogin';
 import AssessorSearchChild from './pages/AssessorSearchChild';
 import AssessorDashboard from './pages/AssessorDashboard';
+import AssessorAddChild from './pages/AssessorAddChild';
 import AssessorAccount from './pages/AssessorAccount';
 import AdminLogin from './pages/AdminLogin';
 import AdminLayout from './components/AdminLayout';
@@ -262,6 +263,7 @@ function App() {
                         <Route element={<PublicLayout />}>
                             <Route element={<RequireAssessorAuth />}>
                                 <Route path="/assessor/dashboard"     element={<AssessorDashboard />} />
+                                <Route path="/assessor/add-child"     element={<AssessorAddChild />} />
                                 <Route path="/assessor/search-child"  element={<AssessorSearchChild />} />
                                 <Route path="/assessor/account"       element={<AssessorAccount />} />
                             </Route>

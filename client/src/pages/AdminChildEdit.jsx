@@ -18,6 +18,7 @@ const AdminChildEdit = () => {
     const [formData, setFormData] = useState({ new_child_id: '', name: '', dobDay: '', dobMonth: '', dobYear: '', gender: '', mobile: '', father_name: '', mother_name: '', remarks: '', gram_sabha: '', hamlet: '', status: 'active', org_id: '' });
     const [orgOptions, setOrgOptions] = useState([]);
     const [currentPhoto, setCurrentPhoto] = useState(null);  // filename from DB
+    const [createdByAssessorName, setCreatedByAssessorName] = useState(null);
     const [photoFile, setPhotoFile]       = useState(null);  // new File selected
     const [errors, setErrors]     = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +129,7 @@ const AdminChildEdit = () => {
                 org_id: data.org_id || '',
             });
             setCurrentPhoto(data.photo || null);
+            setCreatedByAssessorName(data.created_by_assessor_name || null);
             setSelectedGroupIds(data.group_ids ? data.group_ids.split(',').map(Number) : []);
         } catch (error) {
             console.error('Failed to fetch child details:', error);
@@ -237,6 +239,9 @@ const AdminChildEdit = () => {
                     <div>
                         <h3 style={{ fontSize: '18px', margin: '0 0 4px 0' }}>Edit Child Profile — {id}</h3>
                         <p style={{ margin: '0', color: 'var(--muted)', fontSize: '13px' }}>Modify details, change the Child ID, or activate/deactivate the child's access.</p>
+                        {createdByAssessorName && (
+                            <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: '12px' }}>🧑‍💼 Added by Assessor: <strong>{createdByAssessorName}</strong></p>
+                        )}
                     </div>
                     <Link to="/admin/children" className="admin-btn admin-btn-ghost" style={{ padding: '8px 16px' }}>← Back to List</Link>
                 </div>
