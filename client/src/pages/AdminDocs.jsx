@@ -1411,7 +1411,54 @@ Maximum possible = 25
 
 This is updated after every question and saved to the \`game_sessions.score\` column.
 
-**Example — question 5 (10 images required):**
+### Detailed Scoring Table
+
+| Question | Total Images | Correct Clicks | Score | Category |
+|---|---|---|---|---|
+| Item 0 (Practice) | 6 | — | No Scoring | Tools |
+| Item 1 | 7 | 7 | 2 | Fruits |
+| | | 6 | 1 | |
+| | | < 6 | 0 | |
+| Item 2 | 8 | 8 | 2 | Vegetables |
+| | | 7 | 1 | |
+| | | < 7 | 0 | |
+| Item 3 | 9 | 9 | 3 | Sports |
+| | | 8 | 2 | |
+| | | 7 | 1 | |
+| | | < 7 | 0 | |
+| Item 4 | 10 | 10 | 3 | Cloth |
+| | | 9 | 2 | |
+| | | 8 | 1 | |
+| | | < 8 | 0 | |
+| Item 5 | 11 | 11 | 3 | Kitchen |
+| | | 10 | 2 | |
+| | | 9 | 1 | |
+| | | < 9 | 0 | |
+| Item 6 | 12 | 12 | 4 | Household |
+| | | 11 | 3 | |
+| | | 10 | 2 | |
+| | | 9 | 1 | |
+| | | < 9 | 0 | |
+| Item 7 | 13 | 13 | 4 | Animals |
+| | | 12 | 3 | |
+| | | 11 | 2 | |
+| | | 10 | 1 | |
+| | | < 10 | 0 | |
+| Item 8 | 14 | 14 | 4 | Transport |
+| | | 13 | 3 | |
+| | | 12 | 2 | |
+| | | 11 | 1 | |
+| | | < 11 | 0 | |
+
+**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored)
+
+**Question structure:**
+- **Practice (Item 0)** — always Score = 0 / not scored, regardless of performance
+- **Item 1–8** — the 8 actual scored test items, each worth up to 2–4 points depending on the table above
+
+The category names (Tools, Fruits, Vegetables, Sports, Cloth, Kitchen, Household, Animals, Transport) reflect the currently-configured image theme per category (\`item0\`–\`item8\`) in the admin Elements panel — since content is admin-managed (see **Technical Documentation § Content Management**), these are the operational category labels in current use, not hardcoded constants in the game source itself. If an admin re-themes a category, the images change but the point thresholds above stay fixed to the category's required image count.
+
+**Example — question 5 / Item 4 (10 images required, "Cloth"):**
 
 | Correct Clicks | Score |
 |---|---|
@@ -3923,6 +3970,47 @@ SCORING_RULES = {
 score = SCORING_RULES[questionNumber][correctCount] || 0
 \`\`\`
 Any correct-click count not listed for that question scores 0 (e.g. question 9 with only 8 correct clicks out of 14 scores 0, not a partial value). Maximum possible total across all 8 scored questions is **25**.
+
+### Detailed Scoring Table
+
+| Question | Total Images | Correct Clicks | Score | Category |
+|---|---|---|---|---|
+| Item 0 (Practice) | 6 | — | No Scoring | Tools |
+| Item 1 | 7 | 7 | 2 | Fruits |
+| | | 6 | 1 | |
+| | | < 6 | 0 | |
+| Item 2 | 8 | 8 | 2 | Vegetables |
+| | | 7 | 1 | |
+| | | < 7 | 0 | |
+| Item 3 | 9 | 9 | 3 | Sports |
+| | | 8 | 2 | |
+| | | 7 | 1 | |
+| | | < 7 | 0 | |
+| Item 4 | 10 | 10 | 3 | Cloth |
+| | | 9 | 2 | |
+| | | 8 | 1 | |
+| | | < 8 | 0 | |
+| Item 5 | 11 | 11 | 3 | Kitchen |
+| | | 10 | 2 | |
+| | | 9 | 1 | |
+| | | < 9 | 0 | |
+| Item 6 | 12 | 12 | 4 | Household |
+| | | 11 | 3 | |
+| | | 10 | 2 | |
+| | | 9 | 1 | |
+| | | < 9 | 0 | |
+| Item 7 | 13 | 13 | 4 | Animals |
+| | | 12 | 3 | |
+| | | 11 | 2 | |
+| | | 10 | 1 | |
+| | | < 10 | 0 | |
+| Item 8 | 14 | 14 | 4 | Transport |
+| | | 13 | 3 | |
+| | | 12 | 2 | |
+| | | 11 | 1 | |
+| | | < 11 | 0 | |
+
+**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). The category names reflect the currently-configured image theme per category in the admin Elements panel (see §11 Content Management) — these are operational labels, not hardcoded constants in the game source itself.
 
 A \`getPerformanceInterpretation\` helper exists in the source (bucketing ≥20 Excellent / ≥15 Good / ≥10 Average / else Needs Improvement) but does not appear to be rendered anywhere on the actual score screen — likely vestigial, worth flagging rather than assuming it's live-documented UI behavior.
 
