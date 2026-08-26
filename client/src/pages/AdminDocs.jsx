@@ -1650,6 +1650,39 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | q3 | Hit the hazard cell | 0 |
 | **Running Total** | | **6** |
 
+### Full Per-Item Scoring Table
+
+| Item | Trial | Time Limit | Correct (Moves → Score) | Partial (Moves → Score) | Incorrect (Moves → Score) | Coins |
+|---|---|---|---|---|---|---|
+| TQ1 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ1 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| TQ2 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ2 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| Q1  | — | 60s  | 3 → 2 | 4 → 1 | 4+ → 0 | 7 |
+| TQ3 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ3 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| TQ4 | Trial 1 | — | 5 → 2 | — | — | 9 |
+| TQ4 | Trial 2 | — | 5 → 1 | — | 0 → 0 | 9 |
+| Q2  | — | 60s  | 3 → 2 | 4 → 1  | 4+ → 0  | 7 |
+| Q3  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q4  | — | 60s  | 2 → 2 | 3 → 1  | 3+ → 0  | 6 |
+| Q5  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q6  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q7  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q8  | — | 90s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q9  | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 |
+| Q10 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q11 | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 |
+| Q12 | — | 120s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 |
+| Q13 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q14 | — | 180s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q15 | — | 180s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 |
+| Q16 | — | 180s | 8 → 2 | 9 → 1  | 9+ → 0  | 12 |
+| Q17 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 |
+| Q18 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 |
+
+"Correct" is the optimal move count — reaching the end point in exactly that many moves scores 2. "Partial" is the more generous threshold — reaching it in that many moves (but not the optimal count) scores 1. "Incorrect" covers everything beyond the partial threshold — including a slow-but-technically-successful finish and running out of coins/hitting the hazard entirely — all scoring 0. Sample A and Sample B are excluded since they're non-interactive and never scored. Maximum possible score across all 22 questions (4 teaching + 18 scored) is confirmed at **44**.
+
 ---
 
 ## 6. Score Display
@@ -1673,7 +1706,7 @@ Unlike games where the stop rule is checked after *every* question, **${game.tit
 
 ## 8. Stop Rule — Clinical Drop-Out Gate
 
-This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum-correct rule — the generic platform template's language for both does not describe this game accurately:
+This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum-correct rule — the generic platform template's language for both does not describe this game accurately. It's a clinical stopping rule, checked right after Q3 — the third *real scored* question, reached only after the teaching/practice items and sample demos earlier in the sequence:
 
 \`\`\`
 Evaluated ONCE, immediately after q3:
@@ -4631,6 +4664,51 @@ Grid cell types (used across all 22 hardcoded matrices):
 | \`7-T3\` | Toll cell — costs 2 moves instead of 1 |
 | \`7-EP\` | End point |
 
+### Full Per-Item Configuration Table
+
+| Item | Trial | Time Limit | Correct (Moves → Score) | Partial (Moves → Score) | Incorrect (Moves → Score) | Coins |
+|---|---|---|---|---|---|---|
+| TQ1 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ1 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| TQ2 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ2 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| Q1  | — | 60s  | 3 → 2 | 4 → 1 | 4+ → 0 | 7 |
+| TQ3 | Trial 1 | — | 3 → 2 | — | — | 7 |
+| TQ3 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 |
+| TQ4 | Trial 1 | — | 5 → 2 | — | — | 9 |
+| TQ4 | Trial 2 | — | 5 → 1 | — | 0 → 0 | 9 |
+| Q2  | — | 60s  | 3 → 2 | 4 → 1  | 4+ → 0  | 7 |
+| Q3  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q4  | — | 60s  | 2 → 2 | 3 → 1  | 3+ → 0  | 6 |
+| Q5  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q6  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q7  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q8  | — | 90s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 |
+| Q9  | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 |
+| Q10 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q11 | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 |
+| Q12 | — | 120s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 |
+| Q13 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q14 | — | 180s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 |
+| Q15 | — | 180s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 |
+| Q16 | — | 180s | 8 → 2 | 9 → 1  | 9+ → 0  | 12 |
+| Q17 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 |
+| Q18 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 |
+
+**Reading the table:** "Correct" is the optimal move count (\`t2\`) — reaching the end point in exactly that many moves scores 2. "Partial" is the more generous threshold (\`t1\`) — reaching it in that many moves (but not the optimal count) scores 1. "Incorrect" covers everything beyond the partial threshold, including both a slow-but-technically-successful finish and running out of coins/hitting the hazard cell entirely — all of it scores 0. Coin budget is consistently 3 higher than the partial-move threshold across every question, giving the child some room to explore before the hard coin cutoff.
+
+Sample A and Sample B (the two scripted demo sequences) are not included in this table since they are non-interactive and never scored.
+
+**Timer bucketing** — the time limit follows a stepped pattern by question number, not a per-question custom value:
+| Questions | Time Limit |
+|---|---|
+| Q1–Q5 | 60 seconds |
+| Q6–Q8 | 90 seconds |
+| Q9–Q13 | 120 seconds |
+| Q14–Q18 | 180 seconds |
+
+**Maximum possible score: 44** (across 4 teaching questions + 18 scored questions), confirmed against \`MAX_SCORE = 44\` in source.
+
 ---
 
 ## 4. Gameplay Mechanics
@@ -4669,7 +4747,7 @@ One retake is allowed (retakeCount < 2) across the teaching questions.
 
 ## 5. Stop Rule — Clinical Drop-Out Gate
 
-This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum. It is a single, one-time check performed immediately after q3 completes:
+This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum. It's a clinical stopping rule, checked right after Q3 — the third *real scored* question, reached only after the child has already been through the teaching/practice items and sample demos earlier in the sequence. The check itself is a single, one-time evaluation performed immediately after q3 completes:
 
 \`\`\`js
 if (q1s < 2 && q2s < 2 && q3s < 2) {
