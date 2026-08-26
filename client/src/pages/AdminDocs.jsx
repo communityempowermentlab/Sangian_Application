@@ -61,6 +61,7 @@ const GAME_SECTIONS = [
 const HIDDEN_SECTIONS_BY_GAME = {
     number_recall_lottery_v2: ['technical_docs_2013'],
     literacy_reading_skill_v2: ['technical_docs_2013', 'reports'],
+    numeracy_number_skill_v3: ['technical_docs_2013', 'reports'],
 };
 const getVisibleSections = (game) =>
     GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
@@ -8254,7 +8255,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'numeracy_number_skill'  ? NUMERACY_DEFAULT :
                                 selectedGame.key === 'literacy_reading_skill' ? LITERACY_DEFAULT  :
-                                ['literacy_reading_skill_v2', 'number_recall_lottery_v2'].includes(selectedGame.key) ? '' :
+                                ['literacy_reading_skill_v2', 'number_recall_lottery_v2', 'numeracy_number_skill_v3'].includes(selectedGame.key) ? '' :
                                 `# ${selectedGame.title} — Technical Documentation 2013\n\nLegacy documentation for **${selectedGame.title}**.`
                             }
                         />
