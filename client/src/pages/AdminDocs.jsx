@@ -35,6 +35,8 @@ const GAME_CATALOG = [
     { key: 'working_memory_herpher_v2', icon: '🔄', title: 'Her Pher - V1',           color: '#0891b2', image: '/assets/images/her_pher_v2/her_pher_v2.jpg' },
     { key: 'working_memory_herpher_v3', icon: '🔄', title: 'Her Pher',           color: '#0891b2', image: '/assets/images/her_pher_v3/her_pher_v3.jpg' },
     { key: 'numeracy_number_skill',  icon: '🔢', title: 'Ankganit - V0',           color: '#4f46e5', image: '/assets/images/number_skill/number_skill.jpg' },
+    { key: 'numeracy_number_skill_v2', icon: '🔢', title: 'Ankganit - V1',         color: '#4f46e5', image: '/assets/images/number_skill_v2/number_skill.jpg' },
+    { key: 'numeracy_number_skill_v3', icon: '🔢', title: 'Ankganit',              color: '#4f46e5', image: '/assets/images/number_skill_v3/number_skill.jpg' },
     { key: 'literacy_reading_skill', icon: '📖', title: 'Padh ke batao - V0',      color: '#059669', image: '/assets/images/reading_skill/reading_skill.jpg' },
     { key: 'literacy_reading_skill_v2', icon: '📖', title: 'Padh ke batao', color: '#059669', image: '/assets/images/reading_skill_v2/reading_skill_v2.jpg' },
     { key: 'cognitive_flex_chor',    icon: '⚡', title: 'Chor Machaye Shor',  color: '#dc2626', image: '/assets/images/chor_machaye_shor/chor_machaye_shor.jpg' },
@@ -45,17 +47,23 @@ const GAME_SECTIONS = [
     { key: 'introduction',       icon: '📖', label: 'Introduction',                  available: true  },
     { key: 'technical_docs_2013',icon: '📜', label: 'Technical Documentation 2013',  available: true,  legacy: true  },
     { key: 'technical_docs',     icon: '⚙️', label: 'Technical Documentation',       available: true  },
-    { key: 'gameplay_manual',    icon: '📋', label: 'Gameplay Manual',               available: true  },
     { key: 'workflow_diagram',   icon: '🔀', label: 'Workflow Diagram',               available: true  },
-    { key: 'screenshots',        icon: '🖼️', label: 'Screenshot Library',            available: true  },
+    { key: 'screenshots',        icon: '🖼️', label: 'Screenshots & Manual',          available: true  },
     { key: 'audio_logic',        icon: '🔊', label: 'Audio & Sound Logic',            available: true  },
-    { key: 'score_logic',        icon: '🏆', label: 'Score Logic',                   available: true  },
-    { key: 'cutoff_calc',        icon: '📊', label: 'Cutoff Calculation',              available: true  },
+    { key: 'score_logic',        icon: '🏆', label: 'Score & Progression Logic',      available: true  },
     { key: 'assessment',         icon: '🧪', label: 'Assessment Behavior',            available: true  },
-    { key: 'api_integration',    icon: '🔗', label: 'API / Backend Logic',            available: true  },
-    { key: 'database_flow',      icon: '🗄️', label: 'Data Flow',                      available: true  },
+    { key: 'api_integration',    icon: '🔗', label: 'API & Data Flow',                available: true  },
     { key: 'reports',            icon: '📈', label: 'Reports & Analysis',             available: true  },
 ];
+
+// Per-game hidden sections — e.g. a V2 game has no 2013 predecessor, so its
+// legacy archive section is hidden rather than shown empty.
+const HIDDEN_SECTIONS_BY_GAME = {
+    number_recall_lottery_v2: ['technical_docs_2013'],
+    literacy_reading_skill_v2: ['technical_docs_2013', 'reports'],
+};
+const getVisibleSections = (game) =>
+    GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
 
 const SEC_H = 38; // px per accordion section row
 
@@ -162,6 +170,20 @@ const GAME_INTRO_DEFAULTS = {
             guidance:    'संख्याओं और सवालों को ध्यान से देखो। सोचो और अपना सर्वश्रेष्ठ उत्तर दो। तुम गणित में बहुत अच्छे हो!',
         },
     },
+    numeracy_number_skill_v3: {
+        en: {
+            skill:       'Foundational Numeracy - Adaptive Arithmetic Assessment',
+            objective:   'This test uses an adaptive assessment to determine the child\'s arithmetic level. Starting with two-digit subtraction, the child moves up to division or down to number recognition based on their performance, until their numeracy level is identified.',
+            description: 'The child solves subtraction and division problems, or identifies numbers, depending on how they perform at each stage. The test is adaptive: children who solve subtraction correctly move on to harder division problems, while children who struggle move to simpler number-recognition tasks, until the assessment settles on their numeracy level.',
+            guidance:    'Take your time and think carefully about each problem. It\'s okay if some questions are tricky — just do your best!',
+        },
+        hi: {
+            skill:       'बुनियादी संख्या ज्ञान - अनुकूली अंकगणित आकलन',
+            objective:   'यह टेस्ट एक अनुकूली (adaptive) आकलन है, जो बच्चे का अंकगणितीय स्तर पता करता है। दो अंकों वाले घटाव से शुरू करके, बच्चे के प्रदर्शन के आधार पर वह भाग (division) की ओर ऊपर या संख्या पहचान की ओर नीचे बढ़ता है, जब तक उसका संख्या ज्ञान स्तर तय न हो जाए।',
+            description: 'बच्चा घटाव और भाग के सवाल हल करता है, या संख्याओं को पहचानता है, यह इस पर निर्भर करता है कि वह हर चरण में कैसा प्रदर्शन करता है। यह टेस्ट अनुकूली है: घटाव सही हल करने वाले बच्चे कठिन भाग के सवालों की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे सरल संख्या-पहचान कार्यों की ओर जाते हैं, जब तक उनका संख्या ज्ञान स्तर तय नहीं हो जाता।',
+            guidance:    'आराम से हर सवाल के बारे में ध्यान से सोचो। कोई सवाल मुश्किल लगे तो कोई बात नहीं — बस अपनी पूरी कोशिश करो!',
+        },
+    },
     literacy_reading_skill: {
         en: {
             skill:       'Foundational Literacy & Reading Comprehension',
@@ -178,16 +200,16 @@ const GAME_INTRO_DEFAULTS = {
     },
     literacy_reading_skill_v2: {
         en: {
-            skill:       'Foundational Literacy & Reading Comprehension - Version 2',
-            objective:   'This test assesses the child\'s foundational literacy-related academic ability, particularly letter recognition, word reading, and reading simple connected text with understanding.',
-            description: 'Read letters, words, and simple sentences carefully. This activity helps evaluate reading ability, understanding, and language development.',
-            guidance:    'Look carefully and read what you see. Take your time. You are a wonderful reader!',
+            skill:       'Foundational Literacy - Oral Reading Fluency (ASER 2014-style)',
+            objective:   'This test uses an adaptive, ASER 2014-style oral reading assessment to determine the child\'s current reading level. Starting from a paragraph, the child moves up or down a ladder — Letter, Word, Paragraph, Story — based on how fluently they read aloud, until their reading level is identified.',
+            description: 'The child reads letters, words, a paragraph, and a story aloud while the assessor listens and marks accuracy and fluency. The test is adaptive: children who read well move on to harder text, and children who struggle move to easier text, until the assessment settles on their reading level.',
+            guidance:    'Take your time and read out loud, clearly. It\'s okay if some words are tricky — just do your best!',
         },
         hi: {
-            skill:       'बुनियादी साक्षरता और पठन कौशल - संस्करण 2',
-            objective:   'इस टेस्ट का उद्देश्य बच्चे की बुनियादी पढ़ने की क्षमता का आकलन करना है।',
-            description: 'इस गतिविधि में बच्चे अक्षरों, शब्दों और छोटे वाक्यों को पढ़ते हैं। यह बच्चे की पढ़ने और समझने की क्षमता को जानने में मदद करता है।',
-            guidance:    'ध्यान से देखो और जो दिखे उसे पढ़ो। जल्दी मत करो। तुम एक अच्छे पाठक हो!',
+            skill:       'बुनियादी साक्षरता - मौखिक पठन प्रवाह (ASER 2014 आधारित)',
+            objective:   'यह टेस्ट ASER 2014 पद्धति पर आधारित एक अनुकूली (adaptive) मौखिक पठन आकलन है, जो बच्चे का वर्तमान पठन स्तर पता करता है। बच्चे के पढ़ने के प्रवाह के आधार पर स्तर ऊपर या नीचे बदलता है — अक्षर, शब्द, अनुच्छेद, कहानी — जब तक उसका सही स्तर तय न हो जाए।',
+            description: 'बच्चा अक्षर, शब्द, एक अनुच्छेद और एक कहानी ज़ोर से पढ़ता है, जबकि मूल्यांकनकर्ता ध्यान से सुनकर सटीकता और प्रवाह दर्ज करता है। यह टेस्ट अनुकूली है: अच्छा पढ़ने वाले बच्चे कठिन पाठ की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे आसान पाठ की ओर जाते हैं, जब तक उनका पठन स्तर तय नहीं हो जाता।',
+            guidance:    'आराम से और ज़ोर से, साफ़-साफ़ पढ़ो। कोई शब्द मुश्किल लगे तो कोई बात नहीं — बस अपनी पूरी कोशिश करो!',
         },
     },
     cognitive_flex_chor: {
@@ -327,13 +349,13 @@ The Padh ke batao test evaluates reading and language skills across progressive 
 
 // ─── Score Logic template (from real NumberSkillGame.jsx CONFIG & processScoring) ──
 
-const makeScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score Logic
+const makeScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
 
 ---
 
 ## 1. Overview
 
-This document explains how the scoring system works for **${game.title}** — what actions earn a score, how scores are recorded per question, and how the final score is calculated. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+This document explains how the scoring system works for **${game.title}** — what actions earn a score, how scores are recorded per question, how the final score is calculated, and the cutoff rules that determine when the assessment stops early. It is written for SSL teams, researchers, assessors, QA testers, and developers.
 
 ---
 
@@ -440,7 +462,7 @@ On the final score screen, the system displays:
 
 The score after each question is also checked against stop rules. If a stop condition is triggered, the game ends and the current total is saved as the final score.
 
-See the **Cutoff Calculation** section for stop rule details.
+See **§10 Cutoff Rules** below for stop rule details.
 
 ---
 
@@ -463,16 +485,7 @@ The score column in \`game_sessions\` always reflects the most recent saved valu
 
 ---
 
-*Last updated — SANGIAN Documentation Center 2026*
-`;
-
-// ─── Cutoff Calculation template (from CONFIG.MIN_CORRECT and processScoring stop rules) ──
-
-const makeCutoffTemplate = (game) => `# 📊 ${game.title} — Cutoff Calculation
-
----
-
-## 1. What Is a Cutoff?
+## 10. What Is a Cutoff Rule?
 
 A **cutoff** is the minimum number of correct answers a child must achieve in a specific category or stage of the game to continue to the next section. If the child's performance falls below the cutoff, the game stops automatically.
 
@@ -480,7 +493,7 @@ Cutoffs exist to protect assessment validity — continuing with advanced questi
 
 ---
 
-## 2. Cutoff Types
+## 11. Cutoff Types
 
 **${game.title}** uses two types of stop rules:
 
@@ -504,7 +517,7 @@ If correct answers in category < minimum required
 
 ---
 
-## 3. Category Structure and Cutoff Values
+## 12. Category Structure and Cutoff Values
 
 *[Fill in the exact category structure and cutoff values for ${game.title} here based on game config]*
 
@@ -519,7 +532,7 @@ Example format (update with actual values):
 
 ---
 
-## 4. How Cutoff Is Checked (Logic Flow)
+## 13. How Cutoff Is Checked (Logic Flow)
 
 \`\`\`
 After each question is scored:
@@ -536,7 +549,7 @@ Step 3 — If no stop condition triggered → Move to next question
 
 ---
 
-## 5. What Happens When a Cutoff Is Triggered
+## 14. What Happens When a Cutoff Is Triggered
 
 \`\`\`
 Stop condition triggered
@@ -557,7 +570,7 @@ The stop reason is **not** stored in \`quit_reason\` — it is implied by the \`
 
 ---
 
-## 6. Impact on Reports
+## 15. Impact on Reports
 
 In the admin Reports section, a dropped session will show:
 - \`status = 'completed'\`
@@ -568,7 +581,7 @@ This is expected behavior — the child simply did not reach the remaining quest
 
 ---
 
-## 7. Why These Cutoffs?
+## 16. Why These Cutoffs?
 
 The cutoff values are designed based on:
 - The assessment framework established in the original SANGIAN 2013 platform
@@ -579,11 +592,523 @@ Any changes to cutoff values require updating both the frontend game config AND 
 
 ---
 
-## 8. Cutoff vs. Quit
+## 17. Cutoff vs. Quit
 
 | Condition | Status | Who triggers |
 |---|---|---|
 | Cutoff rule met | \`completed\` | System automatic |
+| Assessor ends early | \`quit\` | Assessor manual |
+| Resume → abandoned | \`paused\` | Assessor decision |
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Reading Skill V2 Score & Progression Logic (ASER 2014-style level, not a ──
+// per-question tally). Padh ke Batao V2 has no QUESTIONS array, no allScores,
+// no percentage — makeScoreLogicTemplate's binary per-question model does not
+// apply. Score Logic and Cutoff Calculation are merged into one section here
+// since for this game they document the exact same mechanism: the per-stage
+// pass threshold and the stage-routing table.
+
+const makeReadingV2ScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+This document explains how scoring works for **${game.title}** — an ASER 2014-style adaptive oral reading assessment. Unlike a fixed-question test, there is no per-question tally, no percentage, and no "total questions" — the score is the **reading level** the child reached on the adaptive ladder. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+
+---
+
+## 2. Score Unit
+
+The scored unit is a **stage verdict** — PASS or FAIL — not an individual question:
+
+\`\`\`
+Stage passes → child moves up the ladder (or the ladder ends at a higher level)
+Stage fails  → child moves down the ladder (or the ladder ends at a lower level)
+\`\`\`
+
+There is no partial credit within a stage and no separate points per item — a stage's many tiles or fluency questions collapse into one pass/fail verdict, and it's the *sequence* of verdicts across stages that produces the final level.
+
+---
+
+## 3. Scoring Methods
+
+### Tile Marking (Words / Letters stages)
+The assessor marks up to 5 tiles ✓/✗ as the child reads each one aloud:
+
+\`\`\`
+correctCount = tiles marked ✓
+correctCount >= 4  → stage PASS
+correctCount <  4  → stage FAIL
+\`\`\`
+
+### Fluency Modal (Paragraph / Story stages)
+After the child reads the full text aloud, the assessor answers 3 Yes/No questions:
+
+\`\`\`
+1. Did the child read it like a string of words, rather than sentences?
+2. Did the child read it haltingly and stop very often?
+3. Did the child make more than 3 mistakes?
+
+ALL answered "No" → stage PASS
+ANY answered "Yes" → stage FAIL
+\`\`\`
+
+---
+
+## 4. Per-Stage Result Record
+
+Each stage produces a result object with a different shape depending on its type:
+
+**Tile-marking stages** (\`selectedWords\`, \`selectedWordsRetry\`, \`selectedLetters\`):
+\`\`\`json
+[
+  { "text": "घर", "correct": true },
+  { "text": "कल", "correct": false }
+]
+\`\`\`
+
+**Read-aloud stages** (\`paragraphResult\`, \`paragraphRetryResult\`, \`storyResult\`):
+\`\`\`json
+{
+  "pass": true,
+  "ssrAnswers": ["no", "no", "no"],
+  "timeTaken": 42
+}
+\`\`\`
+
+| Field | Description |
+|---|---|
+| \`text\` / \`correct\` | The tile's text and whether it was marked correct |
+| \`pass\` | The stage's overall PASS/FAIL verdict |
+| \`ssrAnswers\` | The 3 fluency Yes/No answers, in question order |
+| \`timeTaken\` | Seconds spent on that stage (from \`qTimer\`) |
+
+All of these are held in per-stage state (\`selectedWords\`, \`paragraphResult\`, etc.) and included in \`saved_state\` for resume — there is no single \`allScores\` array like fixed-question games use.
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`
+LEVELS = { Beginner: 0, Letter: 1, Word: 2, Paragraph: 3, Story: 4 }
+
+finalLevel is set directly by the stage-routing table — the last stage's
+verdict determines whether the ladder ends here or moves to another stage.
+
+finalScore = LEVELS[finalLevel]
+\`\`\`
+
+This is **not** a sum of per-item scores. Two children with wildly different tile-marking accuracy can land on the same final level if their pass/fail verdicts at each stage matched.
+
+**Example — a child who fails Paragraph, fails Words, passes Letters, passes Words Retry, passes Paragraph Retry, fails Story:**
+
+| Stage | Verdict |
+|---|---|
+| Paragraph | FAIL |
+| Words | FAIL |
+| Letters | PASS |
+| Words Retry | PASS |
+| Paragraph Retry | PASS |
+| Story | FAIL |
+| **finalLevel** | **Paragraph** |
+| **finalScore** | **3** |
+
+---
+
+## 6. Score Display
+
+On the final score screen, the system displays:
+
+| Metric | Calculation |
+|---|---|
+| Reading Level | \`finalLevel\` (Beginner / Letter / Word / Paragraph / Story) |
+| Score Dial | \`finalScore / 4\` |
+| Path Breadcrumb | \`path[]\` — every stage actually traversed, including retries |
+| Duration | \`finalGameTime\` (\`timerSeconds\` snapshot when the ladder ended) |
+| Per-Stage Time | each stage's own \`timeTaken\` / \`*TimeTaken\` field |
+
+There is no "percentage correct" metric — it wouldn't be meaningful for a leveled, adaptive assessment.
+
+---
+
+## 7. Score and Stage-Routing Interaction
+
+The score is entirely a *consequence* of stage routing — there is no separate stop-rule check layered on top of it. See **§10 Stage Thresholds and Routing** below (or the **Workflow Diagram → Stage Flow** tab, or **Technical Documentation**) for the full pass/fail routing table between Paragraph, Words, Letters, the two retry stages, and Story.
+
+---
+
+## 8. Score Persistence
+
+Score is saved to the server:
+- After every stage transition during active play (\`status: 'in_progress'\`)
+- On pause (\`status: 'paused'\`) and quit (\`status: 'quit'\`)
+- At ladder completion (\`status: 'completed'\`)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+{ score: finalScore ?? 0, progress_level: path.length + 1, status, saved_state }
+\`\`\`
+
+The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or \`0\` if the ladder hasn't produced a level yet.
+
+---
+
+## 9. What Does NOT Affect Score
+
+- Time taken on any stage (no speed bonus or time penalty)
+- Number of pauses
+- Replay count of the splash audio
+- Whether the game was resumed from a saved state
+- Which of the 2 paragraphs was assigned (both are treated as equivalent difficulty)
+- How many *more* than the 4-correct threshold a Words/Letters stage scored (5/5 counts the same as 4/5 — both are just PASS)
+
+---
+
+## 10. Stage Thresholds and Routing
+
+**${game.title}** has no fixed question count, no categories, and no "3 consecutive wrong" rule — so there's no cutoff in the fixed-question-test sense. Instead, each stage's pass/fail verdict (per §2–3 above) routes to a specific next stage or a final level:
+
+| Stage | Threshold Type | Threshold | PASS → | FAIL → |
+|---|---|---|---|---|
+| Paragraph | Fluency | all 3 = "No" | Story | Words |
+| Words | Tile-marking | ≥ 4 / 5 | Paragraph Retry | Letters |
+| Letters | Tile-marking | ≥ 4 / 5 | Words Retry (fixed set) | END → level "Beginner" |
+| Words Retry | Tile-marking | ≥ 4 / 5 | Paragraph Retry | END → level "Letter" |
+| Paragraph Retry | Fluency | all 3 = "No" | Story | END → level "Word" |
+| Story | Fluency | all 3 = "No" | END → level "Story" | END → level "Paragraph" |
+
+Unlike a fixed-question test, **every** row leads somewhere — either another stage or a specific final reading level. There is no scenario where the child simply "runs out" of unattempted content; the ladder is always fully resolved by its own routing table.
+
+---
+
+## 11. How a Threshold Is Checked (Logic Flow)
+
+\`\`\`
+When the current stage is completed:
+
+If stage is Words or Letters (tile-marking):
+  correctCount = tiles marked ✓
+  verdict = correctCount >= 4 ? PASS : FAIL
+
+If stage is Paragraph, Paragraph Retry, or Story (fluency):
+  verdict = ssrAnswers.every(a => a === "no") ? PASS : FAIL
+
+Look up (stage, verdict) in the routing table above:
+  → either setStage(nextStage)
+  → or finalizeAssessment(level) and move to the Score screen
+\`\`\`
+
+---
+
+## 12. What Happens When the Ladder Resolves
+
+\`\`\`
+Routing table returns an END
+       ↓
+finalLevel + finalScore are set (LEVELS[finalLevel])
+       ↓
+Game transitions to Score Screen
+       ↓
+Session updated with status = 'completed'
+       ↓
+path[] (every stage traversed) is saved alongside the result
+       ↓
+Assessment form appears for assessor to complete
+       ↓
+PDF report generated
+\`\`\`
+
+There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually.
+
+---
+
+## 13. Impact on Reports
+
+In the admin Reports section, a completed session shows:
+- \`status = 'completed'\`
+- \`finalLevel\` (Beginner / Letter / Word / Paragraph / Story) and \`score\` = \`LEVELS[finalLevel]\` (0–4)
+- \`progress_level\` = \`path.length + 1\` — how many stages were traversed, not "questions answered out of a fixed total" (there is no fixed total here)
+
+A short \`path\` (e.g. 3 stages) is expected and normal for a child who reads at a Beginner level — it does not mean the assessment was cut short.
+
+---
+
+## 14. Why These Thresholds?
+
+The ≥4/5 tile-marking threshold and the 3-question fluency check are not arbitrary SANGIAN choices — they follow the **ASER 2014** ("Annual Status of Education Report") oral reading assessment methodology, a widely-used standard for measuring foundational reading level in Indian primary-grade children. The ladder structure (Beginner → Letter → Word → Paragraph → Story) mirrors ASER's own reading-level categories.
+
+Any change to these thresholds would be a change to the underlying assessment instrument, not just a SANGIAN configuration tweak — it should be made deliberately and reflected in both the game code and this documentation.
+
+---
+
+## 15. Threshold Outcome vs. Quit
+
+| Condition | Status | Who triggers |
+|---|---|---|
+| Ladder reaches an END via the routing table | \`completed\` | System automatic |
+| Assessor ends early | \`quit\` | Assessor manual |
+| Resume → abandoned | \`paused\` | Assessor decision |
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── (Reading Skill V2 Cutoff Calculation merged into makeReadingV2ScoreLogicTemplate above, §10-15) ──
+
+// ─── Ankganit V3 Score & Progression Logic (adaptive arithmetic ladder level, ──
+// not a per-question tally). Ankganit V3 has no QUESTIONS array, no allScores,
+// no percentage — the generic binary per-question model does not apply. Score
+// Logic and Cutoff Calculation are merged into one section, same as the
+// reading game above, since both describe the same per-stage pass mechanism.
+
+const makeAnkganitV3ScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+This document explains how scoring works for **${game.title}** — an adaptive arithmetic assessment. Unlike a fixed-question test, there is no per-question tally, no percentage, and no "total questions" — the score is the **numeracy level** the child reached on the adaptive ladder. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+
+---
+
+## 2. Score Unit
+
+The scored unit is a **stage verdict** — PASS or FAIL — not an individual question:
+
+\`\`\`
+Stage passes → child moves up the ladder (or the ladder ends at a higher level)
+Stage fails  → child moves down the ladder (or the ladder ends at a lower level)
+\`\`\`
+
+There is no partial credit within a stage — a Number Recognition stage's 5 marked tiles collapse into one pass/fail verdict, and a Subtraction/Division answer is either an exact match or it isn't. It's the *sequence* of verdicts across stages that produces the final level.
+
+---
+
+## 3. Scoring Methods
+
+### Numpad Entry (Subtraction / Division stages)
+\`\`\`
+Subtraction (Q1, Q2, and the conditional Q1 retry): one numeric field
+  correct = parseInt(answerVal) === correctAnswer
+
+Division: two numeric fields — quotient and remainder — no retry
+  correct = parseInt(quotientVal) === expectedQuotient
+            AND parseInt(remainderVal) === expectedRemainder
+\`\`\`
+
+### Tile Marking (Number Recognition stages)
+\`\`\`
+The assessor marks up to 5 tiles ✓/✗ as the child identifies each aloud:
+correctCount = tiles marked ✓
+correctCount >= 4  → stage PASS
+correctCount <  4  → stage FAIL
+\`\`\`
+
+---
+
+## 4. Per-Stage Result Record
+
+Each stage produces a result object with a different shape depending on its type:
+
+**Subtraction** (\`subtraction\`):
+\`\`\`json
+{
+  "q1": {
+    "firstAttempt": { "correct": false, "timeTaken": 11, "enteredAnswer": 47 },
+    "retryGiven": true,
+    "retryAttempt": { "correct": true, "timeTaken": 8, "enteredAnswer": 52 },
+    "finalCorrect": true
+  },
+  "q2": { "firstAttempt": { "correct": true, "timeTaken": 9, "enteredAnswer": 31 }, "finalCorrect": true },
+  "bothCorrect": true
+}
+\`\`\`
+Note the Q1 retry does **not overwrite** \`q1.firstAttempt\` — the original wrong attempt and the retry are both preserved as separate fields, and both can appear as separate rows in the results table.
+
+**Division** (\`division\`):
+\`\`\`json
+{ "correct": true, "enteredQuotient": 4, "enteredRemainder": 2, "timeTaken": 14 }
+\`\`\`
+
+**Number Recognition** (\`numberRecognition99\`, \`numberRecognition9\`):
+\`\`\`json
+{ "pass": true, "marks": [{ "text": "47", "correct": true }, { "text": "83", "correct": false }], "timeTaken": 26 }
+\`\`\`
+
+All of these are held in per-category state and included in \`saved_state\` for resume — there is no single \`allScores\` array like fixed-question games use.
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`
+LEVELS = { Beginner: 0, 'Number Recognition (1–9)': 1, 'Number Recognition (10–99)': 2, Subtraction: 3, Division: 4 }
+
+finalLevel is set directly by the stage-routing table — the last stage's
+verdict determines whether the ladder ends here or moves to another stage.
+
+finalScore = LEVELS[finalLevel]
+\`\`\`
+
+This is **not** a sum of per-item scores. Reaching Division Select at all already guarantees a floor of \`finalLevel = "Subtraction"\` (score 3) — Division only decides whether the score is upgraded to 4.
+
+**Example — a child who fails Q1 (first attempt), passes Q2, passes the Q1 retry, then fails Division:**
+
+| Stage | Verdict |
+|---|---|
+| Subtraction Q1 (first attempt) | FAIL |
+| Subtraction Q2 | PASS |
+| Subtraction Q1 Retry | PASS |
+| Combined Subtraction (retry counted) | PASS |
+| Division | FAIL |
+| **finalLevel** | **Subtraction** |
+| **finalScore** | **3** |
+
+---
+
+## 6. Score Display
+
+On the final score screen, the system displays:
+
+| Metric | Calculation |
+|---|---|
+| Numeracy Level | \`finalLevel\` (Beginner / Number Recognition 1–9 / Number Recognition 10–99 / Subtraction / Division) |
+| Score Dial | \`finalScore / 4\` |
+| Path Breadcrumb | \`path[]\` — every stage actually traversed, including the Q1 retry if it fired |
+| Duration | \`finalGameTime\` (\`timerSeconds\` snapshot when the ladder ended) |
+| Per-Stage Time | each stage's own \`timeTaken\` field |
+
+There is no "percentage correct" metric — it wouldn't be meaningful for a leveled, adaptive assessment.
+
+---
+
+## 7. Score and Stage-Routing Interaction
+
+The score is entirely a *consequence* of stage routing — there is no separate stop-rule check layered on top of it. See **§10 Stage Thresholds and Routing** below (or the **Workflow Diagram → Stage Flow** tab, or **Technical Documentation**) for the full pass/fail routing table between Subtraction, Division, and the two Number Recognition levels.
+
+---
+
+## 8. Score Persistence
+
+Score is saved to the server:
+- After every stage transition during active play (\`status: 'in_progress'\`)
+- On pause (\`status: 'paused'\`) and quit (\`status: 'quit'\`)
+- At ladder completion (\`status: 'completed'\`)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+{ score: finalScore ?? 0, progress_level: path.length + 1, status, saved_state }
+\`\`\`
+
+The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or unset if the ladder hasn't produced a level yet.
+
+---
+
+## 9. What Does NOT Affect Score
+
+- Time taken on any stage (no speed bonus or time penalty)
+- Number of pauses
+- Replay count of the splash audio
+- Whether the game was resumed from a saved state
+- Which 2 of the 8 subtraction problems were picked, or which 1 of 4 division problems (all are treated as equivalent difficulty)
+- How many *more* than the 4-correct threshold a Number Recognition stage scored (5/5 counts the same as 4/5 — both are just PASS)
+
+---
+
+## 10. Stage Thresholds and Routing
+
+**${game.title}** has no fixed question count and no "3 consecutive wrong" rule. Instead, each stage's pass/fail verdict routes to a specific next stage or a final level:
+
+| Stage | Threshold Type | Threshold | PASS → | FAIL → |
+|---|---|---|---|---|
+| Subtraction Q1 | Exact match | — | (always proceeds to Q2) | (always proceeds to Q2) |
+| Subtraction Q2 | Exact match | — | See routing rule below | See routing rule below |
+| Subtraction Q1 Retry | Exact match | Only reached if Q1 failed & Q2 passed | Combined check re-evaluated | Combined check re-evaluated |
+| Combined Subtraction | Both Q1 (final) & Q2 correct | — | Division Select | Number Recognition (10–99) |
+| Division | Exact match (quotient + remainder) | No retry | END → level "Division" | END → level "Subtraction" |
+| Number Recognition (10–99) | Tile-marking | ≥ 4 / 5 | END → level "Number Recognition (10–99)" | Number Recognition (1–9) |
+| Number Recognition (1–9) | Tile-marking | ≥ 4 / 5 | END → level "Number Recognition (1–9)" | END → level "Beginner" |
+
+Unlike a fixed-question test, **every** row leads somewhere — either another stage or a specific final level. There is no scenario where the child simply "runs out" of unattempted content; the ladder is always fully resolved by its own routing table.
+
+---
+
+## 11. How a Threshold Is Checked (Logic Flow)
+
+\`\`\`
+When the current stage is completed:
+
+If stage is Subtraction Q1/Q2/Retry:
+  verdict = parseInt(answerVal) === correctAnswer ? PASS : FAIL
+  (Q2's verdict also triggers evaluateAfterQ2(), which decides whether a
+  Q1 retry is needed before the combined Subtraction result is final)
+
+If stage is Division:
+  verdict = (quotient match AND remainder match) ? PASS : FAIL
+
+If stage is Number Recognition (10–99 or 1–9):
+  correctCount = tiles marked correct
+  verdict = correctCount >= 4 ? PASS : FAIL
+
+Look up (stage, verdict) in the routing table above:
+  → either setStage(nextStage)
+  → or finalizeAssessment(level) and move to the Score screen
+\`\`\`
+
+---
+
+## 12. What Happens When the Ladder Resolves
+
+\`\`\`
+Routing table returns an END
+       ↓
+finalLevel + finalScore are set (LEVELS[finalLevel])
+       ↓
+Game transitions to Score Screen
+       ↓
+Session updated with status = 'completed'
+       ↓
+path[] (every stage traversed) is saved alongside the result
+       ↓
+Assessment form appears for assessor to complete
+       ↓
+PDF report generated
+\`\`\`
+
+There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually.
+
+---
+
+## 13. Impact on Reports
+
+In the admin Reports section, a completed session shows:
+- \`status = 'completed'\`
+- \`finalLevel\` and \`score\` = \`LEVELS[finalLevel]\` (0–4)
+- \`progress_level\` = \`path.length + 1\` — how many stages were traversed, not "questions answered out of a fixed total"
+
+A short \`path\` (e.g. 3 stages) is expected and normal for a child who lands at Beginner level — it does not mean the assessment was cut short.
+
+---
+
+## 14. Why These Thresholds?
+
+Unlike the reading assessment on this platform (which follows the published ASER 2014 methodology), Ankganit V3's ≥4/5 tile-marking threshold has **no cited external framework** in the codebase — it's a hardcoded SANGIAN-internal design choice.
+
+**Known inconsistency worth flagging:** the admin Category Config panel exposes a \`minimum_correct\`/\`evaluation_type\` field per category, implying the threshold is configurable — but the game code never reads either field. Whoever administers content should be aware that changing these admin fields currently has **no effect on gameplay**; the real threshold is hardcoded in \`NumberSkillGameV3.jsx\`. Any change to the actual threshold requires a code change, not an admin panel edit — this is a mismatch between what the UI implies and what the code does, and is worth resolving one way or the other (either wire the admin field up, or remove it from the UI to stop it being misleading).
+
+---
+
+## 15. Threshold Outcome vs. Quit
+
+| Condition | Status | Who triggers |
+|---|---|---|
+| Ladder reaches an END via the routing table | \`completed\` | System automatic |
 | Assessor ends early | \`quit\` | Assessor manual |
 | Resume → abandoned | \`paused\` | Assessor decision |
 
@@ -743,250 +1268,333 @@ In the Admin Reports panel, every session record shows the assessment responses 
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
-// ─── Data Flow template (from saveToServer, generateAndUploadPDF, full API sequence) ──
+// ─── Reading Skill V2 Assessment Behavior — the SessionAssessmentForm itself is ──
+// shared/identical across games, so most of this section carries over unchanged.
+// Only the framing (what's being measured) and two status/terminology references
+// ('dropped' status, "question scores") differ for the adaptive ladder.
 
-const makeDataFlowTemplate = (game) => `# 🗄️ ${game.title} — Data Flow
+const makeReadingV2AssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
 
 ---
 
 ## 1. Overview
 
-This document explains how data moves through the **${game.title}** system — from the moment the child starts the game to the moment the administrator views the final report. It is written in simple language for all teams, with technical detail available in expandable sections.
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
 
 ---
 
-## 2. Complete Data Journey
+## 2. What Is Being Measured
 
-\`\`\`
-Child Logs In (Device)
-       ↓
-Game Loads → Browser checks for saved session
-       ↓
-Session Created on Server → Database record written
-       ↓
-Child Answers Questions → Score saved after each answer
-       ↓
-Game Ends → Final session status written
-       ↓
-Assessor Submits Form → Behavioral data saved
-       ↓
-PDF Generated → Dashboard exported and uploaded
-       ↓
-Admin Views Report → Data read from all three tables
-\`\`\`
+**${game.title}** is a structured oral reading assessment, not a scored quiz. Beyond the reading level reached, the system tracks:
+
+- **Reading level** — the highest stage the child reached on the adaptive ladder (Beginner / Letter / Word / Paragraph / Story)
+- **Fluency indicators** — the assessor's word-by-word / halting / mistake-count judgments recorded at each Paragraph/Story stage
+- **Tile-marking accuracy** — which specific letters/words the child read correctly or incorrectly at each stage
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged, captured separately in the form below
 
 ---
 
-## 3. Stage-by-Stage Breakdown
+## 3. Behavioral Assessment Form
 
-### Stage 1 — Game Load (Resume Check)
+After every game session (whether completed or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with the adaptive ladder mechanics above.
 
-When the game screen opens, the first action is a resume check:
+### Assessment Questions
 
-\`\`\`
-GET /api/games/sessions/resume/:childId/${game.key}
+Exact wording shown on screen (\`en.js\` locale strings), addressed directly to the child:
 
-Purpose: Check if the child has an unfinished session
-Result:
-  → Session found (status: paused) → Show "Resume" popup
-  → No session found              → Show Splash screen
-\`\`\`
-
-**Data involved:** child_id, game_name, saved_state (if resuming)
-
----
-
-### Stage 2 — Session Start
-
-When the child clicks "Start Now":
-
-\`\`\`
-POST /api/games/sessions/start
-
-Sends: child_id, game_name, total_questions
-Receives: sessionId, attempt_no
-
-Database: New row written in game_sessions
-  status = 'in_progress'
-  start_time = NOW()
-  score = 0
-\`\`\`
-
-If an active session already exists, the server returns the existing session ID (no duplicate created).
-
----
-
-### Stage 3 — During Gameplay (Auto-Save)
-
-After every question is answered, the complete game state is synced to the server:
-
-\`\`\`
-PUT /api/games/sessions/update/:sessionId
-
-Sends:
-  score         → correct answers so far
-  progress_level → current question number
-  status        → 'in_progress'
-  saved_state   → full JSON snapshot:
-    {
-      questionIndex: 7,
-      allScores: [
-        { qId: 1, score: 1, timeTaken: 4 },
-        { qId: 2, score: 0, timeTaken: 8 },
-        ...
-      ],
-      timerSeconds: 124,
-      pauses: []
-    }
-\`\`\`
-
-This ensures that if the device loses connectivity or the browser closes, the session can be resumed from the last saved question.
-
----
-
-### Stage 4 — Pause / Quit
-
-If the assessor pauses or quits the session:
-
-\`\`\`
-Pause:
-  PUT /api/games/sessions/update/:sessionId
-  status = 'paused'
-  saved_state includes pause event with timestamp
-
-Quit:
-  PUT /api/games/sessions/update/:sessionId
-  status = 'quit'
-  quit_reason = assessor-entered reason
-  end_time = NOW()
-\`\`\`
-
----
-
-### Stage 5 — Game End (Stop Rule or Completion)
-
-When the game ends (all questions done or stop rule triggered):
-
-\`\`\`
-PUT /api/games/sessions/update/:sessionId
-  status = 'completed'
-  score = final correct answer count
-  progress_level = last question reached
-  end_time = NOW()
-  saved_state = final snapshot
-\`\`\`
-
-**Terminal status guard**: Once \`quit\` or \`dropped\`, the server will never overwrite to \`completed\`.
-
----
-
-### Stage 6 — Behavioral Assessment Submission
-
-After the score screen appears, the assessor fills in the observation form:
-
-\`\`\`
-POST /api/games/assessments
-
-Sends:
-  session_id, child_id
-  q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again
-  q5_behaviors (JSON array)
-  additional_notes
-
-Database: New row in game_assessments linked to session
-\`\`\`
-
----
-
-### Stage 7 — PDF Generation and Upload
-
-Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
-
-\`\`\`
-1. Score screen is rendered to a canvas (html2canvas)
-2. Canvas is converted to a JPEG image
-3. Image is embedded in an A4 PDF (jsPDF)
-4. PDF blob is uploaded:
-
-POST /api/games/pdfs/upload
-  Sends: PDF file, child_id, session_id, game_name
-  Database: New row in game_dashboard_pdfs with file path
-\`\`\`
-
-PDF filename format:
-\`\`\`
-[ChildName]_${game.title}_SES[sessionId]_[timestamp].pdf
-\`\`\`
-
----
-
-### Stage 8 — Admin Report View
-
-When the administrator opens the Reports module:
-
-\`\`\`
-GET /api/games/reports/detail/${game.key}
-
-Server joins data from:
-  game_sessions       → score, status, timing, saved_state
-  children            → child_name
-  game_assessments    → behavioral observations
-  game_dashboard_pdfs → PDF download link
-
-Parses saved_state JSON to extract per-question scores
-Returns enriched session records with:
-  correct_count, attempted_questions, actual_game_time,
-  total_session_time, question_scores, assessment, pdf_url
-\`\`\`
-
----
-
-## 4. Database Tables in This Flow
-
-| Table | Written At | Contains |
+| # | Question | Response Options |
 |---|---|---|
-| \`game_sessions\` | Stage 2, 3, 4, 5 | Session lifecycle, scores, saved state |
-| \`game_assessments\` | Stage 6 | Behavioral form responses |
-| \`game_dashboard_pdfs\` | Stage 7 | PDF file paths |
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
 
----
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
 
-## 5. Data Security
+### Behavioral Observation Checkboxes (Q5)
 
-- Child game routes: session-based (child must be logged in)
-- Admin report routes: JWT Bearer token required (role: admin)
-- PDFs stored server-side in \`/dashboard_pdfs/\` — not publicly accessible
-- All data transmission via HTTPS
-
----
-
-## 6. Offline Behavior
-
-If the internet connection drops during gameplay:
-- The game continues running locally in the browser
-- API save calls fail silently (error logged to console)
-- On next successful question, the save is attempted again with accumulated state
-- At game end, the final update is retried before showing the score screen
-
----
-
-## 7. Data Lifecycle Summary
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
 
 \`\`\`
-Game Start    → game_sessions row created
-During Play   → game_sessions updated (score + saved_state)
-Game End      → game_sessions finalized (status + end_time)
-Assessment    → game_assessments row created
-PDF Export    → game_dashboard_pdfs row created
-Admin Report  → All three tables joined and returned
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
 \`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission with "Please select at least one observed behaviour."
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+  → if any missing: inline errors shown, submission blocked
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+Dashboard PDF auto-generated and uploaded
+       ↓
+"Retest" and "Home" buttons appear
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+
+Note: this game has no \`'dropped'\` status — a session is only ever \`'in_progress'\`, \`'paused'\`, \`'completed'\` (the ladder reached an END), or \`'quit'\` (ended manually). This ensures no session is left without a behavioral assessment.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the reading-level result. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- The final reading level and stage-by-stage results (not "question scores" — this game has no individually scored questions)
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not change when the assessment is submitted (reading level/status are independent)
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
 
 ---
 
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
-// ─── Technical Documentation (Dynamic) template — master game reference ─────────
+// ─── Ankganit V3 Assessment Behavior — the SessionAssessmentForm itself is ──
+// shared/identical across games (same real bugs found and fixed here as for
+// Padh ke Batao V2: Q5 is actually required, and there's a confirmation modal
+// the old generic template never documented). Only the framing differs.
+
+const makeAnkganitV3AssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
+
+---
+
+## 1. Overview
+
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
+
+---
+
+## 2. What Is Being Measured
+
+**${game.title}** is a structured adaptive arithmetic assessment, not a scored quiz. Beyond the numeracy level reached, the system tracks:
+
+- **Numeracy level** — the highest stage the child reached on the adaptive ladder (Beginner / Number Recognition 1–9 / Number Recognition 10–99 / Subtraction / Division)
+- **Per-question correctness** — the specific subtraction/division answers and number-recognition tiles the child got right or wrong at each stage
+- **Retry behavior** — whether the Subtraction Q1 retry fired, and whether it succeeded
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged, captured separately in the form below
+
+---
+
+## 3. Behavioral Assessment Form
+
+After every game session (whether completed or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with the adaptive ladder mechanics above.
+
+### Assessment Questions
+
+Exact wording shown on screen (\`en.js\` locale strings), addressed directly to the child:
+
+| # | Question | Response Options |
+|---|---|---|
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
+
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
+
+### Behavioral Observation Checkboxes (Q5)
+
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
+
+\`\`\`
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
+\`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission with "Please select at least one observed behaviour."
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+  → if any missing: inline errors shown, submission blocked
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+Dashboard PDF auto-generated and uploaded
+       ↓
+"Retest" and "Home" buttons appear
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+
+Note: this game has no \`'dropped'\` status — a session is only ever \`'in_progress'\`, \`'paused'\`, \`'completed'\` (the ladder reached an END), or \`'quit'\` (ended manually). This ensures no session is left without a behavioral assessment.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the numeracy-level result. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- The final numeracy level and stage-by-stage results (not "question scores" — this game has no individually scored questions in the fixed-quiz sense)
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not change when the assessment is submitted (numeracy level/status are independent)
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
 
 const makeTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
 
@@ -1303,10 +1911,857 @@ Fallback: Alert shown if browser does not support Speech Recognition
 
 *Last updated — SANGIAN Documentation Center 2026*
 `;
+// ─── Reading Skill V2 Technical Documentation (adaptive ASER-2014-style ladder) ──
+// This game is NOT a fixed-question test — makeTechDocTemplate's generic
+// "QUESTIONS array / consecutive-wrong / category minimum" model does not apply.
+
+const makeReadingV2TechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: an ASER 2014-style **adaptive oral reading assessment**, not a fixed-question quiz. It has no question count, no consecutive-wrong stop rule, and no category-minimum drop logic — instead, the child moves up or down a reading-level ladder based on a pass/fail verdict at each stage.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Academic / Literacy — Adaptive Oral Reading (ASER 2014-style) |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash.wav) plays automatically once the resume check finishes
+  "Start Now" activates only after audio completes (or errors — fail-safe)
+  "Replay" button available
+  If a paused/in-progress session exists, a Resume modal offers
+  Resume / Restart Fresh
+       ↓
+[Game Screen — adaptive ladder]
+  Stage by stage: Paragraph → (Words → Letters → Words Retry) → Paragraph Retry → Story
+  Each stage is either a tile-marking screen (Words/Letters) or a
+  read-aloud + Yes/No fluency modal (Paragraph/Story)
+  Per-stage timer (qTimer) and overall screentime timer (timerSeconds) both
+  run and are recorded — neither is ever used to force a stage to end
+  Pause/Quit button always accessible — requires a typed or dictated reason
+       ↓
+[Score Screen]
+  Final ASER reading level + score dial (finalScore / 4)
+  Path breadcrumb — every stage actually traversed, including retries
+  Per-stage results table (pass/fail, marked words/letters or
+  paragraph/story detail, duration)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+There is no on-screen instructional text — the assessor's and child's
+instructions are delivered entirely through the splash audio clip and cover
+image.
+
+---
+
+## 3. Game Configuration
+
+${game.title} has no \`MAX_CONSECUTIVE_WRONG\`, \`MIN_CORRECT\`, or
+\`QUESTION_COUNT\` constants. Its "configuration" is the ladder's fixed
+content pools plus two hardcoded pass thresholds:
+
+| Constant | Value | Purpose |
+|---|---|---|
+| \`LEVELS\` | \`{ Beginner:0, Letter:1, Word:2, Paragraph:3, Story:4 }\` | Maps a stage-based verdict path to a numeric ASER reading level |
+| Letters bank | 10 letters (admin-editable) | Pool for the Letters stage; assessor marks 5 |
+| Words bank | 10 words (admin-editable) | Pool for the Words stage; assessor marks 5 |
+| Paragraphs | 2 paragraphs (admin-editable) | Assessor picks 1 at the start; locked for retry |
+| Story | 1 fixed story (admin-editable) | Single story, top of the ladder |
+| Words / Letters pass threshold | ≥ 4 of 5 correct | Checked in \`handleMarkingContinue\` |
+| Paragraph / Story pass rule | All 3 fluency questions answered "No" | Any single "Yes" fails the stage |
+
+See **Content Management** (§11) for how letters/words/paragraphs/story/
+questions/hints are edited without a code change.
+
+---
+
+## 4. Gameplay Mechanics
+
+### Scoring Types
+
+**Tile marking** (Words / Letters stages):
+\`\`\`
+Assessor selects up to 5 tiles from a 10-item bank for the child to read
+Child reads each aloud; assessor marks it ✓ Correct or ✗ Incorrect
+Exactly 5 must be marked before the stage can continue
+≥ 4 of 5 correct → stage passes
+\`\`\`
+
+**Fluency modal** (Paragraph / Story stages):
+\`\`\`
+Child reads the full paragraph/story aloud; assessor taps "Done Reading"
+A 3-question Yes/No modal opens (each question has an ⓘ hint with a
+worked example):
+  1. Did the child read it like a string of words, rather than sentences?
+  2. Did the child read it haltingly and stop very often?
+  3. Did the child make more than 3 mistakes?
+ANY "Yes" → stage fails · ALL "No" → stage passes
+\`\`\`
+
+### Timers
+- **Overall screentime** (\`timerSeconds\`): runs through the game, Score, and
+  Assessment screens; stops only once the final assessment is submitted.
+- **Per-stage timer** (\`qTimer\`): resets to 0 at every stage transition;
+  its value becomes that stage's recorded \`timeTaken\`.
+- Neither timer enforces a cutoff — there is no time limit on any stage.
+
+---
+
+## 5. Stage Transition Rules (Adaptive Ladder Logic)
+
+\`\`\`
+STAGE: Paragraph  (1 of 2 chosen by the assessor at the start)
+  PASS → Story
+  FAIL → Words
+
+STAGE: Words  (mark 5 of 10 word tiles)
+  PASS → Paragraph Retry
+  FAIL → Letters
+
+STAGE: Letters  (mark 5 of 10 letter tiles)
+  PASS → Words Retry  (same 5 words re-shown, fixed — no reselection)
+  FAIL → END, finalLevel = "Beginner"
+
+STAGE: Words Retry  (fixed set from the original Words attempt)
+  PASS → Paragraph Retry
+  FAIL → END, finalLevel = "Letter"
+
+STAGE: Paragraph Retry  (same paragraph chosen at the start)
+  PASS → Story
+  FAIL → END, finalLevel = "Word"
+
+STAGE: Story  (the single fixed story)
+  PASS → END, finalLevel = "Story"
+  FAIL → END, finalLevel = "Paragraph"
+\`\`\`
+
+Every completed stage — including retries — is appended to the \`path\` array
+(e.g. \`['paragraph','words','letters','words_retry','paragraph_retry','story']\`),
+which drives both the breadcrumb trail and the results table on the score
+screen. The shortest possible path is 3 stages (Paragraph fail → Words fail
+→ Letters fail); the longest is 6 (a full climb back up to Story).
+
+---
+
+## 6. Score Calculation
+
+\`\`\`
+LEVELS = { Beginner: 0, Letter: 1, Word: 2, Paragraph: 3, Story: 4 }
+finalScore = LEVELS[finalLevel]
+\`\`\`
+
+This is an ASER reading level, not a points tally or percentage — there is
+no "22 questions" concept or partial credit across categories. The score
+dial on the results screen shows \`finalScore / 4\`.
+
+---
+
+## 7. Session State Management
+
+### Resume Flow
+\`\`\`
+On splash load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a session with status in ['in_progress','paused'] and not yet
+  assessmentSubmitted is found → show Resume modal:
+    [Resume]        → restore stage, selections, results, timers from saved_state
+    [Restart Fresh] → discard it, start a new session
+
+  If no such session → show Splash screen normally
+\`\`\`
+
+In-progress tile marking on the *current* Words/Letters screen (\`marks\`,
+\`selectedTexts\`) is deliberately **not** persisted — resuming always
+restarts the current stage's marking UI from scratch, even though every
+earlier *completed* stage carries over exactly.
+
+### State Saved to Server (\`buildSavedState\`)
+\`\`\`js
+{
+  stage, selectedParagraphIndex, wordsSource,
+  selectedWords, selectedWordsRetry, selectedLetters,
+  wordsTimeTaken, wordsRetryTimeTaken, lettersTimeTaken,
+  paragraphResult, paragraphRetryResult, storyResult,
+  path, finalLevel, finalScore, finalGameTime,
+  timerSeconds, qTimer, pauses
+}
+\`\`\`
+
+Sent inside the same PUT used for every progress sync (autosave, pause,
+quit, and finalize all reuse this one endpoint):
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+{
+  score: finalScore ?? 0,
+  progress_level: path.length + 1,
+  status: 'in_progress' | 'paused' | 'quit',
+  quit_reason: <text or null>,
+  saved_state: { ...as above... }
+}
+\`\`\`
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', { stage, reason, timestamp } appended to
+        pauses[], navigate to Home immediately
+Quit  → status = 'quit', same pause-log entry appended, screen → Score,
+        then PDF generation triggers
+\`\`\`
+A reason — typed or dictated — is required before either action confirms.
+
+---
+
+## 8. Assessment Form Integration
+
+After the score screen appears, \`SessionAssessmentForm\` renders:
+\`\`\`
+4 required observation questions (radio buttons — required)
+1 behavioral checklist (8 checkboxes — optional)
+1 additional notes field with voice-dictation support
+\`\`\`
+Submission calls:
+\`\`\`
+POST /api/games/assessments
+{ session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness,
+  q4_play_again, q5_behaviors[], additional_notes }
+\`\`\`
+The form is **disabled** after submission; validation blocks submit while
+any required question is empty.
+
+---
+
+## 9. PDF Dashboard Generation
+
+Triggered ~1–1.5s after the score screen settles (after finalize, after
+Quit, or after the final assessment submits):
+\`\`\`
+1. Locate #dashboard-capture-area (the score screen's root <div>)
+2. Clone it into an off-screen wrapper (position:fixed, top:-99999px,
+   background:#fff) appended to <body> — avoids clipping caused by the
+   game shell's position:fixed + backdrop-filter
+3. Neutralize animations/transitions/opacity and force overflow:visible
+   on the clone so the full content renders
+4. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
+5. canvas.toDataURL('image/jpeg', 0.9)
+6. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+7. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_ReadingSkillV2_SES<sessionId>_<ts>.pdf"
+  child_id:    childData.child_id
+  session_id:  gameSessionId
+  game_name:   '${game.key}'
+\`\`\`
+PDF failures are logged to console only — they never block the score screen
+or gameplay.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Audio element: <audio ref={audioRef} src="/assets/audios/reading_skill_v2/splash.wav" />
+
+Behavior:
+  - Plays automatically on splash load, once the resume check finishes
+  - onEnded → audioFinished = true → enables "Start Now"
+  - onError → audioFinished = true (fail-safe — button never permanently locked)
+  - "Replay" resets currentTime to 0 and replays
+  - No audio plays during the game or score screens
+\`\`\`
+The "Start Now" button is **disabled** until the audio finishes, ensuring
+the assessor/child hear the instructions before beginning.
+
+---
+
+## 11. Content Management (Admin-Editable Test Content)
+
+All of ${game.title}'s test material is admin-editable per language via the
+Elements admin panel (\`ReadingV2ContentManager.jsx\`), with a hardcoded
+fallback baked into the game file for any language that hasn't been
+configured yet.
+
+| Element key | Shape | Fallback constant | Used for |
+|---|---|---|---|
+| \`letters_bank\` | array | \`LETTERS_BANK\` | Letters stage tile pool |
+| \`words_bank\` | array | \`WORDS_BANK\` | Words stage tile pool |
+| \`paragraphs\` | array | \`PARAGRAPHS\` | The 2 paragraph choices |
+| \`story\` | text | \`STORY_TEXT\` | The single story |
+| \`paragraph_questions\` | array | — | The 3 fluency Yes/No questions (paragraph) |
+| \`story_questions\` | array | — | The 3 fluency Yes/No questions (story) |
+| \`paragraph_hints\` | hints | — | ⓘ worked examples behind each paragraph question |
+| \`story_hints\` | hints | — | ⓘ worked examples behind each story question |
+
+\`\`\`
+Player side (useTestContent('${game.key}')):
+  GET /api/public/elements?test_id=${game.key}
+  GET /api/public/translations/languages
+  getContent(key) → resolves content_<key> for the player's language,
+                     falls back to the platform default language,
+                     falls back to the hardcoded constant if still unset
+
+Admin side (Elements panel):
+  GET /api/admin/elements?test_id=${game.key}
+  PUT /api/admin/elements/config
+    { test_id, asset_type: 'content_<key>', language, config: draft }
+  PUT /api/admin/elements/:fileId/status   (enable/disable a saved row)
+\`\`\`
+Hint *examples/descriptions* are per-language editable; the underlying
+Yes/No answer key is not.
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Session summaries (splash "last played") | GET | \`/api/games/sessions/summaries/:childId\` |
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch admin-managed content | GET | \`/api/public/elements?test_id=${game.key}\` |
+| Fetch configured languages | GET | \`/api/public/translations/languages\` |
+| (Admin) Load content elements | GET | \`/api/admin/elements?test_id=${game.key}\` |
+| (Admin) Save content element | PUT | \`/api/admin/elements/config\` |
+| (Admin) Toggle content row status | PUT | \`/api/admin/elements/:fileId/status\` |
+
+See **API / Backend Logic** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+**Flow & Stage**
+| State | Purpose |
+|---|---|
+| \`screen\` | \`splash \| game \| score\` |
+| \`stage\` | \`paragraph \| words \| letters \| paragraph_retry \| story\` |
+| \`selectedParagraphIndex\` | Which of the 2 paragraphs was chosen (reused on retry) |
+| \`wordsSource\` | \`direct \| afterLetters\` — first Word attempt vs. the fixed post-Letters retry |
+| \`path\` | Ordered list of completed stages — drives the breadcrumb + results table |
+
+**In-Progress Marking**
+| State | Purpose |
+|---|---|
+| \`marks\` | \`{ [text]: 'correct'\|'incorrect' }\` for the tile screen currently open |
+| \`selectedTexts\` | Tiles picked so far on the current Words/Letters screen (max 5) |
+| \`pendingAssessTarget\` | Which stage the open fluency modal is scoring |
+| \`midTestAnswers\` | In-progress Yes/No answers in that modal |
+| \`expandedHint\` | Index of the open ⓘ hint panel, or \`null\` |
+
+**Finalized Stage Results**
+| State | Purpose |
+|---|---|
+| \`selectedWords\` / \`selectedWordsRetry\` / \`selectedLetters\` | Finalized \`{ text, correct }[]\` per stage |
+| \`wordsTimeTaken\` / \`wordsRetryTimeTaken\` / \`lettersTimeTaken\` | Seconds spent on each marking stage |
+| \`paragraphResult\` / \`paragraphRetryResult\` / \`storyResult\` | \`{ pass, ssrAnswers, timeTaken }\` per read-aloud stage |
+
+**Outcome**
+| State | Purpose |
+|---|---|
+| \`finalLevel\` | Final ASER level string |
+| \`finalScore\` | \`LEVELS[finalLevel]\` |
+| \`finalGameTime\` | \`timerSeconds\` snapshot at completion |
+
+**Session, Timers & Misc UI**
+| State | Purpose |
+|---|---|
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`timerSeconds\` / \`qTimer\` | Overall screentime / per-stage timer |
+| \`pauses\` | \`{ stage, reason, timestamp }[]\` pause/quit log |
+| \`showResumeModal\` / \`showQuitModal\` / \`showMidTestModal\` | Modal visibility flags |
+| \`quitReason\` | Typed/dictated pause-quit reason |
+| \`audioFinished\` / \`isCheckingSession\` | Gate splash "Start Now" / splash rendering |
+| \`assessment\` / \`isAssessmentSubmitting\` / \`assessmentSubmitted\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+| \`storyFontSize\` | Auto-shrunk font size so the Story text fits without scrolling |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Session summaries fetch fail  → console.error only, splash still renders
+Resume check fail             → console.error only, splash shown normally
+Session start fail            → alert shown, game proceeds locally with
+                                 gameSessionId = null (progress silently
+                                 stops syncing to the server from then on)
+Progress save fail (autosave) → console.error only, gameplay continues
+Finalize-assessment save fail → console.log only, screen already on Score
+PDF generation/upload fail    → console.error only, never shown to the user
+Final assessment submit fail  → alert shown, submit re-enabled for retry
+\`\`\`
+The adaptive ladder itself (stage transitions, pass/fail verdicts) is pure
+local state logic and is never blocked by a network failure — only server
+*sync* can silently fail.
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Config: continuous: true, interimResults: true, lang: STT_LANG_MAP[language] || 'en-US'
+Targets: quitReason (Pause/Quit modal) · assessmentNotes (final assessment form)
+Fallback: alert shown if the browser doesn't support Speech Recognition
+\`\`\`
+Only \`isFinal\` results are appended to the target field. The active
+recognition instance is stashed on \`window.activeRecognition\` so it can be
+force-stopped from elsewhere (e.g. on unmount, to release the microphone).
+Re-tapping the mic on the same target just stops the existing instance — it
+never runs two recognitions in parallel.
+
+---
+
+## 16. Technical Notes
+
+- Mid-marking progress (\`marks\`, \`selectedTexts\`) is **not** resumable —
+  only completed stages carry over; resuming always restarts the current
+  stage's tile-marking UI from scratch.
+- The Words Retry stage re-shows the *same 5 words* from the original
+  attempt — it is not a fresh 5-of-10 selection, so a child cannot draw a
+  different, easier word set on the second try.
+- Story text auto-shrinks (66px down to 24px, \`fitStoryText\`) so the full
+  story fits its card without scrolling, rather than truncating.
+- \`timerSeconds\` keeps running through the Score and Assessment screens and
+  stops only once the final assessment is submitted; \`finalGameTime\` is a
+  snapshot taken the moment the ladder ends.
+- No stage has a time limit — \`qTimer\`/\`timerSeconds\` are recorded for
+  reporting only, never used to force a stage to end.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Ankganit V3 Technical Documentation (adaptive arithmetic ladder) ──────────
+// This game is NOT a fixed-question test either — same situation as Padh ke
+// Batao V2: no QUESTIONS array, no consecutive-wrong stop rule, no category
+// MIN_CORRECT (that field exists in the DB/admin UI but is never read by the
+// game itself — vestigial, left over from the schema it was cloned from).
+
+const makeAnkganitV3TechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: an adaptive arithmetic ladder, not a fixed-question quiz. It has no question count, no consecutive-wrong stop rule, and no working category-minimum drop logic — instead, the child moves up or down a numeracy-level ladder based on a pass/fail verdict at each stage.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Academic / Numeracy — Adaptive Arithmetic Ladder |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash.wav) plays automatically once the resume check finishes
+  "Start Now" activates only after audio completes (or errors — fail-safe)
+  "Replay" button available
+  If a paused/in-progress session exists, a Resume modal offers
+  Resume / Restart Fresh
+       ↓
+[Game Screen — adaptive ladder]
+  Stage by stage: Subtraction (pick 2, Q1, Q2, conditional Q1 retry) →
+  Division (pick 1, Q1) OR Number Recognition (10–99) → Number Recognition (1–9)
+  Each stage is either an on-screen numpad entry (Subtraction/Division) or a
+  tile-marking screen (Number Recognition)
+  Per-stage timer (qTimer) and overall session timer (timerSeconds) both
+  run and are recorded — neither is ever used to force a stage to end
+  Pause/Quit button always accessible — requires a typed or dictated reason
+       ↓
+[Score Screen]
+  Final numeracy level + score dial (finalScore / 4)
+  Path breadcrumb — every stage actually traversed
+  Per-stage results table (correct/incorrect, marked tiles or numpad detail, duration)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+---
+
+## 3. Game Configuration
+
+${game.title} has no \`MAX_CONSECUTIVE_WRONG\` or \`QUESTION_COUNT\` constant. Its "configuration" is the ladder's server-fetched content pools plus hardcoded pass thresholds:
+
+| Constant | Value | Purpose |
+|---|---|---|
+| \`LEVELS\` | \`{ Beginner:0, 'Number Recognition (1–9)':1, 'Number Recognition (10–99)':2, Subtraction:3, Division:4 }\` | Maps a stage-based verdict path to a numeric numeracy level |
+| Subtraction bank | 8 two-digit subtraction problems (admin-editable) | Assessor picks 2 (pick order = Q1, Q2) |
+| Division bank | 4 division problems (admin-editable) | Assessor picks 1 |
+| Number Recognition (10–99) bank | 10 numbers (admin-editable) | Assessor marks 5 |
+| Number Recognition (1–9) bank | 10 numbers (admin-editable) | Assessor marks 5 |
+| Number Recognition pass threshold | ≥ 4 / 5 correct | Hardcoded in \`finishNumberRecognition99\`/\`finishNumberRecognition9\` |
+| Subtraction/Division pass rule | Exact numeric match | See §4 below |
+
+**Important:** the admin Category Config panel (\`AdminAnkganitV3Config.jsx\`) exposes a \`minimum_correct\`/\`evaluation_type\` field per category, seeded with values 4/4/2/1 inherited from an older schema — but \`NumberSkillGameV3.jsx\` **never reads either field**. Changing them in the admin panel has no effect on gameplay; the real ≥4/5 threshold is hardcoded in the component. This is worth fixing or removing from the admin UI to avoid misleading whoever configures it.
+
+See **Content Management** (§11) for how the question banks are actually edited.
+
+---
+
+## 4. Gameplay Mechanics
+
+### Numpad Entry (Subtraction / Division)
+
+Answers are entered via an on-screen digital numpad, not free typing:
+
+\`\`\`
+Subtraction (Q1, Q2, and the Q1 retry): one field (answerVal)
+  correct = parseInt(answerVal) === Number(question.correctAnswer)
+
+Division: two fields — quotient (quotientVal) and remainder (remainderVal)
+  correct = parseInt(quotientVal) === expectedQuotient
+            AND parseInt(remainderVal) === expectedRemainder
+  (both default to 0 if left empty or non-numeric — parseInt(...) || 0)
+\`\`\`
+Division has **no retry** — one shot, both fields must match.
+
+### Tile Marking (Number Recognition stages)
+
+Structurally the same "mark 5 of 10" mechanic used elsewhere, though this file uses \`nr\`-prefixed state names since one marking screen is shared by both recognition sub-stages:
+
+\`\`\`
+Assessor selects up to 5 tiles from a 10-item bank (nrSelectedTexts)
+Child identifies each aloud; assessor marks it ✓ or ✗ (nrMarks)
+Exactly 5 must be selected AND all 5 marked before the stage can continue
+correctCount >= 4 of 5  → stage PASS
+\`\`\`
+
+### Timers
+- **Overall session timer** (\`timerSeconds\`): runs through the game and Score/Assessment screens.
+- **Per-stage timer** (\`qTimer\`): resets at every \`goToStage\` transition; becomes that stage's recorded \`timeTaken\`.
+- Neither timer enforces a cutoff — there is no time limit on any stage.
+
+---
+
+## 5. Stage Transition Rules (Adaptive Ladder Logic)
+
+\`\`\`
+STAGE: Subtraction Select  (assessor picks 2 of 8 problems; pick order = Q1, Q2)
+  → always proceeds to Q1
+
+STAGE: Subtraction Q1  (numpad, single field)
+  → always proceeds to Q2 (a wrong Q1 is never immediately fatal)
+
+STAGE: Subtraction Q2  (numpad, single field)
+  evaluateAfterQ2():
+    Q1 wrong AND Q2 correct → Subtraction Q1 Retry
+    otherwise               → evaluate combined result now
+
+STAGE: Subtraction Q1 Retry  (only reached per the rule above — one more shot at Q1)
+  → evaluate combined result: q1.finalCorrect (retry outcome) AND q2.finalCorrect
+
+Combined Subtraction result:
+  BOTH correct → Division Select
+  otherwise    → Number Recognition (10–99)
+
+STAGE: Division Select  (assessor picks 1 of 4 problems)
+  → Division Q1
+
+STAGE: Division Q1  (numpad, quotient + remainder, no retry)
+  PASS → END, finalLevel = "Division"
+  FAIL → END, finalLevel = "Subtraction"
+
+STAGE: Number Recognition (10–99)  (mark 5 of 10 tiles)
+  PASS (≥4/5) → END, finalLevel = "Number Recognition (10–99)"
+  FAIL        → Number Recognition (1–9)
+
+STAGE: Number Recognition (1–9)  (mark 5 of 10 tiles)
+  PASS (≥4/5) → END, finalLevel = "Number Recognition (1–9)"
+  FAIL        → END, finalLevel = "Beginner"
+\`\`\`
+
+Every completed stage is appended to the \`path\` array, which drives the breadcrumb trail and results table on the score screen. The shortest possible path is 3 stages (Subtraction Q1+Q2 both fail their combined check → Number Recognition 10–99 fail → Number Recognition 1–9); the longest is 5 (Q1 retry fired, then climbing to Division).
+
+The retry does **not overwrite** the original wrong Q1 attempt — \`subtraction.q1.firstAttempt\` and \`subtraction.q1.retryAttempt\` are tracked as separate fields, and both can appear as separate rows in the results table, while \`q1.finalCorrect\` reflects only the retry's outcome.
+
+---
+
+## 6. Score Calculation
+
+\`\`\`
+LEVELS = { Beginner: 0, 'Number Recognition (1–9)': 1, 'Number Recognition (10–99)': 2, Subtraction: 3, Division: 4 }
+finalScore = LEVELS[finalLevel]
+\`\`\`
+
+This is a numeracy level, not a points tally or percentage. Reaching Division Select at all already guarantees a floor of \`finalLevel = "Subtraction"\` (score 3), since that branch is only reached after passing the combined Subtraction check — Division only decides whether the score is upgraded to 4.
+
+---
+
+## 7. Session State Management
+
+### Resume Flow
+\`\`\`
+On splash load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a session with status in ['in_progress','paused'] and not yet
+  assessmentSubmitted is found → show Resume modal:
+    [Resume]        → restore stage, selections, results, timers from saved_state
+    [Restart Fresh] → discard it, start a new session
+\`\`\`
+
+### State Saved to Server (\`buildSavedState\`)
+\`\`\`js
+{
+  stage, path,
+  subtraction, division, numberRecognition99, numberRecognition9,
+  finalLevel, finalScore, finalGameTime,
+  timerSeconds, qTimer, pauses
+}
+\`\`\`
+Note the field names here differ from Padh ke Batao V2's equivalent shape (\`selectedWords\`/\`paragraphResult\`/etc.) — this game groups everything by category (\`subtraction\`, \`division\`, \`numberRecognition99\`, \`numberRecognition9\`) rather than by stage type. In-progress tile marking on the *current* Number Recognition screen (\`nrMarks\`, \`nrSelectedTexts\`) is **not** part of this snapshot — only completed stages are saved.
+
+Sent inside the same PUT used for every progress sync:
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+{
+  score: finalScore ?? 0,
+  progress_level: path.length + 1,
+  status: 'in_progress' | 'paused' | 'quit',
+  quit_reason: <text or null>,
+  saved_state: { ...as above... }
+}
+\`\`\`
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', { stage, reason, timestamp } appended to
+        pauses[], navigate to Home immediately
+Quit  → status = 'quit', same pause-log entry appended, screen → Score,
+        then PDF generation triggers
+\`\`\`
+A reason — typed or dictated — is required before either action confirms (blocked with an alert otherwise).
+
+---
+
+## 8. Assessment Form Integration
+
+After the score screen appears, \`SessionAssessmentForm\` renders:
+\`\`\`
+4 required observation questions (radio buttons — required)
+1 behavioral checklist (8 checkboxes — required, at least 1)
+1 additional notes field with voice-dictation support
+\`\`\`
+Submission calls:
+\`\`\`
+POST /api/games/assessments
+{ session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness,
+  q4_play_again, q5_behaviors[], additional_notes }
+\`\`\`
+A confirmation modal ("Are you sure you want to submit the assessment?") appears after validation passes and before the actual submit fires — see **Assessment Behavior** for the full form details.
+
+---
+
+## 9. PDF Dashboard Generation
+
+Triggered ~1–1.5s after the score screen settles:
+\`\`\`
+1. Locate .ns-main (the score screen's root element)
+2. Deep-clone it into an off-screen wrapper (position:fixed, top:-99999px,
+   background:#fff) appended to <body> — avoids clipping from .ns-app's
+   overflow:hidden + height:100dvh
+3. Strip animations/opacity, force overflow-x/y:visible on any node that
+   was scrollable, and strip <input> name attributes to avoid React
+   radio-group collisions in the clone
+4. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   logging: false, windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
+5. canvas.toDataURL('image/jpeg', 0.9)
+6. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+7. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_AnkganitV3_SES<sessionId>_<ts>.pdf"
+  child_id:    childData.child_id
+  session_id:  gameSessionId
+  game_name:   '${game.key}'
+\`\`\`
+PDF failures are logged to console only — they never block the score screen or gameplay.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Audio element: <audio ref={audioRef} src="/assets/audios/number_skill_v3/splash.wav" preload="auto" />
+
+Behavior:
+  - Plays automatically once the resume check finishes and the splash screen is shown
+  - onEnded → audioFinished = true → enables "Start Now"
+  - onError → audioFinished = true (fail-safe — button never permanently locked)
+  - Autoplay-blocked errors are also caught and treated the same as onError
+  - "Replay" resets currentTime to 0 and replays
+\`\`\`
+The audio path is resolved via \`useTestAudio('${game.key}')\`, with the literal path above as its fallback if no admin-configured audio asset exists.
+
+---
+
+## 11. Content Management (Admin-Editable Test Content)
+
+Unlike Padh ke Batao V2's single \`useTestContent\`-driven content system, Ankganit V3 splits content into two layers:
+
+1. **Canonical question bank (scoring source of truth)** — fetched directly via \`axios\`, not through \`useTestContent\`:
+\`\`\`
+GET /api/public/ankganit-v3
+Returns 4 categories (Number Recognition 1–9, Number Recognition 10–99,
+Two-Digit Subtraction, One-Digit Divisor Three-Digit Dividend), each with
+a .questions array: { id, title, text, correct_answer, remainder, display_order }
+\`\`\`
+This is what's used for scoring, saved_state, results, and PDF — admin-edited via \`AdminAnkganitV3Config.jsx\` (\`PUT /admin/ankganit-v3/categories/:id\`, \`PUT /admin/ankganit-v3/questions/:id\`).
+
+2. **Per-language display overrides (cosmetic only)** — via \`useTestContent('${game.key}')\`, resolving \`content_q_<questionId>\` rows edited in \`AnkganitV3ContentManager.jsx\`. This **only** changes the rendered text of a question on screen — it never touches \`correct_answer\`, \`remainder\`, scoring, saved_state, or the PDF.
+
+This split matters: changing a question's display translation does not change what counts as correct, and changing the canonical \`correct_answer\` in the Config panel does not automatically get a translated display override — the two must be kept in sync manually by whoever administers the content.
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Session summaries (splash "last played") | GET | \`/api/games/sessions/summaries/:childId\` |
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch canonical question bank | GET | \`/api/public/ankganit-v3\` |
+| Fetch admin-managed display overrides | GET | \`/api/public/elements?test_id=${game.key}\` |
+| (Admin) Update category | PUT | \`/api/admin/ankganit-v3/categories/:id\` |
+| (Admin) Update question | PUT | \`/api/admin/ankganit-v3/questions/:id\` |
+
+See **API & Data Flow** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+**Flow & Stage**
+| State | Purpose |
+|---|---|
+| \`screen\` | \`splash \| game \| score\` |
+| \`stage\` | Current adaptive-tree stage id |
+| \`path\` | Ordered list of completed stages — drives the breadcrumb + results table |
+| \`pendingSubtractionSelection\` | Up to 2 picked subtraction question ids (pick order = Q1/Q2) |
+| \`pendingDivisionSelection\` | Index of the picked division question, or \`null\` |
+
+**Category Results**
+| State | Purpose |
+|---|---|
+| \`subtraction\` | \`{ q1, q2, bothCorrect }\` — \`q1\` holds both \`firstAttempt\` and (if fired) \`retryAttempt\` |
+| \`division\` | Division attempt/result object |
+| \`numberRecognition99\` / \`numberRecognition9\` | Recognition-stage result records |
+
+**In-Progress Marking (Number Recognition)**
+| State | Purpose |
+|---|---|
+| \`nrMarks\` | \`{ [text]: 'correct'\|'incorrect' }\` for the tile screen currently open |
+| \`nrSelectedTexts\` | Tiles picked so far (max 5) |
+
+**Numpad**
+| State | Purpose |
+|---|---|
+| \`activeInput\` | Which numpad field is focused: \`answer \| quotient \| remainder\` |
+| \`answerVal\` | Subtraction answer buffer |
+| \`quotientVal\` / \`remainderVal\` | Division answer buffers |
+
+**Outcome**
+| State | Purpose |
+|---|---|
+| \`finalLevel\` | Final numeracy level string |
+| \`finalScore\` | \`LEVELS[finalLevel]\` |
+| \`finalGameTime\` | \`timerSeconds\` snapshot at completion |
+
+**Session, Timers & Misc UI**
+| State | Purpose |
+|---|---|
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`timerSeconds\` / \`qTimer\` | Overall session timer / per-stage timer |
+| \`pauses\` | \`{ stage, reason, timestamp }[]\` pause/quit log |
+| \`showResumeModal\` / \`showQuitModal\` | Modal visibility flags |
+| \`quitReason\` | Typed/dictated pause-quit reason |
+| \`audioFinished\` / \`isCheckingSession\` | Gate splash "Start Now" / splash rendering |
+| \`assessment\` / \`isAssessmentSubmitting\` / \`assessmentSubmitted\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Question bank fetch fail       → console.error only, splash still renders
+Activity/resume fetch fail     → console.error only, splash shown normally
+Session start fail             → alert shown, game proceeds locally with
+                                  gameSessionId still unset (progress
+                                  silently stops syncing from then on)
+Progress save fail (autosave)  → console.error only, gameplay continues
+Finalize-assessment save fail  → console.log only, screen already on Score
+Screentime save (fire-and-forget, not awaited) → console.error only
+PDF generation/upload fail     → console.error only, never shown to the user
+Final assessment submit fail   → console.error + alert shown, submit re-enabled
+\`\`\`
+The adaptive ladder itself (stage transitions, pass/fail verdicts) is pure local state logic and is never blocked by a network failure — only server *sync* can silently fail.
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Config: continuous: true, interimResults: true, lang: STT_LANG_MAP[language] || 'en-US'
+Targets: quitReason (Pause/Quit modal) · assessmentNotes (final assessment form)
+\`\`\`
+Only \`isFinal\` results are appended to the target field. The active recognition instance is stashed on \`window.activeRecognition\` so it can be force-stopped on unmount (releasing the microphone). Re-tapping the mic on the same target stops the existing instance rather than starting a second one.
+
+---
+
+## 16. Technical Notes
+
+- The admin Category Config panel's \`minimum_correct\`/\`evaluation_type\` fields are **dead weight** — they exist in the schema and the admin UI but are never consulted by the game. The real pass threshold (≥4/5) is hardcoded. Anyone editing these fields expecting them to change gameplay will be surprised that nothing happens.
+- The Subtraction Q1 retry preserves the original wrong attempt (\`firstAttempt\`) alongside the retry (\`retryAttempt\`) — both can show as separate rows in the results table, rather than the retry silently replacing the original.
+- Division has no retry at all, unlike Subtraction's Q1 — a wrong division answer immediately finalizes \`finalLevel = "Subtraction"\`.
+- \`nrMarks\`/\`nrSelectedTexts\` are shared, reset state used by *both* Number Recognition sub-stages — they are not per-stage-scoped, so each stage transition must clear them.
+- No stage has a time limit — \`qTimer\`/\`timerSeconds\` are recorded for reporting only, never used to force a stage to end.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
 
 // ─── API & Backend Logic template (pre-populated with real SANGIAN API data) ──
+// Merged with the former Data Flow template — same endpoints/payloads/tables
+// were being narrated twice (reference-style here, step-by-step there); the
+// step-by-step walkthrough now lives as §15 below instead of a separate section.
 
-const makeApiTemplate = (game) => `# 🔗 ${game.title} — API & Backend Logic
+const makeApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
 
 ---
 
@@ -1326,32 +2781,27 @@ ${game.title} is a cognitive assessment module within the SANGIAN platform. The 
 
 ## 2. Backend Workflow
 
-### Simplified Flow (For All Users)
+### Complete Data Journey
 
 \`\`\`
-Child Logs In
-      ↓
-Game Loads → Backend checks for a resumable session
-      ↓
-Session Created (or reused) → game_sessions table
-      ↓
-Gameplay Begins → Score and progress saved during play
-      ↓
-Game Ends → Final status written (completed / quit / dropped)
-      ↓
-Assessment Form → Assessor submits behavioral observations
-      ↓
-Reports Available → Admin views full session data & downloads PDF
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Answers Questions → Score saved after each answer
+       ↓
+Game Ends → Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
 \`\`\`
 
-### What Happens at Each Step
-
-1. **Game Load** — The system checks whether the child has a paused session from a previous visit. If found, a resume prompt appears.
-2. **Session Start** — A unique session ID is created in the database. If an active session already exists, it is reused to prevent duplicates.
-3. **During Play** — Score and the full game state (question results, timings, pause events) are periodically saved to the server.
-4. **Game End** — The final status (\`completed\`, \`quit\`, or \`dropped\`) is recorded along with the end time.
-5. **Assessment** — The assessor fills in a behavioral observation form. The data is linked to the session.
-6. **Report** — Administrators can view the full session, per-question scores, assessment data, and download a PDF summary.
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
 
 ---
 
@@ -1615,24 +3065,6 @@ saved_state     JSON     — Full snapshot: allScores, pauses, timings
 }
 \`\`\`
 
-### Data Flow
-
-\`\`\`
-Session Starts  → Record written: status = 'in_progress'
-       ↓
-Questions Answered → saved_state JSON updated with each result
-       ↓
-Game Ends Normally → status = 'completed', end_time recorded
-Game Quit Early    → status = 'quit', quit_reason saved
-Drop Rule Hit      → status = 'dropped'
-       ↓
-Assessment Submitted → Record written in game_assessments table
-       ↓
-PDF Exported         → File path stored in game_dashboard_pdfs
-       ↓
-Admin Views Reports  → Data joined from all three tables
-\`\`\`
-
 ---
 
 ## 8. Score Calculation
@@ -1782,6 +3214,1450 @@ Attempt numbers are not stored as a column — they are calculated dynamically a
 
 ---
 
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order — useful for onboarding or tracing a bug across the full request chain.
+
+### Stage 1 — Game Load (Resume Check)
+
+When the game screen opens, the first action is a resume check:
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+
+Purpose: Check if the child has an unfinished session
+Result:
+  → Session found (status: paused) → Show "Resume" popup
+  → No session found              → Show Splash screen
+\`\`\`
+
+**Data involved:** child_id, game_name, saved_state (if resuming)
+
+### Stage 2 — Session Start
+
+When the child clicks "Start Now":
+
+\`\`\`
+POST /api/games/sessions/start
+
+Sends: child_id, game_name, total_questions
+Receives: sessionId, attempt_no
+
+Database: New row written in game_sessions
+  status = 'in_progress'
+  start_time = NOW()
+  score = 0
+\`\`\`
+
+If an active session already exists, the server returns the existing session ID (no duplicate created).
+
+### Stage 3 — During Gameplay (Auto-Save)
+
+After every question is answered, the complete game state is synced to the server:
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends:
+  score         → correct answers so far
+  progress_level → current question number
+  status        → 'in_progress'
+  saved_state   → full JSON snapshot:
+    {
+      questionIndex: 7,
+      allScores: [
+        { qId: 1, score: 1, timeTaken: 4 },
+        { qId: 2, score: 0, timeTaken: 8 },
+        ...
+      ],
+      timerSeconds: 124,
+      pauses: []
+    }
+\`\`\`
+
+This ensures that if the device loses connectivity or the browser closes, the session can be resumed from the last saved question.
+
+### Stage 4 — Pause / Quit
+
+If the assessor pauses or quits the session:
+
+\`\`\`
+Pause:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'paused'
+  saved_state includes pause event with timestamp
+
+Quit:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'quit'
+  quit_reason = assessor-entered reason
+  end_time = NOW()
+\`\`\`
+
+### Stage 5 — Game End (Stop Rule or Completion)
+
+When the game ends (all questions done or stop rule triggered):
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+  status = 'completed'
+  score = final correct answer count
+  progress_level = last question reached
+  end_time = NOW()
+  saved_state = final snapshot
+\`\`\`
+
+**Terminal status guard**: Once \`quit\` or \`dropped\`, the server will never overwrite to \`completed\` (see §5 above).
+
+### Stage 6 — Behavioral Assessment Submission
+
+After the score screen appears, the assessor fills in the observation form:
+
+\`\`\`
+POST /api/games/assessments
+
+Sends:
+  session_id, child_id
+  q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again
+  q5_behaviors (JSON array)
+  additional_notes
+
+Database: New row in game_assessments linked to session
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+
+\`\`\`
+1. Score screen is rendered to a canvas (html2canvas)
+2. Canvas is converted to a JPEG image
+3. Image is embedded in an A4 PDF (jsPDF)
+4. PDF blob is uploaded:
+
+POST /api/games/pdfs/upload
+  Sends: PDF file, child_id, session_id, game_name
+  Database: New row in game_dashboard_pdfs with file path
+\`\`\`
+
+PDF filename format:
+\`\`\`
+[ChildName]_${game.title}_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+When the administrator opens the Reports module:
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins data from:
+  game_sessions       → score, status, timing, saved_state
+  children            → child_name
+  game_assessments    → behavioral observations
+  game_dashboard_pdfs → PDF download link
+
+Parses saved_state JSON to extract per-question scores
+Returns enriched session records with:
+  correct_count, attempted_questions, actual_game_time,
+  total_session_time, question_scores, assessment, pdf_url
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Reading Skill V2 API & Data Flow — adds content-management endpoints ──
+// unique to this game, corrects the saved_state / score shape (no allScores,
+// no 'dropped' status), points the Visual Workflow section at the real
+// Workflow Diagram tab, and merges in the stage-by-stage Data Flow walkthrough
+// (§15) instead of keeping it as a separate section — same endpoints/payloads/
+// tables were being narrated twice.
+
+const makeReadingV2ApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is an ASER 2014-style adaptive oral reading assessment within the SANGIAN platform. The backend is responsible for creating and managing every game session, capturing per-stage results as the child moves through the ladder, serving admin-managed test content, and generating reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Saves gameplay progress and stage-level results in real time (not per-question scores — see **Score Logic**)
+- Serves admin-managed letters/words/paragraphs/story/questions/hints, per language
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; test content + languages fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Reads Aloud / Assessor Marks Tiles → Stage result saved after each stage
+       ↓
+Ladder Reaches an End → Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving a stage result, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (player-facing content & language routes)
+/api/admin/    (admin content-management routes)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | On every stage transition / pause / quit / finalize |
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/:gameName\` | Finds the latest session to resume | On game load |
+| Game History | GET | \`/api/games/sessions/history/:childId\` | Returns all sessions for a child | Child history panel |
+| Game Summaries | GET | \`/api/games/sessions/summaries/:childId\` | Returns per-game summary | Home / splash screen |
+| Pending Assessment | GET | \`/api/games/sessions/pending-assessment/:childId\` | Finds sessions without an assessment | After game completion |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Overview | GET | \`/api/games/reports/overview\` | KPI stats for all games (admin only) | Admin opens Reports tab |
+| Report Detail | GET | \`/api/games/reports/detail/:gameName\` | Detailed session list for one game | Admin views game report |
+| **Fetch Test Content** | GET | \`/api/public/elements?test_id=${game.key}\` | Loads admin-managed letters/words/paragraphs/story/questions/hints | On game load |
+| **Fetch Languages** | GET | \`/api/public/translations/languages\` | Resolves the player's language and platform default | On game load |
+| **(Admin) Load Content Elements** | GET | \`/api/admin/elements?test_id=${game.key}\` | Loads all content rows for the Elements editor | Admin opens Content Manager |
+| **(Admin) Save Content Element** | PUT | \`/api/admin/elements/config\` | Saves an edited letters/words/paragraph/story/question/hint entry | Admin clicks Save in Content Manager |
+| **(Admin) Toggle Content Status** | PUT | \`/api/admin/elements/:fileId/status\` | Enables/disables a saved content row | Admin toggles a row's status |
+
+The last 5 rows (bold) are specific to games with admin-managed content, like this one — most other SANGIAN games hardcode their content and don't use them.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active 'in_progress' session already exists for the same
+child and game, the server returns the existing session ID
+instead of creating a duplicate record.
+
+During gameplay, the session is updated with:
+  - Current score (LEVELS[finalLevel], 0-4, once the ladder ends)
+  - Progress level (path.length + 1 — stages traversed so far)
+  - Saved state (full JSON snapshot of ladder state)
+
+When the ladder ends:
+  - Status → completed (or quit, if the assessor ended it early)
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked as 'quit' or 'dropped', the server
+will never allow it to be overwritten as 'completed'.
+
+This is a server-side safety guard against client-side bugs
+that might accidentally send a 'completed' update after the
+session has already been terminated. The guard is shared
+backend logic across all games — this particular game just
+never produces a 'dropped' status itself.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+This prevents ghost sessions from accumulating in reports.
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "${game.key}",
+  "total_questions": 5
+}
+\`\`\`
+Note: \`total_questions\` is a fixed value (5) for this game — it does not correspond to a real question count, since the ladder has no fixed number of items.
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+**Response — Session Reused (HTTP 200):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Active session reused",
+  "sessionId": 138,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**):
+\`\`\`json
+{
+  "score": 3,
+  "progress_level": 4,
+  "status": "in_progress",
+  "saved_state": {
+    "stage": "story",
+    "selectedParagraphIndex": 0,
+    "wordsSource": "direct",
+    "selectedWords": [{ "text": "घर", "correct": true }],
+    "selectedWordsRetry": [],
+    "selectedLetters": [],
+    "paragraphResult": { "pass": true, "ssrAnswers": ["no","no","no"], "timeTaken": 38 },
+    "paragraphRetryResult": null,
+    "storyResult": null,
+    "path": ["paragraph"],
+    "finalLevel": null,
+    "finalScore": null,
+    "finalGameTime": null,
+    "timerSeconds": 96,
+    "qTimer": 12,
+    "pauses": []
+  }
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session updated"
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Ladder is actively being played
+paused       — Session paused (resume popup will show on next visit)
+completed    — Ladder reached an END point in the routing table
+quit         — Assessor ended the session early
+\`\`\`
+\`dropped\` is a status value the backend supports generically for other games, but this game never sets it — every FAIL branch routes to either another stage or a defined final level, never an undefined "drop."
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Read the paragraph confidently but hesitated on the story."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/${game.key}\`
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "${game.key}",
+    "status": "paused",
+    "score": null,
+    "progress_level": 2,
+    "saved_state": { "stage": "words", "path": ["paragraph"], "...": "..." },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+
+**Response (no session):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": null
+}
+\`\`\`
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Internal game key (${game.key})
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — LEVELS[finalLevel], 0–4 (NULL until the ladder ends)
+total_questions INT      — Fixed at 5 for this game (not a real question count)
+progress_level  INT      — path.length + 1 — stages traversed so far
+status          ENUM     — in_progress / paused / completed / quit (no 'dropped' for this game)
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: stage, path, per-stage results, timings
+\`\`\`
+
+### saved_state JSON Structure (this game)
+
+\`\`\`json
+{
+  "stage": "story",
+  "selectedParagraphIndex": 0,
+  "wordsSource": "direct",
+  "selectedWords": [{ "text": "घर", "correct": true }],
+  "selectedWordsRetry": [],
+  "selectedLetters": [],
+  "paragraphResult": { "pass": true, "ssrAnswers": ["no","no","no"], "timeTaken": 38 },
+  "storyResult": null,
+  "path": ["paragraph"],
+  "finalLevel": null,
+  "finalScore": null,
+  "timerSeconds": 96,
+  "qTimer": 12,
+  "pauses": []
+}
+\`\`\`
+This is a materially different shape from the \`allScores\`-based structure used by fixed-question games — see the **saved_state Schema Flexibility** note below.
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Stages Traversed → saved_state JSON updated after each stage transition
+       ↓
+Ladder Reaches an END → status = 'completed', end_time recorded, finalLevel/finalScore set
+Game Quit Early        → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds \`LEVELS[finalLevel]\` — a 0–4 ASER reading level — not a count of correct answers. It is \`NULL\`/unset until the ladder actually reaches an END.
+
+Per-stage results are stored directly in \`saved_state\` under their own keys — \`selectedWords\`, \`selectedWordsRetry\`, \`selectedLetters\`, \`paragraphResult\`, \`paragraphRetryResult\`, \`storyResult\` — **not** in a single \`allScores\` array like fixed-question games use. See **Score Logic** for the exact shape of each.
+
+### Report Reading for This Game
+Because this game's \`saved_state\` doesn't follow the \`allScores\` shape, any report/aggregation logic reading it needs to branch on game type and read \`path\`, \`finalLevel\`, \`finalScore\`, and the per-stage \`timeTaken\` fields instead — the same adaptation the backend already makes for other non-standard games (see **saved_state Schema Flexibility**, §13).
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — "Did you enjoy playing the game?" | Single choice, required |
+| Q2 — "How did the game feel for you?" | Single choice, required |
+| Q3 — "Did you feel tired while playing the game?" | Single choice, required |
+| Q4 — "Would you like to play the game again?" | Single choice, required |
+| Q5 — Observed behaviors | Multi-select checkboxes, **required (≥1)** |
+| Additional Notes | Free text, optional |
+
+### Assessment Storage
+Responses are stored in the \`game_assessments\` table linked to \`session_id\`. The \`q5_behaviors\` field is stored as a JSON array of canonical English behavior strings, regardless of the assessor's display language.
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit')\` but no corresponding record exists in \`game_assessments\`. A prompt is shown to the assessor to complete the form before navigating away. (This game never produces \`'dropped'\`, so that status isn't part of the check for it.)
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist |
+| 500 | Internal Server Error — database or processing failure |
+
+### Terminal Status Guard
+\`\`\`
+If a 'completed' update is sent for a session already in
+'quit' or 'dropped' state, the server responds HTTP 200
+with 'Session already finalized — status preserved.'
+No data is changed.
+\`\`\`
+
+### Client-Side Resilience
+- Ladder gameplay continues running locally if a save API call fails (see **Technical Documentation § Error Handling**)
+- Session ID is stored in React state for the duration of gameplay
+- Final session update is always attempted before displaying the score screen
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+
+**Token Check:**
+\`\`\`
+Authorization: Bearer <JWT_TOKEN>
+
+Validates:
+  ✓ Token is a valid JWT (signed with server secret)
+  ✓ Token is not expired
+  ✓ Token role === 'admin'
+
+Failure responses:
+  401 — No token provided
+  401 — Token expired
+  403 — Role is not admin
+\`\`\`
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard)
+
+---
+
+## 12. Visual Workflow
+
+The full visual API/session/stage-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game, which has dedicated tabs for Game Journey, Stage Flow, Score & Level, API Flow, and Session States, all generated from this game's real adaptive-ladder logic.
+
+---
+
+## 13. Developer Notes
+
+### Game Name Normalization
+Several games have legacy name aliases that are normalized server-side:
+
+\`\`\`
+'Chalo Mela Chale' / 'chalo_mela_chale' → 'rover_mela'
+'chor_machaye_shor'                      → 'cognitive_flex_chor'
+'reading_skill'                          → 'literacy_reading_skill'
+'Ankganit'                               → 'numeracy_number_skill'
+\`\`\`
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
+- \`allScores\` array (standard fixed-question games)
+- \`itemResults\` array (Chor Machaye Shor)
+- \`questionDetails\` map (games with mid-test assessments)
+- \`stage\` / \`path\`-based adaptive-ladder shape (**this game** — see §7 above)
+
+### Attempt Number Calculation
+Attempt numbers are not stored as a column — they are calculated dynamically at query time by counting sessions for the same \`child_id\` + \`game_name\` ordered by \`start_time\`.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New question/stage metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+- **API versioning**: Base path \`/api/games/\` supports future versioned sub-routes
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order — useful for onboarding or tracing a bug across the full request chain. Unlike a fixed-question game, this game also **reads** admin-managed test content (letters/words/paragraphs/story/questions/hints) on load — a read path from a separate content table, not one of the three session-related tables the rest of this walkthrough covers.
+
+### Stage 1 — Game Load (Resume Check + Content Fetch)
+
+When the game screen opens, two things happen in parallel:
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+
+Purpose: Check if the child has an unfinished session
+Result:
+  → Session found (status: in_progress or paused) → Show "Resume" popup
+  → No session found                               → Show Splash screen
+\`\`\`
+
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+GET /api/public/translations/languages
+
+Purpose: Load the admin-managed letters/words/paragraphs/story/questions/
+hints, resolved for the child's language (falling back to the platform
+default language, then to a hardcoded constant if still unset)
+\`\`\`
+
+**Data involved:** child_id, game_name, saved_state (if resuming); content elements + language config (always)
+
+### Stage 2 — Session Start
+
+When the child clicks "Start Now":
+
+\`\`\`
+POST /api/games/sessions/start
+
+Sends: child_id, game_name, total_questions (fixed at 5 — not a real question count)
+Receives: sessionId, attempt_no
+
+Database: New row written in game_sessions
+  status = 'in_progress'
+  start_time = NOW()
+  score = NULL (no level reached yet)
+\`\`\`
+
+If an active session already exists, the server returns the existing session ID (no duplicate created).
+
+### Stage 3 — During Gameplay (Auto-Save)
+
+After every stage transition (not every question — this game has no per-question loop), the complete ladder state is synced to the server:
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends:
+  score          → LEVELS[finalLevel] once the ladder ends, else unset
+  progress_level → path.length + 1 (stages traversed so far)
+  status         → 'in_progress'
+  saved_state    → full JSON snapshot (see §6 above for the exact shape)
+\`\`\`
+
+This ensures that if the device loses connectivity or the browser closes, the session can be resumed from the last completed stage. Note: mid-marking progress on the *current* Words/Letters tile screen is not part of this snapshot — only completed stages are saved.
+
+### Stage 4 — Pause / Quit
+
+If the assessor pauses or quits the session:
+
+\`\`\`
+Pause:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'paused'
+  saved_state.pauses gets a new entry: { stage, reason, timestamp }
+
+Quit:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'quit'
+  quit_reason = assessor-entered (typed or dictated) reason
+  end_time = NOW()
+\`\`\`
+
+A reason is required before either action confirms — the pause/quit modal blocks otherwise.
+
+### Stage 5 — Game End (Ladder Reaches an End)
+
+When the ladder reaches an END point in its stage-routing table (see **Score & Progression Logic** or **Workflow Diagram → Stage Flow**):
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+  status = 'completed'
+  score = LEVELS[finalLevel]  (0–4, an ASER reading level)
+  progress_level = path.length + 1
+  end_time = NOW()
+  saved_state = final snapshot, including path[] and finalLevel
+\`\`\`
+
+**Terminal status guard**: Once \`quit\`, the server will never overwrite to \`completed\`. This game never produces a \`'dropped'\` status — every stage's FAIL branch routes to either another stage or a defined final level.
+
+### Stage 6 — Behavioral Assessment Submission
+
+After the score screen appears, the assessor fills in the observation form (Q1–Q5 required, Q5 needs at least 1 behavior checked) and confirms in a modal before it's sent:
+
+\`\`\`
+POST /api/games/assessments
+
+Sends:
+  session_id, child_id
+  q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again
+  q5_behaviors (JSON array, ≥1 entry required)
+  additional_notes
+
+Database: New row in game_assessments linked to session
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+
+\`\`\`
+1. Score screen (#dashboard-capture-area) is cloned off-screen to avoid
+   clipping from the game shell's backdrop-filter, then rendered to a
+   canvas (html2canvas, scale 1.5)
+2. Canvas is converted to a JPEG image
+3. Image is embedded in an A4 PDF (jsPDF)
+4. PDF blob is uploaded:
+
+POST /api/games/pdfs/upload
+  Sends: PDF file, child_id, session_id, game_name
+  Database: New row in game_dashboard_pdfs with file path
+\`\`\`
+
+PDF filename format:
+\`\`\`
+[ChildName]_ReadingSkillV2_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+When the administrator opens the Reports module:
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins data from:
+  game_sessions       → score, status, timing, saved_state
+  children            → child_name
+  game_assessments    → behavioral observations
+  game_dashboard_pdfs → PDF download link
+
+Parses saved_state JSON to extract path[], finalLevel, finalScore, and
+each stage's own result/timing fields — NOT a "question_scores" list,
+since this game has no individually scored questions (see §8 Score
+Calculation above for why the standard allScores-based report reading
+doesn't apply here)
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Ankganit V3 API & Data Flow — adds the split content-management model ──
+// (canonical scoring bank vs. cosmetic display overrides) unique to this game,
+// corrects the saved_state shape (no allScores, no 'dropped' status), points
+// Visual Workflow at the real Workflow Diagram tab, and merges in the
+// stage-by-stage Data Flow walkthrough (§15) instead of a separate section.
+
+const makeAnkganitV3ApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is an adaptive arithmetic assessment within the SANGIAN platform. The backend is responsible for creating and managing every game session, capturing per-stage results as the child moves through the ladder, serving the canonical question bank and admin-managed display text, and generating reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Saves gameplay progress and stage-level results in real time (not per-question scores — see **Score & Progression Logic**)
+- Serves the canonical subtraction/division/number-recognition question bank, and separately, admin-managed per-language display text
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; question bank + display text fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Solves Subtraction/Division / Assessor Marks Tiles → Stage result saved
+       ↓
+Ladder Reaches an End → Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving a stage result, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (question bank + display-text + language routes)
+/api/admin/    (admin content-management routes)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | On every stage transition / pause / quit / finalize |
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/:gameName\` | Finds the latest session to resume | On game load |
+| Game History | GET | \`/api/games/sessions/history/:childId\` | Returns all sessions for a child | Child history panel |
+| Game Summaries | GET | \`/api/games/sessions/summaries/:childId\` | Returns per-game summary | Home / splash screen |
+| Pending Assessment | GET | \`/api/games/sessions/pending-assessment/:childId\` | Finds sessions without an assessment | After game completion |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Overview | GET | \`/api/games/reports/overview\` | KPI stats for all games (admin only) | Admin opens Reports tab |
+| Report Detail | GET | \`/api/games/reports/detail/:gameName\` | Detailed session list for one game | Admin views game report |
+| **Question Bank** | GET | \`/api/public/ankganit-v3\` | Loads the canonical subtraction/division/number-recognition bank (correct answers included) | On game load |
+| **Fetch Display Overrides** | GET | \`/api/public/elements?test_id=${game.key}\` | Loads admin-managed per-language display text | On game load |
+| **Fetch Languages** | GET | \`/api/public/translations/languages\` | Resolves the player's language and platform default | On game load |
+| **(Admin) Update Category** | PUT | \`/api/admin/ankganit-v3/categories/:id\` | Edits category name/active flag (\`minimum_correct\`/\`evaluation_type\` are also editable here but never read by gameplay — see Score & Progression Logic §14) | Admin edits Category Config |
+| **(Admin) Update Question** | PUT | \`/api/admin/ankganit-v3/questions/:id\` | Edits question text/correct_answer/remainder | Admin edits Category Config |
+
+The last 5 rows (bold) are specific to games with a split canonical-content/display-overrides architecture, like this one.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active 'in_progress' session already exists for the same
+child and game, the server returns the existing session ID
+instead of creating a duplicate record.
+
+During gameplay, the session is updated with:
+  - Current score (LEVELS[finalLevel], once the ladder ends)
+  - Progress level (path.length + 1 — stages traversed so far)
+  - Saved state (full JSON snapshot of ladder state)
+
+When the ladder ends:
+  - Status → completed (or quit, if the assessor ended it early)
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked as 'quit' or 'dropped', the server
+will never allow it to be overwritten as 'completed'.
+
+This is a server-side safety guard against client-side bugs
+that might accidentally send a 'completed' update after the
+session has already been terminated. The guard is shared
+backend logic across all games — this particular game just
+never produces a 'dropped' status itself.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+This prevents ghost sessions from accumulating in reports.
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "${game.key}"
+}
+\`\`\`
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+**Response — Session Reused (HTTP 200):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Active session reused",
+  "sessionId": 138,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**):
+\`\`\`json
+{
+  "score": 3,
+  "progress_level": 4,
+  "status": "in_progress",
+  "saved_state": {
+    "stage": "division_q1",
+    "path": ["subtraction_select", "subtraction_q1", "subtraction_q2", "division_select"],
+    "subtraction": {
+      "q1": { "firstAttempt": { "correct": true, "timeTaken": 9, "enteredAnswer": 31 }, "finalCorrect": true },
+      "q2": { "firstAttempt": { "correct": true, "timeTaken": 7, "enteredAnswer": 18 }, "finalCorrect": true },
+      "bothCorrect": true
+    },
+    "division": null,
+    "numberRecognition99": null,
+    "numberRecognition9": null,
+    "finalLevel": null,
+    "finalScore": null,
+    "finalGameTime": null,
+    "timerSeconds": 84,
+    "qTimer": 6,
+    "pauses": []
+  }
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session updated"
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Ladder is actively being played
+paused       — Session paused (resume popup will show on next visit)
+completed    — Ladder reached an END point in the routing table
+quit         — Assessor ended the session early
+\`\`\`
+\`dropped\` is a status value the backend supports generically for other games, but this game never sets it — every FAIL branch routes to either another stage or a defined final level, never an undefined "drop."
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Solved subtraction confidently but struggled with the division remainder."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/${game.key}\`
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "${game.key}",
+    "status": "paused",
+    "score": null,
+    "progress_level": 3,
+    "saved_state": { "stage": "number_recognition_99", "path": ["subtraction_select","subtraction_q1","subtraction_q2"], "...": "..." },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+
+**Response (no session):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": null
+}
+\`\`\`
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+| \`ankganit_v3_categories\` | The 4 category definitions (name, active flag, and the vestigial \`minimum_correct\`/\`evaluation_type\` fields) |
+| \`ankganit_v3_questions\` | The canonical question bank — text, \`correct_answer\`, \`remainder\`, \`display_order\`, linked to a category |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Internal game key (${game.key})
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — LEVELS[finalLevel], 0–4 (NULL until the ladder ends)
+progress_level  INT      — path.length + 1 — stages traversed so far
+status          ENUM     — in_progress / paused / completed / quit (no 'dropped' for this game)
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: stage, path, per-category results, timings
+\`\`\`
+
+### saved_state JSON Structure (this game)
+
+\`\`\`json
+{
+  "stage": "division_q1",
+  "path": ["subtraction_select", "subtraction_q1", "subtraction_q2", "division_select"],
+  "subtraction": { "q1": { "...": "..." }, "q2": { "...": "..." }, "bothCorrect": true },
+  "division": null,
+  "numberRecognition99": null,
+  "numberRecognition9": null,
+  "finalLevel": null,
+  "finalScore": null,
+  "timerSeconds": 84,
+  "qTimer": 6,
+  "pauses": []
+}
+\`\`\`
+This is grouped by *category* (\`subtraction\`, \`division\`, \`numberRecognition99\`, \`numberRecognition9\`) rather than by stage type — a different grouping from Padh ke Batao V2's per-stage-type shape, and a materially different shape from the \`allScores\`-based structure used by fixed-question games. See the **saved_state Schema Flexibility** note below.
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Stages Traversed → saved_state JSON updated after each stage transition
+       ↓
+Ladder Reaches an END → status = 'completed', end_time recorded, finalLevel/finalScore set
+Game Quit Early        → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three session-related tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds \`LEVELS[finalLevel]\` — a 0–4 numeracy level — not a count of correct answers. It is \`NULL\`/unset until the ladder actually reaches an END.
+
+Per-stage results are stored directly in \`saved_state\`, grouped by category (\`subtraction\`, \`division\`, \`numberRecognition99\`, \`numberRecognition9\`) — **not** in a single \`allScores\` array like fixed-question games use. See **Score & Progression Logic** for the exact shape of each.
+
+### Report Reading for This Game
+Because this game's \`saved_state\` doesn't follow the \`allScores\` shape, any report/aggregation logic reading it needs to branch on game type and read \`path\`, \`finalLevel\`, \`finalScore\`, and each category's own result/timing fields instead — the same adaptation the backend already makes for other non-standard games (see **saved_state Schema Flexibility**, §13).
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — "Did you enjoy playing the game?" | Single choice, required |
+| Q2 — "How did the game feel for you?" | Single choice, required |
+| Q3 — "Did you feel tired while playing the game?" | Single choice, required |
+| Q4 — "Would you like to play the game again?" | Single choice, required |
+| Q5 — Observed behaviors | Multi-select checkboxes, **required (≥1)** |
+| Additional Notes | Free text, optional |
+
+### Assessment Storage
+Responses are stored in the \`game_assessments\` table linked to \`session_id\`. The \`q5_behaviors\` field is stored as a JSON array of canonical English behavior strings, regardless of the assessor's display language.
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit')\` but no corresponding record exists in \`game_assessments\`. A prompt is shown to the assessor to complete the form before navigating away. (This game never produces \`'dropped'\`, so that status isn't part of the check for it.)
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist |
+| 500 | Internal Server Error — database or processing failure |
+
+### Terminal Status Guard
+\`\`\`
+If a 'completed' update is sent for a session already in
+'quit' or 'dropped' state, the server responds HTTP 200
+with 'Session already finalized — status preserved.'
+No data is changed.
+\`\`\`
+
+### Client-Side Resilience
+- Ladder gameplay continues running locally if a save API call fails (see **Technical Documentation § Error Handling**)
+- Session ID is stored in React state for the duration of gameplay
+- Final session update is always attempted before displaying the score screen
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+
+**Token Check:**
+\`\`\`
+Authorization: Bearer <JWT_TOKEN>
+
+Validates:
+  ✓ Token is a valid JWT (signed with server secret)
+  ✓ Token is not expired
+  ✓ Token role === 'admin'
+
+Failure responses:
+  401 — No token provided
+  401 — Token expired
+  403 — Role is not admin
+\`\`\`
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard)
+
+---
+
+## 12. Visual Workflow
+
+The full visual API/session/stage-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game, which has dedicated tabs for Game Journey, Stage Flow, Score & Level, API Flow, and Session States, all generated from this game's real adaptive-ladder logic.
+
+---
+
+## 13. Developer Notes
+
+### Game Name Normalization
+Several games have legacy name aliases that are normalized server-side:
+
+\`\`\`
+'Chalo Mela Chale' / 'chalo_mela_chale' → 'rover_mela'
+'chor_machaye_shor'                      → 'cognitive_flex_chor'
+'reading_skill'                          → 'literacy_reading_skill'
+'Ankganit'                               → 'numeracy_number_skill'
+\`\`\`
+Note this last alias maps the bare "Ankganit" name to \`numeracy_number_skill\` (V0), not \`numeracy_number_skill_v3\` — worth double-checking if this alias is ever hit for V3 traffic, since it would silently misattribute sessions to the wrong game version.
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
+- \`allScores\` array (standard fixed-question games)
+- \`itemResults\` array (Chor Machaye Shor)
+- \`questionDetails\` map (games with mid-test assessments)
+- \`stage\` / \`path\`-based adaptive-ladder shape, grouped by category (**this game** — see §7 above)
+
+### Attempt Number Calculation
+Attempt numbers are not stored as a column — they are calculated dynamically at query time by counting sessions for the same \`child_id\` + \`game_name\` ordered by \`start_time\`.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New question/stage metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+- **API versioning**: Base path \`/api/games/\` supports future versioned sub-routes
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order — useful for onboarding or tracing a bug across the full request chain. Unlike a fixed-question game, this game also **reads** a canonical question bank (with correct answers) on load, separately from admin-managed per-language display text — neither is one of the three session-related tables the rest of this walkthrough covers.
+
+### Stage 1 — Game Load (Resume Check + Content Fetch)
+
+When the game screen opens, several things happen in parallel:
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+
+Purpose: Check if the child has an unfinished session
+Result:
+  → Session found (status: in_progress or paused) → Show "Resume" popup
+  → No session found                               → Show Splash screen
+\`\`\`
+
+\`\`\`
+GET /api/public/ankganit-v3
+
+Purpose: Load the canonical question bank (correct_answer/remainder
+included) for all 4 categories — this is what scoring actually uses
+\`\`\`
+
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+GET /api/public/translations/languages
+
+Purpose: Load admin-managed per-language display text for each question
+(cosmetic only — never affects scoring)
+\`\`\`
+
+**Data involved:** child_id, game_name, saved_state (if resuming); question bank (always); display overrides + language config (always)
+
+### Stage 2 — Session Start
+
+When the child clicks "Start Now":
+
+\`\`\`
+POST /api/games/sessions/start
+
+Sends: child_id, game_name
+Receives: sessionId, attempt_no
+
+Database: New row written in game_sessions
+  status = 'in_progress'
+  start_time = NOW()
+  score = NULL (no level reached yet)
+\`\`\`
+
+If an active session already exists, the server returns the existing session ID (no duplicate created).
+
+### Stage 3 — During Gameplay (Auto-Save)
+
+After every stage transition, the complete ladder state is synced to the server:
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends:
+  score          → LEVELS[finalLevel] once the ladder ends, else unset
+  progress_level → path.length + 1 (stages traversed so far)
+  status         → 'in_progress'
+  saved_state    → full JSON snapshot (see §6 above for the exact shape)
+\`\`\`
+
+This ensures that if the device loses connectivity or the browser closes, the session can be resumed from the last completed stage. Note: mid-marking progress on the *current* Number Recognition tile screen is not part of this snapshot — only completed stages are saved.
+
+### Stage 4 — Pause / Quit
+
+If the assessor pauses or quits the session:
+
+\`\`\`
+Pause:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'paused'
+  saved_state.pauses gets a new entry: { stage, reason, timestamp }
+
+Quit:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'quit'
+  quit_reason = assessor-entered (typed or dictated) reason
+  end_time = NOW()
+\`\`\`
+
+A reason is required before either action confirms — the pause/quit modal blocks otherwise.
+
+### Stage 5 — Game End (Ladder Reaches an End)
+
+When the ladder reaches an END point in its stage-routing table (see **Score & Progression Logic** or **Workflow Diagram → Stage Flow**):
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+  status = 'completed'
+  score = LEVELS[finalLevel]  (0–4)
+  progress_level = path.length + 1
+  end_time = NOW()
+  saved_state = final snapshot, including path[] and finalLevel
+\`\`\`
+
+**Terminal status guard**: Once \`quit\`, the server will never overwrite to \`completed\`. This game never produces a \`'dropped'\` status.
+
+### Stage 6 — Behavioral Assessment Submission
+
+After the score screen appears, the assessor fills in the observation form (Q1–Q5 required, Q5 needs at least 1 behavior checked) and confirms in a modal before it's sent:
+
+\`\`\`
+POST /api/games/assessments
+
+Sends:
+  session_id, child_id
+  q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again
+  q5_behaviors (JSON array, ≥1 entry required)
+  additional_notes
+
+Database: New row in game_assessments linked to session
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+
+\`\`\`
+1. Score screen (.ns-main) is cloned off-screen to avoid clipping from
+   .ns-app's overflow:hidden + height:100dvh, then rendered to a
+   canvas (html2canvas, scale 1.5)
+2. Canvas is converted to a JPEG image
+3. Image is embedded in an A4 PDF (jsPDF)
+4. PDF blob is uploaded:
+
+POST /api/games/pdfs/upload
+  Sends: PDF file, child_id, session_id, game_name
+  Database: New row in game_dashboard_pdfs with file path
+\`\`\`
+
+PDF filename format:
+\`\`\`
+[ChildName]_AnkganitV3_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+When the administrator opens the Reports module:
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins data from:
+  game_sessions       → score, status, timing, saved_state
+  children            → child_name
+  game_assessments    → behavioral observations
+  game_dashboard_pdfs → PDF download link
+
+Parses saved_state JSON to extract path[], finalLevel, finalScore, and
+each category's own result/timing fields — NOT a "question_scores" list,
+since this game has no individually scored questions in the fixed-quiz
+sense (see §8 Score Calculation above for why the standard allScores-based
+report reading doesn't apply here)
+\`\`\`
+
+---
+
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
@@ -1916,7 +4792,7 @@ const Sidebar = ({ catalog, expandedGame, selectedGame, selectedSection, onHome,
 
                         {/* Sub-sections accordion */}
                         {(() => {
-                            const visibleSections = GAME_SECTIONS.filter(sec => !(game.key === 'number_recall_lottery_v2' && sec.key === 'technical_docs_2013'));
+                            const visibleSections = getVisibleSections(game);
                             return (
                                 <div style={{
                                     maxHeight: isExpanded ? `${visibleSections.length * SEC_H}px` : '0',
@@ -2278,7 +5154,8 @@ const LandingSectionHead = ({ label, title, sub }) => (
 
 const GameDashboard = ({ game, onSectionClick }) => {
     const [hovered, setHovered] = useState(null);
-    const available = GAME_SECTIONS.filter(s => s.available).length;
+    const visibleSections = getVisibleSections(game);
+    const available = visibleSections.filter(s => s.available).length;
 
     return (
         <div style={{ background: T.bg, fontFamily: T.font, color: T.text, overflowY: 'auto', minHeight: '100%' }}>
@@ -2301,7 +5178,7 @@ const GameDashboard = ({ game, onSectionClick }) => {
                         {game.icon} {game.title}
                     </h1>
                     <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', margin: 0 }}>
-                        {available} section{available !== 1 ? 's' : ''} currently live · {GAME_SECTIONS.length - available} coming soon
+                        {available} section{available !== 1 ? 's' : ''} currently live · {visibleSections.length - available} coming soon
                     </p>
                 </div>
             </div>
@@ -2312,7 +5189,7 @@ const GameDashboard = ({ game, onSectionClick }) => {
                     Documentation Sections
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: '12px' }}>
-                    {GAME_SECTIONS.filter(sec => !(game.key === 'number_recall_lottery_v2' && sec.key === 'technical_docs_2013')).map(sec => {
+                    {visibleSections.map(sec => {
                         const isHov = hovered === sec.key;
                         return (
                             <button
@@ -2408,19 +5285,12 @@ const btnSm = (bg, color, border) => ({
 // Generic editor — works for any section with its own docKey in game_documents table
 const DocSectionEditor = ({ game, section, docKey, defaultContent }) => {
     const [content, setContent]           = useState('');
-    const [editContent, setEditContent]   = useState('');
-    const [isEditing, setIsEditing]       = useState(false);
-    const [isSaving, setIsSaving]         = useState(false);
     const [isLoading, setIsLoading]       = useState(false);
-    const [saveMsg, setSaveMsg]           = useState('');
-    const [versions, setVersions]         = useState([]);
-    const [showVersions, setShowVersions] = useState(false);
-    const [viewingVersion, setViewingVersion] = useState(null);
     const [updatedAt, setUpdatedAt]       = useState(null);
     const [updatedBy, setUpdatedBy]       = useState(null);
 
     const loadDoc = useCallback(async () => {
-        setIsLoading(true); setIsEditing(false); setViewingVersion(null); setShowVersions(false);
+        setIsLoading(true);
         try {
             const res = await axios.get(`${API_URL}/docs/${docKey}`, authHeader());
             if (res.data.doc) {
@@ -2436,28 +5306,6 @@ const DocSectionEditor = ({ game, section, docKey, defaultContent }) => {
 
     useEffect(() => { loadDoc(); }, [loadDoc]);
 
-    const loadVersions = async () => {
-        try { const r = await axios.get(`${API_URL}/docs/${docKey}/versions`, authHeader()); setVersions(r.data.versions || []); }
-        catch { setVersions([]); }
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true); setSaveMsg('');
-        const savedBy = (() => { try { return JSON.parse(localStorage.getItem('adminUser')).name; } catch { return 'admin'; } })();
-        try {
-            await axios.put(`${API_URL}/docs/${docKey}`, { content: editContent, saved_by: savedBy }, authHeader());
-            setContent(editContent); setIsEditing(false);
-            setUpdatedAt(new Date().toISOString()); setUpdatedBy(savedBy);
-            setSaveMsg('✅ Saved successfully!'); setTimeout(() => setSaveMsg(''), 3000);
-        } catch { setSaveMsg('❌ Failed to save. Please try again.'); }
-        finally { setIsSaving(false); }
-    };
-
-    const handleViewVersion = async (ver) => {
-        try { const r = await axios.get(`${API_URL}/docs/version/${ver.id}`, authHeader()); setViewingVersion({ ...ver, content: r.data.version.content }); setIsEditing(false); }
-        catch {}
-    };
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
             {/* Toolbar */}
@@ -2471,76 +5319,12 @@ const DocSectionEditor = ({ game, section, docKey, defaultContent }) => {
                         {updatedAt ? `Last updated ${fmtDt(updatedAt)} · by ${updatedBy}` : 'No saved version yet'}
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {saveMsg && <span style={{ fontSize: '0.78rem', color: saveMsg.includes('✅') ? '#059669' : '#dc2626', fontWeight: 600 }}>{saveMsg}</span>}
-                    {viewingVersion && (
-                        <>
-                            <span style={{ fontSize: '0.72rem', background: '#fffbeb', color: '#92400e', padding: '3px 10px', borderRadius: '999px', fontWeight: 600, border: '1px solid rgba(245,158,11,0.25)' }}>
-                                Viewing v{viewingVersion.id}
-                            </span>
-                            <button onClick={() => { setEditContent(viewingVersion.content); setViewingVersion(null); setIsEditing(true); }} style={btnSm('#fef9c3','#92400e','1px solid rgba(245,158,11,0.3)')}>↩ Restore</button>
-                            <button onClick={() => setViewingVersion(null)} style={btnSm('rgba(15,23,42,0.04)',T.text,'1px solid rgba(15,23,42,0.08)')}>✕ Close</button>
-                        </>
-                    )}
-                    {!viewingVersion && !isEditing && (
-                        <>
-                            <button onClick={() => setShowVersions(v => { const n = !v; if (n) loadVersions(); return n; })} style={btnSm('rgba(15,23,42,0.04)',T.text,'1px solid rgba(15,23,42,0.08)')}>
-                                🕓 History {showVersions ? '▲' : '▼'}
-                            </button>
-                            <button onClick={() => { setEditContent(content); setIsEditing(true); setViewingVersion(null); }} style={btnSm(game.color,'#fff')}>✏️ Edit</button>
-                        </>
-                    )}
-                    {isEditing && (
-                        <>
-                            <button onClick={() => { setIsEditing(false); setViewingVersion(null); }} style={btnSm('rgba(15,23,42,0.04)',T.text,'1px solid rgba(15,23,42,0.08)')}>Cancel</button>
-                            <button onClick={handleSave} disabled={isSaving} style={btnSm(game.color,'#fff')}>{isSaving ? 'Saving…' : '💾 Save'}</button>
-                        </>
-                    )}
-                </div>
             </div>
-
-            {/* Version history panel */}
-            {showVersions && !isEditing && (
-                <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: '10px 22px', flexShrink: 0 }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: T.muted, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Version History</div>
-                    {versions.length === 0 ? (
-                        <div style={{ fontSize: '0.8rem', color: T.faint, fontStyle: 'italic' }}>No prior versions found.</div>
-                    ) : (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {versions.map(ver => (
-                                <button key={ver.id} onClick={() => handleViewVersion(ver)} style={{
-                                    padding: '4px 11px', borderRadius: '6px',
-                                    border: `1px solid ${T.border}`,
-                                    background: viewingVersion?.id === ver.id ? T.accentBg : '#f8fafc',
-                                    cursor: 'pointer', fontSize: '0.76rem', color: T.text, fontFamily: T.font,
-                                }}>
-                                    v{ver.id} · {fmtDt(ver.saved_at)} · {ver.saved_by}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '22px' }}>
                 {isLoading ? (
                     <div style={{ textAlign: 'center', padding: '60px', color: T.faint, fontSize: '0.88rem' }}>Loading documentation…</div>
-                ) : isEditing ? (
-                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ fontSize: '0.73rem', color: T.faint }}>📝 Editing in Markdown — **bold**, ## headings, - lists, `code`, tables</div>
-                        <textarea
-                            value={editContent}
-                            onChange={e => setEditContent(e.target.value)}
-                            style={{
-                                flex: 1, minHeight: '460px', width: '100%', padding: '16px',
-                                border: `2px solid ${game.color}`, borderRadius: '10px',
-                                fontFamily: 'monospace', fontSize: '0.88rem', lineHeight: '1.7',
-                                background: T.white, color: T.text, resize: 'vertical',
-                                boxSizing: 'border-box', outline: 'none', fontFamily: T.font,
-                            }}
-                        />
-                    </div>
                 ) : (
                     <div
                         style={{
@@ -2548,7 +5332,7 @@ const DocSectionEditor = ({ game, section, docKey, defaultContent }) => {
                             boxShadow: T.shadow, lineHeight: '1.75', color: '#374151',
                             fontSize: '0.9rem', border: `1px solid ${T.border}`,
                         }}
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(viewingVersion ? viewingVersion.content : content) }}
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
                     />
                 )}
             </div>
@@ -3689,6 +6473,429 @@ const makeWorkflowFlows = (game) => ({
     ],
 });
 
+// makeReadingV2WorkflowFlows — Padh ke Batao V2 is an ASER 2014-style adaptive
+// reading ladder, NOT a fixed-question test. It has no QUESTIONS array, no
+// consecutive-wrong stop rule, and no category-minimum cutoff — so it gets its
+// own flow generator instead of reusing makeWorkflowFlows's generic model.
+const makeReadingV2WorkflowFlows = (game) => ({
+    journey: [
+        { type: 'start',    icon: '📱', title: 'Game Load',
+            simple:   'The child opens the game on their device.',
+            detailed: 'React component mounts. Child data is read from localStorage. If no child is logged in, user is redirected to login.',
+            technical:'useEffect → reads localStorage("currentChild") → if null, navigate("/login") → calls checkResume(childId) + fetchActivity(childId)' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'The system checks if the child has a previous unfinished session.',
+            detailed: 'The backend queries the latest session for this child and game. If it has status "in_progress" or "paused" and isn\'t assessment-submitted, a resume popup is shown.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nReturns: sessionInfo (saved_state with stage, path, per-stage results, timers) or null` },
+        { type: 'decision', icon: '❓', title: 'Saved Session Found?',
+            simple:   'If a previous session is found, the child can choose to continue or start fresh.',
+            detailed: 'Resume restores every completed stage\'s result plus timers. In-progress tile marking on the current Words/Letters screen is NOT restored — that stage always restarts from scratch.',
+            technical:'sessionInfo.status in ["in_progress","paused"] && !assessmentSubmitted → showResumeModal = true\nResume → restores stage, path, selectedWords/Letters, results, timerSeconds, qTimer, pauses from saved_state',
+            branches: [{ label: 'Yes → Resume Prompt', color: '#f59e0b' }, { label: 'No → Splash Screen', color: '#10b981' }] },
+        { type: 'process',  icon: '🎵', title: 'Splash Screen',
+            simple:   'Game instructions are displayed and audio plays automatically.',
+            detailed: 'Background audio plays as soon as the splash screen loads. The "Start Now" button remains disabled until audio finishes.',
+            technical:'<audio ref={audioRef} src="/assets/audios/reading_skill_v2/splash.wav" />\naudioRef.current.play() → onEnded: setAudioFinished(true) → enables Start Now\nonError: setAudioFinished(true) as fail-safe' },
+        { type: 'decision', icon: '🔊', title: 'Audio Completed?',
+            simple:   'Start Now becomes active only after the child has heard the full instructions.',
+            detailed: 'The button is disabled while audio plays. The assessor can replay audio at any time.',
+            technical:'button disabled={!audioFinished} → onEnded/onError → setAudioFinished(true)',
+            branches: [{ label: 'Audio ends → Start Now active', color: '#10b981' }, { label: 'Audio error → Start Now active (fail-safe)', color: '#f59e0b' }] },
+        { type: 'api',      icon: '▶️', title: 'Session Created on Server',
+            simple:   'A unique session ID is created to track this child\'s attempt.',
+            detailed: 'The server creates a new record in the database. If an active session already exists (deduplication guard), the existing ID is returned.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name: "${game.key}", total_questions: 5 }\nResponse: { sessionId, attempt_no }\nDB: INSERT INTO game_sessions (child_id, game_name, status="in_progress", score=0)` },
+        { type: 'process',  icon: '📖', title: 'Paragraph Stage Begins',
+            simple:   'The assessor picks one of two paragraphs; the child reads it aloud.',
+            detailed: 'The ladder always starts at the Paragraph stage. The chosen paragraph is locked in and reused if the child later reaches the Paragraph Retry stage.',
+            technical:'setStage("paragraph") → assessor sets selectedParagraphIndex (0 or 1) → child reads aloud → "Done Reading" opens the fluency modal' },
+        { type: 'process',  icon: '🪜', title: 'Adaptive Ladder Runs',
+            simple:   'Depending on how the child reads, the test moves to easier or harder stages until a reading level is found.',
+            detailed: 'See "Stage Flow" for the full pass/fail routing between Paragraph, Words, Letters, the two retry stages, and Story.',
+            technical:'handleMarkingContinue() / handleMidTestAssessmentComplete() → determine PASS/FAIL → setStage(nextStage) or finalizeAssessment(level)',
+            isRef: true, refLabel: 'See Stage Flow →' },
+        { type: 'process',  icon: '📊', title: 'Score Screen',
+            simple:   'The final reading level and stage-by-stage results are displayed.',
+            detailed: 'Score screen shows: final ASER reading level, score dial (finalScore/4), the path breadcrumb of every stage traversed, and a per-stage results table.',
+            technical:'setScreen("score") → finalLevel/finalScore already set by finalizeAssessment()\nResults table rendered from path[] + per-stage result objects' },
+        { type: 'process',  icon: '📋', title: 'Assessment Form',
+            simple:   'The assessor fills in behavioral observations about the child\'s session.',
+            detailed: 'Four required questions (radio buttons) + eight optional behavioral checkboxes + free-text notes with voice dictation support.',
+            technical:'<SessionAssessmentForm /> component renders\nQ1–Q4 required, validation prevents submit if empty\nq5_behaviors stored as JSON array' },
+        { type: 'api',      icon: '💾', title: 'Assessment Saved',
+            simple:   'The assessor\'s observations are saved to the system.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID.',
+            technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }\nDB: INSERT INTO game_assessments' },
+        { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
+            simple:   'A PDF summary of the session is automatically created and saved.',
+            detailed: 'The score screen is cloned off-screen, captured as a high-resolution image, and embedded in an A4 PDF. The file is uploaded to the server and linked to the session.',
+            technical:'Clone #dashboard-capture-area off-screen (avoids clipping from the game shell\'s backdrop-filter) → html2canvas(scale:1.5) → jsPDF(A4) → POST /api/games/pdfs/upload\nFilename: [ChildName]_ReadingSkillV2_SES[id]_[timestamp].pdf' },
+        { type: 'success',  icon: '✅', title: 'Session Complete',
+            simple:   'The assessment is finished. The admin can now view the full report.',
+            detailed: 'Session status is "completed". All data is saved: stage results, timers, assessment, PDF. Admin can view the full session in the Reports module.',
+            technical:'game_sessions.status = "completed", end_time = NOW()\ngame_assessments record created\ngame_dashboard_pdfs record created\nReport available: GET /api/games/reports/detail/:gameName' },
+    ],
+
+    question: [
+        { type: 'start',    icon: '🪜', title: 'Stage Begins',
+            simple:   'One of six possible stages is shown: Paragraph, Words, Letters, Words Retry, Paragraph Retry, or Story.',
+            detailed: 'Which stage shows next is entirely determined by the previous stage\'s pass/fail verdict — there is no fixed sequence.',
+            technical:'setStage(nextStage) → setQTimer(0) → qTimer counts seconds via setInterval(1000)' },
+        { type: 'decision', icon: '📝', title: 'Stage Type?',
+            simple:   'Words and Letters stages use tile marking; Paragraph and Story stages use read-aloud plus a fluency questionnaire.',
+            detailed: 'Tile-marking stages present a bank of items to select and mark. Read-aloud stages present a block of text for the child to read aloud, followed by a 3-question fluency check.',
+            technical:'stage in ["words","letters"] → tile-marking UI\nstage in ["paragraph","paragraph_retry","story"] → read-aloud UI',
+            branches: [{ label: 'Words/Letters → Tile Marking', color: '#8b5cf6' }, { label: 'Paragraph/Story → Read-Aloud + Modal', color: '#0891b2' }] },
+        { type: 'process',  icon: '✋', title: 'Tile Marking',
+            simple:   'The assessor selects up to 5 tiles from a 10-item bank and marks each ✓ or ✗ as the child reads it aloud.',
+            detailed: 'Exactly 5 tiles must be marked before the stage can continue. On the Words Retry stage, the same 5 words from the original attempt are re-shown — the assessor cannot pick a different set.',
+            technical:'toggleMark(text) → marks[text] = "correct"|"incorrect"\ncanContinueMarking = Object.keys(marks).length === 5' },
+        { type: 'process',  icon: '📖', title: 'Read-Aloud + Fluency Modal',
+            simple:   'The child reads the paragraph or story aloud; the assessor then answers 3 Yes/No questions about how fluently they read.',
+            detailed: '"Done Reading" opens a modal: (1) read word-by-word rather than in sentences? (2) read haltingly / stopped often? (3) made more than 3 mistakes? Each question has an ⓘ hint with a worked example.',
+            technical:'openMidTestModal(pendingAssessTarget) → 3 Yes/No answers collected → handleMidTestAssessmentComplete()' },
+        { type: 'decision', icon: '⚖️', title: 'Stage Verdict',
+            simple:   'The stage passes or fails depending on the marking or the fluency answers.',
+            detailed: 'Tile marking passes at 4 or 5 correct out of 5. The fluency modal passes only if all 3 answers are "No" — a single "Yes" fails the stage.',
+            technical:'Tile: correctCount >= 4 → PASS\nFluency: ssrAnswers.every(a => a === "no") → PASS',
+            branches: [{ label: 'PASS', color: '#10b981' }, { label: 'FAIL', color: '#dc2626' }] },
+        { type: 'decision', icon: '🪜', title: 'Route to Next Stage',
+            simple:   'Where the test goes next depends on which stage just passed or failed.',
+            detailed: 'Every stage routes to a different next stage on pass vs. fail — some routes lead to another attempt, some end the test with a specific reading level.',
+            technical:'Paragraph: pass→Story, fail→Words\nWords: pass→Paragraph Retry, fail→Letters\nLetters: pass→Words Retry, fail→END "Beginner"\nWords Retry: pass→Paragraph Retry, fail→END "Letter"\nParagraph Retry: pass→Story, fail→END "Word"\nStory: pass→END "Story", fail→END "Paragraph"' },
+        { type: 'success',  icon: '➡️', title: 'Advance or Ladder Complete',
+            simple:   'Either the next stage begins, or the test ends and a final reading level is recorded.',
+            detailed: 'The completed stage name is appended to path[]. If the routing table says END, finalizeAssessment(level) runs and the screen moves to Score.',
+            technical:'path = [...path, stageName] → setStage(next) OR finalizeAssessment(level) → setScreen("score")' },
+    ],
+
+    score: [
+        { type: 'start',    icon: '🎯', title: 'Ladder Ends',
+            simple:   'The test reaches an END point in the stage-routing table.',
+            detailed: 'This can happen after as few as 3 stages (fail Paragraph → fail Words → fail Letters) or as many as 6 (climb all the way back up to Story).',
+            technical:'finalizeAssessment(level, pathArg) called from the last stage\'s verdict handler' },
+        { type: 'process',  icon: '🏷️', title: 'Final Level Determined',
+            simple:   'The reading level the child reached becomes the result — not a points total.',
+            detailed: 'One of 5 ASER reading levels, in increasing order of difficulty: Beginner, Letter, Word, Paragraph, Story.',
+            technical:'LEVELS = { Beginner:0, Letter:1, Word:2, Paragraph:3, Story:4 }\nfinalLevel is set directly by the stage-routing table (see Stage Flow)' },
+        { type: 'process',  icon: '🏆', title: 'Score Calculated',
+            simple:   'The reading level is converted to a number for the score dial.',
+            detailed: 'There is no "correct answers out of total" percentage — the dial simply shows the level reached out of the 4 possible levels above Beginner.',
+            technical:'finalScore = LEVELS[finalLevel]\nfinalGameTime = timerSeconds (snapshot taken the moment the ladder ends)' },
+        { type: 'process',  icon: '🧵', title: 'Path Breadcrumb Built',
+            simple:   'A trail of every stage the child actually went through is recorded, including retries.',
+            detailed: 'This trail drives both the breadcrumb display and the per-stage results table on the score screen.',
+            technical:'path = [...] e.g. ["paragraph","words","letters","words_retry","paragraph_retry","story"]' },
+        { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
+            simple:   'The score screen shows the reading level, a score dial, and per-stage timing.',
+            detailed: 'Duration and average time per stage are computed from each stage\'s recorded qTimer value at the time it was completed.',
+            technical:'Per-stage duration fields: wordsTimeTaken, wordsRetryTimeTaken, lettersTimeTaken, paragraphResult.timeTaken, paragraphRetryResult.timeTaken, storyResult.timeTaken' },
+        { type: 'success',  icon: '✅', title: 'Score Complete',
+            simple:   'Assessment scoring is done. Assessment form follows.',
+            detailed: 'All traversed stages are displayed in a results table. The behavioral assessment form then appears for the assessor to complete.',
+            technical:'screen = "score" → SessionAssessmentForm renders\nassessmentSubmitted controls which buttons appear after form submit' },
+    ],
+
+    api: [
+        { type: 'start',    icon: '📱', title: 'Client-Side Event',
+            simple:   'Something happens in the game — a tile marked, a stage completed, or the game ending.',
+            detailed: 'Every significant game action (start, stage completion, pause, quit, submit assessment) triggers an API call to the backend server.',
+            technical:'React state change or user interaction → async axios call → awaits server response' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'Check if the child can continue a previous session.',
+            detailed: 'Called once when the game loads. Returns the latest session for this child/game.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nAuth: child session\nResponse: { success, sessionInfo: { id, status, saved_state, attempt_no } | null }` },
+        { type: 'api',      icon: '▶️', title: 'Start Session',
+            simple:   'Create a new session record when the child starts.',
+            detailed: 'Returns a session ID used for all subsequent updates. Deduplication prevents duplicate sessions.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name:"${game.key}", total_questions: 5 }\nResponse: { success, sessionId, attempt_no }\nHTTP 201 (new) or 200 (reused)` },
+        { type: 'api',      icon: '📚', title: 'Test Content Fetch',
+            simple:   'The letters, words, paragraphs, story, questions, and hints are loaded — admin-managed, not hardcoded.',
+            detailed: 'On mount, useTestContent(gameKey) fetches all admin-configured content elements plus the platform\'s configured languages, and resolves each element for the player\'s language.',
+            technical:`GET /api/public/elements?test_id=${game.key}\nGET /api/public/translations/languages\ngetContent(key) → content_<key> for player language → falls back to platform default → falls back to hardcoded constant` },
+        { type: 'api',      icon: '💾', title: 'Progress Update (Repeated)',
+            simple:   'After every stage, the progress is saved to the server.',
+            detailed: 'Called after each stage transition and also on pause/quit. Carries the full ladder snapshot so sessions can be resumed.',
+            technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level: path.length+1, status, saved_state: { stage, selectedParagraphIndex, wordsSource, selectedWords, selectedWordsRetry, selectedLetters, ...timings, ...results, path, finalLevel, finalScore, finalGameTime, timerSeconds, qTimer, pauses } }\nStatus values: "in_progress" | "paused" | "quit" | "completed"` },
+        { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
+            detailed: 'The server checks: if the current status is "quit" or "dropped", it will never overwrite it with "completed". This prevents client bugs from corrupting data.',
+            technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })\n// No DB update performed`,
+            branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
+        { type: 'api',      icon: '📋', title: 'Assessment Submission',
+            simple:   'Assessor observations are sent to the server.',
+            detailed: 'Saves behavioral data to a separate table linked by session_id.',
+            technical:`POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors:[], additional_notes }\nDB: INSERT INTO game_assessments` },
+        { type: 'api',      icon: '📄', title: 'PDF Upload',
+            simple:   'The session dashboard is saved as a PDF file.',
+            detailed: 'Score screen is cloned off-screen, captured with html2canvas, converted to PDF via jsPDF, then uploaded as a file.',
+            technical:`POST /api/games/pdfs/upload (multipart/form-data)\nFields: pdf (file), child_id, session_id, game_name\nDB: INSERT INTO game_dashboard_pdfs (file_path)\nFile: /dashboard_pdfs/[name].pdf` },
+        { type: 'api',      icon: '📈', title: 'Admin Report',
+            simple:   'The administrator views the complete session data.',
+            detailed: 'Admin-only endpoint. Returns session records with per-stage results, behavioral assessment, and PDF link.',
+            technical:`GET /api/games/reports/detail/${game.key}\nAuth: Admin JWT Bearer token\nReturns: { columns, data: [{ session_id, score, stage_results, assessment, pdf_url }] }` },
+        { type: 'success',  icon: '✅', title: 'Data Cycle Complete',
+            simple:   'All game data is safely stored and accessible to administrators.',
+            detailed: 'Three tables contain the full session record: game_sessions, game_assessments, game_dashboard_pdfs.',
+            technical:'game_sessions: status="completed", end_time, saved_state\ngame_assessments: q1–q4, behaviors[], notes\ngame_dashboard_pdfs: file_path\nAll joined in /reports/detail response' },
+    ],
+
+    session: [
+        { type: 'start',    icon: '🟢', title: 'Status: in_progress',
+            simple:   'The session is active — the child is playing.',
+            detailed: 'Set when the session is created. Updated with score and saved_state on every stage transition.',
+            technical:`game_sessions.status = "in_progress"\nCreated by: POST /sessions/start\nUpdated by: PUT /sessions/update after each stage` },
+        { type: 'decision', icon: '⏸️', title: 'Assessor Pauses?',
+            simple:   'The assessor can pause the session at any time.',
+            detailed: 'Pause saves the full ladder state to the server. A pause event (with the current stage, timestamp, and reason) is appended to the pauses array in saved_state.',
+            technical:`PUT /sessions/update: { status:"paused", quit_reason: reason, saved_state: { ...state, pauses: [...pauses, { stage, reason, timestamp }] } }\nThen: navigate("/")`,
+            branches: [{ label: 'Yes → Pause & Save', color: '#f59e0b' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟡', title: 'Status: paused',
+            simple:   'The game is saved and the child can resume later.',
+            detailed: 'On next visit, the resume check returns this session. The assessor can choose to resume (restoring every completed stage) or start fresh.',
+            technical:'game_sessions.status = "paused"\nResume: GET /sessions/resume → sessionInfo.saved_state contains the full snapshot\nResume: setStage, setPath, setSelectedWords/Letters/Results, setTimerSeconds from saved_state' },
+        { type: 'decision', icon: '🚪', title: 'Assessor Quits?',
+            simple:   'The assessor can end the session early for any reason.',
+            detailed: 'Quit requires a reason to be entered (typed or dictated). The game transitions to the score screen using the current stage as the endpoint.',
+            technical:`PUT /sessions/update: { status:"quit", quit_reason: reason, end_time:NOW() }\nsetScreen("score") → setTimeout(generateAndUploadPDF, 1500)`,
+            branches: [{ label: 'Yes → Quit', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🔴', title: 'Status: quit',
+            simple:   'The session was ended early by the assessor.',
+            detailed: 'Score screen shows the ladder stopped early, with the quit reason recorded. Assessment form still appears for behavioral data.',
+            technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
+        { type: 'decision', icon: '🪜', title: 'Ladder Reaches an END?',
+            simple:   'Unlike stop-rule games, this test always ends by reaching an END point in the stage-routing table — there\'s no separate "3 wrong in a row" or "below cutoff" drop condition.',
+            detailed: 'Every stage\'s FAIL branch either routes to another stage or is itself an END — see Stage Flow for the full table.',
+            technical:'finalizeAssessment(level) → PUT /sessions/update: { status:"completed", score: LEVELS[level], saved_state }',
+            branches: [{ label: 'END reached → Status: completed', color: '#10b981' }] },
+        { type: 'process',  icon: '🟢', title: 'Status: completed',
+            simple:   'The session ended normally — the ladder reached an END point naturally.',
+            detailed: 'progress_level reflects path.length + 1 (how many stages were traversed), not "questions answered out of a fixed total" — there is no fixed total here.',
+            technical:'game_sessions.status = "completed"\nend_time = NOW()\nscore = finalScore (0–4, the ASER level index)' },
+        { type: 'process',  icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once ended, a session status cannot be changed.',
+            detailed: 'The server enforces that "quit" sessions can never be overwritten as "completed". This is a hard server-side rule.',
+            technical:'Backend guard: if (newStatus==="completed" && current==="quit")\n→ return 200 { message:"Session already finalized" }\n→ No DB write performed' },
+        { type: 'success',  icon: '📊', title: 'Report Available',
+            simple:   'The administrator can view the complete session in the Reports panel.',
+            detailed: 'All data — session, assessment, PDF — is linked by session_id and visible in the admin Reports module.',
+            technical:'GET /api/games/reports/detail/:gameName (admin JWT required)\nJOINs: game_sessions + children + game_assessments + game_dashboard_pdfs' },
+    ],
+});
+
+// makeAnkganitV3WorkflowFlows — Ankganit V3 is an adaptive arithmetic ladder,
+// NOT a fixed-question test. It has no QUESTIONS array, no consecutive-wrong
+// stop rule, and no working category minimum — it gets its own flow generator
+// instead of reusing makeWorkflowFlows's generic fixed-question model.
+const makeAnkganitV3WorkflowFlows = (game) => ({
+    journey: [
+        { type: 'start',    icon: '📱', title: 'Game Load',
+            simple:   'The child opens the game on their device.',
+            detailed: 'React component mounts. Child data is read from localStorage. If no child is logged in, user is redirected to login.',
+            technical:'useEffect → reads localStorage("currentChild") → if null, navigate("/login") → calls checkResume(childId) + fetchActivity(childId)' },
+        { type: 'api',      icon: '📚', title: 'Question Bank Fetch',
+            simple:   'The subtraction/division/number-recognition question bank is loaded from the server.',
+            detailed: 'Unlike admin-managed display text, the canonical question bank (correct answers included) is fetched directly, not through the language-content system.',
+            technical:`GET /api/public/ankganit-v3\nReturns 4 categories with .questions[]: { id, title, text, correct_answer, remainder, display_order }` },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'The system checks if the child has a previous unfinished session.',
+            detailed: 'The backend queries the latest session for this child and game. If it has status "in_progress" or "paused" and isn\'t assessment-submitted, a resume popup is shown.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nReturns: sessionInfo (saved_state with stage, path, per-category results, timers) or null` },
+        { type: 'decision', icon: '❓', title: 'Saved Session Found?',
+            simple:   'If a previous session is found, the child can choose to continue or start fresh.',
+            detailed: 'Resume restores every completed stage\'s result plus timers. In-progress tile marking on the current Number Recognition screen is NOT restored.',
+            technical:'sessionInfo.status in ["in_progress","paused"] && !assessmentSubmitted → showResumeModal = true\nResume → restores stage, path, subtraction/division/numberRecognition state, timerSeconds, qTimer, pauses from saved_state',
+            branches: [{ label: 'Yes → Resume Prompt', color: '#f59e0b' }, { label: 'No → Splash Screen', color: '#10b981' }] },
+        { type: 'process',  icon: '🎵', title: 'Splash Screen',
+            simple:   'Game instructions are displayed and audio plays automatically.',
+            detailed: 'Background audio plays as soon as the splash screen loads. The "Start Now" button remains disabled until audio finishes.',
+            technical:'<audio ref={audioRef} src="/assets/audios/number_skill_v3/splash.wav" />\naudioRef.current.play() → onEnded: setAudioFinished(true) → enables Start Now\nonError: setAudioFinished(true) as fail-safe' },
+        { type: 'api',      icon: '▶️', title: 'Session Created on Server',
+            simple:   'A unique session ID is created to track this child\'s attempt.',
+            detailed: 'The server creates a new record in the database. If an active session already exists (deduplication guard), the existing ID is returned.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name: "${game.key}" }\nResponse: { sessionId, attempt_no }\nDB: INSERT INTO game_sessions (child_id, game_name, status="in_progress", score=0)` },
+        { type: 'process',  icon: '➖', title: 'Subtraction Stage Begins',
+            simple:   'The assessor picks 2 of 8 subtraction problems; the child solves them one at a time.',
+            detailed: 'The ladder always starts with Subtraction. Pick order matters — the first problem picked becomes Q1, the second becomes Q2.',
+            technical:'setStage("subtraction_select") → assessor picks pendingSubtractionSelection[0..1] → setStage("subtraction_q1") → numpad entry' },
+        { type: 'process',  icon: '🪜', title: 'Adaptive Ladder Runs',
+            simple:   'Depending on how the child answers, the test moves to easier or harder stages until a numeracy level is found.',
+            detailed: 'See "Stage Flow" for the full pass/fail routing between Subtraction (with its conditional Q1 retry), Division, and the two Number Recognition levels.',
+            technical:'evaluateAfterQ2() / proceedFromSubtractionResult() / finishNumberRecognition99() / finishNumberRecognition9() → determine PASS/FAIL → setStage(nextStage) or finalizeAssessment(level)',
+            isRef: true, refLabel: 'See Stage Flow →' },
+        { type: 'process',  icon: '📊', title: 'Score Screen',
+            simple:   'The final numeracy level and stage-by-stage results are displayed.',
+            detailed: 'Score screen shows: final numeracy level, score dial (finalScore/4), the path breadcrumb of every stage traversed, and a per-stage results table.',
+            technical:'setScreen("score") → finalLevel/finalScore already set by finalizeAssessment()\nResults table rendered from path[] + per-category result objects' },
+        { type: 'process',  icon: '📋', title: 'Assessment Form',
+            simple:   'The assessor fills in behavioral observations about the child\'s session.',
+            detailed: 'Four required questions (radio buttons) + eight behavioral checkboxes (at least 1 required) + free-text notes with voice dictation support, confirmed via a modal before submission.',
+            technical:'<SessionAssessmentForm /> component renders\nQ1–Q5 required (Q5 needs >=1 checked), validation prevents submit if empty\nConfirm modal → submitAssessmentForm()' },
+        { type: 'api',      icon: '💾', title: 'Assessment Saved',
+            simple:   'The assessor\'s observations are saved to the system.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID.',
+            technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }\nDB: INSERT INTO game_assessments' },
+        { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
+            simple:   'A PDF summary of the session is automatically created and saved.',
+            detailed: 'The score screen (.ns-main) is cloned off-screen, captured as a high-resolution image, and embedded in an A4 PDF. The file is uploaded to the server and linked to the session.',
+            technical:'Clone .ns-main off-screen (avoids clipping from .ns-app\'s overflow:hidden) → html2canvas(scale:1.5) → jsPDF(A4) → POST /api/games/pdfs/upload\nFilename: [ChildName]_AnkganitV3_SES[id]_[timestamp].pdf' },
+        { type: 'success',  icon: '✅', title: 'Session Complete',
+            simple:   'The assessment is finished. The admin can now view the full report.',
+            detailed: 'Session status is "completed". All data is saved: stage results, timers, assessment, PDF. Admin can view the full session in the Reports module.',
+            technical:'game_sessions.status = "completed", end_time = NOW()\ngame_assessments record created\ngame_dashboard_pdfs record created\nReport available: GET /api/games/reports/detail/:gameName' },
+    ],
+
+    question: [
+        { type: 'start',    icon: '🪜', title: 'Stage Begins',
+            simple:   'One of several possible stages is shown: Subtraction Select/Q1/Q2/Retry, Division Select/Q1, or one of the two Number Recognition levels.',
+            detailed: 'Which stage shows next is entirely determined by the previous stage\'s pass/fail verdict — there is no fixed sequence.',
+            technical:'setStage(nextStage) → setQTimer(0) → qTimer counts seconds via setInterval(1000)' },
+        { type: 'decision', icon: '📝', title: 'Stage Type?',
+            simple:   'Subtraction and Division use an on-screen numpad; Number Recognition uses tile marking.',
+            detailed: 'Numpad stages present digit buttons for the child\'s answer (Division needs two fields: quotient and remainder). Tile-marking stages present a bank of numbers to select and mark.',
+            technical:'stage in ["subtraction_q1","subtraction_q2","subtraction_q1_retry","division_q1"] → numpad UI\nstage in ["number_recognition_99","number_recognition_9"] → tile-marking UI',
+            branches: [{ label: 'Subtraction/Division → Numpad', color: '#0891b2' }, { label: 'Number Recognition → Tile Marking', color: '#8b5cf6' }] },
+        { type: 'process',  icon: '🔢', title: 'Numpad Entry',
+            simple:   'The child (or assessor on their behalf) types the answer using on-screen digit buttons.',
+            detailed: 'Subtraction uses a single answer field. Division uses two fields — quotient and remainder — both must be correct, and there is no retry on Division.',
+            technical:'handleNumpadInput(val) → setter(prev => prev + val) for the active field (answerVal / quotientVal / remainderVal)' },
+        { type: 'process',  icon: '✋', title: 'Tile Marking',
+            simple:   'The assessor selects up to 5 tiles from a 10-item bank and marks each ✓ or ✗ as the child identifies it aloud.',
+            detailed: 'Exactly 5 tiles must be selected and marked before the stage can continue.',
+            technical:'toggleNrTileSelection(text) → nrSelectedTexts\nmarkNrTile(text, correct) → nrMarks[text] = "correct"|"incorrect"\ncanContinueNrMarking = nrSelectedTexts.length === 5 && markedCount === 5' },
+        { type: 'decision', icon: '⚖️', title: 'Stage Verdict',
+            simple:   'The stage passes or fails depending on the numpad answer or the tile marking.',
+            detailed: 'Subtraction/Division: exact numeric match required. Tile marking: passes at 4 or 5 correct out of 5.',
+            technical:'Numpad: parseInt(val) === correctAnswer (both quotient AND remainder for Division)\nTile: correctCount >= 4 → PASS',
+            branches: [{ label: 'PASS', color: '#10b981' }, { label: 'FAIL', color: '#dc2626' }] },
+        { type: 'decision', icon: '🪜', title: 'Route to Next Stage',
+            simple:   'Where the test goes next depends on which stage just passed or failed.',
+            detailed: 'Q1 wrong + Q2 correct triggers a one-time Q1 retry. Passing both Subtraction questions (after any retry) unlocks Division; failing drops to Number Recognition (10–99), then (1–9).',
+            technical:'Q2 evaluated: Q1 wrong & Q2 correct → Subtraction Q1 Retry\nCombined pass (both correct) → Division Select\nCombined fail → Number Recognition (10–99)\nDivision: pass→END "Division", fail→END "Subtraction"\nNR(10–99): pass→END "Number Recognition (10–99)", fail→NR(1–9)\nNR(1–9): pass→END "Number Recognition (1–9)", fail→END "Beginner"' },
+        { type: 'success',  icon: '➡️', title: 'Advance or Ladder Complete',
+            simple:   'Either the next stage begins, or the test ends and a final numeracy level is recorded.',
+            detailed: 'The completed stage name is appended to path[]. If the routing table says END, finalizeAssessment(level) runs and the screen moves to Score.',
+            technical:'path = [...path, stageName] → setStage(next) OR finalizeAssessment(level) → setScreen("score")' },
+    ],
+
+    score: [
+        { type: 'start',    icon: '🎯', title: 'Ladder Ends',
+            simple:   'The test reaches an END point in the stage-routing table.',
+            detailed: 'This can happen after as few as 3 stages (fail Subtraction combined check → fail Number Recognition 10–99 → fail Number Recognition 1–9) or as many as 5 (Q1 retry fired, then climbing to Division).',
+            technical:'finalizeAssessment(level, pathArg) called from the last stage\'s verdict handler' },
+        { type: 'process',  icon: '🏷️', title: 'Final Level Determined',
+            simple:   'The numeracy level the child reached becomes the result — not a points total.',
+            detailed: 'One of 5 levels, in increasing order of difficulty: Beginner, Number Recognition (1–9), Number Recognition (10–99), Subtraction, Division.',
+            technical:'LEVELS = { Beginner:0, "Number Recognition (1–9)":1, "Number Recognition (10–99)":2, Subtraction:3, Division:4 }\nfinalLevel is set directly by the stage-routing table' },
+        { type: 'process',  icon: '🏆', title: 'Score Calculated',
+            simple:   'The numeracy level is converted to a number for the score dial.',
+            detailed: 'Reaching Division at all already guarantees a floor of "Subtraction" (score 3) — Division only decides whether the score upgrades to 4.',
+            technical:'finalScore = LEVELS[finalLevel]\nfinalGameTime = timerSeconds (snapshot taken the moment the ladder ends)' },
+        { type: 'process',  icon: '🧵', title: 'Path Breadcrumb Built',
+            simple:   'A trail of every stage the child actually went through is recorded, including the Q1 retry if it fired.',
+            detailed: 'This trail drives both the breadcrumb display and the per-stage results table on the score screen.',
+            technical:'path = [...] e.g. ["subtraction_select","subtraction_q1","subtraction_q2","subtraction_q1_retry","division_select","division_q1"]' },
+        { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
+            simple:   'The score screen shows the numeracy level, a score dial, and per-stage timing.',
+            detailed: 'Duration and per-stage timing are computed from each stage\'s recorded qTimer value at the time it was completed.',
+            technical:'Per-category result fields carry their own timing: subtraction.q1/.q2 attempts, division attempt, numberRecognition99/9 records' },
+        { type: 'success',  icon: '✅', title: 'Score Complete',
+            simple:   'Assessment scoring is done. Assessment form follows.',
+            detailed: 'All traversed stages are displayed in a results table. The behavioral assessment form then appears for the assessor to complete.',
+            technical:'screen = "score" → SessionAssessmentForm renders\nassessmentSubmitted controls which buttons appear after form submit' },
+    ],
+
+    api: [
+        { type: 'start',    icon: '📱', title: 'Client-Side Event',
+            simple:   'Something happens in the game — a numpad digit pressed, a tile marked, a stage completed, or the game ending.',
+            detailed: 'Every significant game action (start, stage completion, pause, quit, submit assessment) triggers an API call to the backend server.',
+            technical:'React state change or user interaction → async axios call → awaits server response' },
+        { type: 'api',      icon: '📚', title: 'Question Bank Fetch',
+            simple:   'The canonical subtraction/division/number-recognition question bank — including correct answers — is loaded.',
+            detailed: 'This is a plain public GET, not routed through the language-content system, since it carries scoring-sensitive data (correct_answer, remainder).',
+            technical:`GET /api/public/ankganit-v3\nResponse: { success, categories: [{ name, questions: [{ id, title, text, correct_answer, remainder, display_order }] }] }` },
+        { type: 'api',      icon: '🌐', title: 'Display Text Overrides',
+            simple:   'Per-language display text for each question is loaded separately from the scoring data.',
+            detailed: 'This only affects what\'s shown on screen — never scoring, saved_state, or the PDF.',
+            technical:`GET /api/public/elements?test_id=${game.key}\ngetContent(\`q_\${questionId}\`) → resolves content_q_<id> for the player's language` },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'Check if the child can continue a previous session.',
+            detailed: 'Called once when the game loads. Returns the latest session for this child/game.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nAuth: child session\nResponse: { success, sessionInfo: { id, status, saved_state, attempt_no } | null }` },
+        { type: 'api',      icon: '▶️', title: 'Start Session',
+            simple:   'Create a new session record when the child starts.',
+            detailed: 'Returns a session ID used for all subsequent updates. Deduplication prevents duplicate sessions.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name:"${game.key}" }\nResponse: { success, sessionId, attempt_no }\nHTTP 201 (new) or 200 (reused)` },
+        { type: 'api',      icon: '💾', title: 'Progress Update (Repeated)',
+            simple:   'After every stage, the progress is saved to the server.',
+            detailed: 'Called after each stage transition and also on pause/quit. Carries the full ladder snapshot so sessions can be resumed.',
+            technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level: path.length+1, status, saved_state: { stage, path, subtraction, division, numberRecognition99, numberRecognition9, finalLevel, finalScore, finalGameTime, timerSeconds, qTimer, pauses } }\nStatus values: "in_progress" | "paused" | "quit" | "completed"` },
+        { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
+            detailed: 'The server checks: if the current status is "quit" or "dropped", it will never overwrite it with "completed". This prevents client bugs from corrupting data.',
+            technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })\n// No DB update performed`,
+            branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
+        { type: 'api',      icon: '📋', title: 'Assessment Submission',
+            simple:   'Assessor observations are sent to the server.',
+            detailed: 'Saves behavioral data to a separate table linked by session_id.',
+            technical:`POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors:[], additional_notes }\nDB: INSERT INTO game_assessments` },
+        { type: 'api',      icon: '📄', title: 'PDF Upload',
+            simple:   'The session dashboard is saved as a PDF file.',
+            detailed: 'Score screen is cloned off-screen, captured with html2canvas, converted to PDF via jsPDF, then uploaded as a file.',
+            technical:`POST /api/games/pdfs/upload (multipart/form-data)\nFields: pdf (file), child_id, session_id, game_name\nDB: INSERT INTO game_dashboard_pdfs (file_path)\nFile: /dashboard_pdfs/[name].pdf` },
+        { type: 'api',      icon: '📈', title: 'Admin Report',
+            simple:   'The administrator views the complete session data.',
+            detailed: 'Admin-only endpoint. Returns session records with per-stage results, behavioral assessment, and PDF link.',
+            technical:`GET /api/games/reports/detail/${game.key}\nAuth: Admin JWT Bearer token\nReturns: { columns, data: [{ session_id, score, stage_results, assessment, pdf_url }] }` },
+        { type: 'success',  icon: '✅', title: 'Data Cycle Complete',
+            simple:   'All game data is safely stored and accessible to administrators.',
+            detailed: 'Three tables contain the full session record: game_sessions, game_assessments, game_dashboard_pdfs.',
+            technical:'game_sessions: status="completed", end_time, saved_state\ngame_assessments: q1–q4, behaviors[], notes\ngame_dashboard_pdfs: file_path\nAll joined in /reports/detail response' },
+    ],
+
+    session: [
+        { type: 'start',    icon: '🟢', title: 'Status: in_progress',
+            simple:   'The session is active — the child is playing.',
+            detailed: 'Set when the session is created. Updated with score and saved_state on every stage transition.',
+            technical:`game_sessions.status = "in_progress"\nCreated by: POST /sessions/start\nUpdated by: PUT /sessions/update after each stage` },
+        { type: 'decision', icon: '⏸️', title: 'Assessor Pauses?',
+            simple:   'The assessor can pause the session at any time.',
+            detailed: 'Pause saves the full ladder state to the server. A pause event (with the current stage, timestamp, and reason) is appended to the pauses array in saved_state.',
+            technical:`PUT /sessions/update: { status:"paused", quit_reason: reason, saved_state: { ...state, pauses: [...pauses, { stage, reason, timestamp }] } }\nThen: navigate("/")`,
+            branches: [{ label: 'Yes → Pause & Save', color: '#f59e0b' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟡', title: 'Status: paused',
+            simple:   'The game is saved and the child can resume later.',
+            detailed: 'On next visit, the resume check returns this session. The assessor can choose to resume (restoring every completed stage) or start fresh.',
+            technical:'game_sessions.status = "paused"\nResume: GET /sessions/resume → sessionInfo.saved_state contains the full snapshot\nResume: setStage, setPath, setSubtraction/Division/NumberRecognition, setTimerSeconds from saved_state' },
+        { type: 'decision', icon: '🚪', title: 'Assessor Quits?',
+            simple:   'The assessor can end the session early for any reason.',
+            detailed: 'Quit requires a reason to be entered (typed or dictated). The game transitions to the score screen using the current stage as the endpoint.',
+            technical:`PUT /sessions/update: { status:"quit", quit_reason: reason, end_time:NOW() }\nsetScreen("score") → setTimeout(generateAndUploadPDF, 1500)`,
+            branches: [{ label: 'Yes → Quit', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🔴', title: 'Status: quit',
+            simple:   'The session was ended early by the assessor.',
+            detailed: 'Score screen shows the ladder stopped early, with the quit reason recorded. Assessment form still appears for behavioral data.',
+            technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
+        { type: 'decision', icon: '🪜', title: 'Ladder Reaches an END?',
+            simple:   'Unlike stop-rule games, this test always ends by reaching an END point in the stage-routing table — there\'s no separate "3 wrong in a row" or "below cutoff" drop condition.',
+            detailed: 'Every stage\'s FAIL branch either routes to another stage or is itself an END — see Stage Flow for the full table.',
+            technical:'finalizeAssessment(level) → PUT /sessions/update: { status:"completed", score: LEVELS[level], saved_state }',
+            branches: [{ label: 'END reached → Status: completed', color: '#10b981' }] },
+        { type: 'process',  icon: '🟢', title: 'Status: completed',
+            simple:   'The session ended normally — the ladder reached an END point naturally.',
+            detailed: 'progress_level reflects path.length + 1 (how many stages were traversed), not "questions answered out of a fixed total" — there is no fixed total here.',
+            technical:'game_sessions.status = "completed"\nend_time = NOW()\nscore = finalScore (0–4, the numeracy level index)' },
+        { type: 'process',  icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once ended, a session status cannot be changed.',
+            detailed: 'The server enforces that "quit" sessions can never be overwritten as "completed". This is a hard server-side rule.',
+            technical:'Backend guard: if (newStatus==="completed" && current==="quit")\n→ return 200 { message:"Session already finalized" }\n→ No DB write performed' },
+        { type: 'success',  icon: '📊', title: 'Report Available',
+            simple:   'The administrator can view the complete session in the Reports panel.',
+            detailed: 'All data — session, assessment, PDF — is linked by session_id and visible in the admin Reports module.',
+            technical:'GET /api/games/reports/detail/:gameName (admin JWT required)\nJOINs: game_sessions + children + game_assessments + game_dashboard_pdfs' },
+    ],
+});
+
 const FLOW_SECTIONS = [
     { key: 'journey',  icon: '🎮', label: 'Game Journey'      },
     { key: 'question', icon: '❓', label: 'Question Flow'     },
@@ -3696,6 +6903,27 @@ const FLOW_SECTIONS = [
     { key: 'api',      icon: '🔗', label: 'API Flow'          },
     { key: 'session',  icon: '🗄️', label: 'Session States'   },
 ];
+
+const READING_V2_FLOW_SECTIONS = [
+    { key: 'journey',  icon: '🎮', label: 'Game Journey'      },
+    { key: 'question', icon: '🪜', label: 'Stage Flow'        },
+    { key: 'score',    icon: '🏆', label: 'Score & Level'     },
+    { key: 'api',      icon: '🔗', label: 'API Flow'          },
+    { key: 'session',  icon: '🗄️', label: 'Session States'   },
+];
+
+const ANKGANIT_V3_FLOW_SECTIONS = [
+    { key: 'journey',  icon: '🎮', label: 'Game Journey'      },
+    { key: 'question', icon: '🪜', label: 'Stage Flow'        },
+    { key: 'score',    icon: '🏆', label: 'Score & Level'     },
+    { key: 'api',      icon: '🔗', label: 'API Flow'          },
+    { key: 'session',  icon: '🗄️', label: 'Session States'   },
+];
+
+const getFlowSections = (game) =>
+    game.key === 'literacy_reading_skill_v2' ? READING_V2_FLOW_SECTIONS :
+    game.key === 'numeracy_number_skill_v3' ? ANKGANIT_V3_FLOW_SECTIONS :
+    FLOW_SECTIONS;
 
 const FlowNode = ({ node, layer, isLast }) => {
     const [hov, setHov] = useState(false);
@@ -3769,9 +6997,13 @@ const WorkflowDiagramViewer = ({ game, section }) => {
     const [activeFlow, setActiveFlow] = useState('journey');
     const [syncedAt]                  = useState(new Date());
 
-    const modules = getConnectedModules(game);
-    const flows   = makeWorkflowFlows(game);
-    const nodes   = flows[activeFlow] || [];
+    const modules      = getConnectedModules(game);
+    const flowSections = getFlowSections(game);
+    const flows =
+        game.key === 'literacy_reading_skill_v2' ? makeReadingV2WorkflowFlows(game) :
+        game.key === 'numeracy_number_skill_v3' ? makeAnkganitV3WorkflowFlows(game) :
+        makeWorkflowFlows(game);
+    const nodes = flows[activeFlow] || [];
     const fmtSync = (d) => d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const typeColor = { Frontend: '#4f46e5', Component: '#8b5cf6', Backend: '#059669', Routes: '#0891b2', Database: '#f59e0b' };
 
@@ -3840,7 +7072,7 @@ const WorkflowDiagramViewer = ({ game, section }) => {
                 {/* Flow section tabs */}
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.72rem', fontWeight: 700, color: T.faint, alignSelf: 'center', marginRight: '4px' }}>FLOW:</span>
-                    {FLOW_SECTIONS.map(fs => (
+                    {flowSections.map(fs => (
                         <button key={fs.key} onClick={() => setActiveFlow(fs.key)} style={{
                             display: 'flex', alignItems: 'center', gap: '5px',
                             padding: '5px 12px', borderRadius: '8px', cursor: 'pointer',
@@ -3862,10 +7094,10 @@ const WorkflowDiagramViewer = ({ game, section }) => {
                     {/* Section header */}
                     <div style={{ marginBottom: '20px' }}>
                         <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.accent, marginBottom: '4px' }}>
-                            {game.title} · {FLOW_SECTIONS.find(f=>f.key===activeFlow)?.label}
+                            {game.title} · {flowSections.find(f=>f.key===activeFlow)?.label}
                         </div>
                         <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: T.text, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                            {FLOW_SECTIONS.find(f=>f.key===activeFlow)?.icon} {FLOW_SECTIONS.find(f=>f.key===activeFlow)?.label} Diagram
+                            {flowSections.find(f=>f.key===activeFlow)?.icon} {flowSections.find(f=>f.key===activeFlow)?.label} Diagram
                         </h2>
                         <p style={{ fontSize: '0.8rem', color: T.muted, margin: 0 }}>
                             {layer === 'simple'    ? 'Plain language explanation for assessors, trainers, and SSL teams.' :
@@ -3895,21 +7127,39 @@ const GAME_FILE_MAP = {
     working_memory_herpher_v2: 'HerPherGameV2.jsx',
     working_memory_herpher_v3: 'HerPherGameV3.jsx',
     numeracy_number_skill:  'NumberSkillGame.jsx',
+    numeracy_number_skill_v2: 'NumberSkillGameV2.jsx',
+    numeracy_number_skill_v3: 'NumberSkillGameV3.jsx',
     literacy_reading_skill: 'ReadingSkillGame.jsx',
     literacy_reading_skill_v2: 'ReadingSkillGameV2.jsx',
     cognitive_flex_chor:    'ChorMachayeShorGame.jsx',
     triangle_rachna:        'TriangleRachnaGame.jsx',
 };
 
-const getConnectedModules = (game) => [
-    { file: GAME_FILE_MAP[game.key] || `${game.title}Game.jsx`, type: 'Frontend',  icon: '⚛️',  desc: 'Screen flow, game logic, timers, scoring, session state' },
-    { file: 'SessionAssessmentForm.jsx',                         type: 'Component', icon: '🧩',  desc: 'Behavioral assessment form — all observation fields' },
-    { file: 'gameController.js',                                 type: 'Backend',   icon: '🖥️',  desc: 'Session lifecycle, score processing, report generation' },
-    { file: 'gameRoutes.js',                                     type: 'Routes',    icon: '🔀',  desc: 'REST API endpoint definitions and middleware' },
-    { file: 'db.js → game_sessions',                             type: 'Database',  icon: '🗄️',  desc: 'Session storage — score, saved state, status, timing' },
-    { file: 'db.js → game_assessments',                          type: 'Database',  icon: '🗄️',  desc: 'Behavioral assessment form data storage' },
-    { file: 'db.js → game_dashboard_pdfs',                       type: 'Database',  icon: '🗄️',  desc: 'PDF export file path storage' },
-];
+const getConnectedModules = (game) => {
+    const modules = [
+        { file: GAME_FILE_MAP[game.key] || `${game.title}Game.jsx`, type: 'Frontend',  icon: '⚛️',  desc: 'Screen flow, game logic, timers, scoring, session state' },
+        { file: 'SessionAssessmentForm.jsx',                         type: 'Component', icon: '🧩',  desc: 'Behavioral assessment form — all observation fields' },
+        { file: 'gameController.js',                                 type: 'Backend',   icon: '🖥️',  desc: 'Session lifecycle, score processing, report generation' },
+        { file: 'gameRoutes.js',                                     type: 'Routes',    icon: '🔀',  desc: 'REST API endpoint definitions and middleware' },
+        { file: 'db.js → game_sessions',                             type: 'Database',  icon: '🗄️',  desc: 'Session storage — score, saved state, status, timing' },
+        { file: 'db.js → game_assessments',                          type: 'Database',  icon: '🗄️',  desc: 'Behavioral assessment form data storage' },
+        { file: 'db.js → game_dashboard_pdfs',                       type: 'Database',  icon: '🗄️',  desc: 'PDF export file path storage' },
+    ];
+    if (game.key === 'literacy_reading_skill_v2') {
+        modules.splice(1, 0,
+            { file: 'useTestContent.js',           type: 'Component', icon: '🧩', desc: 'Fetches admin-managed letters/words/paragraphs/story per language' },
+            { file: 'ReadingV2ContentManager.jsx', type: 'Component', icon: '🧩', desc: 'Admin panel — edit letters/words/paragraphs/story/questions/hints' },
+        );
+    }
+    if (game.key === 'numeracy_number_skill_v3') {
+        modules.splice(1, 0,
+            { file: 'useTestContent.js',             type: 'Component', icon: '🧩', desc: 'Fetches admin-managed question display text per language' },
+            { file: 'AnkganitV3ContentManager.jsx',  type: 'Component', icon: '🧩', desc: 'Admin panel — per-language display-text overrides for each question' },
+            { file: 'AdminAnkganitV3Config.jsx',     type: 'Component', icon: '🧩', desc: 'Admin panel — question bank, categories, and correct answers' },
+        );
+    }
+    return modules;
+};
 
 // ─── Dynamic Doc Viewer (read-only — no edit/save/history) ────────────────────
 
@@ -4065,6 +7315,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
+    const englishOnly = game.key === 'literacy_reading_skill_v2';
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -4177,11 +7428,13 @@ const ScreenshotLibraryViewer = ({ game }) => {
                         {/* Publish status */}
                         <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>{badge.label}</span>
                         {/* Language toggle */}
-                        <div style={{ display: 'flex', background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
-                            {DOCS_LANGUAGES.map(({code:l,label:lbl}) => (
-                                <button key={l} onClick={() => setLang(l)} style={{ ...btnStyle, background: lang===l ? T.accent : 'transparent', color: lang===l ? '#fff' : T.muted, borderRadius: 0, padding: '5px 14px' }}>{lbl}</button>
-                            ))}
-                        </div>
+                        {!englishOnly && (
+                            <div style={{ display: 'flex', background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                                {DOCS_LANGUAGES.map(({code:l,label:lbl}) => (
+                                    <button key={l} onClick={() => setLang(l)} style={{ ...btnStyle, background: lang===l ? T.accent : 'transparent', color: lang===l ? '#fff' : T.muted, borderRadius: 0, padding: '5px 14px' }}>{lbl}</button>
+                                ))}
+                            </div>
+                        )}
                         <button onClick={openUpload} style={{ ...btnStyle, background: T.accent, color: '#fff' }}>+ Upload</button>
                         <button onClick={handlePublish} disabled={screenshots.length === 0} style={{ ...btnStyle, background: screenshots.length ? '#059669' : '#e2e8f0', color: screenshots.length ? '#fff' : T.faint }}>🚀 Publish Manual</button>
                     </div>
@@ -4328,6 +7581,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
+    const englishOnly = game.key === 'literacy_reading_skill_v2';
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
@@ -4391,13 +7645,17 @@ const GameplayManualViewer = ({ game }) => {
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                         {pubDate && <span style={{ padding:'4px 12px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #bbf7d0' }}>✓ Published · {pubDate}</span>}
-                        <span style={{ padding:'4px 11px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{docsLangLabel(lang)} · {screenshots.length} screens</span>
+                        {!englishOnly && (
+                            <span style={{ padding:'4px 11px', borderRadius:20, fontSize:'0.73rem', fontWeight:700, background:T.accentBg, color:T.accentText, border:`1px solid ${T.accentBd}` }}>{docsLangLabel(lang)} · {screenshots.length} screens</span>
+                        )}
                         {/* Language toggle */}
-                        <div style={{ display:'flex', background:T.white, border:`1px solid ${T.border}`, borderRadius:8, overflow:'hidden' }}>
-                            {DOCS_LANGUAGES.map(({code:l,label:lbl})=>(
-                                <button key={l} onClick={()=>setLang(l)} style={{ ...btnStyle, background:lang===l?T.accent:'transparent', color:lang===l?'#fff':T.muted, borderRadius:0, padding:'5px 13px' }}>{lbl}</button>
-                            ))}
-                        </div>
+                        {!englishOnly && (
+                            <div style={{ display:'flex', background:T.white, border:`1px solid ${T.border}`, borderRadius:8, overflow:'hidden' }}>
+                                {DOCS_LANGUAGES.map(({code:l,label:lbl})=>(
+                                    <button key={l} onClick={()=>setLang(l)} style={{ ...btnStyle, background:lang===l?T.accent:'transparent', color:lang===l?'#fff':T.muted, borderRadius:0, padding:'5px 13px' }}>{lbl}</button>
+                                ))}
+                            </div>
+                        )}
                         {screenshots.length > 0 && <button onClick={handleDownloadPDF} style={{ ...btnStyle, background:'#0891b2', color:'#fff' }}>⬇ Download PDF</button>}
                     </div>
                 </div>
@@ -4424,7 +7682,7 @@ const GameplayManualViewer = ({ game }) => {
                                 <div>
                                     <h2 style={{ margin:0, fontSize:'1.4rem', fontWeight:800, color:T.text }}>{game.title} — Gameplay Manual</h2>
                                     <div style={{ fontSize:'0.78rem', color:T.muted, marginTop:3 }}>
-                                        {docsLangLabel(lang)} · {screenshots.length} published screenshot{screenshots.length!==1?'s':''} · SANGIAN Documentation System
+                                        {!englishOnly && `${docsLangLabel(lang)} · `}{screenshots.length} published screenshot{screenshots.length!==1?'s':''} · SANGIAN Documentation System
                                         {pubDate && ` · Published ${pubDate}`}
                                     </div>
                                 </div>
@@ -4493,6 +7751,50 @@ const GameplayManualViewer = ({ game }) => {
     );
 };
 
+// ─── Screenshots & Manual — combined viewer (two tabs over the same data) ─────
+// Gameplay Manual is just an auto-generated, published-only, PDF-exportable
+// view of Screenshot Library's own screenshots, grouped by screen type — same
+// underlying `screenshots` table, two presentation modes. Merged into tabs
+// instead of two separate sidebar sections.
+
+const ScreenshotsAndManualViewer = ({ game, section }) => {
+    const [tab, setTab] = useState('manage');
+    const tabs = [
+        { key: 'manage', icon: '🖼️', label: 'Manage Library' },
+        { key: 'manual', icon: '📋', label: 'Manual View' },
+    ];
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', gap: '4px', padding: '10px 22px 0', background: T.white, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+                {tabs.map(t => (
+                    <button
+                        key={t.key}
+                        onClick={() => setTab(t.key)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '8px 16px', borderRadius: '8px 8px 0 0', cursor: 'pointer',
+                            border: `1px solid ${tab === t.key ? T.border : 'transparent'}`,
+                            borderBottom: tab === t.key ? `1px solid ${T.white}` : `1px solid transparent`,
+                            marginBottom: '-1px',
+                            background: tab === t.key ? T.white : 'transparent',
+                            color: tab === t.key ? T.accentText : T.muted,
+                            fontSize: '0.82rem', fontWeight: 700, fontFamily: T.font,
+                            transition: 'all 0.15s',
+                        }}
+                    >
+                        {t.icon} {t.label}
+                    </button>
+                ))}
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {tab === 'manage'
+                    ? <ScreenshotLibraryViewer game={game} section={section} />
+                    : <GameplayManualViewer game={game} section={section} />}
+            </div>
+        </div>
+    );
+};
+
 // ─── Introduction Viewer ─────────────────────────────────────────────────────
 
 const INTRO_FIELD_DEFS = [
@@ -4518,29 +7820,38 @@ const IntroCard = ({ icon, title, titleHi, game, accent, children }) => (
         }}>
             <span style={{ fontSize: '1rem' }}>{icon}</span>
             <span style={{ fontWeight: 700, fontSize: '0.88rem', color: T.text }}>{title}</span>
-            <span style={{ fontSize: '0.72rem', color: T.muted, fontStyle: 'italic', fontFamily: HINDI_FONT }}>/ {titleHi}</span>
+            {titleHi && (
+                <span style={{ fontSize: '0.72rem', color: T.muted, fontStyle: 'italic', fontFamily: HINDI_FONT }}>/ {titleHi}</span>
+            )}
         </div>
         <div style={{ padding: '16px 20px' }}>{children}</div>
     </div>
 );
 
-const BilingualBlock = ({ en, hi, fieldKey, expanded, onToggle }) => {
+const BilingualBlock = ({ en, hi, fieldKey, expanded, onToggle, showHindi = true }) => {
     const LIMIT = 220;
+    const langs = showHindi
+        ? [
+            { lang: 'en', label: '🇬🇧 English', text: en, ff: T.font,    accent: '#1d4ed8' },
+            { lang: 'hi', label: '🇮🇳 हिंदी',   text: hi, ff: HINDI_FONT, accent: '#7c3aed' },
+        ]
+        : [
+            { lang: 'en', label: '🇬🇧 English', text: en, ff: T.font,    accent: '#1d4ed8' },
+        ];
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-            {[
-                { lang: 'en', label: '🇬🇧 English', text: en, ff: T.font,    accent: '#1d4ed8' },
-                { lang: 'hi', label: '🇮🇳 हिंदी',   text: hi, ff: HINDI_FONT, accent: '#7c3aed' },
-            ].map(({ lang, label, text, ff, accent }) => {
+        <div style={{ display: 'grid', gridTemplateColumns: showHindi ? 'repeat(auto-fit, minmax(260px, 1fr))' : '1fr', gap: '14px' }}>
+            {langs.map(({ lang, label, text, ff, accent }) => {
                 const key   = `${fieldKey}_${lang}`;
-                const isLong = (text || '').length > LIMIT;
+                const isLong = showHindi && (text || '').length > LIMIT;
                 const isExp  = expanded[key];
                 const shown  = isLong && !isExp ? text.slice(0, LIMIT) + '…' : (text || '');
                 return (
                     <div key={lang} style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: `1px solid ${T.border}` }}>
-                        <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                            {label}
-                        </div>
+                        {showHindi && (
+                            <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                {label}
+                            </div>
+                        )}
                         <p style={{ margin: 0, fontSize: lang === 'hi' ? '0.97rem' : '0.88rem', lineHeight: 1.8, color: '#374151', fontFamily: ff }}>
                             {shown || '—'}
                         </p>
@@ -4590,8 +7901,6 @@ const IntroductionViewer = ({ game }) => {
 
     useEffect(() => { loadIntro(); }, [loadIntro]);
 
-    const handleEdit = () => { setEditData(JSON.parse(JSON.stringify(data))); setIsEditing(true); };
-
     const handleSave = async () => {
         setIsSaving(true); setSaveMsg('');
         const savedBy = (() => { try { return JSON.parse(localStorage.getItem('adminUser')).name; } catch { return 'admin'; } })();
@@ -4610,6 +7919,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
+    const showHindi = game.key !== 'literacy_reading_skill_v2';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
@@ -4625,7 +7935,7 @@ const IntroductionViewer = ({ game }) => {
                     <div style={{ fontSize: '0.72rem', color: T.faint, marginTop: '1px' }}>
                         {updatedAt
                             ? `Last updated ${fmtDt(updatedAt)} · by ${updatedBy}`
-                            : 'Default content — click Edit to customise'}
+                            : 'Default content'}
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -4634,9 +7944,7 @@ const IntroductionViewer = ({ game }) => {
                             {saveMsg}
                         </span>
                     )}
-                    {!isEditing ? (
-                        <button onClick={handleEdit} style={btnSm(game.color, '#fff')}>✏️ Edit</button>
-                    ) : (
+                    {isEditing && (
                         <>
                             <button onClick={() => setIsEditing(false)} style={btnSm('rgba(15,23,42,0.04)', T.text, '1px solid rgba(15,23,42,0.08)')}>Cancel</button>
                             <button onClick={handleSave} disabled={isSaving} style={btnSm(game.color, '#fff')}>
@@ -4733,9 +8041,11 @@ const IntroductionViewer = ({ game }) => {
                                     <h2 style={{ margin: '0 0 3px', fontSize: 'clamp(1rem,2vw,1.3rem)', fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
                                         {game.title}
                                     </h2>
-                                    <div style={{ fontSize: '0.82rem', color: T.muted, fontFamily: HINDI_FONT, lineHeight: 1.5 }}>
-                                        {d.hi?.skill || ''}
-                                    </div>
+                                    {showHindi && (
+                                        <div style={{ fontSize: '0.82rem', color: T.muted, fontFamily: HINDI_FONT, lineHeight: 1.5 }}>
+                                            {d.hi?.skill || ''}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -4755,47 +8065,58 @@ const IntroductionViewer = ({ game }) => {
                                 }}>
                                     📊 SANGIAN Assessment
                                 </span>
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    fontSize: '0.75rem', fontWeight: 600, padding: '5px 14px',
-                                    borderRadius: '999px', background: 'rgba(255,255,255,0.85)',
-                                    border: `1px solid ${game.color}35`, color: game.color,
-                                }}>
-                                    🌐 EN + हिंदी
-                                </span>
+                                {showHindi && (
+                                    <span style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        fontSize: '0.75rem', fontWeight: 600, padding: '5px 14px',
+                                        borderRadius: '999px', background: 'rgba(255,255,255,0.85)',
+                                        border: `1px solid ${game.color}35`, color: game.color,
+                                    }}>
+                                        🌐 EN + हिंदी
+                                    </span>
+                                )}
                             </div>
                         </div>
 
                         {/* Objective */}
-                        <IntroCard icon="🎯" title="Test Objective" titleHi="परीक्षण उद्देश्य" game={game}>
+                        <IntroCard icon="🎯" title="Test Objective" titleHi={showHindi ? "परीक्षण उद्देश्य" : undefined} game={game}>
                             <BilingualBlock
                                 en={d.en?.objective} hi={d.hi?.objective}
                                 fieldKey="objective" expanded={expanded} onToggle={toggleExpand}
+                                showHindi={showHindi}
                             />
                         </IntroCard>
 
                         {/* About this Game */}
-                        <IntroCard icon="📘" title="About this Game" titleHi="इस खेल के बारे में" game={game}>
+                        <IntroCard icon="📘" title="About this Game" titleHi={showHindi ? "इस खेल के बारे में" : undefined} game={game}>
                             <BilingualBlock
                                 en={d.en?.description} hi={d.hi?.description}
                                 fieldKey="description" expanded={expanded} onToggle={toggleExpand}
+                                showHindi={showHindi}
                             />
                         </IntroCard>
 
                         {/* Before You Start */}
-                        <IntroCard icon="💡" title="Before You Start" titleHi="शुरू करने से पहले" game={game} accent>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-                                {[
-                                    { lang: 'en', label: '🇬🇧 English', ff: T.font,    accent: '#1d4ed8', text: d.en?.guidance },
-                                    { lang: 'hi', label: '🇮🇳 हिंदी',   ff: HINDI_FONT, accent: '#7c3aed', text: d.hi?.guidance },
-                                ].map(({ lang, label, ff, accent, text }) => (
+                        <IntroCard icon="💡" title="Before You Start" titleHi={showHindi ? "शुरू करने से पहले" : undefined} game={game} accent>
+                            <div style={{ display: 'grid', gridTemplateColumns: showHindi ? 'repeat(auto-fit, minmax(260px, 1fr))' : '1fr', gap: '14px' }}>
+                                {(showHindi
+                                    ? [
+                                        { lang: 'en', label: '🇬🇧 English', ff: T.font,    accent: '#1d4ed8', text: d.en?.guidance },
+                                        { lang: 'hi', label: '🇮🇳 हिंदी',   ff: HINDI_FONT, accent: '#7c3aed', text: d.hi?.guidance },
+                                    ]
+                                    : [
+                                        { lang: 'en', label: '🇬🇧 English', ff: T.font,    accent: '#1d4ed8', text: d.en?.guidance },
+                                    ]
+                                ).map(({ lang, label, ff, accent, text }) => (
                                     <div key={lang} style={{
                                         background: 'rgba(255,255,255,0.75)', borderRadius: '10px',
                                         padding: '14px 16px', border: `1px solid ${game.color}22`,
                                     }}>
-                                        <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                                            {label}
-                                        </div>
+                                        {showHindi && (
+                                            <div style={{ fontSize: '0.67rem', fontWeight: 700, color: accent, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                                {label}
+                                            </div>
+                                        )}
                                         <p style={{
                                             margin: 0, fontStyle: 'italic',
                                             fontSize: lang === 'hi' ? '0.97rem' : '0.87rem',
@@ -4824,13 +8145,15 @@ const IntroductionViewer = ({ game }) => {
                             }}>
                                 🧠 {d.en?.skill || '—'}
                             </span>
-                            <span style={{
-                                fontSize: '0.88rem', fontFamily: HINDI_FONT, fontWeight: 600, padding: '4px 14px',
-                                borderRadius: '999px', background: 'rgba(124,58,237,0.07)',
-                                border: '1px solid rgba(124,58,237,0.2)', color: '#7c3aed',
-                            }}>
-                                🧠 {d.hi?.skill || '—'}
-                            </span>
+                            {showHindi && (
+                                <span style={{
+                                    fontSize: '0.88rem', fontFamily: HINDI_FONT, fontWeight: 600, padding: '4px 14px',
+                                    borderRadius: '999px', background: 'rgba(124,58,237,0.07)',
+                                    border: '1px solid rgba(124,58,237,0.2)', color: '#7c3aed',
+                                }}>
+                                    🧠 {d.hi?.skill || '—'}
+                                </span>
+                            )}
                         </div>
 
                     </div>
@@ -4874,8 +8197,8 @@ const AdminDocs = () => {
 
     const selectedGame = gameParam ? orderedGameCatalog.find(g => g.key === gameParam) || null : null;
     const expandedGame = selectedGame ? selectedGame.key : null;
-    const selectedSection = (selectedGame && sectionParam) 
-        ? GAME_SECTIONS.find(s => s.key === sectionParam) || null 
+    const selectedSection = (selectedGame && sectionParam)
+        ? getVisibleSections(selectedGame).find(s => s.key === sectionParam) || null
         : null;
 
     const handleHome = () => { 
@@ -4931,9 +8254,8 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'numeracy_number_skill'  ? NUMERACY_DEFAULT :
                                 selectedGame.key === 'literacy_reading_skill' ? LITERACY_DEFAULT  :
-                                selectedGame.key === 'literacy_reading_skill_v2' ? LITERACY_DEFAULT  :
-                                selectedGame.key === 'number_recall_lottery_v2' ? '' :
-                                `# ${selectedGame.title} — Technical Documentation 2013\n\nLegacy documentation for **${selectedGame.title}**.\n\nClick **Edit** to add historical documentation.`
+                                ['literacy_reading_skill_v2', 'number_recall_lottery_v2'].includes(selectedGame.key) ? '' :
+                                `# ${selectedGame.title} — Technical Documentation 2013\n\nLegacy documentation for **${selectedGame.title}**.`
                             }
                         />
                     ) : selectedSection.available && selectedSection.key === 'technical_docs' ? (
@@ -4941,35 +8263,44 @@ const AdminDocs = () => {
                             game={selectedGame}
                             section={selectedSection}
                             docKey={`${selectedGame.key}__tech`}
-                            defaultContent={makeTechDocTemplate(selectedGame)}
+                            defaultContent={
+                                selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2TechDocTemplate(selectedGame) :
+                                selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3TechDocTemplate(selectedGame) :
+                                makeTechDocTemplate(selectedGame)
+                            }
                         />
                     ) : selectedSection.available && selectedSection.key === 'api_integration' ? (
                         <DocSectionEditor
                             game={selectedGame}
                             section={selectedSection}
                             docKey={`${selectedGame.key}__api`}
-                            defaultContent={makeApiTemplate(selectedGame)}
+                            defaultContent={
+                                selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ApiTemplate(selectedGame) :
+                                selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ApiTemplate(selectedGame) :
+                                makeApiTemplate(selectedGame)
+                            }
                         />
                     ) : selectedSection.available && selectedSection.key === 'score_logic' ? (
                         <DocSectionEditor
                             game={selectedGame}
                             section={selectedSection}
                             docKey={`${selectedGame.key}__score`}
-                            defaultContent={makeScoreLogicTemplate(selectedGame)}
-                        />
-                    ) : selectedSection.available && selectedSection.key === 'cutoff_calc' ? (
-                        <DocSectionEditor
-                            game={selectedGame}
-                            section={selectedSection}
-                            docKey={`${selectedGame.key}__cutoff`}
-                            defaultContent={makeCutoffTemplate(selectedGame)}
+                            defaultContent={
+                                selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ScoreLogicTemplate(selectedGame) :
+                                selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ScoreLogicTemplate(selectedGame) :
+                                makeScoreLogicTemplate(selectedGame)
+                            }
                         />
                     ) : selectedSection.available && selectedSection.key === 'assessment' ? (
                         <DocSectionEditor
                             game={selectedGame}
                             section={selectedSection}
                             docKey={`${selectedGame.key}__assessment`}
-                            defaultContent={makeAssessmentTemplate(selectedGame)}
+                            defaultContent={
+                                selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2AssessmentTemplate(selectedGame) :
+                                selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3AssessmentTemplate(selectedGame) :
+                                makeAssessmentTemplate(selectedGame)
+                            }
                         />
                     ) : selectedSection.available && selectedSection.key === 'audio_logic' ? (
                         <AudioLogicViewer
@@ -4981,31 +8312,19 @@ const AdminDocs = () => {
                             game={selectedGame}
                             section={selectedSection}
                         />
-                    ) : selectedSection.available && selectedSection.key === 'database_flow' ? (
-                        <DocSectionEditor
-                            game={selectedGame}
-                            section={selectedSection}
-                            docKey={`${selectedGame.key}__dataflow`}
-                            defaultContent={makeDataFlowTemplate(selectedGame)}
-                        />
                     ) : selectedSection.available && selectedSection.key === 'reports' ? (
                         <ReportsAnalysisViewer
                             game={selectedGame}
                             section={selectedSection}
                         />
                     ) : selectedSection.available && selectedSection.key === 'screenshots' ? (
-                        <ScreenshotLibraryViewer
+                        <ScreenshotsAndManualViewer
                             game={selectedGame}
                             section={selectedSection}
                         />
                     ) : selectedSection.available && selectedSection.key === 'introduction' ? (
                         <IntroductionViewer
                             game={selectedGame}
-                        />
-                    ) : selectedSection.available && selectedSection.key === 'gameplay_manual' ? (
-                        <GameplayManualViewer
-                            game={selectedGame}
-                            section={selectedSection}
                         />
                     ) : (
                         <div style={{ flex: 1, overflowY: 'auto' }}>
