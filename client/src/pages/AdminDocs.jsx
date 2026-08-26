@@ -91,20 +91,6 @@ const GAME_INTRO_DEFAULTS = {
             guidance:    'ध्यान से देखो और जो दिखाया जाए उसे अच्छी तरह याद करो। बाद में जब पूछा जाए तो अपनी पूरी कोशिश करो!',
         },
     },
-    number_recall_lottery: {
-        en: {
-            skill:       'Sequential Processing & Short-term Auditory Memory',
-            objective:   'This test measures sequential processing and short-term memory within the auditory-vocal modality. In this test, the assessor says a series of numbers, and the child repeats them in the same sequence.',
-            description: 'Listen carefully and remember the numbers in the correct order. This activity checks how well children can hear, remember, and repeat information step by step.',
-            guidance:    'Listen carefully to the numbers. Then repeat them in the same order. Ready? Let\'s go!',
-        },
-        hi: {
-            skill:       'क्रमबद्ध प्रसंस्करण और अल्पकालिक श्रवण स्मृति',
-            objective:   'यह टेस्ट बच्चे की क्रमबद्ध रूप से सुनी गई जानकारी को समझने और थोड़े समय तक याद रखकर उसी क्रम में दोहराने की क्षमता का आकलन करता है।',
-            description: 'इस गतिविधि में बच्चे को ध्यान से संख्याएँ सुनकर उन्हें उसी क्रम में दोहराना होता है। यह बच्चे की सुनने, याद रखने और सही क्रम बनाए रखने की क्षमता को समझने में मदद करता है।',
-            guidance:    'ध्यान से संख्याएँ सुनो और फिर उन्हें उसी क्रम में दोहराओ। तैयार हो? चलो शुरू करते हैं!',
-        },
-    },
     number_recall_lottery_v2: {
         en: {
             skill:       'Sequential Processing & Short-term Auditory Memory (Reverse)',
@@ -117,20 +103,6 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'यह टेस्ट बच्चे की सुनी गई जानकारी को समझने और थोड़े समय तक याद रखकर विपरीत क्रम में दोहराने की क्षमता का आकलन करता है।',
             description: 'इस गतिविधि में बच्चे को ध्यान से संख्याएँ सुनकर उन्हें उल्टे क्रम में दोहराना होता है। यह बच्चे की सुनने, याद रखने और सही क्रम को उलटने की क्षमता को समझने में मदद करता है।',
             guidance:    'ध्यान से संख्याएँ सुनो और फिर उन्हें उल्टे क्रम में दोहराओ। तैयार हो? चलो शुरू करते हैं!',
-        },
-    },
-    rover_mela: {
-        en: {
-            skill:       'Visual Processing & Spatial Decision-Making',
-            objective:   'It measures simultaneous or visual processing that requires decision-making to identify the shortest route to a goal.',
-            description: 'Help Baby reach the mela using the shortest possible path. This Test encourages smart thinking, planning, and visual problem-solving skills.',
-            guidance:    'Look at the paths carefully and think before you choose. Which is the shortest way to reach the mela?',
-        },
-        hi: {
-            skill:       'देखकर सोचना और सही रास्ता चुनना',
-            objective:   'इस टेस्ट में बच्चा तस्वीर देखकर समझता है और मेले तक जाने का सबसे छोटा रास्ता चुनता है।',
-            description: 'इस खेल में बच्चे को सबसे छोटे रास्ते से मेले तक पहुँचाना होता है। यह सोचने, रास्ते देखने और सही चुनाव करने की क्षमता को समझने में मदद करता है।',
-            guidance:    'रास्तों को ध्यान से देखो और सोचकर चुनो। मेले तक जाने का सबसे छोटा रास्ता कौन सा है?',
         },
     },
     auditory_dhyan: {
@@ -271,20 +243,6 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'यह टेस्ट ASER 2014 पद्धति पर आधारित एक अनुकूली (adaptive) मौखिक पठन आकलन है, जो बच्चे का वर्तमान पठन स्तर पता करता है। बच्चे के पढ़ने के प्रवाह के आधार पर स्तर ऊपर या नीचे बदलता है — अक्षर, शब्द, अनुच्छेद, कहानी — जब तक उसका सही स्तर तय न हो जाए।',
             description: 'बच्चा अक्षर, शब्द, एक अनुच्छेद और एक कहानी ज़ोर से पढ़ता है, जबकि मूल्यांकनकर्ता ध्यान से सुनकर सटीकता और प्रवाह दर्ज करता है। यह टेस्ट अनुकूली है: अच्छा पढ़ने वाले बच्चे कठिन पाठ की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे आसान पाठ की ओर जाते हैं, जब तक उनका पठन स्तर तय नहीं हो जाता।',
             guidance:    'आराम से और ज़ोर से, साफ़-साफ़ पढ़ो। कोई शब्द मुश्किल लगे तो कोई बात नहीं — बस अपनी पूरी कोशिश करो!',
-        },
-    },
-    cognitive_flex_chor: {
-        en: {
-            skill:       'Cognitive Flexibility & Adaptive Thinking',
-            objective:   'This test assesses cognitive flexibility, which means the child\'s ability to quickly shift attention, adapt to changing rules, and respond accurately in changing situations.',
-            description: 'Be alert and ready to adapt! In this activity, rules and situations may change quickly, and the child must respond carefully and accurately. This helps measure flexible thinking and adaptive problem-solving skills.',
-            guidance:    'Pay close attention! The rules might change. Stay alert and respond quickly and correctly!',
-        },
-        hi: {
-            skill:       'संज्ञानात्मक लचीलापन और अनुकूली सोच',
-            objective:   'यह टेस्ट बच्चे की बदलती परिस्थितियों और नियमों के अनुसार जल्दी सोचने, ध्यान बदलने और सही प्रतिक्रिया देने की क्षमता का आकलन करता है।',
-            description: 'इस गतिविधि में बच्चे को बदलते नियमों और परिस्थितियों के अनुसार जल्दी प्रतिक्रिया देनी होती है। यह बच्चे की सोच में लचीलापन, ध्यान बदलने और सही निर्णय लेने की क्षमता को समझने में मदद करता है।',
-            guidance:    'ध्यान रखो! नियम बदल सकते हैं। सतर्क रहो और जल्दी तथा सही प्रतिक्रिया दो!',
         },
     },
     triangle_rachna: {
@@ -1937,9 +1895,38 @@ This document explains how **${game.title}** measures and records behavioral obs
 
 ---
 
-## 3. Behavioral Assessment Form
+## 3. In-Game ASER Fluency Questionnaire (Paragraph / Story)
 
-After every game session (whether completed or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with the adaptive ladder mechanics above.
+**${game.title}** has a *second*, earlier questionnaire that the generic SANGIAN Session Details Form (§4 below) does not cover — this one is unique to this game and is what actually drives stage routing (see **Score & Progression Logic §3**). It fires every time the child finishes reading the Paragraph, the Paragraph Retry, or the Story aloud, immediately after the assessor taps **"Done Reading"**.
+
+### Paragraph / Paragraph Retry — exact wording
+1. "Did the child read the paragraph like a string of words, rather than sentences?"
+2. "Did the child read the paragraph haltingly and stop very often?"
+3. "Did the child make more than 3 mistakes while reading the paragraph?"
+
+### Story — exact wording
+1. "Did the child read the story like a string of words, rather than sentences?"
+2. "Did the child read the story haltingly and stop very often?"
+3. "Did the child make more than 3 mistakes while reading the story?"
+
+Each question is Yes/No. **Any single "Yes" fails the stage; all three must be "No" to pass** — this is the direct digitization of the ASER 2014 ("Annual Status of Education Report") manual's "NOT at Paragraph/Story Level" criteria.
+
+### ⓘ Worked-example hints
+Every question has an info icon the assessor can tap for a worked example, so two different assessors judge the same behavior consistently:
+
+| Question | "No" example | "Yes" example |
+|---|---|---|
+| String of words vs. sentences | Reads naturally as a sentence — *"राम स्कूल जाता है।"* | Reads each word separately — *"राम... स्कूल... जाता... है..."* |
+| Haltingly / frequent stops | Reads continuously and smoothly, with normal pauses | Frequent pauses or long stops mid-sentence |
+| More than 3 mistakes | 0–3 mistakes while reading | More than 3 mistakes while reading |
+
+This questionnaire is deliberately **separate** from the Session Details Form below — it is completed once per read-aloud stage (up to 3 times in a full climb: Paragraph, Paragraph Retry, Story), while the Session Details Form is completed exactly once, at the very end of the whole session.
+
+---
+
+## 4. Behavioral Assessment Form (Session Details)
+
+After every game session (whether completed or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with the adaptive ladder mechanics above, and is distinct from the in-game fluency questionnaire in §3.
 
 ### Assessment Questions
 
@@ -1979,7 +1966,7 @@ A free-text field where the assessor can dictate or type any additional qualitat
 
 ---
 
-## 4. Validation Rules
+## 5. Validation Rules
 
 \`\`\`
 Q1, Q2, Q3, Q4 → Required (must be selected before submission)
@@ -1989,9 +1976,11 @@ Additional notes → Optional (can be empty)
 
 If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
 
+The §3 fluency questionnaire has its own, separate validation: all 3 questions must be answered before "Finish Assessment" proceeds, since the pass/fail verdict cannot be computed from a partial answer set.
+
 ---
 
-## 5. Assessment Submission Flow
+## 6. Assessment Submission Flow
 
 \`\`\`
 Assessor fills in Q1–Q4 (required)
@@ -2019,7 +2008,7 @@ Note the confirmation step: validation passing does **not** submit immediately �
 
 ---
 
-## 6. Database Storage
+## 7. Database Storage
 
 \`\`\`
 Table: game_assessments
@@ -2035,9 +2024,11 @@ additional_notes  → Free text notes
 created_at        → When the assessment was submitted
 \`\`\`
 
+The §3 fluency questionnaire answers are stored separately, inside \`game_sessions.saved_state\` as \`paragraphResult.ssrAnswers\` / \`paragraphRetryResult.ssrAnswers\` / \`storyResult.ssrAnswers\` (see **Score & Progression Logic §4**) — not in \`game_assessments\`. The two questionnaires are audited independently, and the first attempt's answers are never overwritten by a retry's answers (\`paragraphResult\` and \`paragraphRetryResult\` are always distinct fields).
+
 ---
 
-## 7. Pending Assessment Detection
+## 8. Pending Assessment Detection
 
 If the child completes or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
 
@@ -2052,7 +2043,7 @@ Note: this game has no \`'dropped'\` status — a session is only ever \`'in_pro
 
 ---
 
-## 8. Assessment in Reports
+## 9. Assessment in Reports
 
 In the Admin Reports panel, every session record shows the assessment responses alongside the reading-level result. The reports include:
 
@@ -2060,15 +2051,17 @@ In the Admin Reports panel, every session record shows the assessment responses 
 - Q5 behavioral observations (comma-separated)
 - Additional notes
 - The final reading level and stage-by-stage results (not "question scores" — this game has no individually scored questions)
+- The §3 fluency questionnaire's answers for every read-aloud stage traversed (Paragraph / Paragraph Retry / Story), so the exact basis for each stage's pass/fail verdict is auditable after the fact
 - Whether the assessment was submitted or is pending
 
 ---
 
-## 9. Assessment Integrity
+## 10. Assessment Integrity
 
 - The assessment form is **disabled** after submission — responses cannot be changed
 - The session status does not change when the assessment is submitted (reading level/status are independent)
 - Assessment data is linked to the session by \`session_id\` and \`child_id\`
+- The §3 fluency questionnaire is answered once per read-aloud stage and locked in immediately — it cannot be revisited or changed once the next stage begins
 
 ---
 
@@ -3360,6 +3353,57 @@ Admin side (Elements panel):
 \`\`\`
 Hint *examples/descriptions* are per-language editable; the underlying
 Yes/No answer key is not.
+
+### Default (Fallback) Content — Verbatim from the ASER 2014 Manual
+
+The hardcoded Hindi fallback constants are not placeholder text — they are
+transcribed directly from the official **ASER 2014 ("असर 2014", facilitated
+by Pratham) "पढ़ने की जाँच" reading-test sample sheet**, so a freshly deployed
+instance is ASER-faithful even before an admin configures anything:
+
+\`\`\`
+PARAGRAPHS[0]: "बगीचे में एक पेड़ है। पेड़ पर एक तोता रहता है।
+                तोते का रंग हरा है। वह लाल टमाटर खाता है।"
+PARAGRAPHS[1]: "नीतू के घर में गाय है। उसका रंग सफेद है।
+                गाय हरी घास खाती है। वह बहुत दूध देती है।"
+
+STORY_TEXT:    "सावन का महीना था। आसमान में बहुत काले-काले बादल छाए थे।
+                ठंडी-ठंडी हवा चल रही थी। मुझे झूला झूलने का मन किया।
+                बड़े भैया एक मोटी सी रस्सी लेकर बाहर आए। भैया ने रस्सी को
+                पेड़ से लटकाकर झूला बनाया। सब ने मिलकर खूब झूला झूला।
+                बाकी बच्चे भी आकर मज़े से झूलने लगे। झूलते-झूलते रात हो गई।"
+
+LETTERS_BANK:  ल  प  स  क  ग  ड  ब  म  ट  झ   (10 letters — assessor picks 5)
+WORDS_BANK:    लाल  दूध  पैर  तेल  किला  मोर  जूता  कुल  पानी  मौका   (10 words — assessor picks 5)
+\`\`\`
+
+The assessor is free to pick *any* 5 of the 10 letters/words for the child
+to read — exactly as the ASER manual instructs ("Ask the child to read any
+5 words from the list... Let the child choose the words herself"). The app
+does not currently support child-driven selection; the assessor makes the
+pick on the child's behalf via the tile UI.
+
+### Implementation Principles (Audit / Traceability)
+
+These are the non-negotiable invariants the ASER 2014 methodology requires
+of any digital implementation — carried over verbatim from the manual's own
+"how to test reading" administration rules, not SANGIAN-specific choices:
+
+1. **The final outcome is a categorical level, never a continuous score.**
+   \`finalLevel\` (Beginner/Letter/Word/Paragraph/Story) is the result; the
+   \`0–4\` dial number (§6) is only a display convenience derived from it.
+2. **Every administered stage and its response is retained**, not just the
+   final verdict — the full \`path[]\` plus each stage's result object
+   (§7 in Session State Management) means any final level can be audited
+   back to the exact tile marks / fluency answers that produced it.
+3. **A retry never overwrites the original attempt.** \`selectedWords\` vs.
+   \`selectedWordsRetry\`, and \`paragraphResult\` vs. \`paragraphRetryResult\`,
+   are always distinct fields — the first attempt stays inspectable even
+   after a retry is given and passes.
+4. **Routing is fully automatic once a stage's response is recorded** — the
+   assessor records what the child did; the system alone decides the next
+   stage or the final level via the routing table in §5. There is no manual
+   "assign level" override anywhere in the UI.
 
 ---
 
