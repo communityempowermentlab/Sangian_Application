@@ -12242,7 +12242,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela', 'cognitive_flex_chor'].includes(game.key);
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -12508,7 +12508,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela', 'cognitive_flex_chor'].includes(game.key);
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
@@ -12846,7 +12846,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
-    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
+    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela', 'cognitive_flex_chor'].includes(game.key);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
