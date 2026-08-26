@@ -188,6 +188,20 @@ const GAME_INTRO_DEFAULTS = {
             guidance:    'चलना शुरू करने से पहले पूरे ग्रिड को देखो। अपने रास्ते की योजना बनाओ और खतरे वाले चौकोर से सावधान रहो! जल्दी मत करो।',
         },
     },
+    cognitive_flex_chor: {
+        en: {
+            skill:       'Cognitive Flexibility - Rule Detection and Set-Shifting',
+            objective:   'This test assesses the child\'s cognitive flexibility by measuring how well they can infer a hidden rule for choosing the correct house, and re-detect a new rule when it silently changes partway through certain items. The child must get 3 correct choices in a row to pass each rule.',
+            description: 'The child taps one of four houses to find the correct one, guided by a hidden rule (such as roof color or window count). The houses reshuffle after every attempt. On some items, the rule secretly changes partway through, and the child must notice and adapt their thinking. This activity helps evaluate how well a child can infer rules and shift their thinking when the rules change.',
+            guidance:    'Watch carefully to figure out what makes a house the right one. If your answers stop working, the rule might have changed — pay attention!',
+        },
+        hi: {
+            skill:       'संज्ञानात्मक लचीलापन - नियम पहचान और सोच परिवर्तन',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे के संज्ञानात्मक लचीलेपन का आकलन करना है, यह मापकर कि वह सही घर चुनने के छिपे हुए नियम को कितनी अच्छी तरह पहचान पाता है, और जब कुछ आइटम के बीच में नियम चुपचाप बदल जाता है तो नए नियम को दोबारा पहचान पाता है। हर नियम को पास करने के लिए बच्चे को लगातार 3 सही चुनाव करने होते हैं।',
+            description: 'बच्चा सही घर खोजने के लिए चार घरों में से एक को दबाता है, एक छिपे हुए नियम (जैसे छत का रंग या खिड़कियों की संख्या) के आधार पर। हर प्रयास के बाद घर फिर से बदल जाते हैं। कुछ आइटम में, नियम बीच में ही चुपचाप बदल जाता है, और बच्चे को इसे नोटिस करके अपनी सोच बदलनी होती है। यह गतिविधि यह आकलन करने में मदद करती है कि बच्चा नियमों का अनुमान कैसे लगाता है और नियम बदलने पर अपनी सोच कैसे बदलता है।',
+            guidance:    'ध्यान से देखो कि कौन सा घर सही है। अगर तुम्हारे जवाब काम करना बंद कर दें, तो हो सकता है नियम बदल गया हो — ध्यान दो!',
+        },
+    },
     working_memory_herpher_v3: {
         en: {
             skill:       'Visual Working Memory - Image Recall',
@@ -1519,7 +1533,7 @@ On each scored attempt (attempt 2, not the practice attempt):
 
 If consecutiveZeros >= 3 → STOP, status = 'dropped'
 \`\`\`
-This is the same convention the codebase uses for several other games (\`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, \`NumberSkillGameV2.jsx\`) — a shared platform pattern, not unique to Her Pher V3.
+A comment in this file's own source claims this "3 consecutive zero-score questions" convention is shared with \`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, and \`NumberSkillGameV2.jsx\`. **This has been verified false for \`ChorMachayeShorGame.jsx\`** — that game actually uses a "2 consecutive zero-scored *distinct items*" rule (deduped by item id, not a running per-question counter; see that game's own Score & Progression Logic doc). The claim for \`AtlantisBagiyaGame.jsx\`/\`NumberSkillGameV2.jsx\` has not been independently verified either — treat it as unconfirmed rather than a reliable cross-game convention.
 
 ---
 
@@ -4329,7 +4343,7 @@ On each SCORED attempt (attempt 2, non-practice):
 
 If consecutiveZeros >= 3 → STOP (status = 'dropped')
 \`\`\`
-This is the same "3 consecutive zero-score questions" pattern the codebase's own comments say is shared with \`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, and \`NumberSkillGameV2.jsx\` — worth knowing if documenting those games too, since it's a repeated platform convention, not unique to this game.
+A comment in this file's own source claims this "3 consecutive zero-score questions" convention is shared with \`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, and \`NumberSkillGameV2.jsx\`. **This has been verified false for \`ChorMachayeShorGame.jsx\`** — that game actually uses a "2 consecutive zero-scored *distinct items*" rule (deduped by item id, not a running per-question counter; see that game's own Score & Progression Logic doc). The claim for \`AtlantisBagiyaGame.jsx\`/\`NumberSkillGameV2.jsx\` has not been independently verified either — treat it as unconfirmed rather than a reliable cross-game convention.
 
 ---
 
@@ -4959,6 +4973,381 @@ STT errors here use a **user-facing alert** (\`alert(t('game.speechError') + ' /
 - This game's maze content is **not admin-authorable** at all, unlike Her Pher V3's fully dynamic image content — admin control here is limited to activation toggling and a cosmetic subtitle/chips label per question.
 - Two entirely scripted, non-interactive demo sequences (Sample A, Sample B) exist purely to teach the mechanic via animation + voice-over before the child ever controls the token themselves.
 - Scoring rewards move efficiency, not just success — reaching the end point exactly at the optimal move count (\`t2\`) scores higher than reaching it within the more generous \`t1\` threshold.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Chor Machaye Shor Technical Documentation ─────────────────────────────────
+// This game does NOT fit the generic fixed-question-test template well enough
+// to reuse: it saves saved_state.itemResults[] (not allScores[]), each item
+// requires 3-consecutive-correct clicks with live house reshuffling (not a
+// single Q&A), items 6-11 have a silent mid-item rule change requiring
+// re-detection, item 1 has two trials, and the whole-test stop rule is "2
+// consecutive zero-scored DISTINCT ITEMS" — not a running "3 consecutive
+// wrong answers" counter and not a category MIN_CORRECT threshold.
+
+const makeChorTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a rule-inference and cognitive-flexibility (set-shifting) task, styled as "find the thief's house." It is a fixed 11-item test, but its mechanics diverge substantially from this platform's generic fixed-question model — no single question has a single answer; each item requires 3 consecutive correct choices, some items silently swap the rule partway through, and the whole-test stop rule is based on distinct items, not a running per-question counter.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Cognitive — Rule Inference / Cognitive Flexibility (Set-Shifting) |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash.wav) plays automatically on load
+  "Start Now" activates only after audio completes
+  "Replay Audio" button available
+       ↓
+[Game Screen] — 11 fixed items, walked in order:
+  Item 1: TWO TRIALS (not phases) — Trial 1 up to 10 attempts, Trial 2 up
+    to 6 attempts, each needs 3 consecutive correct to pass
+  Items 2-5: single phase, 15 max attempts, needs 3 consecutive correct
+  Items 6-11: TWO PHASES per item — pass phase 1 (3 consecutive correct),
+    then the rule silently changes and the child must detect and pass
+    phase 2 (3 consecutive correct again); 18-21 max attempts depending
+    on item
+  Houses reshuffle position/appearance after every single attempt
+  Whole-test stop check runs after every item completes (see §5)
+       ↓
+[Results Screen]
+  Score out of the sum of all per-item max scores
+  Per-item breakdown (moves, mistakes, time, final rule detected)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+---
+
+## 3. Game Configuration
+
+\`\`\`
+TOTAL_QUESTIONS = 11   (GAME_DATA.items.length)
+\`\`\`
+
+There is **no** \`MAX_CONSECUTIVE_WRONG\` counter on a per-question basis and **no** category \`MIN_CORRECT\` threshold anywhere in this game — the generic platform template's language for both does not apply here. Each item is entirely self-contained, hardcoded in \`GAME_DATA.items\` (lines 40–167 of the source), with its own:
+
+| Field | Purpose |
+|---|---|
+| \`maxAttempts\` / \`maxAttemptsTrial1\` / \`maxAttemptsTrial2\` | Attempt ceiling before the item auto-fails at 0 |
+| \`hasTrials\` | \`true\` only for item 1 (two trials, not phases) |
+| \`maxPhases\` | \`1\` for items 1–5, \`2\` for items 6–11 (mid-item rule change) |
+| \`consecutiveRequired\` | \`3\` (single number for items 1–5, or \`[3, 3]\` per-phase for items 6–11) |
+| \`scoring\` | Move-count → score lookup table (see §6) |
+| \`houses\` | Base house appearance data (roof type/color, wall color, window count) — randomized per attempt by \`applyItemNDynamic\` functions |
+
+Content is **fully hardcoded** — there is no dedicated content-manager component and no \`useTestContent\` hook call anywhere in this file. The only admin lever is a generic per-item active/inactive toggle via the shared Elements panel (\`GET /public/elements?test_id=${game.key}\`) — a source comment explicitly guards against confusing this with content editing: *"GAME_DATA.items must NEVER be filtered/reordered ... Deactivation is purely a navigation-layer skip over the intact array."*
+
+---
+
+## 4. Gameplay Mechanics
+
+### The Rule-Inference Mechanic
+\`\`\`
+1. Four houses are shown, each with a hidden attribute set (roof color,
+   wall color, window count, screen position)
+2. One house is "correct" per a hidden rule the item defines (e.g.
+   "red roof," "2 windows," "the house clockwise from the last correct one")
+3. The child taps a house
+4. Correct → treasure animation + applause audio, houses reshuffle
+   (appearance AND position re-randomized), correctTouchCount increments
+5. Incorrect → "neglect" audio, correct house briefly highlighted,
+   houses reshuffle, correctTouchCount resets to 0
+6. Once correctTouchCount reaches consecutiveRequired (3), the item/phase
+   is passed (handleMilestone)
+7. If maxAttempts is exhausted first, the item/phase auto-fails at score 0
+   (handleMaxAttempts)
+\`\`\`
+This is fundamentally **not** a single-question-single-answer mechanic — each item is itself a small rule-learning task requiring sustained correct performance, not a single click judged right or wrong.
+
+### Item 1 — Two Trials (Not Phases)
+\`\`\`
+Trial 1: up to 10 attempts to reach 3 consecutive correct
+Trial 2: up to 6 attempts (only reached if Trial 1 failed)
+\`\`\`
+\`hasTrials: true\` is unique to item 1 — every other item uses phases (or a single phase), not trials. Trial 1 and Trial 2 produce **differently-shaped** \`itemResults\` records — see §7.
+
+### Items 6–11 — Mid-Item Silent Rule Change
+\`\`\`
+Phase 1: child must reach 3 consecutive correct on the FIRST rule
+  (e.g. "blue roof")
+On phase 1 pass: the rule silently swaps to a second rule
+  (e.g. "4 windows") — no announcement to the child
+Phase 2: child must detect the new rule and again reach 3 consecutive
+  correct, this time against the new attribute
+\`\`\`
+This mid-item rule swap — requiring the child to notice their previously-correct strategy has stopped working and adapt — is the actual cognitive-flexibility construct this game measures. \`isRuleSelection\`, \`phase2Rule\`, and \`lastCorrectPosition\` (for rules based on relative position, like "clockwise from last correct") are the key state driving this.
+
+### Timers
+- **Per-item timer** (\`timerSeconds\`): resets at the start of each item; its value (or the phase-split value, see §7) becomes that item's recorded time.
+- No time limit enforces a cutoff — timers are recorded for reporting only.
+
+---
+
+## 5. Whole-Test Stop Rule — 2 Consecutive Zero-Scored Distinct Items
+
+This is **not** a running "3 consecutive wrong answers" counter, and **not** a category minimum. It is recomputed fresh from the full \`itemResults\` array every time an item completes, via \`checkDropCondition\`:
+
+\`\`\`js
+const checkDropCondition = (results) => {
+  const distinctScores = [];
+  const seenIds = [];
+  for (const r of results) {
+    const idx = seenIds.indexOf(r.itemId);
+    if (idx === -1) {
+      seenIds.push(r.itemId);
+      distinctScores.push({ itemId: r.itemId, score: r.score });
+    } else {
+      distinctScores[idx].score = Math.max(distinctScores[idx].score, r.score);
+    }
+  }
+  if (distinctScores.length < 2) return false;
+  const last1 = distinctScores[distinctScores.length - 1];
+  const last2 = distinctScores[distinctScores.length - 2];
+  return last1.score === 0 && last2.score === 0;
+};
+\`\`\`
+
+**Key behaviors:**
+- Results are **deduplicated by \`itemId\`** first, keeping the **maximum** score seen for that item — this matters specifically for item 1, whose two trials both push separate \`itemResults\` records; only the better of the two trial scores counts toward this check.
+- The check looks at the **last two distinct items**, not the last two raw result records.
+- Stops the whole test only if **both** are exactly 0.
+- This is recomputed from scratch each time, not an incrementing counter — there is no \`consecutiveZeros\`-style state variable in this file.
+
+**A prior documentation claim was found and corrected**: an existing note elsewhere in this doc system asserted Chor Machaye Shor shares the platform's "3 consecutive zero-score questions" convention with a few other games, based on a comment found in a *different* game's source file. That comment's claim about this game is **not substantiated in \`ChorMachayeShorGame.jsx\`** — no such cross-reference exists here, and the real rule (2 consecutive zero-scored distinct *items*, not questions) is materially different. Don't rely on that other doc's cross-game claim when reasoning about this game.
+
+---
+
+## 6. Score Calculation
+
+Each item has its own move-count → score lookup table, e.g. item 2:
+\`\`\`js
+[{ minMoves: 3, maxMoves: 4, score: 5 }, { minMoves: 5, maxMoves: 6, score: 4 }, ...]
+\`\`\`
+Score is looked up by how many attempts (moves) it took to reach the consecutive-correct target. Items that exhaust \`maxAttempts\` without reaching the target score **0**. There is no partial credit outside the defined move-count bands.
+
+Total possible score is the sum of every item's maximum achievable score across the 11-item bank (varies per item's own table — not a single fixed number like 25 or 44 on other games; see **Score & Progression Logic** for the per-item breakdown).
+
+---
+
+## 7. Session State Management — The \`itemResults\` Deviation
+
+### Resume Flow
+\`\`\`
+On game load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a resumable session is found → show Resume modal:
+    [Resume]        → restores itemResults, currentItemIndex, currentTrial,
+                       currentPhase, phase2Rule, and all in-progress counters
+    [Start Fresh]    → the old session is explicitly marked dropped via
+                       POST /games/sessions/:sessionId { status: 'dropped' },
+                       then a new session starts
+\`\`\`
+
+### State Saved to Server
+\`\`\`js
+{
+  itemResults,   // NOT allScores — see below for the exact per-record shape
+  currentItemIndex, currentTrial, currentPhase, currentMove, correctTouchCount,
+  isRuleSelection, phase2Rule, lastCorrectPosition, timerSeconds,
+  currentAttempts, totalScore, screen,
+  screentime,
+  retakeCount, itemRetakes
+}
+\`\`\`
+
+**This game saves \`saved_state.itemResults[]\`, not \`saved_state.allScores[]\`** — a genuinely different top-level field with its own shape. This is confirmed server-side too: both \`gameController.js\` and \`analysisController.js\` have dedicated \`itemResults\`-aware branches, including a bespoke SQL \`JSON_TABLE('$.itemResults[*]' COLUMNS (itemId, trial, itemName, score, moves, mistakes, completed, timeTaken))\` query in \`analysisController.js\` specifically for this game.
+
+### \`itemResults\` Per-Record Shape (NOT Schema-Uniform)
+
+Most records (built in \`finalizeItem\`):
+\`\`\`js
+{
+  itemId, itemName, score, moves, timeTaken, completed,
+  phase1Time, phase2Time, mistakes, consecutiveBreaks,
+  finalRule, trial, retakes
+}
+\`\`\`
+
+Item 1's Trial 1 records (built in \`handleMilestone\`/\`handleMaxAttempts\`) are **missing several fields** present on every other record:
+\`\`\`js
+{ itemId, itemName, score, moves, timeTaken, completed, trial, retakes }
+// no phase1Time, phase2Time, mistakes, consecutiveBreaks, or finalRule
+\`\`\`
+
+Any tooling or report that assumes every \`itemResults\` entry has the same fields will break or silently produce \`undefined\` for item 1 Trial 1 records — worth knowing before writing new analysis code against this game's data.
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', pause state saved
+Quit  → status = 'quit', quit_reason saved, screen → Results, PDF generation triggers
+\`\`\`
+A reason (typed or dictated) is required before either action confirms.
+
+---
+
+## 8. Assessment Form Integration
+
+After the results screen appears, \`SessionAssessmentForm\` renders — see **Assessment Behavior** for the full field list, validation rules (Q5 is required, not optional), and the confirmation-modal step before submission.
+
+---
+
+## 9. PDF Dashboard Generation
+
+\`\`\`
+1. Locate #dashboard-container (the results screen's root element — note
+   this game uses a different id than most others' #dashboard-capture-area)
+2. Clone it into a detached wrapper appended directly to document.body
+   (not inside .chor-app) — specifically works around a backdrop-filter +
+   overflow:hidden ancestor chain that would otherwise clip the score
+   circle/table out of the capture
+3. Strip animations/transitions, force overflow-x/y:visible on scrollable
+   descendants
+4. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight, logging: false })
+5. canvas.toDataURL('image/jpeg', 0.9)
+6. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+7. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_Chor_Machaye_Shor_SES<sessionId>_<ts>.pdf"
+  child_id, session_id, game_name: '${game.key}'
+\`\`\`
+PDF failures are logged to console only — notably, this happens **inside the same \`submitAssessment\` flow** that alerts the user on other failures, so an assessor can see "Assessment Submitted!" even if the PDF silently failed to generate/upload.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Splash: <audio src=".../splash.wav" onEnded={()=>setAudioFinished(true)} />
+
+In-game feedback (via playAudio() promise wrapper, 3s timeout fallback):
+  cm_appalause   — correct answer
+  cm_neglect     — incorrect answer / rule-change highlight
+  cm_thief_caught — item fully completed
+\`\`\`
+All audio resolves through \`useTestAudio('${game.key}')\`, with static fallback paths under \`/assets/audios/chor_machaye_shor/\` if no admin override exists.
+
+---
+
+## 11. Content Management (Activation Toggle Only)
+
+Like Lottery Ka Ticket and Chalo Mela Chalen, this game's item content is **not admin-authorable**. The only lever is:
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+  Returns active/inactive state per item id — GAME_DATA.items itself is
+  never filtered or reordered; deactivation is purely a navigation-layer
+  skip that walks past an inactive item without removing it from the array
+\`\`\`
+There is no dedicated admin content-manager component for this game (unlike \`MelaElements.jsx\` for Chalo Mela Chalen or \`HerPherElements.jsx\` for Her Pher V3) — item toggling goes through the generic Elements admin surface directly.
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Mark session dropped (on "Start Fresh" over a resumable session) | POST | \`/api/games/sessions/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch item activation overrides | GET | \`/api/public/elements?test_id=${game.key}\` |
+| Fetch audio overrides | GET | \`/api/public/audio-elements?test_id=${game.key}\` |
+
+Note the **dedicated POST to mark a session explicitly dropped** (\`POST /api/games/sessions/:sessionId\`) when the assessor chooses "Start Fresh" over a resumable prior session — this is a distinct endpoint pattern not seen in the other games reviewed so far, which typically just start a new session without explicitly closing out the old one this way.
+
+See **API & Data Flow** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+| State | Purpose |
+|---|---|
+| \`screen\` | \`splash \| game \| results\` |
+| \`currentItemIndex\` | Index into \`GAME_DATA.items\` (0–10) |
+| \`currentTrial\` | 1 or 2 — item 1 only |
+| \`currentPhase\` | 1 or 2 — items 6–11 only |
+| \`correctTouchCount\` | Running count toward \`consecutiveRequired\` (3), resets on any wrong tap |
+| \`currentMove\` | Attempt counter within the current item/trial/phase |
+| \`isRuleSelection\` | True during the brief post-phase-change "figure out the new rule" state |
+| \`phase2Rule\` | The discovered phase-2 rule object once detected |
+| \`lastCorrectPosition\` | Grid slot of the last correct house — used for relative-position rules |
+| \`itemResults\` | The accumulated per-item score records — saved as \`saved_state.itemResults\` |
+| \`currentMistakes\` / \`currentConsecutiveBreaks\` | Per-item error tallies folded into the result record |
+| \`phase1TimeTaken\` | Split timer value used to compute \`phase1Time\`/\`phase2Time\` on two-phase items |
+| \`houses\` | The 4 currently-rendered house objects (regenerated each attempt) |
+| \`interactionLocked\` | Disables house taps during feedback animations |
+| \`elementOverrides\` | Admin per-item active/inactive map |
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`showResumeModal\` / \`pendingResumeData\` | Resume-prompt modal state |
+| \`showPauseModal\` / \`quitReason\` / \`isPaused\` | Pause/Quit modal state |
+| \`audioFinished\` | Gates splash "Start Now" |
+| \`assessment\` / \`isAssessmentSubmitting\` / \`assessmentSubmitted\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+| \`sessionTimerSec\` | Total screentime shown in results |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Resume check fail             → console.error only, falls back to startNewSession
+Progress save fail (autosave) → console.error only, gameplay continues,
+                                 NO user-facing feedback at all
+Element-overrides fetch fail  → fully silent (.catch(() => {}))
+PDF generation/upload fail    → console.error only — happens inside the
+                                 SAME submitAssessment flow that alerts on
+                                 other failures, so the assessor may see
+                                 "Assessment Submitted!" even if the PDF failed
+Pause/Quit with empty reason  → alert shown, blocked until a reason is entered
+Missing session id            → alert shown
+STT unsupported               → alert shown
+Assessment submit fail        → alert shown, INCLUDES the actual server error
+                                 message text (not just a generic message)
+\`\`\`
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Config: continuous: true, interimResults: true, lang: STT_LANG_MAP[language]
+Targets: quitReason (Pause/Quit modal, target 'quit') · assessment.notes (target 'notes'/'assessmentNotes')
+\`\`\`
+A global cleanup effect on unmount force-stops \`window.activeRecognition\` to release the microphone.
+
+---
+
+## 16. Technical Notes
+
+- **The whole-test stop rule is 2 consecutive zero-scored DISTINCT ITEMS, not 3 consecutive wrong questions.** This is the single most important correction versus the platform's generic template — do not describe this game using the standard "consecutiveWrong >= 3" language.
+- Item 1's two \`itemResults\` records (Trial 1, Trial 2) have a **narrower field set** than every other item's record — missing \`phase1Time\`/\`phase2Time\`/\`mistakes\`/\`consecutiveBreaks\`/\`finalRule\`. Any code reading this data uniformly across items needs to handle that.
+- \`checkDropCondition\` **deduplicates by \`itemId\` and keeps the max score** before checking the last two — meaning item 1's better trial result is what counts, not both trials separately.
+- The PDF capture target here is \`#dashboard-container\`, not \`#dashboard-capture-area\` like most other games — worth knowing if writing cross-game tooling that assumes a single consistent element id.
+- This game explicitly marks an abandoned session as \`'dropped'\` via a dedicated POST when the assessor chooses "Start Fresh" over resuming — most other games reviewed so far just start a new session without this extra step.
 
 ---
 
@@ -8672,16 +9061,13 @@ const Sidebar = ({ catalog, expandedGame, selectedGame, selectedSection, onHome,
                                         }}>
                                             {sec.label}
                                         </span>
-                                        {sec.available && (
+                                        {sec.available && sec.legacy && (
                                             <span style={{
                                                 fontSize: '0.5rem', fontWeight: 700, padding: '1px 6px',
                                                 borderRadius: '999px', flexShrink: 0, letterSpacing: '0.04em',
-                                                ...(sec.legacy
-                                                    ? { background: 'rgba(245,158,11,0.1)', color: '#92400e', border: '1px solid rgba(245,158,11,0.3)' }
-                                                    : { background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)' }
-                                                ),
+                                                background: 'rgba(245,158,11,0.1)', color: '#92400e', border: '1px solid rgba(245,158,11,0.3)',
                                             }}>
-                                                {sec.legacy ? '2013' : 'LIVE'}
+                                                2013
                                             </span>
                                         )}
                                     </button>
@@ -12809,6 +13195,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryTechDocTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3TechDocTemplate(selectedGame) :
                                 selectedGame.key === 'rover_mela' ? makeRoverMelaTechDocTemplate(selectedGame) :
+                                selectedGame.key === 'cognitive_flex_chor' ? makeChorTechDocTemplate(selectedGame) :
                                 makeTechDocTemplate(selectedGame)
                             }
                         />
