@@ -64,6 +64,7 @@ const HIDDEN_SECTIONS_BY_GAME = {
     numeracy_number_skill_v3: ['technical_docs_2013', 'reports'],
     number_recall_lottery: ['reports'],
     working_memory_herpher_v3: ['reports'],
+    rover_mela: ['reports'],
 };
 const getVisibleSections = (game) =>
     GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
@@ -171,6 +172,20 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'इस Test का उद्देश्य बच्चे की बुनियादी गणितीय क्षमता का आकलन करना है।',
             description: 'इस गतिविधि में बच्चे संख्याओं की पहचान, गिनती और सरल गणितीय सवालों को हल करते हैं। इससे बच्चे की बुनियादी गणितीय समझ का आकलन किया जाता है।',
             guidance:    'संख्याओं और सवालों को ध्यान से देखो। सोचो और अपना सर्वश्रेष्ठ उत्तर दो। तुम गणित में बहुत अच्छे हो!',
+        },
+    },
+    rover_mela: {
+        en: {
+            skill:       'Visuospatial Planning - Maze Route Navigation',
+            objective:   'This test assesses the child\'s visuospatial planning and route-finding ability by measuring how efficiently they can navigate a token from a start point to an end point on a grid, avoiding a hazard cell and staying within a limited move budget. Grids grow progressively larger and more complex across 18 scored rounds.',
+            description: 'The child plans and taps a path for a token to travel across a grid, from a starting square to a finish square, while avoiding a hazard cell and managing a limited number of moves. Grids get bigger and more complex as the test progresses. This activity helps evaluate how well a child can plan a route and adapt their thinking under a limited move budget.',
+            guidance:    'Look at the whole grid before you start moving. Plan your path and watch out for the danger square! Take your time.',
+        },
+        hi: {
+            skill:       'दृश्य-स्थानिक योजना - भूलभुलैया मार्ग नेविगेशन',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की दृश्य-स्थानिक योजना और मार्ग खोजने की क्षमता का आकलन करना है, यह मापकर कि वह एक ग्रिड पर शुरुआती बिंदु से अंतिम बिंदु तक टोकन को कितनी कुशलता से ले जा पाता है, खतरे वाले सेल से बचते हुए और सीमित चालों के भीतर रहते हुए। 18 अंकित राउंड में ग्रिड धीरे-धीरे बड़े और जटिल होते जाते हैं।',
+            description: 'बच्चा एक ग्रिड पर टोकन के लिए रास्ता योजना बनाता है और उसे चलाता है, शुरुआती चौकोर से अंतिम चौकोर तक, खतरे वाले सेल से बचते हुए और सीमित चालों को संभालते हुए। टेस्ट आगे बढ़ने के साथ ग्रिड बड़े और जटिल होते जाते हैं। यह गतिविधि यह आकलन करने में मदद करती है कि बच्चा सीमित चाल बजट के तहत मार्ग की योजना कैसे बनाता है और अपनी सोच को कैसे अनुकूलित करता है।',
+            guidance:    'चलना शुरू करने से पहले पूरे ग्रिड को देखो। अपने रास्ते की योजना बनाओ और खतरे वाले चौकोर से सावधान रहो! जल्दी मत करो।',
         },
     },
     working_memory_herpher_v3: {
@@ -1531,6 +1546,172 @@ The score column in \`game_sessions\` always reflects the most recent saved valu
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Chalo Mela Chalen Score & Progression Logic ───────────────────────────────
+// This game IS a genuine fixed-question test — the generic model mostly fits.
+// What's wrong for this game specifically: the stop rule is NOT "3 consecutive
+// wrong" and NOT a per-category MIN_CORRECT — it's a one-time clinical
+// drop-out gate on exactly q1/q2/q3, and each question's score depends on move
+// EFFICIENCY (which of two thresholds was met), not simple success/failure.
+
+const makeRoverMelaScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+This document explains how the scoring system works for **${game.title}** — what actions earn points, how scores are recorded per question, how the final score is calculated, and the stop rule that determines when the assessment ends early. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+
+---
+
+## 2. Score Unit
+
+Each question in **${game.title}** is scored 0, 1, or 2 points, based on **move efficiency**, not simple success/failure:
+
+\`\`\`
+Teaching questions (tq1–tq4):
+  Trial 1 succeeds → 2 points (trial 2 skipped entirely)
+  Trial 1 fails, trial 2 succeeds → 1 point (max)
+  Both trials fail → 0 points
+
+Scored questions (q1–q18):
+  moveCount === config.t2 (the optimal/efficient move count) → 2 points
+  moveCount <= config.t1 (a more generous threshold)          → 1 point
+  Timeout, Hit Weed, or Out of Coins (never reached end)      → 0 points
+\`\`\`
+
+Reaching the end point at all does **not** guarantee more than 1 point — only reaching it at the *optimal* move count (\`t2\`) earns the full 2 points. This is a materially different scoring model from a simple binary correct/incorrect.
+
+---
+
+## 3. Scoring Method — Fully Automatic, Move-Count Based
+
+There is **no manual/assessor-click scoring anywhere in this game**:
+
+\`\`\`
+Child taps adjacent cells to move a token from start to end
+The system tracks move count, elapsed time, and whether a hazard cell was hit
+On reaching the end point (or failing), the score is looked up automatically
+from the question's move-count thresholds
+\`\`\`
+Each scored question allows **one free "Refresh"** (restart the trial) — using it does not affect the eventual score, only how many attempts it took to reach the recorded result.
+
+---
+
+## 4. Per-Question Score Record
+
+Every answered question produces a score record within \`saved_state.allScores\`, built verbatim as:
+
+\`\`\`js
+{ id: s.id, score, moves: moveCount, trial: s.currentTrial, timeTaken, path: pathToSave, failReason: isSuccess ? null : reason }
+\`\`\`
+
+Example:
+\`\`\`json
+{
+  "id": "q7",
+  "score": 1,
+  "moves": 9,
+  "trial": 1,
+  "timeTaken": 42,
+  "path": [[0,0], [0,1], [1,1], "..."],
+  "failReason": null
+}
+\`\`\`
+
+| Field | Description |
+|---|---|
+| \`id\` | Question identifier (e.g. \`tq1\`, \`q7\`) |
+| \`score\` | 0, 1, or 2 — see §2 |
+| \`moves\` | How many moves the token actually took |
+| \`trial\` | Which trial this result came from (relevant for teaching questions, which allow up to 2) |
+| \`timeTaken\` | Seconds elapsed for this question |
+| \`path\` | The actual sequence of grid cells the token traversed |
+| \`failReason\` | \`null\` on success, otherwise which fail condition triggered (Timeout / Hit Weed / Out of Coins) |
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`
+Total Score = sum of all per-question scores (0, 1, or 2 each)
+Maximum possible = 44   (4 teaching questions × 2 + 18 scored questions × 2)
+\`\`\`
+
+This is updated after every question and saved to the \`game_sessions.score\` column.
+
+**Example:**
+
+| Question | Outcome | Score |
+|---|---|---|
+| tq1 | Trial 1 success | 2 |
+| tq2 | Trial 1 fail, trial 2 success | 1 |
+| q1 | Reached end at optimal move count | 2 |
+| q2 | Reached end above optimal but within t1 | 1 |
+| q3 | Hit the hazard cell | 0 |
+| **Running Total** | | **6** |
+
+---
+
+## 6. Score Display
+
+On the final results screen, the system displays:
+
+| Metric | Calculation |
+|---|---|
+| Total Score | sum across all questions, out of 44 |
+| Accuracy % | (total score ÷ 44) × 100 |
+| Total Time | sum of all \`timeTaken\` values |
+| Coins Collected / Budget | per-question coin usage vs. the allotted budget |
+
+---
+
+## 7. Score and Stop Rule Interaction
+
+Unlike games where the stop rule is checked after *every* question, **${game.title}**'s stop rule is checked exactly **once** — immediately after q3 completes. If q1, q2, and q3 all score below 2, the session ends there; otherwise the check never runs again for the rest of the session.
+
+---
+
+## 8. Stop Rule — Clinical Drop-Out Gate
+
+This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum-correct rule — the generic platform template's language for both does not describe this game accurately:
+
+\`\`\`
+Evaluated ONCE, immediately after q3:
+
+if (score(q1) < 2 AND score(q2) < 2 AND score(q3) < 2):
+    STOP → status = 'dropped'
+    q4 through q18 (15 questions) are never shown
+else:
+    continue normally to q4 and onward
+\`\`\`
+
+Scoring 2 on even one of q1/q2/q3 avoids the gate entirely — this is an "all three below threshold" condition, not "any single question failing."
+
+Because q1/q2/q3 feed this gate directly by id, they are **permanently locked active** in the admin content manager — an admin cannot deactivate any of the three, since doing so would be silently scored as 0 and could incorrectly trigger the drop-out.
+
+---
+
+## 9. Score Persistence
+
+Score is saved to the server:
+- After every question during active play (\`status: 'in_progress'\`)
+- At session end (\`status: 'completed'\` if all 18 scored questions were reached, \`'dropped'\` if the clinical gate triggered after q3, or \`'quit'\` if the assessor ended it manually)
+
+---
+
+## 10. What Does NOT Affect Score
+
+- Time taken, beyond the per-question time limit itself (no speed bonus for finishing early once above the optimal move count)
+- Number of pauses
+- Using the one free "Refresh" on a question — the refreshed attempt's outcome is what's scored, not whether a refresh happened
+- Whether the game was resumed from a saved state
+- The two scripted demo sequences (Sample A, Sample B) — these are non-interactive and never scored
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Assessment Behavior template (from SessionAssessmentForm.jsx actual values) ──
 
 const makeAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
@@ -2311,6 +2492,173 @@ System checks: sessions with status IN ('completed', 'quit', 'dropped')
 If found → Shows a prompt to the assessor to complete the form
 \`\`\`
 This game genuinely can produce a \`'dropped'\` status (via the 3-consecutive-zero-score stop rule), so \`'dropped'\` legitimately belongs in this check here.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the question scores. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not change when the assessment is submitted (score/status are independent)
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Chalo Mela Chalen Assessment Behavior — the SessionAssessmentForm itself ──
+// is shared/identical across games (same real bugs found and fixed here as for
+// the other games: Q5 is actually required, and there's a confirmation modal
+// the old generic template never documented). This game's one real deviation:
+// a failed submission shows a visible on-screen message, not a JS alert like
+// most other games.
+
+const makeRoverMelaAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
+
+---
+
+## 1. Overview
+
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
+
+---
+
+## 2. What Is Being Measured
+
+**${game.title}** is a structured visuospatial planning assessment. Beyond the question scores, the system tracks:
+
+- **Accuracy/efficiency** — whether the child reaches each grid's end point, and how move-efficient the route was
+- **Speed** — how long the child takes per question, against a per-question time limit
+- **Route strategy** — the actual path taken through each grid, recorded for later review
+- **Clinical threshold outcome** — whether the child cleared the q1/q2/q3 drop-out gate, a meaningful clinical signal in itself
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged
+
+---
+
+## 3. Behavioral Assessment Form
+
+After every game session (whether completed, dropped, or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with this game's mechanics.
+
+### Assessment Questions
+
+Exact wording shown on screen (\`en.js\` locale strings), addressed directly to the child:
+
+| # | Question | Response Options |
+|---|---|---|
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
+
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
+
+### Behavioral Observation Checkboxes (Q5)
+
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
+
+\`\`\`
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
+\`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission with "Please select at least one observed behaviour."
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+  → if any missing: inline errors shown, submission blocked
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+Dashboard PDF auto-generated and uploaded
+       ↓
+"Retest" and "Home" buttons appear
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+**Failure handling is different for this game**: if the \`POST /api/games/assessments\` call fails, most other SANGIAN games show a JS \`alert()\`. This game instead sets a visible on-screen message (\`assessmentSaveMsg\`, e.g. "❌ Failed to save assessment...") rendered inline in the form — worth knowing if writing cross-game QA scripts that check for a specific failure-handling pattern.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes, drops out, or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit', 'dropped')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+This game genuinely can produce a \`'dropped'\` status — via the clinical drop-out gate on q1/q2/q3 (see **Score & Progression Logic**), not a consecutive-wrong-answer or per-category rule — so \`'dropped'\` legitimately belongs in this check here.
 
 ---
 
@@ -4198,6 +4546,341 @@ Config: lang: STT_LANG_MAP[language] || 'en-US'
 - Scoring is **not** simply "did you click all N images correctly" — the \`SCORING_RULES\` table means a specific correct-click count can score 0 if it's not one of the table's listed thresholds for that question.
 - \`getPerformanceInterpretation\` exists in source but does not appear to be wired into the visible score screen — likely dead/unused code, not a documented UI feature.
 - A resumed session replays with the **same** \`gameData\` (image set) it started with, since that's persisted in \`saved_state\` — it does not re-randomize on resume.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Chalo Mela Chalen Technical Documentation ─────────────────────────────────
+// This game IS a genuine fixed-question test (flat allScores/screen/questionState
+// shape, fully hardcoded 22-grid item bank) — so most of makeTechDocTemplate's
+// model fits. What's wrong for THIS game specifically: there is no consecutive-
+// wrong stop rule and no per-category MIN_CORRECT threshold — the actual stop
+// rule is a ONE-TIME clinical drop-out gate on exactly q1/q2/q3, and unlike Her
+// Pher V3, this game's content is NOT admin-authorable at all (admin can only
+// toggle active/inactive + a subtitle label).
+
+const makeRoverMelaTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a visuospatial route-planning maze task (navigate a token across a grid to a finish square, avoiding a hazard cell, within a limited move budget). It IS a genuine fixed-question test (fully hardcoded 22-grid item bank, deterministic per-item scoring) — but unlike the platform's generic fixed-question template, its stop rule is **not** "3 consecutive wrong answers" and **not** a per-category minimum — it's a one-time clinical drop-out gate on exactly 3 named questions.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Cognitive — Visuospatial Planning (Maze Route Navigation) |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash.wav) plays automatically on load
+  "Start Now" activates only after audio completes
+  "Replay Audio" button available
+       ↓
+[Sample A] — scripted, non-interactive demo: a token auto-walks 3 example
+  paths on a demo grid, synced to voice-over, before unlocking Teaching Q1
+       ↓
+[Teaching Questions tq1–tq4] — practice grids (4x4/5x5), up to 2 trials each,
+  interleaved into the main sequence (see §3 QUESTION_SEQUENCE)
+       ↓
+[Sample B] — a second scripted demo, shown before the harder tq3/tq4 grids
+  that introduce the "toll" (double-cost) cell
+       ↓
+[Scored Questions q1–q18] — grids from 4x4 up to 6x6, each with its own
+  time limit and coin (move) budget
+  ONE-TIME drop-out gate after q3: if q1, q2, AND q3 all score < 2, the
+  session ends immediately and q4–q18 are never shown
+       ↓
+[Results Screen]
+  Score out of 44
+  Per-question result cards (path taken, coins used, move count, pass/fail reason)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+---
+
+## 3. Game Configuration
+
+\`\`\`
+QUESTION_SEQUENCE = ['tq1','tq2','q1','tq3','tq4','q2','q3','q4', ..., 'q18']
+TOTAL_QUESTIONS = 18   (scored items only — teaching items are separate)
+MAX_SCORE = 44
+\`\`\`
+
+There is **no** \`MAX_CONSECUTIVE_WRONG\` counter and **no** per-category \`MIN_CORRECT\` threshold anywhere in this game — the generic platform template's language for both does not apply here. Instead there is a single, one-time clinical gate (see §5).
+
+Each scored question has its own \`QUESTION_CONFIG\` entry: a time limit, a coin (move) budget, and two move-count thresholds (\`t1\`, \`t2\`) that determine whether an on-time finish scores 1 or 2 points (see §6).
+
+Grid cell types (used across all 22 hardcoded matrices):
+| Code | Meaning |
+|---|---|
+| \`7-SP\` | Start point |
+| \`7-T1\` | Normal traversable cell |
+| \`7-T2\` | Hazard ("weed") — stepping on it is an instant fail |
+| \`7-T3\` | Toll cell — costs 2 moves instead of 1 |
+| \`7-EP\` | End point |
+
+---
+
+## 4. Gameplay Mechanics
+
+### The Route-Planning Mechanic
+\`\`\`
+1. The grid for the current question is displayed with the start (7-SP)
+   and end (7-EP) cells marked
+2. The child taps adjacent cells to move the token step by step
+3. move.wav / wrong_move.wav play on valid/invalid taps
+4. The token must reach 7-EP within the coin (move) budget and time limit,
+   without stepping on a 7-T2 hazard cell
+5. One free "Refresh" (restart this trial) is allowed per scored question
+\`\`\`
+
+### Fail Conditions (per question)
+\`\`\`
+Timeout        — the countdown timer reaches 0 before reaching 7-EP
+Hit Weed       — the token steps on a 7-T2 cell (instant fail)
+Out of Coins   — the move count reaches the coin budget before reaching 7-EP
+\`\`\`
+
+### Teaching Questions (tq1–tq4)
+\`\`\`
+Up to 2 trials allowed per teaching question.
+Trial 1 succeeds → score 2, trial 2 is skipped entirely.
+Trial 1 fails    → trial 2 auto-starts; trial 2 succeeding scores 1 (max).
+One retake is allowed (retakeCount < 2) across the teaching questions.
+\`\`\`
+
+### Timers
+- **Per-question countdown**: set per \`QUESTION_CONFIG[id]\`, ranges from 60s to 180s depending on grid difficulty.
+- **Session timer** (\`screentime\`/\`timerSeconds\`): counts total session seconds during active play.
+
+---
+
+## 5. Stop Rule — Clinical Drop-Out Gate
+
+This is **not** a consecutive-wrong-answer rule and **not** a per-category minimum. It is a single, one-time check performed immediately after q3 completes:
+
+\`\`\`js
+if (q1s < 2 && q2s < 2 && q3s < 2) {
+  isDropped = true
+  screen = 'results'
+  saveToServer('dropped', ..., 'Clinical Drop-Out Rule Triggered (Q1-Q3 < 2)', true)
+} else {
+  // proceed to q4 and onward normally
+}
+\`\`\`
+
+If the child scores below 2 on **all three** of q1, q2, and q3, the session ends immediately with status \`'dropped'\`, and the remaining 15 scored questions (q4–q18) are **never shown**. Scoring even one of q1/q2/q3 at 2 or above avoids the gate entirely — this is an all-three-below-threshold condition, not "any one question failing."
+
+Because q1/q2/q3 feed this hardcoded gate directly, they are **permanently locked active** in the admin content manager (\`PROTECTED_KEYS\` in \`MelaElements.jsx\`) — deactivating any of them would silently be scored as 0 in the game, which could trigger the drop-out gate incorrectly.
+
+---
+
+## 6. Score Calculation
+
+\`\`\`
+Teaching questions (tq1–tq4):
+  trial 1 success → score 2
+  trial 2 success (only reached if trial 1 failed) → score 1
+  both trials fail → score 0
+
+Scored questions (q1–q18):
+  moveCount === config.t2  → score 2
+  moveCount <= config.t1   → score 1
+  otherwise (timeout / hit weed / out of coins) → score 0
+\`\`\`
+
+Total Score = sum of all per-question scores, **maximum 44**. This is a move-efficiency-based score, not a simple pass/fail — reaching the end point slower (more moves) than the \`t1\` threshold, or exactly at the \`t2\` (optimal) threshold, produces different point values for the same "successful" outcome.
+
+---
+
+## 7. Session State Management
+
+### Resume Flow
+\`\`\`
+On game load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a paused/in-progress session is found → show Resume modal:
+    [Resume]      → restores allScores, screen (current question id),
+                     questionState, isDropped, coin/refresh/retake counts,
+                     and the exact countdown time remaining
+    [Start Fresh] → discard it, start a new session
+\`\`\`
+
+### State Saved to Server
+\`\`\`js
+{
+  allScores, totalScore,
+  unlockedPaths, completedPaths,   // demo-sequence animation gating, not game logic
+  screen,                          // current question id, doubles as progress pointer
+  questionState,                   // the core per-question play state (grid/path/timer/trial)
+  isDropped,
+  refreshCount, retakeCount, collectedCoins,
+  tqTrials,
+  screentime
+}
+\`\`\`
+This is a flat \`allScores\`-array shape — the same architectural family as other fixed-question games, not the \`stage\`/\`path\`-based shape used by the platform's adaptive-ladder games. \`unlockedPaths\`/\`completedPaths\`/\`activePath\` are UI-animation bookkeeping for the two scripted demo sequences (Sample A/B), not adaptive routing state — don't confuse them with a ladder's stage-routing fields.
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', pause event with reason appended
+Quit  → status = 'quit', quit_reason saved, screen → Results, PDF generation triggers
+\`\`\`
+A reason (typed or dictated) is required before either action confirms.
+
+---
+
+## 8. Assessment Form Integration
+
+After the results screen appears, \`SessionAssessmentForm\` renders — see **Assessment Behavior** for the full field list, validation rules (Q5 is required, not optional), and the confirmation-modal step before submission.
+
+---
+
+## 9. PDF Dashboard Generation
+
+\`\`\`
+1. Locate #dashboard-capture-area (the results screen's root element)
+2. Clone it into an off-screen wrapper (avoids clipping from the app
+   shell's backdrop-filter)
+3. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
+4. canvas.toDataURL('image/jpeg', 0.9)
+5. jsPDF('p','mm',[pdfWidth, pdfHeight]).addImage(...)
+6. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_Chalo_Mela_Chalen_SES<sessionId>_<ts>.pdf"
+  child_id, session_id, game_name: '${game.key}'
+\`\`\`
+PDF failures are logged to console only.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Splash: <audio src=".../splash.wav" onEnded={()=>setAudioFinished(true)} preload="auto" />
+
+Effect sounds (admin-overridable via useTestAudio):
+  move.wav, wrong_move.wav, timer_warning.wav, success.wav,
+  failure.wav, start_trial.wav
+
+Demo voice-over (Sample A / Sample B): sample_a, sa_path1/2/3,
+  sample_b, sb_path1/2, last_instruction — each with custom per-step
+  timing offsets to sync narration with the animated token movement
+\`\`\`
+All audio resolves through \`useTestAudio('${game.key}')\`, with static fallback paths under \`/assets/audios/chalo_mela_chale/\` if no admin override exists.
+
+---
+
+## 11. Content Management (Activation Toggle Only — Not Question Authoring)
+
+Unlike Her Pher V3 (fully dynamic image content), this game's actual content — the 22 grid layouts, cell types, and difficulty configuration — is **entirely hardcoded** in the frontend (\`MATRIX_P1\`, \`MATRIX_TQ1\`...\`MATRIX_Q18\`, \`QUESTION_CONFIG\`). There is no server-fetched item bank and no admin authoring path for maze content at all — \`MelaElements.jsx\` explicitly documents this: *"there's no add/delete/edit-matrix capability anywhere in this feature."*
+
+What admin **can** do, via the same generic elements pattern used across the platform:
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+  Returns activation state + optional subtitle/chips metadata per question id
+
+Admin editing surface: MelaElements.jsx
+  GET /api/admin/elements?test_id=${game.key}
+  PUT /api/admin/elements/config
+    → toggle a question active/inactive, edit its subtitle/chips label
+
+q1, q2, and q3 are PERMANENTLY LOCKED ACTIVE (PROTECTED_KEYS) — since
+their scores feed the hardcoded clinical drop-out gate directly,
+deactivating any of them would be silently scored as 0, which could
+incorrectly trigger drop-out.
+\`\`\`
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch question activation overrides | GET | \`/api/public/elements?test_id=${game.key}\` |
+| Fetch audio overrides | GET | \`/api/public/audio-elements?test_id=${game.key}\` |
+
+See **API & Data Flow** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+| State | Purpose |
+|---|---|
+| \`screen\` | Current question id — doubles as the progress pointer |
+| \`questionState\` | Core per-question play state: grid, current path, move count, timer, trial results |
+| \`allScores\` | Array of per-question score entries |
+| \`isDropped\` | Whether the clinical drop-out gate fired after q3 |
+| \`refreshCount\` / \`retakeCount\` | Retry budgets (1 free refresh per scored question, 1 retake across teaching) |
+| \`collectedCoins\` | Move-budget consumption tracking |
+| \`unlockedPaths\` / \`completedPaths\` / \`activePath\` / \`pathProgress\` / \`isAnimating\` | Sample A/B scripted demo animation state — not game logic |
+| \`elementOverrides\` | Admin question-activation overrides fetched from \`/public/elements\` |
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`startTime\` / \`qStartTime\` / \`timerSeconds\` | Session and per-question timing |
+| \`showResumeModal\` / \`pendingResumeData\` | Resume-prompt modal state |
+| \`showPauseModal\` / \`quitReason\` / \`isPaused\` | Pause/Quit modal state |
+| \`audioFinished\` / \`isCheckingSession\` | Gate splash "Start Now" / splash rendering |
+| \`assessment\` / \`isAssessmentSubmitting\` / \`assessmentSubmitted\` / \`assessmentSaveMsg\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Resume check fail             → console.error only, falls back to startNewGame
+Progress save fail (autosave) → console.error only, gameplay continues
+PDF generation/upload fail    → console.error only, never shown to the user
+Element-overrides fetch fail  → fully silent (.catch(() => {}))
+Pause/Quit with empty reason  → alert shown, blocked until a reason is entered
+STT unsupported / STT error   → alert shown
+Final assessment submit fail  → visible on-screen message (assessmentSaveMsg),
+                                 NOT a JS alert — different pattern from most
+                                 other games' assessment-failure handling
+\`\`\`
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Targets: quitReason (Pause/Quit modal) · notes (final assessment form)
+\`\`\`
+STT errors here use a **user-facing alert** (\`alert(t('game.speechError') + ' / iPad Error: ' + e.error)\`) — unlike most silent-by-default error handling elsewhere in this file, STT failures are always surfaced to the assessor.
+
+---
+
+## 16. Technical Notes
+
+- The stop rule is **not** "3 consecutive wrong answers" and **not** a per-category minimum — it's a single all-three-below-threshold check on q1, q2, and q3 specifically, evaluated exactly once, right after q3 completes. Documenting it with the generic platform's stop-rule language would misrepresent this game.
+- q1/q2/q3 are hardcoded into the drop-out check by id — this is a code-level dependency the admin content manager works around by locking those 3 questions permanently active, rather than the game reading a config-driven list.
+- This game's maze content is **not admin-authorable** at all, unlike Her Pher V3's fully dynamic image content — admin control here is limited to activation toggling and a cosmetic subtitle/chips label per question.
+- Two entirely scripted, non-interactive demo sequences (Sample A, Sample B) exist purely to teach the mechanic via animation + voice-over before the child ever controls the token themselves.
+- Scoring rewards move efficiency, not just success — reaching the end point exactly at the optimal move count (\`t2\`) scores higher than reaching it within the more generous \`t1\` threshold.
 
 ---
 
@@ -7254,6 +7937,497 @@ correct/incorrect) and the image-level match/miss breakdown
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Chalo Mela Chalen API & Data Flow ─────────────────────────────────────────
+// This game IS a genuine fixed-question test, so the generic API/Data Flow
+// model mostly fits (real 'dropped' status, allScores-style array). What needs
+// correcting: the stop condition is a one-time clinical gate on q1/q2/q3 (not a
+// per-question consecutive-wrong check), the per-record shape uses `moves` and
+// `path` fields (not a generic {qId,score,timeTaken}), and this game's content
+// endpoint only carries activation state, not authorable question content.
+
+const makeRoverMelaApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is a visuospatial route-planning assessment within the SANGIAN platform. The backend is responsible for creating and managing every game session, capturing per-question results in real time, applying a one-time clinical drop-out check after q3, storing assessment observations, and generating reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Saves gameplay progress and per-question scores (move-efficiency based, 0–2 points) in real time
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; question activation
+             overrides fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Navigates Grids (Teaching, then Scored) → Score saved after each question
+       ↓
+After Q3: Clinical Drop-Out Check → may end session immediately
+       ↓
+Game Ends (all 18 scored questions done, OR drop-out gate fired) →
+             Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving a score, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (question-activation + audio + language routes)
+/api/admin/    (admin content-management routes, via MelaElements.jsx)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/:gameName\` | Finds the latest session to resume | On game load |
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | After every question / on game end |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Detail | GET | \`/api/games/reports/detail/:gameName\` | Detailed session list for one game | Admin views game report |
+| **Fetch Question Activation** | GET | \`/api/public/elements?test_id=${game.key}\` | Loads which questions are active + optional subtitle/chips metadata | On game load |
+| **Fetch Audio Overrides** | GET | \`/api/public/audio-elements?test_id=${game.key}\` | Loads per-language audio asset overrides | On game load |
+
+The activation-fetch endpoint (bold) does **not** carry maze/grid content — the 22 grids are fully hardcoded in the frontend. It only carries an active/inactive flag and a cosmetic subtitle per question — see **Technical Documentation § Content Management** for why q1/q2/q3 can never be deactivated.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active 'in_progress' session already exists for the same
+child and game, the server returns the existing session ID
+instead of creating a duplicate record.
+
+During gameplay, the session is updated with:
+  - Current score (running total, 0-2 points per question)
+  - Progress level (scoresToSave.length)
+  - Saved state (full JSON snapshot, including questionState and
+    the two demo-animation gating fields)
+
+When the game ends:
+  - Status → completed (all 18 scored questions reached) / dropped
+    (clinical gate fired after q3) / quit (assessor ended it)
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked as 'quit' or 'dropped', the server
+will never allow it to be overwritten as 'completed'.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+\`'dropped'\` is a real status for this game — but unlike Lottery Ka Ticket or Her Pher V3 (where it can fire after any question via a repeating check), here it can **only** ever be set immediately after q3, and only once per session.
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "${game.key}"
+}
+\`\`\`
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real shape — see **Technical Documentation § Session State Management**):
+\`\`\`json
+{
+  "score": 6,
+  "progress_level": 3,
+  "status": "in_progress",
+  "saved_state": {
+    "allScores": [
+      { "id": "tq1", "score": 2, "moves": 3, "trial": 1, "timeTaken": 18, "path": ["[0,0]","[0,1]","[0,2]"], "failReason": null },
+      { "id": "q1",  "score": 1, "moves": 8, "trial": 1, "timeTaken": 34, "path": ["..."], "failReason": null }
+    ],
+    "totalScore": 3,
+    "screen": "q2",
+    "questionState": { "id": "q2", "grid": "...", "path": [], "moveCount": 0, "timer": 90 },
+    "isDropped": false,
+    "refreshCount": 0,
+    "retakeCount": 0,
+    "collectedCoins": 11,
+    "tqTrials": {},
+    "screentime": 96
+  }
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session updated"
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Game is actively being played
+paused       — Game is paused (resume popup will show on next visit)
+completed    — All 18 scored questions were reached
+dropped      — The q1/q2/q3 clinical drop-out gate fired (all three scored < 2)
+quit         — Assessor ended the session early
+\`\`\`
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Planned routes carefully but ran out of moves on the 6x6 grids."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/${game.key}\`
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "${game.key}",
+    "status": "paused",
+    "score": 5,
+    "progress_level": 3,
+    "saved_state": { "screen": "q3", "questionState": { "...": "..." }, "isDropped": false },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Internal game key (${game.key})
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — Sum of per-question points, out of 44
+progress_level  INT      — Count of questions answered so far
+status          ENUM     — in_progress / paused / completed / quit / dropped
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: allScores, screen, questionState,
+                            isDropped, refresh/retake/coin counters
+\`\`\`
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Questions Answered → saved_state JSON updated with each result
+       ↓
+After Q3 → clinical drop-out check runs exactly once
+       ↓
+Game Ends Normally → status = 'completed', end_time recorded
+Drop-Out Gate Fired → status = 'dropped'
+Game Quit Early     → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds the sum of per-question move-efficiency scores (0, 1, or 2 each), out of a possible 44 across 22 total questions (4 teaching + 18 scored) — not a simple correct-answer count.
+
+### Report Score Aggregation
+The Reports Detail API (\`GET /reports/detail/:gameName\`) reads the \`saved_state\` JSON and calculates:
+\`\`\`
+correct_count       = sum of per-question score values (0-2 each, not binary)
+attempted_questions = allScores.length
+actual_game_time    = sum of all timeTaken values
+total_session_time  = end_time - start_time (in seconds)
+\`\`\`
+Since \`isDropped\` sessions genuinely stop after q3, \`attempted_questions\` for a dropped session will typically be much lower (around 6, counting teaching items) than a completed session's 22 — this is expected, not a data quality issue.
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — "Did you enjoy playing the game?" | Single choice, required |
+| Q2 — "How did the game feel for you?" | Single choice, required |
+| Q3 — "Did you feel tired while playing the game?" | Single choice, required |
+| Q4 — "Would you like to play the game again?" | Single choice, required |
+| Q5 — Observed behaviors | Multi-select checkboxes, **required (≥1)** |
+| Additional Notes | Free text, optional |
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. \`'dropped'\` genuinely belongs in this check for this game.
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist |
+| 500 | Internal Server Error — database or processing failure |
+
+### Client-Side Resilience
+- Game continues running locally if a save API call fails
+- Session ID is stored in React state for the duration of gameplay
+- A failed assessment submission shows a visible on-screen message (\`assessmentSaveMsg\`) rather than a JS \`alert\` — a different pattern from most other games on this platform, see **Technical Documentation § Error Handling**
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard)
+
+---
+
+## 12. Visual Workflow
+
+The full visual API/session/stage-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game.
+
+---
+
+## 13. Developer Notes
+
+### Content Model Difference
+Unlike Her Pher V3, this game's maze content is **not** admin-authorable at all — the 22 grids are hardcoded JS constants. A content audit for this game means reading \`ChaloMelaChaleGame.jsx\` directly, not checking an admin content panel.
+
+### q1/q2/q3 Are Code-Level Dependencies
+The clinical drop-out gate reads \`allScores.find(s => s.id === 'q1')\` etc. directly by hardcoded id — there's no config-driven list of "gate questions." This is why the admin panel permanently locks these three active.
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. This game's shape (\`allScores\`/\`screen\`/\`questionState\`) is close to the platform's standard fixed-question shape, but with a \`path\` field per record (the actual grid-cell sequence traversed) that most simpler games don't carry.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New question metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order.
+
+### Stage 1 — Game Load (Resume Check + Content Fetch)
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+Purpose: Check if the child has an unfinished session
+\`\`\`
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+Purpose: Load which questions are active (q1/q2/q3 always active) and
+any subtitle/chips metadata — NOT the grid content itself, which is
+hardcoded
+\`\`\`
+
+### Stage 2 — Session Start
+
+\`\`\`
+POST /api/games/sessions/start
+Sends: child_id, game_name
+Receives: sessionId, attempt_no
+Database: New row in game_sessions, status = 'in_progress'
+\`\`\`
+
+### Stage 3 — Gameplay (Auto-Save)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends: score, progress_level: scoresToSave.length, status: 'in_progress',
+       saved_state (see §6 for the exact shape)
+\`\`\`
+
+### Stage 4 — Pause / Quit
+
+\`\`\`
+Pause: PUT .../update → status='paused', pause event appended
+Quit:  PUT .../update → status='quit', quit_reason saved, screen → Results,
+       PDF generation triggers
+\`\`\`
+
+### Stage 5 — Game End (Clinical Gate or Completion)
+
+\`\`\`
+Immediately after q3 completes:
+  if score(q1) < 2 AND score(q2) < 2 AND score(q3) < 2:
+    PUT .../update: { status: 'dropped', ... }
+    (q4-q18 never shown)
+  else: continue normally
+
+At the natural end (all 18 scored questions done):
+  PUT .../update: { status: 'completed', score: final sum, end_time: NOW() }
+\`\`\`
+
+### Stage 6 — Behavioral Assessment Submission
+
+\`\`\`
+POST /api/games/assessments
+Sends: session_id, child_id, q1-q4, q5_behaviors (≥1 required), additional_notes
+Database: New row in game_assessments
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+\`\`\`
+Clone #dashboard-capture-area off-screen → html2canvas(scale:1.5) →
+jsPDF → POST /api/games/pdfs/upload
+Filename: [ChildName]_Chalo_Mela_Chalen_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins game_sessions + children + game_assessments + game_dashboard_pdfs
+Parses saved_state JSON to extract per-question move-efficiency scores
+and path data, plus whether the session was dropped after q3
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
@@ -9517,6 +10691,231 @@ const makeHerPherV3WorkflowFlows = (game) => ({
     ],
 });
 
+// makeRoverMelaWorkflowFlows — Chalo Mela Chalen IS a genuine fixed-question
+// test (like Lottery Ka Ticket / Her Pher V3), so most of the shared model
+// fits. What's different: the stop rule is a ONE-TIME clinical drop-out gate
+// on exactly q1/q2/q3 (not a repeating consecutive-wrong or category check),
+// scoring is move-efficiency based (0/1/2 per question), and content (the 22
+// grids) is fully hardcoded — admin can only toggle activation, not author it.
+const makeRoverMelaWorkflowFlows = (game) => ({
+    journey: [
+        { type: 'start',    icon: '📱', title: 'Game Load',
+            simple:   'The child opens the game on their device.',
+            detailed: 'React component mounts. Child data is read from localStorage. If no child is logged in, user is redirected to login.',
+            technical:'useEffect → reads localStorage("currentChild") → if null, navigate("/login")' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'The system checks if the child has a previous unfinished session.',
+            detailed: 'The backend queries the latest session for this child and game. If found, a resume popup is shown, restoring the exact question, path state, and countdown time remaining.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nReturns: sessionInfo (saved_state with allScores, screen, questionState) or null` },
+        { type: 'decision', icon: '❓', title: 'Saved Session Found?',
+            simple:   'If a previous session is found, the child can choose to continue or start fresh.',
+            detailed: 'Resume restores allScores, the current question id, questionState, isDropped, and all retry/coin counters.',
+            technical:'sessionInfo found → showResumeModal = true\nResume → restores allScores, screen, questionState, isDropped, refreshCount, retakeCount, collectedCoins from saved_state',
+            branches: [{ label: 'Yes → Resume Prompt', color: '#f59e0b' }, { label: 'No → Splash Screen', color: '#10b981' }] },
+        { type: 'process',  icon: '🎵', title: 'Splash Screen',
+            simple:   'Game instructions are displayed and audio plays automatically.',
+            detailed: 'Background audio plays as soon as the splash screen loads. The "Start Now" button remains disabled until audio finishes.',
+            technical:'<audio src=".../splash.wav" onEnded={()=>setAudioFinished(true)} />' },
+        { type: 'api',      icon: '▶️', title: 'Session Created on Server',
+            simple:   'A unique session ID is created to track this child\'s game attempt.',
+            detailed: 'The server creates a new record in the database. If an active session already exists (deduplication guard), the existing ID is returned.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name: "${game.key}" }\nResponse: { sessionId, attempt_no }` },
+        { type: 'process',  icon: '🎬', title: 'Sample A (Scripted Demo)',
+            simple:   'A non-interactive demo shows a token auto-walking 3 example paths, synced to voice-over.',
+            detailed: 'The child does not control anything here — this teaches the mechanic before the child ever touches the grid themselves.',
+            technical:'startAutoDemoA() → animates token along PATH1_SEQ/PATH2_SEQ/PATH3_SEQ on MATRIX_P1 → unlocks Teaching Q1' },
+        { type: 'process',  icon: '🗺️', title: 'Teaching Questions (tq1–tq4)',
+            simple:   'The child gets hands-on practice on smaller grids, with up to 2 trials each.',
+            detailed: 'A second scripted demo (Sample B) plays before tq3/tq4, introducing the "toll" (double-cost) cell type.',
+            technical:'Trial 1 success → score 2 (trial 2 skipped)\nTrial 1 fail → trial 2 auto-starts, success caps at score 1' },
+        { type: 'process',  icon: '🔁', title: 'Scored Question Loop (q1–q18)',
+            simple:   'For each of the 18 scored grids: the child plans and taps a route, the score is recorded, and — once, after q3 — a clinical check may end the session early.',
+            detailed: 'See "Stage Flow" for the detailed per-question lifecycle and the exact drop-out condition.',
+            technical:'Grid rendered → token moves → success/fail determined → calcScore() → (after q3 only) clinical gate check → currentQuestion advances or setScreen("results")',
+            isRef: true, refLabel: 'See Stage Flow →' },
+        { type: 'process',  icon: '📊', title: 'Results Screen',
+            simple:   'The final score and all question results are displayed.',
+            detailed: 'Results screen shows: total score out of 44, accuracy %, total time, coins collected vs. budget, and a per-question results table with path/move breakdown.',
+            technical:'setScreen("results") → total = sum of allScores[].score\nResults table rendered from allScores, including path/moves/failReason per entry' },
+        { type: 'process',  icon: '📋', title: 'Assessment Form',
+            simple:   'The assessor fills in behavioral observations about the child\'s session.',
+            detailed: 'Four required questions (radio buttons) + eight behavioral checkboxes (at least 1 required) + free-text notes with voice dictation support, confirmed via a modal before submission.',
+            technical:'<SessionAssessmentForm /> component renders\nQ1–Q5 required (Q5 needs >=1 checked)\nConfirm modal → submitAssessmentForm()' },
+        { type: 'api',      icon: '💾', title: 'Assessment Saved',
+            simple:   'The assessor\'s observations are saved to the system.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID. Unlike most other games, a failed save shows an inline on-screen message rather than a JS alert.',
+            technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }' },
+        { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
+            simple:   'A PDF summary of the session is automatically created and saved.',
+            detailed: 'The results screen (#dashboard-capture-area) is cloned off-screen, captured as a high-resolution image, and embedded in an A4 PDF.',
+            technical:'Clone #dashboard-capture-area off-screen → html2canvas(scale:1.5) → jsPDF → POST /api/games/pdfs/upload\nFilename: [ChildName]_Chalo_Mela_Chalen_SES[id]_[timestamp].pdf' },
+        { type: 'success',  icon: '✅', title: 'Session Complete',
+            simple:   'The assessment is finished. The admin can now view the full report.',
+            detailed: 'Session status is "completed" (all 18 scored questions reached) or "dropped" (the q1/q2/q3 clinical gate fired).',
+            technical:'game_sessions.status = "completed" | "dropped", end_time = NOW()\nReport available: GET /api/games/reports/detail/:gameName' },
+    ],
+
+    question: [
+        { type: 'start',    icon: '🗺️', title: 'Grid Displayed',
+            simple:   'The current question\'s grid is shown with the start and end cells marked.',
+            detailed: 'A countdown timer starts, and a coin (move) budget is set per this question\'s QUESTION_CONFIG.',
+            technical:'setQuestionState({ id, grid, timer: config.timeLimit, moveCount: 0 })' },
+        { type: 'process',  icon: '👆', title: 'Child Plans and Moves',
+            simple:   'The child taps adjacent cells to move the token step by step toward the end point.',
+            detailed: 'move.wav / wrong_move.wav play on valid/invalid taps. One free "Refresh" (restart this trial) is available per scored question.',
+            technical:'handleCellTap(cell) → validates adjacency → updates path, moveCount, collectedCoins' },
+        { type: 'decision', icon: '⚠️', title: 'Hazard, Timeout, or Coins Exhausted?',
+            simple:   'Three ways a question can fail: stepping on the danger cell, running out of time, or running out of moves.',
+            detailed: 'Any one of these three conditions ends the question as a failure (score 0) — there is no partial credit for "almost" reaching the end.',
+            technical:'Hit Weed: token steps on a 7-T2 cell\nTimeout: countdown reaches 0\nOut of Coins: moveCount reaches the coin budget before reaching 7-EP',
+            branches: [{ label: 'Any triggers → Score 0', color: '#dc2626' }, { label: 'None → Continue toward end point', color: '#10b981' }] },
+        { type: 'decision', icon: '🏁', title: 'Reached End Point?',
+            simple:   'If the token reaches the end cell (7-EP) before any fail condition, the score depends on HOW efficiently it got there.',
+            detailed: 'Reaching the end at the optimal move count (t2) scores 2; reaching it within the more generous t1 threshold scores 1.',
+            technical:'if (moveCount === config.t2) score = 2\nelse if (moveCount <= config.t1) score = 1\nelse score = 0 (technically still reached, but outside both thresholds)',
+            branches: [{ label: 'At optimal count → Score 2', color: '#10b981' }, { label: 'Within generous threshold → Score 1', color: '#f59e0b' }] },
+        { type: 'process',  icon: '📊', title: 'Score Recorded',
+            simple:   'The result is added to allScores with the path taken, move count, and time.',
+            detailed: 'The record includes the full sequence of grid cells traversed — useful for reviewing exactly how the child navigated.',
+            technical:'scoreEntry = { id, score, moves: moveCount, trial, timeTaken, path: pathToSave, failReason }\nallScores = [...allScores, scoreEntry]' },
+        { type: 'api',      icon: '💾', title: 'Progress Auto-Saved',
+            simple:   'The progress is automatically sent to the server after every question.',
+            detailed: 'Carries the full game snapshot so sessions can be resumed at the exact question and countdown time.',
+            technical:'PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { allScores, screen, questionState, isDropped, ... } }' },
+        { type: 'decision', icon: '⚖️', title: 'Is This Question q3?', isRef: false,
+            simple:   'ONLY immediately after q3 completes, a one-time clinical check runs — this never happens after any other question.',
+            detailed: 'This is the single most important divergence from other fixed-question games on this platform: there is no repeating stop-rule check after every question, just this one gate.',
+            technical:'if (questionState.id === "q3") { runClinicalGateCheck() } else { proceed normally }',
+            branches: [{ label: 'Yes → Run Clinical Gate Check', color: '#f59e0b' }, { label: 'No → Advance Normally', color: '#4f46e5' }] },
+        { type: 'stop',     icon: '🛑', title: 'Clinical Gate: All of Q1/Q2/Q3 Below 2?',
+            simple:   'If the child scored below 2 on ALL THREE of q1, q2, and q3, the session ends immediately.',
+            detailed: 'Scoring 2 on even one of the three avoids this entirely. q4 through q18 (15 questions) are never shown if the gate fires.',
+            technical:'if (score(q1) < 2 && score(q2) < 2 && score(q3) < 2) { isDropped=true; setScreen("results"); saveToServer("dropped", ...) }' },
+        { type: 'success',  icon: '➡️', title: 'Advance to Next Question',
+            simple:   'If the gate didn\'t fire (or this wasn\'t q3), the next question in QUESTION_SEQUENCE begins.',
+            detailed: 'The question timer resets. The sequence pointer advances to the next active question id.',
+            technical:'nextId = firstActiveFromMainChain(nextInSequence) → setScreen(nextId) → new questionState' },
+    ],
+
+    score: [
+        { type: 'start',    icon: '🎯', title: 'Question Attempt Ends',
+            simple:   'The child either reaches the end point or triggers a fail condition.',
+            detailed: 'Scoring is always automatic in this game — there is no assessor judgment call.',
+            technical:'handleQuestionEnd(isSuccess, moveCount, reason) → calcScore()' },
+        { type: 'process',  icon: '⚖️', title: 'Move-Efficiency Score Applied',
+            simple:   'Unlike a simple pass/fail, the score depends on HOW efficiently the child reached the end point.',
+            detailed: 'Teaching questions: trial 1 success = 2, trial 2 success (only reached if trial 1 failed) = 1. Scored questions: exact optimal move count = 2, within the more generous threshold = 1, otherwise = 0.',
+            technical:'Scored Qs: moveCount===config.t2 → 2; moveCount<=config.t1 → 1; else 0\nTeaching: trial===1 && success → 2; trial===2 && success → 1' },
+        { type: 'process',  icon: '📈', title: 'Running Score Updated',
+            simple:   'The total score updates after each question.',
+            detailed: 'The total is the sum of all per-question point values (0, 1, or 2 each), not a count of "correct" questions.',
+            technical:'totalScore = allScores.reduce((sum,s) => sum + s.score, 0)\nMaximum possible = 44' },
+        { type: 'decision', icon: '🔢', title: 'Clinical Gate Check (Q3 Only)',
+            simple:   'This check runs exactly once, immediately after q3 — never after any other question.',
+            detailed: 'There is NO repeating consecutive-wrong or category-cutoff check in this game — just this single gate.',
+            technical:'if (questionState.id === "q3"): evaluate q1s<2 && q2s<2 && q3s<2 → isDropped',
+            branches: [{ label: 'All 3 below 2 → STOP (dropped)', color: '#dc2626' }, { label: 'At least one ≥2, or not q3 → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🏆', title: 'Final Score Calculated',
+            simple:   'The sum of all per-question points (out of 44) becomes the final score.',
+            detailed: 'This is saved to the game_sessions.score column.',
+            technical:'finalScore = allScores.reduce((sum,s) => sum + s.score, 0)\nPUT /sessions/update: { score: finalScore, status: "completed"|"dropped" }' },
+        { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
+            simple:   'The results screen shows performance metrics and a per-question path breakdown.',
+            detailed: 'Metrics include: Total Score (out of 44), Accuracy %, Total Time, and Coins Collected vs. Budget.',
+            technical:'Percentage: (totalScore / 44 * 100).toFixed(1)\nPer-question path/move/failReason rendered from allScores' },
+        { type: 'success',  icon: '✅', title: 'Score Complete',
+            simple:   'Assessment scoring is done. Assessment form follows.',
+            detailed: 'All per-question results are displayed in a table. The behavioral assessment form then appears for the assessor to complete.',
+            technical:'screen = "results" → SessionAssessmentForm renders\nassessmentSubmitted controls which buttons appear after form submit' },
+    ],
+
+    api: [
+        { type: 'start',    icon: '📱', title: 'Client-Side Event',
+            simple:   'Something happens in the game — a cell tap, a question completing, or the game ending.',
+            detailed: 'Every significant game action (start, score, pause, quit, submit assessment) triggers an API call to the backend server.',
+            technical:'React state change or user interaction → async axios call → awaits server response' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'Check if the child can continue a previous session.',
+            detailed: 'Called once when the game loads. Returns the latest session for this child/game.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nResponse: { success, sessionInfo: { id, status, saved_state, attempt_no } | null }` },
+        { type: 'api',      icon: '🗺️', title: 'Question Activation Fetch',
+            simple:   'Which questions are active (and any custom subtitle labels) is loaded — NOT the grid content itself.',
+            detailed: 'The 22 grids are fully hardcoded in the frontend; this endpoint only carries activation toggles and cosmetic metadata.',
+            technical:`GET /api/public/elements?test_id=${game.key}\nq1/q2/q3 are always active — locked in the admin panel since they feed the clinical gate directly` },
+        { type: 'api',      icon: '▶️', title: 'Start Session',
+            simple:   'Create a new session record when the child starts.',
+            detailed: 'Returns a session ID used for all subsequent updates.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name:"${game.key}" }\nHTTP 201 (new) or 200 (reused)` },
+        { type: 'api',      icon: '💾', title: 'Progress Update (Repeated)',
+            simple:   'After every question, the progress is saved to the server.',
+            detailed: 'Carries the full game snapshot so sessions can be resumed at the exact question and grid state.',
+            technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { allScores, screen, questionState, isDropped, refreshCount, retakeCount, collectedCoins, tqTrials, screentime } }\nStatus values: "in_progress" | "paused" | "quit" | "completed" | "dropped"` },
+        { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
+            detailed: 'This guard is fully active for this game — "dropped" is real, but unlike other games, it can only ever be set once, immediately after q3.',
+            technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })`,
+            branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
+        { type: 'api',      icon: '📋', title: 'Assessment Submission',
+            simple:   'Assessor observations are sent to the server.',
+            detailed: 'Saves behavioral data to a separate table linked by session_id. A failure here shows an inline message, not a JS alert.',
+            technical:`POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors:[], additional_notes }` },
+        { type: 'api',      icon: '📄', title: 'PDF Upload',
+            simple:   'The session dashboard is saved as a PDF file.',
+            detailed: 'Results screen is cloned off-screen and captured with html2canvas, converted to PDF via jsPDF, then uploaded.',
+            technical:`POST /api/games/pdfs/upload (multipart/form-data)\nFields: pdf (file), child_id, session_id, game_name` },
+        { type: 'api',      icon: '📈', title: 'Admin Report',
+            simple:   'The administrator views the complete session data.',
+            detailed: 'Admin-only endpoint. Returns session records with per-question move-efficiency scores and path data.',
+            technical:`GET /api/games/reports/detail/${game.key}\nAuth: Admin JWT Bearer token` },
+        { type: 'success',  icon: '✅', title: 'Data Cycle Complete',
+            simple:   'All game data is safely stored and accessible to administrators.',
+            detailed: 'Three tables contain the full session record: game_sessions, game_assessments, game_dashboard_pdfs.',
+            technical:'game_sessions: status="completed"|"dropped", end_time, saved_state\ngame_assessments: q1–q4, behaviors[], notes\ngame_dashboard_pdfs: file_path' },
+    ],
+
+    session: [
+        { type: 'start',    icon: '🟢', title: 'Status: in_progress',
+            simple:   'The session is active — the child is playing.',
+            detailed: 'Set when the session is created. Updated with score and saved_state on every question advance.',
+            technical:`game_sessions.status = "in_progress"\nCreated by: POST /sessions/start\nUpdated by: PUT /sessions/update after each question` },
+        { type: 'decision', icon: '⏸️', title: 'Assessor Pauses?',
+            simple:   'The assessor can pause the session at any time.',
+            detailed: 'Pause saves the full game state to the server, including the exact grid, path, and countdown time remaining.',
+            technical:`PUT /sessions/update: { status:"paused", saved_state: { ...state } }`,
+            branches: [{ label: 'Yes → Pause & Save', color: '#f59e0b' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟡', title: 'Status: paused',
+            simple:   'The game is saved and the child can resume later.',
+            detailed: 'On next visit, the resume check returns this session with the exact question, path progress, and countdown time.',
+            technical:'game_sessions.status = "paused"\nResume: restores allScores, screen, questionState, isDropped, refreshCount, retakeCount, collectedCoins from saved_state' },
+        { type: 'decision', icon: '🚪', title: 'Assessor Quits?',
+            simple:   'The assessor can end the session early for any reason.',
+            detailed: 'Quit requires a reason to be entered. The game transitions to the results screen.',
+            technical:`PUT /sessions/update: { status:"quit", quit_reason: reason, end_time:NOW() }\nsetScreen("results") → setTimeout(generateAndUploadPDF, 1500)`,
+            branches: [{ label: 'Yes → Quit', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🔴', title: 'Status: quit',
+            simple:   'The session was ended early by the assessor.',
+            detailed: 'Results screen shows the session was terminated with the quit reason.',
+            technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
+        { type: 'decision', icon: '📏', title: 'Clinical Drop-Out Gate Fired (After Q3 Only)?',
+            simple:   'This is the ONLY automatic stop condition — and it can only ever fire once, right after q3.',
+            detailed: 'Unlike other games\' repeating consecutive-wrong checks, this game never re-checks the gate after q4 onward — once past q3 cleanly, the session always runs to completion or a manual quit.',
+            technical:'Evaluated once: score(q1)<2 && score(q2)<2 && score(q3)<2 → isDropped=true\nif isDropped: PUT update: { status: "dropped" }\nelse if all 18 scored done: PUT update: { status: "completed" }',
+            branches: [{ label: 'Yes (only possible right after q3) → status=dropped', color: '#dc2626' }, { label: 'No → Continue to q4 and beyond', color: '#10b981' }] },
+        { type: 'process',  icon: '🟢', title: 'Status: completed / dropped',
+            simple:   'The session ended — either all 18 scored questions were answered ("completed") or the q1/q2/q3 gate fired ("dropped").',
+            detailed: 'A dropped session will show far fewer attempted_questions than a completed one (around 6 vs. 22) — this is expected, not a data issue.',
+            technical:'game_sessions.status = "completed" | "dropped"\nend_time = NOW()' },
+        { type: 'process',  icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once ended, a session status cannot be changed.',
+            detailed: 'The server enforces that "quit" or "dropped" sessions can never be overwritten as "completed".',
+            technical:'Backend guard: if (newStatus==="completed" && (current==="quit"||current==="dropped"))\n→ return 200 { message:"Session already finalized" }' },
+        { type: 'success',  icon: '📊', title: 'Report Available',
+            simple:   'The administrator can view the complete session in the Reports panel.',
+            detailed: 'All data — session, assessment, PDF — is linked by session_id and visible in the admin Reports module.',
+            technical:'GET /api/games/reports/detail/:gameName (admin JWT required)\nJOINs: game_sessions + children + game_assessments + game_dashboard_pdfs' },
+    ],
+});
+
 // makeReadingV2WorkflowFlows — Padh ke Batao V2 is an ASER 2014-style adaptive
 // reading ladder, NOT a fixed-question test. It has no QUESTIONS array, no
 // consecutive-wrong stop rule, and no category-minimum cutoff — so it gets its
@@ -10048,6 +11447,7 @@ const WorkflowDiagramViewer = ({ game, section }) => {
         game.key === 'numeracy_number_skill_v3' ? makeAnkganitV3WorkflowFlows(game) :
         game.key === 'number_recall_lottery' ? makeLotteryWorkflowFlows(game) :
         game.key === 'working_memory_herpher_v3' ? makeHerPherV3WorkflowFlows(game) :
+        game.key === 'rover_mela' ? makeRoverMelaWorkflowFlows(game) :
         makeWorkflowFlows(game);
     const nodes = flows[activeFlow] || [];
     const fmtSync = (d) => d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -10215,6 +11615,11 @@ const getConnectedModules = (game) => {
             { file: 'herPherV3.js',         type: 'Backend',   icon: '🖥️', desc: 'Server-side required-image-count enforcement per category' },
         );
     }
+    if (game.key === 'rover_mela') {
+        modules.splice(1, 0,
+            { file: 'MelaElements.jsx', type: 'Component', icon: '🧩', desc: 'Admin panel — activation toggle + subtitle/chips label only; does NOT edit maze content (q1/q2/q3 permanently locked active)' },
+        );
+    }
     return modules;
 };
 
@@ -10372,7 +11777,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -10638,7 +12043,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
@@ -10976,7 +12381,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
-    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
+    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3', 'rover_mela'].includes(game.key);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
@@ -11325,6 +12730,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3TechDocTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryTechDocTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3TechDocTemplate(selectedGame) :
+                                selectedGame.key === 'rover_mela' ? makeRoverMelaTechDocTemplate(selectedGame) :
                                 makeTechDocTemplate(selectedGame)
                             }
                         />
@@ -11338,6 +12744,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ApiTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryApiTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ApiTemplate(selectedGame) :
+                                selectedGame.key === 'rover_mela' ? makeRoverMelaApiTemplate(selectedGame) :
                                 makeApiTemplate(selectedGame)
                             }
                         />
@@ -11351,6 +12758,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ScoreLogicTemplate(selectedGame) :
+                                selectedGame.key === 'rover_mela' ? makeRoverMelaScoreLogicTemplate(selectedGame) :
                                 makeScoreLogicTemplate(selectedGame)
                             }
                         />
@@ -11364,6 +12772,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3AssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryAssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3AssessmentTemplate(selectedGame) :
+                                selectedGame.key === 'rover_mela' ? makeRoverMelaAssessmentTemplate(selectedGame) :
                                 makeAssessmentTemplate(selectedGame)
                             }
                         />
