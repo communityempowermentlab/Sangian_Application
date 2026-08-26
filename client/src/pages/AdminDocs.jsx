@@ -63,6 +63,7 @@ const HIDDEN_SECTIONS_BY_GAME = {
     literacy_reading_skill_v2: ['technical_docs_2013', 'reports'],
     numeracy_number_skill_v3: ['technical_docs_2013', 'reports'],
     number_recall_lottery: ['reports'],
+    working_memory_herpher_v3: ['reports'],
 };
 const getVisibleSections = (game) =>
     GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
@@ -170,6 +171,20 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'इस Test का उद्देश्य बच्चे की बुनियादी गणितीय क्षमता का आकलन करना है।',
             description: 'इस गतिविधि में बच्चे संख्याओं की पहचान, गिनती और सरल गणितीय सवालों को हल करते हैं। इससे बच्चे की बुनियादी गणितीय समझ का आकलन किया जाता है।',
             guidance:    'संख्याओं और सवालों को ध्यान से देखो। सोचो और अपना सर्वश्रेष्ठ उत्तर दो। तुम गणित में बहुत अच्छे हो!',
+        },
+    },
+    working_memory_herpher_v3: {
+        en: {
+            skill:       'Visual Working Memory - Image Recall',
+            objective:   'This test assesses the child\'s visual working memory by measuring how many images they can remember having already selected, as the images reshuffle to new positions after each click. The number of images increases progressively across 8 scored rounds, from 7 up to 14.',
+            description: 'The child is shown a scattering of images and clicks each one once. After every click, the images shuffle to new positions on screen — so the child must remember WHICH images they\'ve already selected, not WHERE they were. Each round has a practice attempt followed by a scored attempt. This activity helps evaluate how well a child can track and recall images they\'ve just interacted with.',
+            guidance:    'Look at each image before you click it. Remember which ones you\'ve already picked, even after they move! Take your time.',
+        },
+        hi: {
+            skill:       'दृश्य कार्यशील स्मृति - चित्र स्मरण',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की दृश्य कार्यशील स्मृति का आकलन करना है, यह मापकर कि वह कितनी तस्वीरें याद रख पाता है जिन्हें वह पहले ही चुन चुका है, जबकि हर क्लिक के बाद तस्वीरें नई जगहों पर बदल जाती हैं। तस्वीरों की संख्या 8 अंकित राउंड में धीरे-धीरे बढ़ती है — 7 से शुरू होकर 14 तक।',
+            description: 'बच्चे को कुछ बिखरी हुई तस्वीरें दिखाई जाती हैं और वह हर एक को एक बार क्लिक करता है। हर क्लिक के बाद तस्वीरें स्क्रीन पर नई जगहों पर बदल जाती हैं — इसलिए बच्चे को यह याद रखना होता है कि उसने कौन सी तस्वीरें पहले ही चुन ली हैं, न कि वे कहाँ थीं। हर राउंड में एक अभ्यास प्रयास और उसके बाद एक अंकित प्रयास होता है। यह गतिविधि यह आकलन करने में मदद करती है कि बच्चा अभी-अभी चुनी गई तस्वीरों को कितनी अच्छी तरह याद रख पाता है।',
+            guidance:    'हर तस्वीर को क्लिक करने से पहले ध्यान से देखो। याद रखो कि तुमने कौन सी पहले ही चुन ली हैं, भले ही वे हिल जाएं! जल्दी मत करो।',
         },
     },
     number_recall_lottery: {
@@ -1299,6 +1314,176 @@ The score column in \`game_sessions\` always reflects the most recent saved valu
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Her Pher V3 Score & Progression Logic ─────────────────────────────────────
+// This game IS a genuine fixed-question test with a real consecutive-zero-score
+// stop rule — the generic model mostly fits. What's wrong for this game
+// specifically: there is NO category structure at all, and scoring is a fixed
+// point-lookup TABLE keyed by (question, correctCount) rather than a simple
+// binary 1/0 per question.
+
+const makeHerPherV3ScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+This document explains how the scoring system works for **${game.title}** — what actions earn points, how scores are recorded per question, how the final score is calculated, and the stop rule that determines when the assessment ends early. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+
+---
+
+## 2. Score Unit
+
+Unlike a simple correct/incorrect binary, each scored question in **${game.title}** earns **points from a lookup table** based on how many images were correctly clicked:
+
+\`\`\`
+score = SCORING_RULES[questionNumber][correctCount] || 0
+\`\`\`
+
+A correct-click count that isn't explicitly listed for that question scores **0** — there's no partial-credit interpolation between listed thresholds.
+
+---
+
+## 3. Scoring Method — Fully Automatic
+
+There is **no manual/assessor-click scoring anywhere in this game**, and no category concept:
+
+\`\`\`
+Child clicks each image once; images reshuffle after every click
+Round auto-completes once exactly N images have been clicked
+  (N = the required count for that question, see §5)
+correctCount = number of clicked images that were part of the expected set
+score = SCORING_RULES[questionNumber][correctCount] || 0
+\`\`\`
+Clicking an already-clicked image counts as a duplicate/incorrect click, not a second chance at a correct one.
+
+---
+
+## 4. Per-Question Score Record
+
+Every scored attempt (attempt 2 of each of the 8 scored questions) produces a much richer record than the platform's generic \`{qId, score, timeTaken}\` shape:
+
+\`\`\`json
+{
+  "qId": 5,
+  "score": 2,
+  "timeTaken": 14,
+  "correctCount": 9,
+  "expectedImages": ["img_042", "img_017", "..."],
+  "selectedImages": ["img_042", "img_099", "..."],
+  "matchedImages": ["img_042", "..."],
+  "incorrectSelections": ["img_099"],
+  "missedImages": ["img_017"],
+  "category": "item4"
+}
+\`\`\`
+
+| Field | Description |
+|---|---|
+| \`qId\` | Question number (2–9; question 1 is the unscored practice slot) |
+| \`score\` | Points from \`SCORING_RULES\`, not a simple 0/1 |
+| \`timeTaken\` | Seconds taken to complete the round |
+| \`correctCount\` | How many clicked images were actually part of the expected set |
+| \`expectedImages\` / \`selectedImages\` | The full expected set vs. what the child actually clicked |
+| \`matchedImages\` / \`incorrectSelections\` / \`missedImages\` | Derived breakdown used for the results-table badges |
+| \`category\` | Which of the 9 admin-managed image categories (\`item0\`–\`item8\`) this question drew from |
+
+All records are stored in \`saved_state.allScores\`, filtered to exclude sample/practice attempts (\`h.isSample\`).
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`js
+SCORING_RULES = {
+  2: { 7: 2, 6: 1 },
+  3: { 8: 2, 7: 1 },
+  4: { 9: 3, 8: 2, 7: 1 },
+  5: { 10: 3, 9: 2, 8: 1 },
+  6: { 11: 3, 10: 2, 9: 1 },
+  7: { 12: 4, 11: 3, 10: 2, 9: 1 },
+  8: { 13: 4, 12: 3, 11: 2, 10: 1 },
+  9: { 14: 4, 13: 3, 12: 2, 11: 1 },
+}
+
+Total Score = sum of SCORING_RULES[q][correctCount] across all 8 scored questions
+Maximum possible = 25
+\`\`\`
+
+This is updated after every question and saved to the \`game_sessions.score\` column.
+
+**Example — question 5 (10 images required):**
+
+| Correct Clicks | Score |
+|---|---|
+| 10 (all correct) | 3 |
+| 9 | 2 |
+| 8 | 1 |
+| 7 or fewer | 0 |
+
+Note the table only defines the top 2–4 correct-count values per question — everything below that floor scores 0, it does not scale down gradually.
+
+---
+
+## 6. Score Display
+
+On the final score screen, the system displays:
+
+| Metric | Calculation |
+|---|---|
+| Total Score | sum across all 8 scored questions, out of 25 |
+| Incorrect / Missed | derived from \`incorrectSelections\`/\`missedImages\` per question |
+| Percentage | (total score ÷ 25) × 100 |
+| Total Time | sum of all \`timeTaken\` values |
+| Average Time per Question | total time ÷ questions attempted |
+
+A \`getPerformanceInterpretation\` helper (≥20 Excellent / ≥15 Good / ≥10 Average / else Needs Improvement) exists in the source but does not appear to be wired into the visible score screen — don't assume it's live UI without checking the current render.
+
+---
+
+## 7. Score and Stop Rule Interaction
+
+The score after each scored question is also checked against the stop rule. If 3 consecutive questions score exactly 0, the game ends early and the score accumulated so far is saved as final.
+
+---
+
+## 8. Stop Rule
+
+**${game.title}** has exactly **one** stop rule — there is no category-minimum concept in this game at all:
+
+\`\`\`
+On each scored attempt (attempt 2, not the practice attempt):
+  score === 0  → consecutiveZeros += 1
+  score  > 0   → consecutiveZeros = 0
+
+If consecutiveZeros >= 3 → STOP, status = 'dropped'
+\`\`\`
+This is the same convention the codebase uses for several other games (\`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, \`NumberSkillGameV2.jsx\`) — a shared platform pattern, not unique to Her Pher V3.
+
+---
+
+## 9. Score Persistence
+
+Score is saved to the server:
+- After every scored question during active play (\`status: 'in_progress'\`)
+- At game end (\`status: 'completed'\` if all 8 scored questions were reached, \`'dropped'\` if the consecutive-zero rule triggered, or \`'quit'\` if the assessor ended it manually)
+
+The score column in \`game_sessions\` always reflects the most recent saved value.
+
+---
+
+## 10. What Does NOT Affect Score
+
+- Time taken (no speed bonus or time penalty)
+- Number of pauses
+- Which specific images were randomly sampled for this session (all sessions use the same \`SCORING_RULES\` thresholds regardless of which images appear)
+- Whether the practice attempt (attempt 1) went well or badly — only attempt 2 is ever scored
+- Whether the game was resumed from a saved state
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Assessment Behavior template (from SessionAssessmentForm.jsx actual values) ──
 
 const makeAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
@@ -1916,6 +2101,169 @@ System checks: sessions with status IN ('completed', 'quit', 'dropped')
 If found → Shows a prompt to the assessor to complete the form
 \`\`\`
 Unlike the two adaptive-ladder games on this platform, **this game genuinely can produce a \`'dropped'\` status** (via the 3-consecutive-wrong stop rule) — so \`'dropped'\` legitimately belongs in this check for this game, unlike for the ladder games where it never occurs.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the question scores. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not change when the assessment is submitted (score/status are independent)
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Her Pher V3 Assessment Behavior — the SessionAssessmentForm itself is ──
+// shared/identical across games (same real bugs found and fixed here as for
+// the other games: Q5 is actually required, and there's a confirmation modal
+// the old generic template never documented). Only the framing differs.
+
+const makeHerPherV3AssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
+
+---
+
+## 1. Overview
+
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
+
+---
+
+## 2. What Is Being Measured
+
+**${game.title}** is a structured visual working-memory assessment. Beyond the question scores, the system tracks:
+
+- **Accuracy** — how many of the expected images were correctly re-identified per round
+- **Speed** — how long the child takes to complete each round
+- **Recall capacity** — the largest image set (up to 14) the child can reliably track before the 3-consecutive-zero-score stop rule triggers
+- **Error pattern** — which specific images were missed vs. incorrectly re-selected, tracked per round for the results table
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged
+
+---
+
+## 3. Behavioral Assessment Form
+
+After every game session (whether completed, dropped, or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with this game's mechanics.
+
+### Assessment Questions
+
+Exact wording shown on screen (\`en.js\` locale strings), addressed directly to the child:
+
+| # | Question | Response Options |
+|---|---|---|
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
+
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
+
+### Behavioral Observation Checkboxes (Q5)
+
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
+
+\`\`\`
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
+\`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission with "Please select at least one observed behaviour."
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+  → if any missing: inline errors shown, submission blocked
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+Dashboard PDF auto-generated and uploaded
+       ↓
+"Retest" and "Home" buttons appear
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes, drops out, or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit', 'dropped')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+This game genuinely can produce a \`'dropped'\` status (via the 3-consecutive-zero-score stop rule), so \`'dropped'\` legitimately belongs in this check here.
 
 ---
 
@@ -3434,6 +3782,334 @@ A global cleanup effect on unmount stops \`window.activeRecognition\` to release
 - \`replayCount\` is tracked per question but does **not** affect scoring or the stop rule — it's recorded for reporting only.
 - The score shown on the score screen is out of **22**, not 20 — it includes the 2 scored Teaching questions alongside the 20 Game questions.
 - \`showGrid\` is a declared but apparently unused state variable in the source — likely leftover from a shared component pattern; not wired to any visible JSX.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Her Pher V3 Technical Documentation ───────────────────────────────────────
+// Like Lottery Ka Ticket, this game IS architecturally a genuine fixed-question
+// test (flat currentQuestion/currentAttempt/allScores state, a real
+// consecutive-zero-score stop rule, linear progression through 9 fixed slots) —
+// so most of makeTechDocTemplate's model fits. What's wrong for THIS game
+// specifically: there is no category/MIN_CORRECT concept, no manual/assessor
+// scoring, and — unlike Lottery Ka Ticket — content itself (the images) is
+// dynamically admin-managed and server-fetched, not a hardcoded bank.
+
+const makeHerPherV3TechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a visual/spatial working-memory test (click-to-recall images that reshuffle after every click). It IS a genuine fixed-question test (linear progression through 9 fixed slots, automatic scoring, a real consecutive-zero-score stop rule) — but unlike the platform's generic fixed-question template, it has **no category structure or category-minimum thresholds at all**, and its content (the images shown) is **dynamically pulled from an admin-managed image library** rather than a hardcoded bank.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Cognitive — Visual Working Memory (Click-to-Recall) |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash.wav) plays automatically on load
+  "Start Now" activates only after audio completes AND the admin image
+  library has enough content for every category (configError banner
+  blocks Start otherwise)
+  "Replay Audio" button available
+       ↓
+[Game Screen] — 9 sequential slots:
+  Slot 1: Practice (6 images, UNSCORED, manual "Retake Sample"/"Start Game")
+  Slots 2–9: Scored rounds with 7, 8, 9, 10, 11, 12, 13, 14 images respectively
+  Each scored slot has 2 attempts: Attempt 1 = practice pass (unscored,
+  admin can toggle whether it's shown), Attempt 2 = the scored pass
+  Per-question timer runs; auto-advances ~1.5s after each scored attempt
+  Pause/Quit button always accessible
+       ↓
+[Score Screen]
+  Score out of 25 (see the scoring table in §6)
+  Per-question results table (expected vs. selected images, match/incorrect/missed badges)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+---
+
+## 3. Game Configuration
+
+\`\`\`
+REQUIRED_COUNTS (images per slot): [6, 7, 8, 9, 10, 11, 12, 13, 14]
+  (slot 1 = practice/unscored; slots 2–9 = scored, TOTAL_SCORED_QUESTIONS = 8)
+MAX_CONSECUTIVE_ZERO_SCORE = 3
+\`\`\`
+
+There is **no** \`MIN_CORRECT\` or category concept of any kind — the generic platform template's "Category Structure and Cutoff Values" section does not apply to this game.
+
+The 9 image categories (\`item0\`–\`item8\`, one per slot) each require an exact minimum count of active admin-uploaded images — enforced **both client-side** (\`validateElementConfig\`) and **server-side** (\`server/src/config/herPherV3.js\` → \`HERPHER_V3_IMAGE_COUNTS\`). If any category is short, the splash screen shows a config-error banner and blocks "Start Now" entirely — this game can be rendered un-playable by incomplete admin content, unlike games with a hardcoded fallback bank.
+
+---
+
+## 4. Gameplay Mechanics
+
+### The Recall Mechanic
+\`\`\`
+1. All N images for the current slot/attempt are scattered on the canvas
+   (either an algorithmic grid layout, or an admin-defined custom layout
+   fetched from GET /public/element-positions/${game.key})
+2. The child clicks an image
+3. touch.wav plays; the image is marked "clicked"; ALL images then
+   reshuffle to new positions
+4. Clicking an already-clicked image counts as a duplicate/incorrect click
+5. The round auto-completes once exactly N distinct images have been clicked
+\`\`\`
+This tests whether the child remembers **which** images they've already selected — not **where** they were, since positions change after every single click. This is a materially different memory mechanic from a fixed-position "spot the difference" or spatial-recall test.
+
+### Practice vs. Scored Attempts
+\`\`\`
+Attempt 1 (Practice) — unscored, admin can toggle visibility via
+  displayHerPherPractice; lets the child try the round once before
+  it counts
+Attempt 2 (Scored) — this is the attempt that's actually recorded in
+  allScores / used for the stop rule
+\`\`\`
+Slot 1 (the very first slot, 6 images) is a **fully separate practice round** distinct from the per-slot practice attempts above — it's shown once at the very start with manual "Retake Sample"/"Start Game" controls, not auto-advancing like every other slot.
+
+### Scoring — Fully Automatic
+There is **no manual/assessor-click scoring anywhere in this game** — every click is compared against the expected image set automatically. See §6 for the exact scoring table.
+
+### Timers
+- **Per-question timer**: resets on each new question/attempt.
+- **Session timer** (\`timerSeconds\`): counts total session seconds during active play.
+
+---
+
+## 5. Stop Rule
+
+This game has exactly **one** stop rule — no category-minimum rule exists:
+
+\`\`\`
+On each SCORED attempt (attempt 2, non-practice):
+  questionScore === 0  → consecutiveZeros += 1
+  questionScore  > 0   → consecutiveZeros = 0
+
+If consecutiveZeros >= 3 → STOP (status = 'dropped')
+\`\`\`
+This is the same "3 consecutive zero-score questions" pattern the codebase's own comments say is shared with \`AtlantisBagiyaGame.jsx\`, \`ChorMachayeShorGame.jsx\`, and \`NumberSkillGameV2.jsx\` — worth knowing if documenting those games too, since it's a repeated platform convention, not unique to this game.
+
+---
+
+## 6. Score Calculation
+
+Scoring is a **fixed point lookup table** keyed by question number and correct-click count — not a binary 1/0 per question like some other games:
+
+\`\`\`js
+SCORING_RULES = {
+  2: { 7: 2, 6: 1 },
+  3: { 8: 2, 7: 1 },
+  4: { 9: 3, 8: 2, 7: 1 },
+  5: { 10: 3, 9: 2, 8: 1 },
+  6: { 11: 3, 10: 2, 9: 1 },
+  7: { 12: 4, 11: 3, 10: 2, 9: 1 },
+  8: { 13: 4, 12: 3, 11: 2, 10: 1 },
+  9: { 14: 4, 13: 3, 12: 2, 11: 1 },
+}
+score = SCORING_RULES[questionNumber][correctCount] || 0
+\`\`\`
+Any correct-click count not listed for that question scores 0 (e.g. question 9 with only 8 correct clicks out of 14 scores 0, not a partial value). Maximum possible total across all 8 scored questions is **25**.
+
+A \`getPerformanceInterpretation\` helper exists in the source (bucketing ≥20 Excellent / ≥15 Good / ≥10 Average / else Needs Improvement) but does not appear to be rendered anywhere on the actual score screen — likely vestigial, worth flagging rather than assuming it's live-documented UI behavior.
+
+---
+
+## 7. Session State Management
+
+### Resume Flow
+\`\`\`
+On game load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a paused/in-progress session is found → show Resume modal:
+    [Resume]      → restores currentQuestion, currentAttempt, scoreHistory,
+                     allScores, timers, consecutiveZeros, gameData from saved_state
+    [Start Fresh] → discard it, start a new session
+\`\`\`
+
+### State Saved to Server
+\`\`\`js
+{
+  currentQuestion, currentAttempt, scoreHistory, totalScore,
+  totalTime, pauses,
+  clickedImages: Array.from(clickedImages),
+  responses, selectedOrder, questionTime, imageLayout,
+  gameData: GAME_DATA,
+  screentime, timerSeconds,
+  allScores: scoreHistory.filter(h => !h.isSample).map(h => ({
+    qId: h.question, score: h.score, timeTaken: h.time,
+    correctCount: h.correctCount, expectedImages: h.expectedImages,
+    selectedImages: h.selected, matchedImages: h.matchedImages,
+    incorrectSelections: h.incorrectSelections, missedImages: h.missedImages,
+    category: h.category
+  }))
+}
+\`\`\`
+This is a flat \`currentQuestion\`/\`currentAttempt\`/\`allScores\` shape — the same architectural family as other fixed-question games, not the \`stage\`/\`path\`-based shape used by the platform's adaptive-ladder games. The per-record fields (\`expectedImages\`, \`selectedImages\`, \`matchedImages\`, \`incorrectSelections\`, \`missedImages\`) are richer than the generic template's \`{qId, score, timeTaken}\` example, since this game needs to reconstruct exactly which images were right/wrong/missed for the results table.
+
+**Also saved:** \`gameData\` — the actual randomly-sampled image set used for this session — is persisted in \`saved_state\` so a resumed session sees the *same* images it started with, not a freshly re-randomized set.
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', pause event appended to pauses[]
+Quit  → status = 'quit', quit_reason saved, screen → Score, PDF generation triggers
+\`\`\`
+A reason (typed or dictated) is required before either action confirms.
+
+---
+
+## 8. Assessment Form Integration
+
+After the score screen appears, \`SessionAssessmentForm\` renders — see **Assessment Behavior** for the full field list, validation rules (Q5 is required, not optional), and the confirmation-modal step before submission.
+
+---
+
+## 9. PDF Dashboard Generation
+
+\`\`\`
+1. Locate #dashboard-capture-area (the score screen's result card)
+2. Clone it into an off-screen wrapper (avoids clipping from .hp-container's
+   backdrop-filter/overflow:hidden)
+3. Strip animations/transitions, force overflow:visible where needed
+4. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
+5. canvas.toDataURL('image/jpeg', 0.9)
+6. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+7. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_Her_Pher_SES<sessionId>_<ts>.pdf"
+  child_id, session_id, game_name: '${game.key}'
+\`\`\`
+PDF failures are logged to console only — including no user-facing warning, unlike some failures elsewhere in this same file.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Splash: <audio src=".../splash.wav" onEnded/onError → setAudioFinished(true) />
+"Start Now" is disabled until BOTH audioFinished AND !configError
+
+Per-click sound effect: new Audio('.../touch.wav').play() on every image click
+Per-transition sound effect: new Audio('.../screen_change.wav').play() on
+  question/attempt changes
+\`\`\`
+Splash audio resolves through \`useTestAudio('${game.key}')\`, with static fallback \`/assets/audios/her_pher_v3/splash.wav\` if no admin override exists. The touch/screen-change effects are plain static asset paths, not resolved through the audio-override system.
+
+---
+
+## 11. Content Management (Fully Dynamic — Not a Hardcoded Bank)
+
+Unlike Lottery Ka Ticket (cosmetic-only overrides on a hardcoded bank), Her Pher V3's actual content — which images appear — is **entirely admin-managed and server-fetched**:
+
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+  Returns admin-uploaded images grouped by category (item0...item8)
+  buildGameDataFromElements() randomly samples the required count per
+  category, EACH SESSION (different images each playthrough)
+
+GET /api/public/element-positions/${game.key}
+  Admin-defined custom image layouts per screen, used in preference to
+  algorithmic grid placement when a matching layout exists
+
+Admin editing surface: HerPherElements.jsx (shared generic component,
+  NOT a dedicated HerPherV3ContentManager — invoked from AdminElements.jsx
+  with a Her-Pher-V3-specific categories prop)
+\`\`\`
+Server-side enforcement lives in \`server/src/config/herPherV3.js\` (\`HERPHER_V3_IMAGE_COUNTS\`) — the same required-count-per-category values the client checks via \`validateElementConfig\`. If the admin removes images below the required count for any category, the game becomes unplayable (config-error banner) until more are added.
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Session summaries (splash "last played") | GET | \`/api/games/sessions/summaries/:childId\` |
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch admin image library | GET | \`/api/public/elements?test_id=${game.key}\` |
+| Fetch custom image layouts | GET | \`/api/public/element-positions/${game.key}\` |
+
+See **API & Data Flow** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+| State | Purpose |
+|---|---|
+| \`screen\` | \`splash \| game \| score\` |
+| \`currentQuestion\` (1–9) / \`currentAttempt\` (1–2) | Linear progress pointers |
+| \`GAME_DATA\` | The 9-slot question data, built from randomly-sampled server elements |
+| \`allElements\` / \`elementsLoading\` / \`configError\` | Admin image bank / load state / content-shortage error |
+| \`elementPositionLayouts\` | Admin-defined custom per-screen image positions |
+| \`scoreHistory\` / \`totalScore\` / \`consecutiveZeros\` | Running scoring and stop-rule state |
+| \`clickedImages\` / \`responses\` / \`selectedOrder\` / \`imageLayout\` | Per-attempt in-round state |
+| \`questionTime\` / \`timerSeconds\` | Per-question timer / session-wide timer |
+| \`showControls\` / \`buttonsDisabled\` / \`shuffleInProgress\` | UI interaction locks during the reshuffle animation |
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`showResumeModal\` / \`resumeData\` | Resume-prompt modal state |
+| \`showQuitModal\` / \`quitReason\` / \`pauses\` | Pause/Quit modal state and log |
+| \`audioFinished\` / \`isCheckingSession\` | Gate splash "Start Now" / splash rendering |
+| \`assessment\` / \`assessmentSubmitting\` / \`assessmentSubmitted\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+| \`canvasSize\` | Measured game-canvas dimensions for responsive image layout |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Element/content load fail     → console.error only, may leave configError
+                                 banner blocking Start
+Resume check fail             → console.error only, splash shown normally
+PDF generation/upload fail    → console.error only, never shown to the user
+Quit with empty reason        → alert shown, blocked until a reason is entered
+Final assessment submit fail  → console.error + alert shown, submit re-enabled
+STT unsupported / STT error   → alert shown
+\`\`\`
+No unified error strategy — content-loading and PDF failures are silent, while quit-validation and assessment-submit failures are loud.
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Targets: quitReason (Pause/Quit modal) · assessmentNotes (final assessment form)
+Config: lang: STT_LANG_MAP[language] || 'en-US'
+\`\`\`
+
+---
+
+## 16. Technical Notes
+
+- Images **reshuffle after every single click**, not just between questions — this is the core memory challenge, and worth emphasizing in any assessor-facing explanation of what the test measures.
+- Content is **re-sampled randomly each session** — two attempts by the same child on the same day will very likely show different specific images (within the same categories), unlike Lottery Ka Ticket's fixed number sequences.
+- The game can be **rendered unplayable by incomplete admin content** — if any of the 9 image categories drops below its required count, \`configError\` blocks "Start Now" entirely. This is a meaningfully different failure mode from games with a hardcoded fallback bank, which always have *something* to show.
+- Scoring is **not** simply "did you click all N images correctly" — the \`SCORING_RULES\` table means a specific correct-click count can score 0 if it's not one of the table's listed thresholds for that question.
+- \`getPerformanceInterpretation\` exists in source but does not appear to be wired into the visible score screen — likely dead/unused code, not a documented UI feature.
+- A resumed session replays with the **same** \`gameData\` (image set) it started with, since that's persisted in \`saved_state\` — it does not re-randomize on resume.
 
 ---
 
@@ -5991,6 +6667,505 @@ Returns enriched session records with:
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Her Pher V3 API & Data Flow ────────────────────────────────────────────────
+// This game IS a genuine fixed-question test, so the generic API/Data Flow model
+// mostly fits (real 'dropped' status, allScores-style array). What needs
+// correcting: this game additionally fetches its actual content (images) from a
+// dedicated element-library + custom-layout endpoint pair the generic template
+// has no concept of, the per-question record shape is richer (image arrays, not
+// just a score), and total_questions is 8, not a placeholder.
+
+const makeHerPherV3ApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is a visual working-memory (click-to-recall) assessment within the SANGIAN platform. The backend is responsible for creating and managing every game session, serving the admin-managed image library and custom layouts, capturing per-question results in real time, storing assessment observations, and generating reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Serves the admin-uploaded image library (9 categories, \`item0\`–\`item8\`) and any admin-defined custom image layouts
+- Saves gameplay progress and per-question scores in real time
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; admin image library +
+             custom layouts fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Clicks Images (reshuffle after each click) → Score saved after each question
+       ↓
+Game Ends (all 8 scored questions done, OR 3 consecutive zero scores) →
+             Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving a score, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (image library + custom layout + language routes)
+/api/admin/    (admin content-management routes, via the shared Elements panel)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | After every question / on game end |
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/:gameName\` | Finds the latest session to resume | On game load |
+| Game Summaries | GET | \`/api/games/sessions/summaries/:childId\` | Returns per-game summary | Home / splash screen |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Detail | GET | \`/api/games/reports/detail/:gameName\` | Detailed session list for one game | Admin views game report |
+| **Fetch Image Library** | GET | \`/api/public/elements?test_id=${game.key}\` | Loads the admin-uploaded image bank, grouped by category | On game load |
+| **Fetch Custom Layouts** | GET | \`/api/public/element-positions/${game.key}\` | Loads admin-defined custom per-screen image positions, if any | On game load |
+
+The last 2 rows (bold) are specific to this game's fully-dynamic content model — unlike Lottery Ka Ticket's cosmetic-only overrides, this game's actual playable content comes from these endpoints.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active 'in_progress' session already exists for the same
+child and game, the server returns the existing session ID
+instead of creating a duplicate record.
+
+During gameplay, the session is updated with:
+  - Current score (running total across SCORING_RULES lookups)
+  - Progress level (allScores.length)
+  - Saved state (full JSON snapshot, including the sampled gameData
+    so a resumed session sees the same images)
+
+When the game ends:
+  - Status → completed (all 8 scored questions reached) / dropped
+    (3 consecutive zero-score questions) / quit (assessor ended it)
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked as 'quit' or 'dropped', the server
+will never allow it to be overwritten as 'completed'.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+\`'dropped'\` is a real, commonly-hit status for this game — not a value the backend merely supports generically for other games.
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "${game.key}",
+  "total_questions": 8
+}
+\`\`\`
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Fetch Image Library
+
+**Endpoint:** \`GET /api/public/elements?test_id=${game.key}\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "elements": [
+    { "id": 501, "asset_type": "item0", "file_path": "/uploads/.../img1.jpg", "is_active": true },
+    { "id": 502, "asset_type": "item0", "file_path": "/uploads/.../img2.jpg", "is_active": true }
+  ]
+}
+\`\`\`
+The client groups these by \`asset_type\` (\`item0\`–\`item8\`) and randomly samples the required count per category each session via \`buildGameDataFromElements\`. If any category has fewer active elements than \`HERPHER_V3_IMAGE_COUNTS\` requires, the client shows a config-error banner and blocks "Start Now".
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real shape — see **Technical Documentation § Session State Management**):
+\`\`\`json
+{
+  "score": 8,
+  "progress_level": 3,
+  "status": "in_progress",
+  "saved_state": {
+    "currentQuestion": 4,
+    "currentAttempt": 1,
+    "totalScore": 8,
+    "totalTime": 62,
+    "consecutiveZeros": 0,
+    "allScores": [
+      { "qId": 2, "score": 2, "timeTaken": 11, "correctCount": 7, "category": "item1" },
+      { "qId": 3, "score": 2, "timeTaken": 13, "correctCount": 8, "category": "item2" }
+    ],
+    "gameData": { "...": "the sampled image set for this session" },
+    "pauses": []
+  }
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Game is actively being played
+paused       — Game is paused (resume popup will show on next visit)
+completed    — All 8 scored questions were reached
+dropped      — 3 consecutive zero-score questions triggered the stop rule
+quit         — Assessor ended the session early
+\`\`\`
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Tracked up to 10-image sets reliably, lost track beyond that."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/${game.key}\`
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "${game.key}",
+    "status": "paused",
+    "score": 6,
+    "progress_level": 2,
+    "saved_state": { "currentQuestion": 3, "gameData": { "...": "..." }, "consecutiveZeros": 0 },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+| Elements table (shared \`admin_elements\`-style store) | Admin-uploaded images per category, plus optional custom layout positions |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Internal game key (${game.key})
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — Sum of SCORING_RULES lookups, out of 25
+total_questions INT      — 8 for this game
+progress_level  INT      — allScores.length
+status          ENUM     — in_progress / paused / completed / quit / dropped
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: currentQuestion, currentAttempt,
+                            allScores, gameData, timings, consecutiveZeros
+\`\`\`
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Questions Answered → saved_state JSON updated with each result
+       ↓
+Game Ends Normally → status = 'completed', end_time recorded
+3 Consecutive Zero Scores → status = 'dropped'
+Game Quit Early     → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds the sum of \`SCORING_RULES[questionNumber][correctCount]\` across all 8 scored questions, out of a possible 25 — not a simple correct-answer count.
+
+### Report Score Aggregation
+The Reports Detail API (\`GET /reports/detail/:gameName\`) reads the \`saved_state\` JSON and calculates:
+\`\`\`
+correct_count       = sum of per-question score values (not a count of "correct" questions)
+attempted_questions = allScores.length
+actual_game_time    = sum of all timeTaken values
+total_session_time  = end_time - start_time (in seconds)
+\`\`\`
+Since scores here are points-per-question (0–4) rather than binary 1/0, a naive "count of score===1 questions" style aggregation (used by some simpler games) would misrepresent this game's results — worth being deliberate about when building cross-game report comparisons.
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — "Did you enjoy playing the game?" | Single choice, required |
+| Q2 — "How did the game feel for you?" | Single choice, required |
+| Q3 — "Did you feel tired while playing the game?" | Single choice, required |
+| Q4 — "Would you like to play the game again?" | Single choice, required |
+| Q5 — Observed behaviors | Multi-select checkboxes, **required (≥1)** |
+| Additional Notes | Free text, optional |
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. \`'dropped'\` genuinely belongs in this check for this game.
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist |
+| 500 | Internal Server Error — database or processing failure |
+
+### Client-Side Resilience
+- Game continues running locally if a save API call fails
+- Session ID is stored in React state for the duration of gameplay
+- If the admin image library fetch fails, the config-error banner may block Start entirely rather than falling back silently — see **Technical Documentation § Error Handling**
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard)
+- Image category counts enforced server-side in \`herPherV3.js\` (\`HERPHER_V3_IMAGE_COUNTS\`), mirroring the client-side check
+
+---
+
+## 12. Visual Workflow
+
+*Diagrams will be added in a future update.*
+
+---
+
+## 13. Developer Notes
+
+### Content Model Difference
+Unlike games with a hardcoded question bank, this game's playable content is entirely dependent on admin-uploaded images meeting minimum counts per category. A content audit for this game means checking the Elements admin panel, not reading a source file.
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. This game's shape (\`currentQuestion\`/\`currentAttempt\`/\`allScores\`, plus a persisted \`gameData\` snapshot) is closest to the platform's standard \`allScores\`-based games, but with richer per-record image-tracking fields than most.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New question metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order.
+
+### Stage 1 — Game Load (Resume Check + Content Fetch)
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+
+Purpose: Check if the child has an unfinished session
+\`\`\`
+\`\`\`
+GET /api/public/elements?test_id=${game.key}
+GET /api/public/element-positions/${game.key}
+
+Purpose: Load the admin image library (grouped by category) and any
+custom layout positions. If any category is short of its required
+count, a config-error banner blocks Start.
+\`\`\`
+
+### Stage 2 — Session Start
+
+\`\`\`
+POST /api/games/sessions/start
+Sends: child_id, game_name, total_questions: 8
+Receives: sessionId, attempt_no
+Database: New row in game_sessions, status = 'in_progress'
+\`\`\`
+
+### Stage 3 — Gameplay (Auto-Save)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends: score, progress_level: allScores.length, status: 'in_progress',
+       saved_state (see §6 for the exact shape, including the sampled
+       gameData image set so a resumed session sees the same images)
+\`\`\`
+
+### Stage 4 — Pause / Quit
+
+\`\`\`
+Pause: PUT .../update → status='paused', pause event appended
+Quit:  PUT .../update → status='quit', quit_reason saved, screen → Score,
+       PDF generation triggers
+\`\`\`
+
+### Stage 5 — Game End (Stop Rule or Completion)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+  status = 'completed' (all 8 scored questions reached) OR
+           'dropped' (3 consecutive zero-score questions)
+  score = final sum of SCORING_RULES lookups
+  end_time = NOW()
+\`\`\`
+
+### Stage 6 — Behavioral Assessment Submission
+
+\`\`\`
+POST /api/games/assessments
+Sends: session_id, child_id, q1-q4, q5_behaviors (≥1 required), additional_notes
+Database: New row in game_assessments
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+\`\`\`
+Clone #dashboard-capture-area off-screen → html2canvas(scale:1.5) →
+jsPDF(A4) → POST /api/games/pdfs/upload
+Filename: [ChildName]_Her_Pher_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins game_sessions + children + game_assessments + game_dashboard_pdfs
+Parses saved_state JSON to extract per-question point scores (not binary
+correct/incorrect) and the image-level match/miss breakdown
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
@@ -8025,6 +9200,235 @@ const makeLotteryWorkflowFlows = (game) => ({
     ],
 });
 
+// makeHerPherV3WorkflowFlows — Her Pher V3 IS a genuine fixed-question test
+// (like Lottery Ka Ticket), so most of the shared model fits. What's different:
+// content (images) is dynamically admin-managed and server-fetched, each scored
+// question has a practice + scored attempt pair, scoring is a point LOOKUP
+// TABLE keyed by (question, correctCount) rather than binary 1/0, and the stop
+// rule tracks consecutive ZERO-SCORE questions (not "wrong answers").
+const makeHerPherV3WorkflowFlows = (game) => ({
+    journey: [
+        { type: 'start',    icon: '📱', title: 'Game Load',
+            simple:   'The child opens the game on their device.',
+            detailed: 'React component mounts. Child data is read from localStorage. If no child is logged in, user is redirected to login.',
+            technical:'useEffect → reads localStorage("currentChild") → if null, navigate("/login") → calls checkResume(childId) + fetchActivity(childId)' },
+        { type: 'api',      icon: '🖼️', title: 'Image Library Fetch',
+            simple:   'The admin-uploaded image bank (grouped into 9 categories) is loaded, and the required number of images per round is randomly sampled.',
+            detailed: 'If any category is short of its required count, a config-error banner blocks "Start Now" entirely — this game has no hardcoded fallback bank.',
+            technical:`GET /api/public/elements?test_id=${game.key}\nGET /api/public/element-positions/${game.key}\nbuildGameDataFromElements() → randomly samples required count per category (item0...item8)` },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'The system checks if the child has a previous unfinished session.',
+            detailed: 'The backend queries the latest session for this child and game. If found, a resume popup is shown — and the SAME sampled image set is restored, not a fresh random sample.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nReturns: sessionInfo (saved_state with currentQuestion, currentAttempt, allScores, gameData) or null` },
+        { type: 'decision', icon: '❓', title: 'Saved Session Found?',
+            simple:   'If a previous session is found, the child can choose to continue or start fresh.',
+            detailed: 'Resume restores the exact question/attempt pointer, all scored results, and the original image set. Start Fresh discards it and samples a new image set.',
+            technical:'sessionInfo found → showResumeModal = true\nResume → restores currentQuestion, currentAttempt, allScores, gameData, timers, consecutiveZeros from saved_state',
+            branches: [{ label: 'Yes → Resume Prompt', color: '#f59e0b' }, { label: 'No → Splash Screen', color: '#10b981' }] },
+        { type: 'process',  icon: '🎵', title: 'Splash Screen',
+            simple:   'Game instructions are displayed and audio plays automatically.',
+            detailed: '"Start Now" stays disabled until BOTH the audio finishes AND the image library has enough content for every category.',
+            technical:'<audio src=".../splash.wav" onEnded/onError={()=>setAudioFinished(true)} />\ndisabled={!audioFinished || configError}' },
+        { type: 'api',      icon: '▶️', title: 'Session Created on Server',
+            simple:   'A unique session ID is created to track this child\'s game attempt.',
+            detailed: 'The server creates a new record in the database. If an active session already exists (deduplication guard), the existing ID is returned.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name: "${game.key}", total_questions: 8 }\nResponse: { sessionId, attempt_no }` },
+        { type: 'process',  icon: '🖼️', title: 'Practice Slot (Slot 1, 6 Images)',
+            simple:   'The child tries the click-to-recall mechanic once, unscored, with manual controls.',
+            detailed: 'Unlike every other slot, slot 1 has manual "Retake Sample" and "Start Game" buttons instead of auto-advancing — the assessor decides when the child is ready to begin the scored rounds.',
+            technical:'currentQuestion=1 (isSample) → manual onRetake/onStartGame handlers, no auto-advance' },
+        { type: 'process',  icon: '🔁', title: 'Question Loop (8 Scored Questions)',
+            simple:   'For each of the 8 scored rounds: a practice attempt, then a scored attempt, then the score is recorded and stop rules are checked.',
+            detailed: 'See "Stage Flow" for the detailed per-question lifecycle, including the reshuffle-after-every-click mechanic.',
+            technical:'Attempt 1 (practice, unscored) → Attempt 2 (scored) → calcScore() → checkStopRule() → currentQuestion++ or setScreen("score")',
+            isRef: true, refLabel: 'See Stage Flow →' },
+        { type: 'process',  icon: '📊', title: 'Score Screen',
+            simple:   'The final score and all question results are displayed.',
+            detailed: 'Score screen shows: total score out of 25 (not a simple correct-answer count), a per-question results table with expected/selected/matched/missed image breakdowns.',
+            technical:'setScreen("score") → total = sum of SCORING_RULES lookups across allScores\nResults table rendered per-question with image-level match/miss badges' },
+        { type: 'process',  icon: '📋', title: 'Assessment Form',
+            simple:   'The assessor fills in behavioral observations about the child\'s session.',
+            detailed: 'Four required questions (radio buttons) + eight behavioral checkboxes (at least 1 required) + free-text notes with voice dictation support, confirmed via a modal before submission.',
+            technical:'<SessionAssessmentForm /> component renders\nQ1–Q5 required (Q5 needs >=1 checked)\nConfirm modal → submitAssessmentForm()' },
+        { type: 'api',      icon: '💾', title: 'Assessment Saved',
+            simple:   'The assessor\'s observations are saved to the system.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID.',
+            technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }' },
+        { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
+            simple:   'A PDF summary of the session is automatically created and saved.',
+            detailed: 'The score screen (#dashboard-capture-area) is cloned off-screen, captured as a high-resolution image, and embedded in an A4 PDF.',
+            technical:'Clone #dashboard-capture-area off-screen → html2canvas(scale:1.5) → jsPDF(A4) → POST /api/games/pdfs/upload\nFilename: [ChildName]_Her_Pher_SES[id]_[timestamp].pdf' },
+        { type: 'success',  icon: '✅', title: 'Session Complete',
+            simple:   'The assessment is finished. The admin can now view the full report.',
+            detailed: 'Session status is "completed" (all 8 scored questions reached) or "dropped" (3 consecutive zero-score questions).',
+            technical:'game_sessions.status = "completed" | "dropped", end_time = NOW()\nReport available: GET /api/games/reports/detail/:gameName' },
+    ],
+
+    question: [
+        { type: 'start',    icon: '🖼️', title: 'Images Scattered',
+            simple:   'All images for the current round are scattered on the canvas.',
+            detailed: 'Position comes from an admin-defined custom layout if one exists for this screen, otherwise an algorithmic grid.',
+            technical:'generateShuffledPositions() → uses element-positions override if present, else grid layout → setQTimer(0)' },
+        { type: 'process',  icon: '👆', title: 'Child Clicks an Image',
+            simple:   'The child clicks one image at a time.',
+            detailed: 'touch.wav plays on click. Clicking an already-clicked image counts as a duplicate/incorrect click, not a fresh chance.',
+            technical:'handleImageClick(img) → isNew = !clickedImages.has(img.id) → new Audio(".../touch.wav").play()' },
+        { type: 'process',  icon: '🔀', title: 'Images Reshuffle',
+            simple:   'After every single click, ALL images move to new positions.',
+            detailed: 'This is the core memory challenge — the child must remember WHICH images they\'ve clicked, not WHERE they were, since position is never a reliable cue.',
+            technical:'shuffleInProgress = true → reposition all images → shuffleInProgress = false' },
+        { type: 'decision', icon: '🏁', title: 'All N Images Clicked?',
+            simple:   'The round auto-completes once the child has made exactly N clicks (N = required count for this question).',
+            detailed: 'Slots 2-9 require 7, 8, 9, 10, 11, 12, 13, 14 distinct clicks respectively.',
+            technical:'newSelected.length >= qData.imageCount → round complete',
+            branches: [{ label: 'Yes → Score This Attempt', color: '#10b981' }, { label: 'No → Continue Clicking', color: '#4f46e5' }] },
+        { type: 'process',  icon: '⚖️', title: 'Attempt 1 (Practice) vs Attempt 2 (Scored)?',
+            simple:   'Only the SECOND attempt on each scored question actually counts toward the score.',
+            detailed: 'Attempt 1 is a practice pass (admin can toggle whether it\'s even shown). Attempt 2 is what feeds calcScore() and the stop rule.',
+            technical:'if (currentAttempt === 1) → screen_change.wav, advance to attempt 2, no scoring\nif (currentAttempt === 2 && !isSample) → calcScore() runs' },
+        { type: 'process',  icon: '📊', title: 'Score Looked Up (Not Binary)',
+            simple:   'The score is looked up from a point table based on how many images were correctly clicked — not a simple 1/0.',
+            detailed: 'A correct-click count not listed in the table for that question scores 0, even if it\'s "close" to a scoring threshold.',
+            technical:'score = SCORING_RULES[questionNumber][correctCount] || 0\nRecord: { qId, score, timeTaken, correctCount, expectedImages, selectedImages, matchedImages, incorrectSelections, missedImages, category }' },
+        { type: 'decision', icon: '⚠️', title: '3 Consecutive Zero Scores?',
+            simple:   'If 3 scored questions in a row score exactly 0, the game stops. This is the ONLY stop rule in this game.',
+            detailed: 'The system tracks consecutiveZeros, incrementing on each zero-score question and resetting to 0 on any question scoring above 0. There is no category concept anywhere in this game.',
+            technical:'consecutiveZeros = (score===0) ? consecutiveZeros+1 : 0\nif consecutiveZeros >= 3 → autoStopped = true',
+            branches: [{ label: 'Yes → Game Stops (status=dropped)', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'decision', icon: '🏁', title: 'All 8 Scored Questions Done?',
+            simple:   'If all 8 scored questions have been completed, the game ends normally.',
+            detailed: 'After question 9\'s scored attempt, the game transitions to the score screen with status "completed" rather than "dropped".',
+            technical:'currentQuestion + 1 > TOTAL_SCORED_QUESTIONS (8) → isGameOver = true, status="completed"',
+            branches: [{ label: 'Yes → Score Screen (status=completed)', color: '#10b981' }, { label: 'No → Next Question', color: '#4f46e5' }] },
+        { type: 'stop',     icon: '🛑', title: 'Stop Rule Triggered',
+            simple:   'The game stops early because 3 consecutive questions scored exactly 0.',
+            detailed: 'This game genuinely sets status to "dropped" (not "completed") when the stop rule fires.',
+            technical:'completeGame(autoStopped=true) → PUT update: { status: "dropped", score, saved_state }\nthen setTimeout(generateAndUploadPDF, 1500)' },
+        { type: 'success',  icon: '➡️', title: 'Advance to Next Question',
+            simple:   'The next question is shown, starting with its own practice attempt.',
+            detailed: 'The question timer resets to 0. The question pointer advances by 1, attempt resets to 1.',
+            technical:'setCurrentQuestion(q => q + 1) → setCurrentAttempt(1) → setQTimer(0)' },
+    ],
+
+    score: [
+        { type: 'start',    icon: '🎯', title: 'Round Completes',
+            simple:   'The child finishes clicking all N required images for this attempt.',
+            detailed: 'Scoring is always automatic in this game — there is no assessor judgment call.',
+            technical:'newSelected.length >= qData.imageCount → calcScore(questionNumber, correctCount)' },
+        { type: 'process',  icon: '⚖️', title: 'Point-Table Score Applied',
+            simple:   'Each question is scored from a point lookup table based on correct-click count, not a simple correct/incorrect.',
+            detailed: 'Unlike a binary-scored game, a question can be worth 0, 1, 2, 3, or 4 points depending on the SCORING_RULES table for that specific question number.',
+            technical:'score = SCORING_RULES[questionNumber][correctCount] || 0\nRecord: { qId, score, timeTaken, correctCount, expectedImages, selectedImages, matchedImages, incorrectSelections, missedImages, category }' },
+        { type: 'process',  icon: '📈', title: 'Running Score Updated',
+            simple:   'The total score updates after each scored question.',
+            detailed: 'The total score is the sum of all per-question point values, not a count of "correct" questions.',
+            technical:'totalScore = allScores.reduce((sum,s) => sum + s.score, 0)\nMaximum possible = 25' },
+        { type: 'decision', icon: '🔢', title: 'Consecutive Zero-Score Check',
+            simple:   '3 zero-score questions in a row stops the game. There is no other stop condition.',
+            detailed: 'There is NO category-cutoff check here at all — this game has no category structure or MIN_CORRECT thresholds.',
+            technical:'consecutiveZeros updates on every scored (attempt 2) answer\nif consecutiveZeros >= 3: autoStopped = true, status will be "dropped"',
+            branches: [{ label: '≥ 3 zero scores → STOP (dropped)', color: '#dc2626' }, { label: '< 3 zero scores → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🏆', title: 'Final Score Calculated',
+            simple:   'The sum of all per-question points (out of 25) becomes the final score.',
+            detailed: 'This is saved to the game_sessions.score column.',
+            technical:'finalScore = allScores.reduce((sum,s) => sum + s.score, 0)\nPUT /sessions/update: { score: finalScore, status: "completed"|"dropped" }' },
+        { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
+            simple:   'The score screen shows performance metrics and a per-image breakdown for each question.',
+            detailed: 'Metrics include: Total Score (out of 25), a percentage, total time, and per-question expected/selected/matched/missed image lists.',
+            technical:'Percentage: (totalScore / 25 * 100).toFixed(1)\nPer-question breakdown rendered from matchedImages/incorrectSelections/missedImages' },
+        { type: 'success',  icon: '✅', title: 'Score Complete',
+            simple:   'Assessment scoring is done. Assessment form follows.',
+            detailed: 'All per-question results are displayed in a table. The behavioral assessment form then appears for the assessor to complete.',
+            technical:'screen = "score" → SessionAssessmentForm renders\nassessmentSubmitted controls which buttons appear after form submit' },
+    ],
+
+    api: [
+        { type: 'start',    icon: '📱', title: 'Client-Side Event',
+            simple:   'Something happens in the game — an image click, a question completing, or the game ending.',
+            detailed: 'Every significant game action (start, score, pause, quit, submit assessment) triggers an API call to the backend server.',
+            technical:'React state change or user interaction → async axios call → awaits server response' },
+        { type: 'api',      icon: '🖼️', title: 'Image Library & Layout Fetch',
+            simple:   'The admin-uploaded image bank and any custom layouts are loaded.',
+            detailed: 'Unlike games with a hardcoded question bank, this game\'s actual playable content depends entirely on this fetch succeeding with enough content per category.',
+            technical:`GET /api/public/elements?test_id=${game.key}\nGET /api/public/element-positions/${game.key}` },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'Check if the child can continue a previous session.',
+            detailed: 'Called once when the game loads. Returns the latest session for this child/game, including the original sampled image set.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nResponse: { success, sessionInfo: { id, status, saved_state, attempt_no } | null }` },
+        { type: 'api',      icon: '▶️', title: 'Start Session',
+            simple:   'Create a new session record when the child starts.',
+            detailed: 'Returns a session ID used for all subsequent updates.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name:"${game.key}", total_questions: 8 }\nHTTP 201 (new) or 200 (reused)` },
+        { type: 'api',      icon: '💾', title: 'Progress Update (Repeated)',
+            simple:   'After every question, the progress is saved to the server.',
+            detailed: 'Carries the full game snapshot — including the sampled image set — so sessions can be resumed with the exact same content.',
+            technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { currentQuestion, currentAttempt, allScores, gameData, timerSeconds, consecutiveZeros, pauses } }\nStatus values: "in_progress" | "paused" | "quit" | "completed" | "dropped"` },
+        { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
+            detailed: 'This guard is fully active for this game — "dropped" is a real, commonly-hit status here.',
+            technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })`,
+            branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
+        { type: 'api',      icon: '📋', title: 'Assessment Submission',
+            simple:   'Assessor observations are sent to the server.',
+            detailed: 'Saves behavioral data to a separate table linked by session_id.',
+            technical:`POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors:[], additional_notes }` },
+        { type: 'api',      icon: '📄', title: 'PDF Upload',
+            simple:   'The session dashboard is saved as a PDF file.',
+            detailed: 'Score screen is cloned off-screen and captured with html2canvas, converted to PDF via jsPDF, then uploaded.',
+            technical:`POST /api/games/pdfs/upload (multipart/form-data)\nFields: pdf (file), child_id, session_id, game_name` },
+        { type: 'api',      icon: '📈', title: 'Admin Report',
+            simple:   'The administrator views the complete session data.',
+            detailed: 'Admin-only endpoint. Returns session records with per-question point scores and image-level match/miss breakdowns.',
+            technical:`GET /api/games/reports/detail/${game.key}\nAuth: Admin JWT Bearer token` },
+        { type: 'success',  icon: '✅', title: 'Data Cycle Complete',
+            simple:   'All game data is safely stored and accessible to administrators.',
+            detailed: 'Three tables contain the full session record: game_sessions, game_assessments, game_dashboard_pdfs.',
+            technical:'game_sessions: status="completed"|"dropped", end_time, saved_state\ngame_assessments: q1–q4, behaviors[], notes\ngame_dashboard_pdfs: file_path' },
+    ],
+
+    session: [
+        { type: 'start',    icon: '🟢', title: 'Status: in_progress',
+            simple:   'The session is active — the child is playing.',
+            detailed: 'Set when the session is created. Updated with score and saved_state on every question advance.',
+            technical:`game_sessions.status = "in_progress"\nCreated by: POST /sessions/start\nUpdated by: PUT /sessions/update after each question` },
+        { type: 'decision', icon: '⏸️', title: 'Assessor Pauses?',
+            simple:   'The assessor can pause the session at any time.',
+            detailed: 'Pause saves the full game state to the server, including the exact sampled image set.',
+            technical:`PUT /sessions/update: { status:"paused", saved_state: { ...state, pauses: [...pauses, { reason, timestamp }] } }`,
+            branches: [{ label: 'Yes → Pause & Save', color: '#f59e0b' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟡', title: 'Status: paused',
+            simple:   'The game is saved and the child can resume later, with the same images.',
+            detailed: 'On next visit, the resume check returns this session, including the original image set — not a freshly re-sampled one.',
+            technical:'game_sessions.status = "paused"\nResume: setCurrentQuestion, setCurrentAttempt, setAllScores, setGameData, setConsecutiveZeros from saved_state' },
+        { type: 'decision', icon: '🚪', title: 'Assessor Quits?',
+            simple:   'The assessor can end the session early for any reason.',
+            detailed: 'Quit requires a reason to be entered. The game transitions to the score screen.',
+            technical:`PUT /sessions/update: { status:"quit", quit_reason: reason, end_time:NOW() }\nsetScreen("score") → setTimeout(generateAndUploadPDF, 1500)`,
+            branches: [{ label: 'Yes → Quit', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🔴', title: 'Status: quit',
+            simple:   'The session was ended early by the assessor.',
+            detailed: 'Score screen shows the session was terminated with the quit reason.',
+            technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
+        { type: 'decision', icon: '📏', title: 'Stop Rule Triggered?',
+            simple:   '3 consecutive zero-score questions automatically stops the game — this is the ONLY automatic stop rule.',
+            detailed: 'When it fires, the status genuinely becomes "dropped" — distinct from a session that naturally finished all 8 scored questions ("completed").',
+            technical:'consecutiveZeros >= 3 → autoStopped = true\nif autoStopped: PUT update: { status: "dropped" }\nelse if all 8 done: PUT update: { status: "completed" }',
+            branches: [{ label: 'Yes → Automatic Stop (status=dropped)', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟢', title: 'Status: completed / dropped',
+            simple:   'The session ended — either all 8 scored questions were answered ("completed") or the 3-consecutive-zero-score rule fired ("dropped").',
+            detailed: 'This distinction is real and meaningful here — reports can tell natural completions apart from early stops.',
+            technical:'game_sessions.status = "completed" | "dropped"\nend_time = NOW()' },
+        { type: 'process',  icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once ended, a session status cannot be changed.',
+            detailed: 'The server enforces that "quit" or "dropped" sessions can never be overwritten as "completed".',
+            technical:'Backend guard: if (newStatus==="completed" && (current==="quit"||current==="dropped"))\n→ return 200 { message:"Session already finalized" }' },
+        { type: 'success',  icon: '📊', title: 'Report Available',
+            simple:   'The administrator can view the complete session in the Reports panel.',
+            detailed: 'All data — session, assessment, PDF — is linked by session_id and visible in the admin Reports module.',
+            technical:'GET /api/games/reports/detail/:gameName (admin JWT required)\nJOINs: game_sessions + children + game_assessments + game_dashboard_pdfs' },
+    ],
+});
+
 // makeReadingV2WorkflowFlows — Padh ke Batao V2 is an ASER 2014-style adaptive
 // reading ladder, NOT a fixed-question test. It has no QUESTIONS array, no
 // consecutive-wrong stop rule, and no category-minimum cutoff — so it gets its
@@ -8555,6 +9959,7 @@ const WorkflowDiagramViewer = ({ game, section }) => {
         game.key === 'literacy_reading_skill_v2' ? makeReadingV2WorkflowFlows(game) :
         game.key === 'numeracy_number_skill_v3' ? makeAnkganitV3WorkflowFlows(game) :
         game.key === 'number_recall_lottery' ? makeLotteryWorkflowFlows(game) :
+        game.key === 'working_memory_herpher_v3' ? makeHerPherV3WorkflowFlows(game) :
         makeWorkflowFlows(game);
     const nodes = flows[activeFlow] || [];
     const fmtSync = (d) => d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -8716,6 +10121,12 @@ const getConnectedModules = (game) => {
             { file: 'NumberRecallContentManager.jsx', type: 'Component', icon: '🧩', desc: 'Admin panel — cosmetic per-language digit-glyph overrides only (never affects scoring)' },
         );
     }
+    if (game.key === 'working_memory_herpher_v3') {
+        modules.splice(1, 0,
+            { file: 'HerPherElements.jsx',  type: 'Component', icon: '🧩', desc: 'Admin panel — upload/manage the actual image bank per category (this game\'s real content source)' },
+            { file: 'herPherV3.js',         type: 'Backend',   icon: '🖥️', desc: 'Server-side required-image-count enforcement per category' },
+        );
+    }
     return modules;
 };
 
@@ -8873,7 +10284,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -9139,7 +10550,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
@@ -9477,7 +10888,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
-    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
+    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery', 'working_memory_herpher_v3'].includes(game.key);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
@@ -9825,6 +11236,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2TechDocTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3TechDocTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryTechDocTemplate(selectedGame) :
+                                selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3TechDocTemplate(selectedGame) :
                                 makeTechDocTemplate(selectedGame)
                             }
                         />
@@ -9837,6 +11249,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ApiTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ApiTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryApiTemplate(selectedGame) :
+                                selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ApiTemplate(selectedGame) :
                                 makeApiTemplate(selectedGame)
                             }
                         />
@@ -9849,6 +11262,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryScoreLogicTemplate(selectedGame) :
+                                selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ScoreLogicTemplate(selectedGame) :
                                 makeScoreLogicTemplate(selectedGame)
                             }
                         />
@@ -9861,6 +11275,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2AssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3AssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryAssessmentTemplate(selectedGame) :
+                                selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3AssessmentTemplate(selectedGame) :
                                 makeAssessmentTemplate(selectedGame)
                             }
                         />
