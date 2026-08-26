@@ -8873,7 +8873,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -9139,7 +9139,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
-    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
