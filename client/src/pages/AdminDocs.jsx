@@ -65,6 +65,7 @@ const HIDDEN_SECTIONS_BY_GAME = {
     number_recall_lottery: ['reports'],
     working_memory_herpher_v3: ['reports'],
     rover_mela: ['reports'],
+    cognitive_flex_chor: ['reports'],
 };
 const getVisibleSections = (game) =>
     GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
