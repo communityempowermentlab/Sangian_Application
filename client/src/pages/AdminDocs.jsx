@@ -62,6 +62,7 @@ const HIDDEN_SECTIONS_BY_GAME = {
     number_recall_lottery_v2: ['technical_docs_2013'],
     literacy_reading_skill_v2: ['technical_docs_2013', 'reports'],
     numeracy_number_skill_v3: ['technical_docs_2013', 'reports'],
+    number_recall_lottery: ['reports'],
 };
 const getVisibleSections = (game) =>
     GAME_SECTIONS.filter(sec => !(HIDDEN_SECTIONS_BY_GAME[game.key] || []).includes(sec.key));
@@ -169,6 +170,20 @@ const GAME_INTRO_DEFAULTS = {
             objective:   'इस Test का उद्देश्य बच्चे की बुनियादी गणितीय क्षमता का आकलन करना है।',
             description: 'इस गतिविधि में बच्चे संख्याओं की पहचान, गिनती और सरल गणितीय सवालों को हल करते हैं। इससे बच्चे की बुनियादी गणितीय समझ का आकलन किया जाता है।',
             guidance:    'संख्याओं और सवालों को ध्यान से देखो। सोचो और अपना सर्वश्रेष्ठ उत्तर दो। तुम गणित में बहुत अच्छे हो!',
+        },
+    },
+    number_recall_lottery: {
+        en: {
+            skill:       'Auditory Working Memory - Number Sequence Recall',
+            objective:   'This test assesses the child\'s auditory working memory by measuring how many spoken numbers they can recall in the correct order. Sequences grow progressively longer, from 2 numbers up to 9, until the child\'s recall capacity is reached.',
+            description: 'The child listens to a spoken sequence of numbers and then taps them back in the same order on a numpad. Sequences get longer as the test progresses. This activity helps evaluate how well a child can hold and recall information they\'ve just heard.',
+            guidance:    'Listen carefully to the numbers. Then tap them back in the same order you heard them. Take your time!',
+        },
+        hi: {
+            skill:       'श्रवण कार्यशील स्मृति - संख्या क्रम स्मरण',
+            objective:   'इस टेस्ट का उद्देश्य बच्चे की श्रवण कार्यशील स्मृति का आकलन करना है, यह मापकर कि वह सही क्रम में कितनी बोली गई संख्याएं याद रख पाता है। संख्याओं का क्रम धीरे-धीरे लंबा होता जाता है — 2 संख्याओं से शुरू होकर 9 तक — जब तक बच्चे की स्मरण क्षमता का पता न चल जाए।',
+            description: 'बच्चा बोली गई संख्याओं का एक क्रम सुनता है और फिर उन्हें उसी क्रम में नंबरपैड पर दबाता है। टेस्ट आगे बढ़ने के साथ संख्याओं का क्रम लंबा होता जाता है। यह गतिविधि यह आकलन करने में मदद करती है कि बच्चा अभी-अभी सुनी गई जानकारी को कितनी अच्छी तरह याद रख पाता है।',
+            guidance:    'संख्याओं को ध्यान से सुनो। फिर उन्हें उसी क्रम में दबाओ जिस क्रम में तुमने सुना था। जल्दी मत करो!',
         },
     },
     numeracy_number_skill_v3: {
@@ -1118,6 +1133,172 @@ Like the reading assessment on this platform, **${game.title}** is derived from 
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Lottery Ka Ticket Score & Progression Logic ───────────────────────────────
+// This game IS a genuine fixed-question test with a real per-question binary
+// score and a real consecutive-wrong stop rule — the generic Score Logic
+// content mostly fits. What's wrong in the generic/merged template for this
+// game specifically: there is NO category structure or MIN_CORRECT concept at
+// all, and scoring is 100% automatic (no manual/assessor-click scoring, no
+// division-answer branch).
+
+const makeLotteryScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+This document explains how the scoring system works for **${game.title}** — what actions earn a score, how scores are recorded per question, how the final score is calculated, and the stop rule that determines when the assessment ends early. It is written for SSL teams, researchers, assessors, QA testers, and developers.
+
+---
+
+## 2. Score Unit
+
+Each question in **${game.title}** is scored as a **binary value**, based on an exact sequence match:
+
+\`\`\`
+exactMatch(selected, correct):
+  same length AND same values AND same order → score = 1
+  otherwise                                   → score = 0
+\`\`\`
+
+There is **no partial credit** — recalling 4 of 5 digits correctly, or getting the right digits in the wrong order, both score 0, same as getting none right. Every question is worth exactly 1 point.
+
+---
+
+## 3. Scoring Method — Fully Automatic
+
+Unlike some other games on this platform, **there is no manual/assessor-click scoring anywhere in this game**, and no "division answer" scoring branch:
+
+\`\`\`
+Child taps digits on the numpad, in the order they intend to answer
+Once exactly maxSelect digits are selected, "Next Question" becomes enabled
+Clicking it BOTH scores (exactMatch) AND advances — one action, no separate submit
+\`\`\`
+The assessor's role during scoring is purely to operate the "Next Question" / "Replay" buttons on the child's behalf if needed — there is no correct/incorrect judgment call for the assessor to make.
+
+---
+
+## 4. Per-Question Score Record
+
+Every answered question (including the 2 Teaching questions) produces a score record containing more than the platform's generic per-question shape:
+
+\`\`\`json
+{
+  "qId": 5,
+  "questionNumber": 5,
+  "score": 1,
+  "timeTaken": 6,
+  "userResponse": [8, 3, 9, 1],
+  "correctAnswer": [8, 3, 9, 1],
+  "replayCount": 1
+}
+\`\`\`
+
+| Field | Description |
+|---|---|
+| \`qId\` / \`questionNumber\` | Question identifier / sequential position |
+| \`score\` | 1 = exact match, 0 = anything else |
+| \`timeTaken\` | Seconds taken to respond |
+| \`userResponse\` | The full digit sequence the child entered, in order |
+| \`correctAnswer\` | The full digit sequence that was spoken, in order |
+| \`replayCount\` | How many times the child replayed the audio for this question (does not affect scoring) |
+
+All records are stored in the session's \`saved_state.allScores\` array (game questions) and \`saved_state.teachingScores\` array (the 2 teaching questions) — **not** a single combined array.
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`
+Total Score = count of allScores where score === 1
+            + count of teachingScores where score === 1
+\`\`\`
+
+This is updated after every question and saved to the \`game_sessions.score\` column. The score shown on the score screen is out of **22** (20 game questions + 2 teaching questions), not 20 — a detail the generic platform scoring model doesn't account for, since it assumes teaching/practice items are always unscored.
+
+**Example:**
+
+| Question | Score |
+|---|---|
+| Teaching 1 | 1 |
+| Teaching 2 | 1 |
+| Q1 | 1 |
+| Q2 | 0 |
+| Q3 | 1 |
+| **Total (of 22 possible)** | **4** |
+
+---
+
+## 6. Score Display
+
+On the final score screen, the system displays:
+
+| Metric | Calculation |
+|---|---|
+| Total Score | correct answers, out of 22 |
+| Incorrect | attempted − correct |
+| Percentage | (correct ÷ 22) × 100 |
+| Total Time | sum of all \`timeTaken\` values |
+| Average Time per Question | total time ÷ questions attempted |
+
+---
+
+## 7. Score and Stop Rule Interaction
+
+The score after each question is also checked against the stop rule. If the stop condition triggers, the game ends and the current total (out of however many questions were reached) is saved as the final score.
+
+---
+
+## 8. Stop Rule
+
+**${game.title}** has exactly **one** stop rule — there is no category-minimum concept in this game at all:
+
+\`\`\`
+Consecutive Wrong Answer Rule:
+  If the child gives 3 incorrect answers in a row (back-to-back),
+  the game stops immediately.
+
+  Consecutive wrong count resets to 0 after any correct answer.
+\`\`\`
+When triggered:
+\`\`\`
+Stop condition triggered
+       ↓
+Game transitions to Score Screen
+       ↓
+Session updated with status = 'dropped' (natural completion instead uses 'completed')
+       ↓
+Scores up to that point are saved
+       ↓
+Assessment form appears for assessor to complete
+       ↓
+PDF report generated
+\`\`\`
+
+---
+
+## 9. Score Persistence
+
+Score is saved to the server:
+- After every question during active play (\`status: 'in_progress'\`)
+- At game end (\`status: 'completed'\` if all 20 questions were reached, \`'dropped'\` if the consecutive-wrong rule triggered, or \`'quit'\` if the assessor ended it manually)
+
+The score column in \`game_sessions\` always reflects the most recent saved value.
+
+---
+
+## 10. What Does NOT Affect Score
+
+- Time taken (no speed bonus or time penalty)
+- Number of pauses
+- \`replayCount\` — replaying the audio as many times as needed never penalizes the score
+- Whether the game was resumed from a saved state
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Assessment Behavior template (from SessionAssessmentForm.jsx actual values) ──
 
 const makeAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
@@ -1590,6 +1771,169 @@ In the Admin Reports panel, every session record shows the assessment responses 
 
 - The assessment form is **disabled** after submission — responses cannot be changed
 - The session status does not change when the assessment is submitted (numeracy level/status are independent)
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Lottery Ka Ticket Assessment Behavior — the SessionAssessmentForm itself ──
+// is shared/identical across games (same real bugs found and fixed here as for
+// the other two games: Q5 is actually required, and there's a confirmation
+// modal the old generic template never documented). Only the framing differs.
+
+const makeLotteryAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
+
+---
+
+## 1. Overview
+
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
+
+---
+
+## 2. What Is Being Measured
+
+**${game.title}** is a structured working-memory assessment. Beyond the question scores, the system tracks:
+
+- **Accuracy** — whether the child recalls the exact sequence, in order
+- **Speed** — how long the child takes to respond per question
+- **Recall capacity** — the longest sequence length the child can reliably recall before the 3-consecutive-wrong stop rule triggers
+- **Replay reliance** — how often the child needed the audio replayed to attempt a response (tracked, does not affect scoring)
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged
+
+---
+
+## 3. Behavioral Assessment Form
+
+After every game session (whether completed, dropped, or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games — it does not vary with this game's mechanics.
+
+### Assessment Questions
+
+Exact wording shown on screen (\`en.js\` locale strings), addressed directly to the child:
+
+| # | Question | Response Options |
+|---|---|---|
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
+
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
+
+### Behavioral Observation Checkboxes (Q5)
+
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
+
+\`\`\`
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
+\`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission with "Please select at least one observed behaviour."
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and shows an inline error — Q5 specifically shows "Please select at least one observed behaviour." Submission is blocked until every required field is filled.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+  → if any missing: inline errors shown, submission blocked
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+Dashboard PDF auto-generated and uploaded
+       ↓
+"Retest" and "Home" buttons appear
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes, drops out, or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit', 'dropped')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+Unlike the two adaptive-ladder games on this platform, **this game genuinely can produce a \`'dropped'\` status** (via the 3-consecutive-wrong stop rule) — so \`'dropped'\` legitimately belongs in this check for this game, unlike for the ladder games where it never occurs.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the question scores. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not change when the assessment is submitted (score/status are independent)
 - Assessment data is linked to the session by \`session_id\` and \`child_id\`
 
 ---
@@ -2751,6 +3095,345 @@ Only \`isFinal\` results are appended to the target field. The active recognitio
 - Division has no retry at all, unlike Subtraction's Q1 — a wrong division answer immediately finalizes \`finalLevel = "Subtraction"\`.
 - \`nrMarks\`/\`nrSelectedTexts\` are shared, reset state used by *both* Number Recognition sub-stages — they are not per-stage-scoped, so each stage transition must clear them.
 - No stage has a time limit — \`qTimer\`/\`timerSeconds\` are recorded for reporting only, never used to force a stage to end.
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
+// ─── Lottery Ka Ticket Technical Documentation ─────────────────────────────────
+// Unlike literacy_reading_skill_v2 / numeracy_number_skill_v3, this game IS a
+// genuine fixed-question test (static QUESTIONS array, auto-scored, a real
+// consecutive-wrong stop rule) — so most of makeTechDocTemplate's model fits.
+// But it has NO category/MIN_CORRECT concept at all (that part of the generic
+// template is simply wrong for this game), no manual/assessor scoring, and no
+// division-answer branch — this template corrects those and adds the real
+// sequence-recall specifics (replay tracking, teaching screens, digit 7
+// intentionally excluded, forward-order recall).
+
+const makeLotteryTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
+
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: an auditory working-memory number-sequence-recall test. It IS a genuine fixed-question test (a static 20-question array with automatic scoring and a real stop rule) — but unlike the platform's generic fixed-question template, it has **no category structure or category-minimum thresholds at all**, and **no manual/assessor-click scoring** — every answer is automatically judged by exact sequence match.
+
+---
+
+## 1. Game Identity
+
+| Property | Value |
+|---|---|
+| Internal Key | \`${game.key}\` |
+| Display Title | ${game.title} |
+| Assessment Type | Cognitive — Auditory Working Memory (Number Sequence Recall) |
+| Platform | SANGIAN Web Application (2026) |
+| Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
+
+---
+
+## 2. Screen Architecture
+
+\`\`\`
+[Splash Screen]
+  Audio (splash1.m4a) plays automatically on load
+  "Start Now" activates only after audio completes (or errors — fail-safe)
+  "Replay Audio" button available
+       ↓
+[Practice] — 1 unscored item, lets the child try the mechanic once
+       ↓
+[Teaching 1] → [Teaching 2] — 2 SCORED items; if the first attempt is wrong,
+  a correction audio plays before the child can try again — but only the
+  first attempt counts toward the score
+       ↓
+[Game Screen] — 20 scored questions, sequence length ramps from 2 digits
+  (Q1) up to 9 digits (Q18–20)
+  Per-question timer runs; numpad is locked while audio plays
+  Pause/Quit button always accessible
+       ↓
+[Score Screen]
+  Score out of 22 (20 game + 2 teaching questions)
+  Per-question results table (response vs. correct answer, status, duration, replay count)
+  SessionAssessmentForm (must be submitted to finalize)
+  PDF snapshot auto-generated and uploaded on submit
+\`\`\`
+
+---
+
+## 3. Game Configuration
+
+\`\`\`
+TOTAL_SCORED_QUESTIONS = 20
+TEACHING_QUESTION_COUNT = 2
+MAX_CONSECUTIVE_WRONG = 3
+\`\`\`
+
+There is **no** \`MIN_CORRECT\` or category concept of any kind — the generic platform template's "Category Structure and Cutoff Values" section does not apply to this game. All 20 questions share a single flat sequence with one global stop rule (§6).
+
+The number bank used across all sequences is **1–6, 8, 9, 10** — the digit **7 is intentionally never used** in any question.
+
+---
+
+## 4. Full Question Bank (verbatim from \`NumberRecallGame.jsx\`)
+
+### Practice (unscored) and Teaching (scored)
+
+| Screen | Sequence | Length | Audio File | Scored? | Correction Audio on Wrong Answer? |
+|---|---|---|---|---|---|
+| Practice | 4, 6 | 2 | \`4_6.m4a\` | No | Yes — \`4_6_teaching_audio.m4a\` |
+| Teaching 1 | 9, 4 | 2 | \`9_4.m4a\` | Yes (first attempt only) | Yes — \`9_4_teaching_audio.m4a\` |
+| Teaching 2 | 2, 8 | 2 | \`2_8.m4a\` | Yes (first attempt only) | **No correction audio** — unlike Practice and Teaching 1, a wrong first attempt on Teaching 2 does not play a correction clip |
+
+### Game Questions (all 20, scored)
+
+| Q# | Sequence (spoken order) | Length | Audio File |
+|---|---|---|---|
+| Q1  | 8, 9 | 2 | \`8_9.m4a\` |
+| Q2  | 4, 9, 5 | 3 | \`4_9_5.m4a\` |
+| Q3  | 9, 1, 6 | 3 | \`9_1_6.m4a\` |
+| Q4  | 10, 5, 3 | 3 | \`10_5_3.m4a\` |
+| Q5  | 10, 2, 5, 8 | 4 | \`10_2_5_8.m4a\` |
+| Q6  | 5, 2, 10, 3 | 4 | \`5_2_10_3.m4a\` |
+| Q7  | 6, 1, 9, 5 | 4 | \`6_1_9_5.m4a\` |
+| Q8  | 2, 3, 6, 10, 5 | 5 | \`2_3_6_10_5.m4a\` |
+| Q9  | 1, 4, 6, 9, 2 | 5 | \`1_4_6_9_2.m4a\` |
+| Q10 | 3, 10, 1, 5, 8 | 5 | \`3_10_1_5_8.m4a\` |
+| Q11 | 9, 3, 5, 1, 8, 4 | 6 | \`9_3_5_1_8_4.m4a\` |
+| Q12 | 10, 2, 4, 9, 1, 6 | 6 | \`10_2_4_9_1_6.m4a\` |
+| Q13 | 2, 6, 3, 10, 8, 4 | 6 | \`2_6_3_10_8_4.m4a\` |
+| Q14 | 5, 3, 6, 9, 8, 4, 10 | 7 | \`5_3_6_9_8_4_10.m4a\` |
+| Q15 | 3, 1, 5, 9, 4, 6, 8 | 7 | \`3_1_5_9_4_6_8.m4a\` |
+| Q16 | 1, 10, 2, 6, 8, 5, 3 | 7 | \`1_10_2_6_8_5_3.m4a\` |
+| Q17 | 5, 8, 4, 1, 9, 4, 6, 3 | 8 | \`5_8_4_1_9_4_6_3.m4a\` |
+| Q18 | 1, 8, 5, 3, 9, 4, 6, 2, 10 | 9 | \`1_8_5_3_9_4_6_2_10.m4a\` |
+| Q19 | 9, 1, 2, 6, 4, 3, 8, 5, 10 | 9 | \`9_1_2_6_4_3_8_5_10.m4a\` |
+| Q20 | 10, 5, 1, 9, 8, 2, 4, 6, 3 | 9 | \`10_5_1_9_8_2_4_6_3.m4a\` |
+
+**Notes on the bank:**
+- Sequence length ramps in a fixed pattern: 2 (Q1) → 3 (Q2–4) → 4 (Q5–7) → 5 (Q8–10) → 6 (Q11–13) → 7 (Q14–16) → 8 (Q17) → 9 (Q18–20).
+- Q17 is the only 8-digit sequence — the ramp jumps straight from 7 digits (Q16) to 9 digits (Q18) after it, so Q17 sits alone at length 8.
+- Q17's sequence (\`5, 8, 4, 1, 9, 4, 6, 3\`) contains a **repeated digit** (4 appears twice) — the only question in the entire bank where a digit repeats. This is a meaningfully different memory challenge from the rest of the bank, since the child can't rely on "each digit used at most once."
+- Every audio filename directly encodes its sequence (\`{d1}_{d2}_..._{dn}.m4a\`), stored under \`/assets/audios/lottery_ka_ticket/\`.
+- These are the **static fallback** sequences/audio used if no admin-configured per-language audio override exists for a given \`getAudioUrl(...)\` id — see **Content Management** (§11) for the override mechanism. The digit *sequences themselves* are not admin-editable at all; only which audio clip plays for a given ID can be overridden.
+
+---
+
+## 5. Gameplay Mechanics
+
+### The Recall Mechanic
+\`\`\`
+1. Audio plays a spoken sequence of numbers (e.g. "8, 9" for Q1, ramping
+   up to a 9-number sequence by Q18–20)
+2. The numpad is locked (pointer-events: none) while audio plays
+3. Once audio ends, the child taps the digits back — in the SAME ORDER
+   they were spoken (forward recall; a separate V2 variant of this game
+   tests reverse recall instead)
+4. "Replay" re-plays the sequence and resets the current selection;
+   replay count is tracked per question
+5. The "Next Question" button becomes enabled once exactly maxSelect
+   digits are chosen (or partial-match mode allows advancing sooner);
+   clicking it both scores AND advances — there is no separate submit step
+\`\`\`
+
+### Scoring — Fully Automatic
+\`\`\`
+exactMatch(selected, correct):
+  same length AND same values AND same order → 1 (correct)
+  otherwise                                   → 0 (incorrect)
+\`\`\`
+There is **no manual/assessor-click scoring anywhere in this game** — the platform's generic "Manual Scoring (Assessor-Controlled)" pattern does not apply here. There is also no "division answer" scoring branch (that's specific to the numeracy games).
+
+### Timers
+- **Per-question timer** (\`qTimer\`): resets on each new question.
+- **Global timer** (\`timerSeconds\`): counts total session seconds during active play.
+
+---
+
+## 6. Stop Rules
+
+This game has exactly **one** stop rule — no category-minimum rule exists:
+
+\`\`\`
+consecutiveWrong >= MAX_CONSECUTIVE_WRONG (3)  → STOP (dropped out)
+questionIndex + 1 >= TOTAL_SCORED_QUESTIONS (20) → STOP (natural completion)
+\`\`\`
+When triggered, the screen transitions to Score, and the session status is set to \`'dropped'\` (consecutive-wrong stop) or \`'completed'\` (finished all 20 naturally) — see **API & Data Flow** for the exact status handling.
+
+---
+
+## 7. Session State Management
+
+### Resume Flow
+\`\`\`
+On game load:
+  GET /api/games/sessions/resume/:childId/${game.key}
+
+  If a paused/in-progress session is found → show Resume modal:
+    [Resume]      → restores questionIndex, allScores, teachingScores,
+                     timers, consecutiveWrong from saved_state
+    [Start Fresh] → discard it, start a new session
+\`\`\`
+
+### State Saved to Server
+\`\`\`js
+{
+  questionIndex, allScores, teachingScores,
+  timerSeconds, qTimer, pauses, consecutiveWrong
+}
+\`\`\`
+Each entry in \`allScores\`/\`teachingScores\` (not just \`{qId, score, timeTaken}\` like the generic platform template shows) actually carries:
+\`\`\`js
+{ qId, questionNumber, score, timeTaken, userResponse: [...], correctAnswer: [...], replayCount }
+\`\`\`
+\`userResponse\`/\`correctAnswer\` (the full digit arrays, not just a pass/fail flag) and \`replayCount\` are specific to this game — the generic template's example record doesn't include them.
+
+Sent via the same PUT used for every progress sync:
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+{ score, progress_level: questionIndex + 1, status, quit_reason, saved_state: {...as above...} }
+\`\`\`
+\`score\` = combined count of correct entries across **both** \`allScores\` and \`teachingScores\` — the teaching questions count toward the final score even though they're presented as a "teaching" phase.
+
+### Pause and Quit
+\`\`\`
+Pause → status = 'paused', pause event { reason, timestamp } appended to pauses[]
+Quit  → status = 'quit', quit_reason saved, screen → Score, PDF generation triggers
+\`\`\`
+A reason (typed or dictated) is required before either action confirms.
+
+---
+
+## 8. Assessment Form Integration
+
+After the score screen appears, \`SessionAssessmentForm\` renders — see **Assessment Behavior** for the full field list, validation rules (Q5 is required, not optional), and the confirmation-modal step before submission.
+
+---
+
+## 9. PDF Dashboard Generation
+
+\`\`\`
+1. Locate #dashboard-capture-area (the score screen's root element)
+2. Clone it into an off-screen wrapper (position:fixed, top:-99999px,
+   forced width max(scrollWidth, 1400px), white background)
+3. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+   windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
+4. canvas.toDataURL('image/jpeg', 0.9)
+5. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+6. pdf.output('blob') → FormData → upload
+\`\`\`
+Upload:
+\`\`\`
+POST /api/games/pdfs/upload   (multipart/form-data)
+  pdf:         <blob>, filename "<ChildName>_Lottery_Ka_Ticket_SES<sessionId>_<ts>.pdf"
+  child_id, session_id, game_name: '${game.key}'
+\`\`\`
+Triggered ~1s after quit, and ~1s after the final assessment submits. PDF failures are logged to console only.
+
+---
+
+## 10. Audio System
+
+\`\`\`
+Splash: <audio ref={audioRef} src=".../splash1.m4a" preload="auto"
+  onEnded={()=>setAudioFinished(true)} onError={()=>setAudioFinished(true)} />
+
+Per-question audio: created lazily per question, listens to
+playing/ended/pause/error to toggle isPlaying; numpad is
+pointer-events:none while isPlaying; manual Replay bumps replayCount
+\`\`\`
+Both splash and per-question audio resolve through \`useTestAudio('${game.key}')\`, with static fallback paths under \`/assets/audios/lottery_ka_ticket/\` if no admin-configured audio asset exists for a given language.
+
+---
+
+## 11. Content Management (Cosmetic Only — Not Question Authoring)
+
+Unlike the two adaptive-ladder games on this platform, this game's admin content management is **narrow and cosmetic**, not question-authoring:
+
+\`\`\`
+NumberRecallContentManager.jsx (shared with the V2 variant) lets an admin
+override, per language, only the DISPLAYED GLYPH on each numpad tile
+(content_q_1 ... content_q_10, excluding 7) — e.g. showing a Hindi/Urdu
+numeral style instead of a Western digit.
+
+This NEVER changes the value used for scoring — only what's drawn on the
+button face. The question set itself (which numbers, how many, in what
+order, per question) is a static QUESTIONS array in the frontend and
+cannot be edited by an admin at all.
+\`\`\`
+This is a materially different content-management model from \`ReadingV2ContentManager.jsx\`/\`AnkganitV3ContentManager.jsx\`, which do let admins author real question content — worth not conflating the two when documenting "admin-editable content" generically across games.
+
+---
+
+## 12. API Integration Map
+
+| Action | Method | Endpoint |
+|---|---|---|
+| Session summaries (splash "last played") | GET | \`/api/games/sessions/summaries/:childId\` |
+| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Start session | POST | \`/api/games/sessions/start\` |
+| Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
+| Submit final assessment | POST | \`/api/games/assessments\` |
+| Upload result PDF | POST | \`/api/games/pdfs/upload\` |
+| Fetch digit-display overrides | GET | \`/api/public/elements?test_id=${game.key}\` |
+| Fetch audio overrides | GET | \`/api/public/audio-elements?test_id=${game.key}\` |
+| Fetch configured languages | GET | \`/api/public/translations/languages\` |
+
+See **API & Data Flow** section for full request/response structures.
+
+---
+
+## 13. Frontend State Variables
+
+| State | Purpose |
+|---|---|
+| \`screen\` | \`splash \| practice \| teaching1 \| teaching2 \| game \| score\` |
+| \`questionIndex\` | Index into the flat 20-question array (0–19) |
+| \`allScores\` | Array of scored-question result records (the 20 game questions) |
+| \`teachingScores\` | Array of the 2 teaching-question result records |
+| \`consecutiveWrong\` | Running count driving the stop rule |
+| \`gameSessionId\` / \`attemptNo\` | Server session id / attempt number |
+| \`timerSeconds\` / \`qTimer\` | Overall session timer / per-question timer |
+| \`pauses\` | \`{ reason, timestamp }[]\` pause/quit log |
+| \`showResumeModal\` / \`resumeData\` | Resume-prompt modal state |
+| \`showQuitModal\` / \`quitReason\` | Pause/Quit modal state |
+| \`audioFinished\` / \`isCheckingSession\` | Gate splash "Start Now" / splash rendering |
+| \`assessment\` / \`isAssessmentSubmitting\` / \`assessmentSubmitted\` | Final \`SessionAssessmentForm\` state |
+| \`isRecording\` / \`recordingTarget\` | STT dictation state |
+
+---
+
+## 14. Error Handling
+
+\`\`\`
+Session start fail            → alert shown, but still proceeds into
+                                 practice with no session id (progress
+                                 silently stops syncing from then on)
+Activity/resume fetch fail    → console.error only, splash shown normally
+Progress save fail (autosave) → console.error only, gameplay continues
+PDF generation/upload fail    → console.error only, never shown to the user
+Quit with empty reason        → alert shown, blocked until a reason is entered
+Final assessment submit fail  → alert shown, submit re-enabled for retry
+STT unsupported / STT error   → alert shown
+\`\`\`
+There's no unified error strategy — some failures are loud (assessment submit, quit validation, STT) while functionally similar ones (session start, autosave, PDF) are silent. Worth being aware of when triaging "why didn't this session sync" reports.
+
+---
+
+## 15. Speech-to-Text (Voice Input)
+
+\`\`\`
+Uses: window.SpeechRecognition || window.webkitSpeechRecognition
+Targets: quitReason (Pause/Quit modal) · assessmentNotes (final assessment form)
+Config: lang: STT_LANG_MAP[language] || 'en-US'
+\`\`\`
+A global cleanup effect on unmount stops \`window.activeRecognition\` to release the microphone if the assessor navigates away mid-dictation.
+
+---
+
+## 16. Technical Notes
+
+- Only the **first attempt** on each Teaching question is scored — a wrong first attempt still plays a correction audio and lets the child try again, but that retry doesn't change the recorded score.
+- Digit **7 is deliberately excluded** from every sequence in this game — worth knowing before assuming a bug if it's ever referenced as "missing."
+- \`replayCount\` is tracked per question but does **not** affect scoring or the stop rule — it's recorded for reporting only.
+- The score shown on the score screen is out of **22**, not 20 — it includes the 2 scored Teaching questions alongside the 20 Game questions.
+- \`showGrid\` is a declared but apparently unused state variable in the source — likely leftover from a shared component pattern; not wired to any visible JSX.
 
 ---
 
@@ -4662,6 +5345,652 @@ report reading doesn't apply here)
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Lottery Ka Ticket API & Data Flow ─────────────────────────────────────────
+// This game IS a genuine fixed-question test, so the generic API/Data Flow
+// model mostly fits (real 'dropped' status, real allScores-style array). What
+// needs correcting: the per-question record shape has extra fields
+// (userResponse/correctAnswer/replayCount) the generic template doesn't show,
+// there's a second teachingScores array the generic template has no concept
+// of, and the content-management endpoints are cosmetic-only (digit display +
+// audio), not question-authoring like the two adaptive-ladder games.
+
+const makeLotteryApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is an auditory working-memory (number sequence recall) assessment within the SANGIAN platform. The backend is responsible for creating and managing every game session, capturing per-question results in real time, storing assessment observations, and generating reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Saves gameplay progress and per-question scores in real time, across two separate arrays (\`allScores\` for the 20 game questions, \`teachingScores\` for the 2 teaching questions)
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; digit-display + audio
+             overrides fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Recalls Sequences (Teaching, then Game) → Score saved after each answer
+       ↓
+Game Ends (all 20 done, OR 3 consecutive wrong) → Final session status written
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving a score, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (digit-display + audio override + language routes)
+/api/admin/    (admin content-management routes)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | After every question / on game end |
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/:gameName\` | Finds the latest session to resume | On game load |
+| Game History | GET | \`/api/games/sessions/history/:childId\` | Returns all sessions for a child | Child history panel |
+| Game Summaries | GET | \`/api/games/sessions/summaries/:childId\` | Returns per-game summary | Home / splash screen |
+| Pending Assessment | GET | \`/api/games/sessions/pending-assessment/:childId\` | Finds sessions without an assessment | After game completion |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Overview | GET | \`/api/games/reports/overview\` | KPI stats for all games (admin only) | Admin opens Reports tab |
+| Report Detail | GET | \`/api/games/reports/detail/:gameName\` | Detailed session list for one game | Admin views game report |
+| **Fetch Digit-Display Overrides** | GET | \`/api/public/elements?test_id=${game.key}\` | Loads admin-managed per-language numpad glyph overrides (cosmetic only) | On game load |
+| **Fetch Audio Overrides** | GET | \`/api/public/audio-elements?test_id=${game.key}\` | Loads per-language audio asset overrides | On game load |
+| **Fetch Languages** | GET | \`/api/public/translations/languages\` | Resolves the player's language and platform default | On game load |
+
+The last 3 rows (bold) are specific to this game's content-override system — note this is **cosmetic display overrides only**, not question authoring; the question bank itself is a static array in the frontend with no admin edit path at all.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active 'in_progress' session already exists for the same
+child and game, the server returns the existing session ID
+instead of creating a duplicate record.
+
+During gameplay, the session is updated with:
+  - Current score (combined allScores + teachingScores correct count)
+  - Progress level (questionIndex + 1)
+  - Saved state (full JSON snapshot of game data)
+
+When the game ends:
+  - Status → completed (all 20 reached) / dropped (3 consecutive wrong) / quit (assessor ended it)
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked as 'quit' or 'dropped', the server
+will never allow it to be overwritten as 'completed'.
+
+This is a server-side safety guard against client-side bugs
+that might accidentally send a 'completed' update after the
+session has already been terminated.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+Unlike the two adaptive-ladder games on this platform, **this guard is fully active for this game** — \`'dropped'\` is a real, frequently-occurring status here (any time the 3-consecutive-wrong rule fires), not a dead status value.
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+This prevents ghost sessions from accumulating in reports.
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "${game.key}",
+  "total_questions": 22
+}
+\`\`\`
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+**Response — Session Reused (HTTP 200):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Active session reused",
+  "sessionId": 138,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real shape — see **Technical Documentation § Session State Management**):
+\`\`\`json
+{
+  "score": 6,
+  "progress_level": 8,
+  "status": "in_progress",
+  "saved_state": {
+    "questionIndex": 7,
+    "allScores": [
+      { "qId": 1, "questionNumber": 1, "score": 1, "timeTaken": 4, "userResponse": [8,9], "correctAnswer": [8,9], "replayCount": 0 },
+      { "qId": 2, "questionNumber": 2, "score": 0, "timeTaken": 9, "userResponse": [3,1,6], "correctAnswer": [3,6,1], "replayCount": 1 }
+    ],
+    "teachingScores": [
+      { "qId": "teaching1", "score": 1, "timeTaken": 5, "userResponse": [4,6], "correctAnswer": [4,6], "replayCount": 0 },
+      { "qId": "teaching2", "score": 1, "timeTaken": 6, "userResponse": [9,4], "correctAnswer": [9,4], "replayCount": 0 }
+    ],
+    "timerSeconds": 96,
+    "qTimer": 4,
+    "pauses": [],
+    "consecutiveWrong": 1
+  }
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session updated"
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Game is actively being played
+paused       — Game is paused (resume popup will show on next visit)
+completed    — All 20 game questions were reached
+dropped      — 3 consecutive wrong answers triggered the stop rule
+quit         — Assessor ended the session early
+\`\`\`
+Unlike the platform's two adaptive-ladder games, \`dropped\` is a **real, commonly-hit** status for this game — not a value the backend merely supports generically for other games.
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Recalled sequences up to 5 digits reliably, struggled beyond that."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/${game.key}\`
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "${game.key}",
+    "status": "paused",
+    "score": 5,
+    "progress_level": 6,
+    "saved_state": { "questionIndex": 5, "allScores": [ "..." ], "teachingScores": [ "..." ], "consecutiveWrong": 0 },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+
+**Response (no session):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": null
+}
+\`\`\`
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Internal game key (${game.key})
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — Correct answers count, out of 22 (20 game + 2 teaching)
+total_questions INT      — 22 for this game
+progress_level  INT      — questionIndex + 1
+status          ENUM     — in_progress / completed / quit / paused / dropped
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: questionIndex, allScores, teachingScores, timings, consecutiveWrong
+\`\`\`
+
+### saved_state JSON Structure (this game)
+
+\`\`\`json
+{
+  "questionIndex": 7,
+  "allScores": [
+    { "qId": 1, "questionNumber": 1, "score": 1, "timeTaken": 4, "userResponse": [8,9], "correctAnswer": [8,9], "replayCount": 0 }
+  ],
+  "teachingScores": [
+    { "qId": "teaching1", "score": 1, "timeTaken": 5, "userResponse": [4,6], "correctAnswer": [4,6], "replayCount": 0 }
+  ],
+  "timerSeconds": 96,
+  "qTimer": 4,
+  "pauses": [],
+  "consecutiveWrong": 1
+}
+\`\`\`
+This is close to the platform's generic \`allScores\`-based shape, but with two differences worth flagging: (1) it's split across **two** arrays (\`allScores\` + \`teachingScores\`) rather than one combined list, and (2) each record carries \`userResponse\`/\`correctAnswer\` (the full digit sequences) and \`replayCount\`, fields the generic template's example record doesn't show.
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Questions Answered → saved_state JSON updated with each result
+       ↓
+Game Ends Normally → status = 'completed', end_time recorded
+3 Consecutive Wrong → status = 'dropped'
+Game Quit Early     → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds the total number of correct answers, combined across \`allScores\` **and** \`teachingScores\` — out of a possible 22, not 20.
+
+Each individual question result is stored with:
+- \`qId\` / \`questionNumber\` — question identifier / sequential position
+- \`score\` — 1 = exact sequence match, 0 = anything else
+- \`timeTaken\` — seconds taken to respond
+- \`userResponse\` / \`correctAnswer\` — the full digit sequences, for review
+- \`replayCount\` — how many times the audio was replayed (reporting only, never affects score)
+
+### Report Score Aggregation
+The Reports Detail API (\`GET /reports/detail/:gameName\`) reads the \`saved_state\` JSON and calculates:
+\`\`\`
+correct_count       = (allScores + teachingScores).filter(s => s.score > 0).length
+attempted_questions = allScores.length + teachingScores.length
+actual_game_time     = sum of all timeTaken values
+total_session_time   = end_time - start_time (in seconds)
+\`\`\`
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — "Did you enjoy playing the game?" | Single choice, required |
+| Q2 — "How did the game feel for you?" | Single choice, required |
+| Q3 — "Did you feel tired while playing the game?" | Single choice, required |
+| Q4 — "Would you like to play the game again?" | Single choice, required |
+| Q5 — Observed behaviors | Multi-select checkboxes, **required (≥1)** |
+| Additional Notes | Free text, optional |
+
+### Assessment Storage
+Responses are stored in the \`game_assessments\` table linked to \`session_id\`. The \`q5_behaviors\` field is stored as a JSON array of canonical English behavior strings, regardless of the assessor's display language.
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. A prompt is shown to the assessor to complete the form before navigating away. Unlike the two adaptive-ladder games, \`'dropped'\` genuinely belongs in this check here.
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist |
+| 500 | Internal Server Error — database or processing failure |
+
+### Terminal Status Guard
+\`\`\`
+If a 'completed' update is sent for a session already in
+'quit' or 'dropped' state, the server responds HTTP 200
+with 'Session already finalized — status preserved.'
+No data is changed.
+\`\`\`
+
+### Client-Side Resilience
+- Game continues running locally if a save API call fails
+- Session ID is stored in React state for the duration of gameplay
+- Final session update is always attempted before displaying score screen
+- Notably inconsistent handling across call sites: a failed session start still lets the child proceed into practice (with no session id syncing afterward), while a failed final assessment submit alerts the user and re-enables the button — see **Technical Documentation § Error Handling** for the full breakdown
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report routes require a JWT Bearer token with \`role: admin\`.
+
+**Token Check:**
+\`\`\`
+Authorization: Bearer <JWT_TOKEN>
+
+Validates:
+  ✓ Token is a valid JWT (signed with server secret)
+  ✓ Token is not expired
+  ✓ Token role === 'admin'
+
+Failure responses:
+  401 — No token provided
+  401 — Token expired
+  403 — Role is not admin
+\`\`\`
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard)
+
+---
+
+## 12. Visual Workflow
+
+*Diagrams will be added in a future update.*
+
+**Planned:**
+- Complete session lifecycle diagram
+- API sequence diagram (Client → Server → Database)
+- Score processing pipeline
+- Assessment submission flow
+
+---
+
+## 13. Developer Notes
+
+### Game Name Normalization
+Several games have legacy name aliases that are normalized server-side:
+
+\`\`\`
+'Chalo Mela Chale' / 'chalo_mela_chale' → 'rover_mela'
+'chor_machaye_shor'                      → 'cognitive_flex_chor'
+'reading_skill'                          → 'literacy_reading_skill'
+'Ankganit'                               → 'numeracy_number_skill'
+\`\`\`
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
+- \`allScores\` array (standard games — this game included, though split with a second \`teachingScores\` array)
+- \`itemResults\` array (Chor Machaye Shor)
+- \`questionDetails\` map (games with mid-test assessments)
+- \`stage\` / \`path\`-based adaptive-ladder shape (Padh ke Batao V2, Ankganit V3)
+
+### Attempt Number Calculation
+Attempt numbers are not stored as a column — they are calculated dynamically at query time by counting sessions for the same \`child_id\` + \`game_name\` ordered by \`start_time\`.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New question metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+- **API versioning**: Base path \`/api/games/\` supports future versioned sub-routes
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order — useful for onboarding or tracing a bug across the full request chain.
+
+### Stage 1 — Game Load (Resume Check)
+
+When the game screen opens, the first action is a resume check:
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/${game.key}
+
+Purpose: Check if the child has an unfinished session
+Result:
+  → Session found (status: paused) → Show "Resume" popup
+  → No session found              → Show Splash screen
+\`\`\`
+
+**Data involved:** child_id, game_name, saved_state (if resuming)
+
+### Stage 2 — Session Start
+
+When the child clicks "Start Now":
+
+\`\`\`
+POST /api/games/sessions/start
+
+Sends: child_id, game_name, total_questions (22)
+Receives: sessionId, attempt_no
+
+Database: New row written in game_sessions
+  status = 'in_progress'
+  start_time = NOW()
+  score = 0
+\`\`\`
+
+If an active session already exists, the server returns the existing session ID (no duplicate created).
+
+### Stage 3 — Practice, Teaching, and Gameplay (Auto-Save)
+
+After every answered question (practice is unscored and not saved; teaching and game questions are), the complete game state is synced to the server:
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends:
+  score          → combined correct count across allScores + teachingScores
+  progress_level → questionIndex + 1
+  status         → 'in_progress'
+  saved_state    → full JSON snapshot (see §6 above for the exact shape)
+\`\`\`
+
+This ensures that if the device loses connectivity or the browser closes, the session can be resumed from the last saved question.
+
+### Stage 4 — Pause / Quit
+
+If the assessor pauses or quits the session:
+
+\`\`\`
+Pause:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'paused'
+  saved_state includes pause event with timestamp
+
+Quit:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'quit'
+  quit_reason = assessor-entered (typed or dictated) reason
+  end_time = NOW()
+\`\`\`
+
+### Stage 5 — Game End (Stop Rule or Completion)
+
+When the game ends (all 20 game questions done, or 3 consecutive wrong answers):
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+  status = 'completed' (finished all 20) OR 'dropped' (stop rule triggered)
+  score = final combined correct count
+  progress_level = last question reached
+  end_time = NOW()
+  saved_state = final snapshot
+\`\`\`
+
+**Terminal status guard**: Once \`quit\` or \`dropped\`, the server will never overwrite to \`completed\`.
+
+### Stage 6 — Behavioral Assessment Submission
+
+After the score screen appears, the assessor fills in the observation form (Q1–Q5 required, Q5 needs at least 1 behavior checked) and confirms in a modal before it's sent:
+
+\`\`\`
+POST /api/games/assessments
+
+Sends:
+  session_id, child_id
+  q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again
+  q5_behaviors (JSON array, ≥1 entry required)
+  additional_notes
+
+Database: New row in game_assessments linked to session
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+
+\`\`\`
+1. Score screen (#dashboard-capture-area) is cloned off-screen (forced
+   width max(scrollWidth, 1400px)) to avoid clipping, then rendered to a
+   canvas (html2canvas, scale 1.5)
+2. Canvas is converted to a JPEG image
+3. Image is embedded in an A4 PDF (jsPDF)
+4. PDF blob is uploaded:
+
+POST /api/games/pdfs/upload
+  Sends: PDF file, child_id, session_id, game_name
+  Database: New row in game_dashboard_pdfs with file path
+\`\`\`
+
+PDF filename format:
+\`\`\`
+[ChildName]_Lottery_Ka_Ticket_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+When the administrator opens the Reports module:
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}
+
+Server joins data from:
+  game_sessions       → score, status, timing, saved_state
+  children            → child_name
+  game_assessments    → behavioral observations
+  game_dashboard_pdfs → PDF download link
+
+Parses saved_state JSON to extract per-question scores from BOTH
+allScores and teachingScores
+Returns enriched session records with:
+  correct_count, attempted_questions, actual_game_time,
+  total_session_time, question_scores, assessment, pdf_url
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
@@ -6474,6 +7803,228 @@ const makeWorkflowFlows = (game) => ({
     ],
 });
 
+// makeLotteryWorkflowFlows — Lottery Ka Ticket IS a genuine fixed-question test
+// (unlike the two adaptive-ladder games), so most of makeWorkflowFlows's model
+// fits. What's wrong for THIS game specifically: there is no category concept
+// at all (no MIN_CORRECT, no "Category Cutoff Check"), and scoring is 100%
+// automatic — there is no manual/assessor-click scoring branch. The stop rule
+// also produces a real 'dropped' status here (not 'completed' as the generic
+// template assumes for all stop-rule sessions).
+const makeLotteryWorkflowFlows = (game) => ({
+    journey: [
+        { type: 'start',    icon: '📱', title: 'Game Load',
+            simple:   'The child opens the game on their device.',
+            detailed: 'React component mounts. Child data is read from localStorage. If no child is logged in, user is redirected to login.',
+            technical:'useEffect → reads localStorage("currentChild") → if null, navigate("/login") → calls checkResume(childId) + fetchActivity(childId)' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'The system checks if the child has a previous unfinished session.',
+            detailed: 'The backend queries the latest session for this child and game. If it has status "paused" or "in_progress", a resume popup is shown.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nReturns: sessionInfo (saved_state with questionIndex, allScores, teachingScores, timers) or null` },
+        { type: 'decision', icon: '❓', title: 'Saved Session Found?',
+            simple:   'If a previous session is found, the child can choose to continue or start fresh.',
+            detailed: 'Resume popup shows with two options: Resume (restores exact question, both score arrays, timers) or Start Fresh (creates new session).',
+            technical:'sessionInfo.status in ["in_progress","paused"] → showResumeModal = true\nResume → restores questionIndex, allScores, teachingScores, timerSeconds, qTimer, pauses, consecutiveWrong from saved_state',
+            branches: [{ label: 'Yes → Resume Prompt', color: '#f59e0b' }, { label: 'No → Splash Screen', color: '#10b981' }] },
+        { type: 'process',  icon: '🎵', title: 'Splash Screen',
+            simple:   'Game instructions are displayed and audio plays automatically.',
+            detailed: 'Background audio (splash1.m4a) plays as soon as the splash screen loads. The "Start Now" button remains disabled until audio finishes.',
+            technical:'<audio ref={audioRef} src=".../splash1.m4a" />\naudioRef.current.play() → onEnded: setAudioFinished(true) → enables Start Now\nonError: setAudioFinished(true) as fail-safe' },
+        { type: 'decision', icon: '🔊', title: 'Audio Completed?',
+            simple:   'Start Now becomes active only after the child has heard the full instructions.',
+            detailed: 'The button is disabled while audio plays. The assessor can replay audio at any time.',
+            technical:'button disabled={!audioFinished} → onEnded/onError → setAudioFinished(true)',
+            branches: [{ label: 'Audio ends → Start Now active', color: '#10b981' }, { label: 'Audio error → Start Now active (fail-safe)', color: '#f59e0b' }] },
+        { type: 'api',      icon: '▶️', title: 'Session Created on Server',
+            simple:   'A unique session ID is created to track this child\'s game attempt.',
+            detailed: 'The server creates a new record in the database. If an active session already exists (deduplication guard), the existing ID is returned.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name: "${game.key}", total_questions: 22 }\nResponse: { sessionId, attempt_no }\nDB: INSERT INTO game_sessions (child_id, game_name, status="in_progress", score=0)` },
+        { type: 'process',  icon: '🎓', title: 'Practice, Then Teaching',
+            simple:   'The child tries the recall mechanic once (unscored), then does 2 scored Teaching questions with correction audio if wrong.',
+            detailed: 'Only the FIRST attempt on each Teaching question is scored — a wrong first attempt plays a correction clip and lets the child retry, but the retry doesn\'t change the recorded score.',
+            technical:'setScreen("practice") → setScreen("teaching1") → setScreen("teaching2") → recordTeachingScore(qId, score, ...) on first attempt only' },
+        { type: 'process',  icon: '🔁', title: 'Question Loop (20 Game Questions)',
+            simple:   'For each question: the child listens to a number sequence, recalls it, the score is recorded, stop rules are checked.',
+            detailed: 'See "Question Flow" section for the detailed per-question lifecycle.',
+            technical:'exactMatch(selected, correct) → checkStopRule() → questionIndex++ or setScreen("score")',
+            isRef: true, refLabel: 'See Question Flow →' },
+        { type: 'process',  icon: '📊', title: 'Score Screen',
+            simple:   'The final score and all question results are displayed.',
+            detailed: 'Score screen shows: total score out of 22 (20 game + 2 teaching), correct/incorrect counts, percentage, total time, average time per question, and a per-question results table.',
+            technical:'setScreen("score") → total = allScores.filter(s=>s.score===1).length + teachingScores.filter(s=>s.score===1).length\nScore table rendered from both arrays' },
+        { type: 'process',  icon: '📋', title: 'Assessment Form',
+            simple:   'The assessor fills in behavioral observations about the child\'s session.',
+            detailed: 'Four required questions (radio buttons) + eight behavioral checkboxes (at least 1 required) + free-text notes with voice dictation support, confirmed via a modal before submission.',
+            technical:'<SessionAssessmentForm /> component renders\nQ1–Q5 required (Q5 needs >=1 checked), validation prevents submit if empty\nConfirm modal → submitAssessmentForm()' },
+        { type: 'api',      icon: '💾', title: 'Assessment Saved',
+            simple:   'The assessor\'s observations are saved to the system.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID.',
+            technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }\nDB: INSERT INTO game_assessments' },
+        { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
+            simple:   'A PDF summary of the session is automatically created and saved.',
+            detailed: 'The score screen (#dashboard-capture-area) is cloned off-screen, captured as a high-resolution image, and embedded in an A4 PDF. The file is uploaded to the server and linked to the session.',
+            technical:'Clone #dashboard-capture-area off-screen (forced width max(scrollWidth,1400px)) → html2canvas(scale:1.5) → jsPDF(A4) → POST /api/games/pdfs/upload\nFilename: [ChildName]_Lottery_Ka_Ticket_SES[id]_[timestamp].pdf' },
+        { type: 'success',  icon: '✅', title: 'Session Complete',
+            simple:   'The assessment is finished. The admin can now view the full report.',
+            detailed: 'Session status is "completed" (all 20 reached) or "dropped" (3 consecutive wrong). All data is saved: scores, timers, assessment, PDF. Admin can view the full session in the Reports module.',
+            technical:'game_sessions.status = "completed" | "dropped", end_time = NOW()\ngame_assessments record created\ngame_dashboard_pdfs record created\nReport available: GET /api/games/reports/detail/:gameName' },
+    ],
+
+    question: [
+        { type: 'start',    icon: '🔊', title: 'Sequence Played',
+            simple:   'A spoken number sequence plays for the current question.',
+            detailed: 'One question is shown at a time. The numpad is locked (pointer-events:none) while audio plays. Sequence length ramps from 2 digits (Q1) up to 9 digits (Q18-20). The digit 7 is never used in any sequence.',
+            technical:'QUESTIONS[questionIndex] rendered → new Audio(question.audio) → setQTimer(0) → qTimer++ per second via setInterval' },
+        { type: 'process',  icon: '🔁', title: 'Replay (Optional)',
+            simple:   'The child can ask to hear the sequence again as many times as needed.',
+            detailed: 'Replaying resets the current in-progress selection and increments replayCount for this question. Replaying never penalizes the score.',
+            technical:'toggleReplay() → resets selectedDigits → replayCount++' },
+        { type: 'process',  icon: '✋', title: 'Response Captured',
+            simple:   'The child taps digits back in the same order they were spoken.',
+            detailed: 'This is 100% automatic scoring — there is no manual/assessor-click Correct/Incorrect button anywhere in this game. Once exactly maxSelect digits are chosen, "Next Question" becomes enabled.',
+            technical:'exactMatch(selected, correct): same length AND same values AND same order → score 1, else 0\nClicking "Next Question" both scores AND advances in one action' },
+        { type: 'process',  icon: '📊', title: 'Score Recorded',
+            simple:   'The score (1 for exact match, 0 for anything else) is saved with the response time.',
+            detailed: 'A score record is added to the allScores array: { qId, questionNumber, score, timeTaken, userResponse, correctAnswer, replayCount }.',
+            technical:'newScoreRec = { qId, questionNumber, score: 0|1, timeTaken: qTimer, userResponse, correctAnswer, replayCount }\nsetAllScores([...allScores, newScoreRec])' },
+        { type: 'api',      icon: '💾', title: 'Progress Auto-Saved',
+            simple:   'The progress is automatically sent to the server after every question.',
+            detailed: 'Every time the question index advances, the current state is saved to the server. This allows the game to be resumed if interrupted.',
+            technical:'useEffect([questionIndex]) → saveToServer("in_progress")\nPUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { questionIndex, allScores, teachingScores, timerSeconds, qTimer, pauses, consecutiveWrong } }' },
+        { type: 'decision', icon: '⚠️', title: '3 Consecutive Wrong?',
+            simple:   'If the child gets 3 wrong answers in a row, the game stops. This is the ONLY stop rule in this game.',
+            detailed: 'The system tracks consecutiveWrong, incrementing on each wrong answer and resetting to 0 on any correct answer. There is no category concept and no MIN_CORRECT threshold anywhere in this game.',
+            technical:'consecutiveWrong = (score===0) ? consecutiveWrong+1 : 0\nif consecutiveWrong >= MAX_CONSECUTIVE_WRONG (3) → isDroppedOut = true',
+            branches: [{ label: 'Yes → Game Stops (status=dropped)', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'decision', icon: '🏁', title: 'All 20 Questions Done?',
+            simple:   'If all 20 game questions have been answered, the game ends normally.',
+            detailed: 'After the last question, the game transitions to the score screen with status "completed" rather than "dropped".',
+            technical:'questionIndex + 1 >= TOTAL_SCORED_QUESTIONS (20) → isGameOver = true, status="completed"',
+            branches: [{ label: 'Yes → Score Screen (status=completed)', color: '#10b981' }, { label: 'No → Next Question', color: '#4f46e5' }] },
+        { type: 'stop',     icon: '🛑', title: 'Stop Rule Triggered',
+            simple:   'The game stops early because 3 consecutive wrong answers were given.',
+            detailed: 'Unlike the generic platform pattern, this game genuinely sets status to "dropped" (not "completed") when the stop rule fires — completion and early-stop are distinguishable in reports for this game.',
+            technical:'setScreen("score") → axios.put update: { status: isDroppedOut ? "dropped" : "completed", score, saved_state }\nthen setTimeout(generateAndUploadPDF, 1500)' },
+        { type: 'success',  icon: '➡️', title: 'Advance to Next Question',
+            simple:   'The next question is shown.',
+            detailed: 'The question timer resets to 0. The question index advances by 1.',
+            technical:'setQuestionIndex(i => i + 1) → setQTimer(0) → next question rendered from QUESTIONS[questionIndex]' },
+    ],
+
+    score: [
+        { type: 'start',    icon: '🎯', title: 'Response Received',
+            simple:   'The child finishes tapping their recalled sequence.',
+            detailed: 'Scoring is always automatic in this game — there is no assessor judgment call.',
+            technical:'handleNextQuestion() → calls exactMatch(selected, correct) → processScoring(score)' },
+        { type: 'process',  icon: '⚖️', title: 'Binary Score Applied',
+            simple:   'Every answer is scored as either correct (1) or incorrect (0) based on an exact sequence match. No partial points.',
+            detailed: 'Getting the right digits in the wrong order still scores 0 — there\'s no partial credit for "close" recall.',
+            technical:'score = exactMatch(userResponse, correctAnswer) ? 1 : 0\nRecord: { qId, questionNumber, score, timeTaken: qTimer, userResponse, correctAnswer, replayCount }' },
+        { type: 'process',  icon: '📈', title: 'Running Score Updated',
+            simple:   'The score display in the header updates after each question.',
+            detailed: 'The total score is calculated live as the count of correct answers across BOTH allScores and teachingScores.',
+            technical:'getTotalScore() = allScores.filter(s=>s.score===1).length + teachingScores.filter(s=>s.score===1).length\nDisplayed in header: <span>{getTotalScore()}</span>' },
+        { type: 'decision', icon: '🔢', title: 'Consecutive Wrong Check',
+            simple:   '3 wrong answers in a row stops the game. There is no other stop condition.',
+            detailed: 'Unlike some other games on this platform, there is NO category-cutoff check here at all — this game has no category structure or MIN_CORRECT thresholds.',
+            technical:'consecutiveWrong updates on every scored answer\nif consecutiveWrong >= 3: isDroppedOut = true, status will be "dropped"',
+            branches: [{ label: '≥ 3 wrong → STOP (dropped)', color: '#dc2626' }, { label: '< 3 wrong → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🏆', title: 'Final Score Calculated',
+            simple:   'The total number of correct answers (out of 22) becomes the final score.',
+            detailed: 'Score = count of all score records where score === 1, across both allScores and teachingScores. This is saved to the game_sessions.score column.',
+            technical:'finalScore = allScores.filter(s=>s.score===1).length + teachingScores.filter(s=>s.score===1).length\nPUT /sessions/update: { score: finalScore, status: "completed"|"dropped" }' },
+        { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
+            simple:   'The score screen shows several performance metrics.',
+            detailed: 'Metrics include: Total Score (out of 22), Correct Count, Incorrect Count, Percentage, Total Time, Average Time per Question.',
+            technical:'Correct: getTotalScore()\nTotal time: (allScores+teachingScores).reduce((acc,s)=>acc+(s.timeTaken||0),0)\nPercentage: (correct / 22 * 100).toFixed(1)' },
+        { type: 'success',  icon: '✅', title: 'Score Complete',
+            simple:   'Assessment scoring is done. Assessment form follows.',
+            detailed: 'All per-question results are displayed in a table. The behavioral assessment form then appears for the assessor to complete.',
+            technical:'screen = "score" → SessionAssessmentForm renders\nassessmentSubmitted controls which buttons appear after form submit' },
+    ],
+
+    api: [
+        { type: 'start',    icon: '📱', title: 'Client-Side Event',
+            simple:   'Something happens in the game — a button click, a question answer, or the game ending.',
+            detailed: 'Every significant game action (start, score, pause, quit, submit assessment) triggers an API call to the backend server.',
+            technical:'React state change or user interaction → async axios call → awaits server response' },
+        { type: 'api',      icon: '🔍', title: 'Resume Check',
+            simple:   'Check if the child can continue a previous session.',
+            detailed: 'Called once when the game loads. Returns the latest session for this child/game.',
+            technical:`GET /api/games/sessions/resume/:childId/${game.key}\nAuth: child session\nResponse: { success, sessionInfo: { id, status, saved_state, attempt_no } | null }` },
+        { type: 'api',      icon: '▶️', title: 'Start Session',
+            simple:   'Create a new session record when the child starts.',
+            detailed: 'Returns a session ID used for all subsequent updates. Deduplication prevents duplicate sessions.',
+            technical:`POST /api/games/sessions/start\nBody: { child_id, game_name:"${game.key}", total_questions: 22 }\nResponse: { success, sessionId, attempt_no }\nHTTP 201 (new) or 200 (reused)` },
+        { type: 'api',      icon: '💾', title: 'Progress Update (Repeated)',
+            simple:   'After every question, the progress is saved to the server.',
+            detailed: 'Called after each question and also on pause/quit. Carries the full game snapshot — split across two score arrays — so sessions can be resumed.',
+            technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { questionIndex, allScores, teachingScores, timerSeconds, qTimer, pauses, consecutiveWrong } }\nStatus values: "in_progress" | "paused" | "quit" | "completed" | "dropped"` },
+        { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
+            detailed: 'The server checks: if the current status is "quit" or "dropped", it will never overwrite it with "completed". This prevents client bugs from corrupting data. This guard is fully active for this game — "dropped" is a real, frequently-hit status here.',
+            technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })\n// No DB update performed`,
+            branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
+        { type: 'api',      icon: '📋', title: 'Assessment Submission',
+            simple:   'Assessor observations are sent to the server.',
+            detailed: 'Saves behavioral data to a separate table linked by session_id.',
+            technical:`POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors:[], additional_notes }\nDB: INSERT INTO game_assessments` },
+        { type: 'api',      icon: '📄', title: 'PDF Upload',
+            simple:   'The session dashboard is saved as a PDF file.',
+            detailed: 'Score screen is cloned off-screen and captured with html2canvas, converted to PDF via jsPDF, then uploaded as a file.',
+            technical:`POST /api/games/pdfs/upload (multipart/form-data)\nFields: pdf (file), child_id, session_id, game_name\nDB: INSERT INTO game_dashboard_pdfs (file_path)\nFile: /dashboard_pdfs/[name].pdf` },
+        { type: 'api',      icon: '📈', title: 'Admin Report',
+            simple:   'The administrator views the complete session data.',
+            detailed: 'Admin-only endpoint. Returns session records with per-question scores (from both score arrays), behavioral assessment, and PDF link.',
+            technical:`GET /api/games/reports/detail/${game.key}\nAuth: Admin JWT Bearer token\nReturns: { columns, data: [{ session_id, score, question_scores, assessment, pdf_url }] }` },
+        { type: 'success',  icon: '✅', title: 'Data Cycle Complete',
+            simple:   'All game data is safely stored and accessible to administrators.',
+            detailed: 'Three tables contain the full session record: game_sessions, game_assessments, game_dashboard_pdfs.',
+            technical:'game_sessions: status="completed"|"dropped", end_time, saved_state\ngame_assessments: q1–q4, behaviors[], notes\ngame_dashboard_pdfs: file_path\nAll joined in /reports/detail response' },
+    ],
+
+    session: [
+        { type: 'start',    icon: '🟢', title: 'Status: in_progress',
+            simple:   'The session is active — the child is playing.',
+            detailed: 'Set when the session is created. Updated with score and saved_state on every question advance.',
+            technical:`game_sessions.status = "in_progress"\nCreated by: POST /sessions/start\nUpdated by: PUT /sessions/update after each question` },
+        { type: 'decision', icon: '⏸️', title: 'Assessor Pauses?',
+            simple:   'The assessor can pause the session at any time.',
+            detailed: 'Pause saves the full game state to the server. A pause event (with timestamp and reason) is appended to the pauses array in saved_state.',
+            technical:`PUT /sessions/update: { status:"paused", quit_reason: reason, saved_state: { ...state, pauses: [...pauses, { reason, timestamp }] } }\nThen: navigate("/")`,
+            branches: [{ label: 'Yes → Pause & Save', color: '#f59e0b' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟡', title: 'Status: paused',
+            simple:   'The game is saved and the child can resume later.',
+            detailed: 'On next visit, the resume check returns this session. The assessor can choose to resume or start fresh.',
+            technical:'game_sessions.status = "paused"\nResume: GET /sessions/resume → sessionInfo.saved_state contains full snapshot\nResume: setQuestionIndex, setAllScores, setTeachingScores, setTimerSeconds, setConsecutiveWrong from saved_state' },
+        { type: 'decision', icon: '🚪', title: 'Assessor Quits?',
+            simple:   'The assessor can end the session early for any reason.',
+            detailed: 'Quit requires a reason to be entered. The game transitions to the score screen.',
+            technical:`PUT /sessions/update: { status:"quit", quit_reason: reason, end_time:NOW() }\nsetScreen("score") → setTimeout(generateAndUploadPDF, 1500)`,
+            branches: [{ label: 'Yes → Quit', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🔴', title: 'Status: quit',
+            simple:   'The session was ended early by the assessor.',
+            detailed: 'Score screen shows the session was terminated with the quit reason. Assessment form still appears for behavioral data.',
+            technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
+        { type: 'decision', icon: '📏', title: 'Stop Rule Triggered?',
+            simple:   '3 consecutive wrong answers automatically stops the game — this is the ONLY automatic stop rule (no category minimums exist).',
+            detailed: 'When it fires, the status genuinely becomes "dropped" — distinct from a session that naturally finished all 20 questions ("completed").',
+            technical:'consecutiveWrong >= 3 → isDroppedOut = true\nif isDroppedOut: setScreen("score"), PUT update: { status: "dropped" }\nelse if all 20 done: PUT update: { status: "completed" }',
+            branches: [{ label: 'Yes → Automatic Stop (status=dropped)', color: '#dc2626' }, { label: 'No → Continue', color: '#10b981' }] },
+        { type: 'process',  icon: '🟢', title: 'Status: completed / dropped',
+            simple:   'The session ended — either all 20 questions were answered ("completed") or the 3-consecutive-wrong rule fired ("dropped").',
+            detailed: 'Unlike some other games on this platform, this distinction is real and meaningful here — reports can tell natural completions apart from early stops.',
+            technical:'game_sessions.status = "completed" | "dropped"\nend_time = NOW()\nNote: dropped sessions show attempted_questions < 20 in reports' },
+        { type: 'process',  icon: '🛡️', title: 'Terminal Status Guard',
+            simple:   'Once ended, a session status cannot be changed.',
+            detailed: 'The server enforces that "quit" or "dropped" sessions can never be overwritten as "completed". This is a hard server-side rule.',
+            technical:'Backend guard: if (newStatus==="completed" && (current==="quit"||current==="dropped"))\n→ return 200 { message:"Session already finalized" }\n→ No DB write performed' },
+        { type: 'success',  icon: '📊', title: 'Report Available',
+            simple:   'The administrator can view the complete session in the Reports panel.',
+            detailed: 'All data — session, assessment, PDF — is linked by session_id and visible in the admin Reports module.',
+            technical:'GET /api/games/reports/detail/:gameName (admin JWT required)\nJOINs: game_sessions + children + game_assessments + game_dashboard_pdfs' },
+    ],
+});
+
 // makeReadingV2WorkflowFlows — Padh ke Batao V2 is an ASER 2014-style adaptive
 // reading ladder, NOT a fixed-question test. It has no QUESTIONS array, no
 // consecutive-wrong stop rule, and no category-minimum cutoff — so it gets its
@@ -7003,6 +8554,7 @@ const WorkflowDiagramViewer = ({ game, section }) => {
     const flows =
         game.key === 'literacy_reading_skill_v2' ? makeReadingV2WorkflowFlows(game) :
         game.key === 'numeracy_number_skill_v3' ? makeAnkganitV3WorkflowFlows(game) :
+        game.key === 'number_recall_lottery' ? makeLotteryWorkflowFlows(game) :
         makeWorkflowFlows(game);
     const nodes = flows[activeFlow] || [];
     const fmtSync = (d) => d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -7157,6 +8709,11 @@ const getConnectedModules = (game) => {
             { file: 'useTestContent.js',             type: 'Component', icon: '🧩', desc: 'Fetches admin-managed question display text per language' },
             { file: 'AnkganitV3ContentManager.jsx',  type: 'Component', icon: '🧩', desc: 'Admin panel — per-language display-text overrides for each question' },
             { file: 'AdminAnkganitV3Config.jsx',     type: 'Component', icon: '🧩', desc: 'Admin panel — question bank, categories, and correct answers' },
+        );
+    }
+    if (game.key === 'number_recall_lottery') {
+        modules.splice(1, 0,
+            { file: 'NumberRecallContentManager.jsx', type: 'Component', icon: '🧩', desc: 'Admin panel — cosmetic per-language digit-glyph overrides only (never affects scoring)' },
         );
     }
     return modules;
@@ -8267,6 +9824,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2TechDocTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3TechDocTemplate(selectedGame) :
+                                selectedGame.key === 'number_recall_lottery' ? makeLotteryTechDocTemplate(selectedGame) :
                                 makeTechDocTemplate(selectedGame)
                             }
                         />
@@ -8278,6 +9836,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ApiTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ApiTemplate(selectedGame) :
+                                selectedGame.key === 'number_recall_lottery' ? makeLotteryApiTemplate(selectedGame) :
                                 makeApiTemplate(selectedGame)
                             }
                         />
@@ -8289,6 +9848,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2ScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3ScoreLogicTemplate(selectedGame) :
+                                selectedGame.key === 'number_recall_lottery' ? makeLotteryScoreLogicTemplate(selectedGame) :
                                 makeScoreLogicTemplate(selectedGame)
                             }
                         />
@@ -8300,6 +9860,7 @@ const AdminDocs = () => {
                             defaultContent={
                                 selectedGame.key === 'literacy_reading_skill_v2' ? makeReadingV2AssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'numeracy_number_skill_v3' ? makeAnkganitV3AssessmentTemplate(selectedGame) :
+                                selectedGame.key === 'number_recall_lottery' ? makeLotteryAssessmentTemplate(selectedGame) :
                                 makeAssessmentTemplate(selectedGame)
                             }
                         />
