@@ -173,15 +173,15 @@ const GAME_INTRO_DEFAULTS = {
     },
     numeracy_number_skill_v3: {
         en: {
-            skill:       'Foundational Numeracy - Adaptive Arithmetic Assessment',
-            objective:   'This test uses an adaptive assessment to determine the child\'s arithmetic level. Starting with two-digit subtraction, the child moves up to division or down to number recognition based on their performance, until their numeracy level is identified.',
-            description: 'The child solves subtraction and division problems, or identifies numbers, depending on how they perform at each stage. The test is adaptive: children who solve subtraction correctly move on to harder division problems, while children who struggle move to simpler number-recognition tasks, until the assessment settles on their numeracy level.',
+            skill:       'Foundational Numeracy - Adaptive Arithmetic Assessment (ASER 2014-style)',
+            objective:   'This test uses an adaptive, ASER 2014-style arithmetic assessment to determine the child\'s numeracy level. Starting with two-digit subtraction, the child moves up to division or down to number recognition based on their performance, until their numeracy level is identified.',
+            description: 'The child solves subtraction and division problems, or identifies numbers, depending on how they perform at each stage. The test is adaptive, following the ASER 2014 arithmetic ladder methodology: children who solve subtraction correctly move on to harder division problems, while children who struggle move to simpler number-recognition tasks, until the assessment settles on their numeracy level.',
             guidance:    'Take your time and think carefully about each problem. It\'s okay if some questions are tricky — just do your best!',
         },
         hi: {
-            skill:       'बुनियादी संख्या ज्ञान - अनुकूली अंकगणित आकलन',
-            objective:   'यह टेस्ट एक अनुकूली (adaptive) आकलन है, जो बच्चे का अंकगणितीय स्तर पता करता है। दो अंकों वाले घटाव से शुरू करके, बच्चे के प्रदर्शन के आधार पर वह भाग (division) की ओर ऊपर या संख्या पहचान की ओर नीचे बढ़ता है, जब तक उसका संख्या ज्ञान स्तर तय न हो जाए।',
-            description: 'बच्चा घटाव और भाग के सवाल हल करता है, या संख्याओं को पहचानता है, यह इस पर निर्भर करता है कि वह हर चरण में कैसा प्रदर्शन करता है। यह टेस्ट अनुकूली है: घटाव सही हल करने वाले बच्चे कठिन भाग के सवालों की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे सरल संख्या-पहचान कार्यों की ओर जाते हैं, जब तक उनका संख्या ज्ञान स्तर तय नहीं हो जाता।',
+            skill:       'बुनियादी संख्या ज्ञान - अनुकूली अंकगणित आकलन (ASER 2014 आधारित)',
+            objective:   'यह टेस्ट ASER 2014 पद्धति पर आधारित एक अनुकूली (adaptive) अंकगणितीय आकलन है, जो बच्चे का संख्या ज्ञान स्तर पता करता है। दो अंकों वाले घटाव से शुरू करके, बच्चे के प्रदर्शन के आधार पर वह भाग (division) की ओर ऊपर या संख्या पहचान की ओर नीचे बढ़ता है, जब तक उसका संख्या ज्ञान स्तर तय न हो जाए।',
+            description: 'बच्चा घटाव और भाग के सवाल हल करता है, या संख्याओं को पहचानता है, यह इस पर निर्भर करता है कि वह हर चरण में कैसा प्रदर्शन करता है। यह टेस्ट ASER 2014 की अंकगणितीय सीढ़ी पद्धति का पालन करते हुए अनुकूली है: घटाव सही हल करने वाले बच्चे कठिन भाग के सवालों की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे सरल संख्या-पहचान कार्यों की ओर जाते हैं, जब तक उनका संख्या ज्ञान स्तर तय नहीं हो जाता।',
             guidance:    'आराम से हर सवाल के बारे में ध्यान से सोचो। कोई सवाल मुश्किल लगे तो कोई बात नहीं — बस अपनी पूरी कोशिश करो!',
         },
     },
@@ -1099,9 +1099,9 @@ A short \`path\` (e.g. 3 stages) is expected and normal for a child who lands at
 
 ## 14. Why These Thresholds?
 
-Unlike the reading assessment on this platform (which follows the published ASER 2014 methodology), Ankganit V3's ≥4/5 tile-marking threshold has **no cited external framework** in the codebase — it's a hardcoded SANGIAN-internal design choice.
+Like the reading assessment on this platform, **${game.title}** is derived from the **ASER 2014** ("Annual Status of Education Report") assessment manual — specifically its arithmetic ladder, which tests children on number recognition, subtraction, and division in an adaptive sequence. The Beginner → Number Recognition (1–9) → Number Recognition (10–99) → Subtraction → Division progression mirrors ASER's own arithmetic level categories, and the ≥4/5 tile-marking threshold follows the same convention used on the reading side of the platform.
 
-**Known inconsistency worth flagging:** the admin Category Config panel exposes a \`minimum_correct\`/\`evaluation_type\` field per category, implying the threshold is configurable — but the game code never reads either field. Whoever administers content should be aware that changing these admin fields currently has **no effect on gameplay**; the real threshold is hardcoded in \`NumberSkillGameV3.jsx\`. Any change to the actual threshold requires a code change, not an admin panel edit — this is a mismatch between what the UI implies and what the code does, and is worth resolving one way or the other (either wire the admin field up, or remove it from the UI to stop it being misleading).
+**Known inconsistency worth flagging** (independent of the ASER methodology itself — this is purely a code/admin-UI mismatch): the admin Category Config panel exposes a \`minimum_correct\`/\`evaluation_type\` field per category, implying the threshold is configurable — but the game code never reads either field. Whoever administers content should be aware that changing these admin fields currently has **no effect on gameplay**; the real threshold is hardcoded in \`NumberSkillGameV3.jsx\`. Any change to the actual threshold requires a code change, not an admin panel edit — this is a mismatch between what the UI implies and what the code does, and is worth resolving one way or the other (either wire the admin field up, or remove it from the UI to stop it being misleading).
 
 ---
 
@@ -2361,7 +2361,7 @@ never runs two recognitions in parallel.
 
 const makeAnkganitV3TechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
 
-> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: an adaptive arithmetic ladder, not a fixed-question quiz. It has no question count, no consecutive-wrong stop rule, and no working category-minimum drop logic — instead, the child moves up or down a numeracy-level ladder based on a pass/fail verdict at each stage.
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: an ASER 2014-style adaptive arithmetic ladder, not a fixed-question quiz. It has no question count, no consecutive-wrong stop rule, and no working category-minimum drop logic — instead, the child moves up or down a numeracy-level ladder based on a pass/fail verdict at each stage.
 
 ---
 
@@ -2371,7 +2371,7 @@ const makeAnkganitV3TechDocTemplate = (game) => `# ⚙️ ${game.title} — Tech
 |---|---|
 | Internal Key | \`${game.key}\` |
 | Display Title | ${game.title} |
-| Assessment Type | Academic / Numeracy — Adaptive Arithmetic Ladder |
+| Assessment Type | Academic / Numeracy — Adaptive Arithmetic Ladder (ASER 2014-style) |
 | Platform | SANGIAN Web Application (2026) |
 | Technology | React.js (Frontend) · Node.js + MySQL (Backend) |
 
@@ -7316,7 +7316,7 @@ const DOCS_LANGUAGES = [
 const docsLangLabel = (code) => DOCS_LANGUAGES.find(l => l.code === code)?.label || code;
 
 const ScreenshotLibraryViewer = ({ game }) => {
-    const englishOnly = game.key === 'literacy_reading_skill_v2';
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
     const [lang,         setLang]        = useState('en');
     const [screenshots,  setScreenshots] = useState([]);
     const [loading,      setLoading]     = useState(false);
@@ -7582,7 +7582,7 @@ const MANUAL_SECTIONS_DEF = [
 ];
 
 const GameplayManualViewer = ({ game }) => {
-    const englishOnly = game.key === 'literacy_reading_skill_v2';
+    const englishOnly = ['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
     const [lang,        setLang]       = useState('en');
     const [screenshots, setScreenshots]= useState([]);
     const [loading,     setLoading]    = useState(false);
@@ -7920,7 +7920,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
-    const showHindi = game.key !== 'literacy_reading_skill_v2';
+    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
