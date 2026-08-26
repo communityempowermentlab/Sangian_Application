@@ -9477,7 +9477,7 @@ const IntroductionViewer = ({ game }) => {
     const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
     const d = data || defaultData;
-    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3'].includes(game.key);
+    const showHindi = !['literacy_reading_skill_v2', 'numeracy_number_skill_v3', 'number_recall_lottery'].includes(game.key);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: T.bg, fontFamily: T.font }}>
