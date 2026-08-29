@@ -1520,14 +1520,14 @@ The score column in \`game_sessions\` always reflects the most recent saved valu
 `;
 
 // ─── Chor Machaye Shor Score & Progression Logic ───────────────────────────────
-// This game is NOT a fixed-question test — the generic model doesn't apply at
-// all. Every one of the 11 items has its own move-count → score lookup table,
-// its own correct-house rule (verified against determineResponseHouse /
-// determinePhase2Rule in ChorMachayeShorGame.jsx), and items 6-11 silently
-// swap that rule mid-item. All scoring bands, maxAttempts, and rule logic
-// below are read directly from GAME_DATA.items (lines 40-167) and the rule
-// engine (lines 203-289) — not from an external spec — since the two were
-// found to disagree on item numbering (see the per-item table's note).
+// The main-phase test is a fixed 8-item test (items 1, 2, 3, 4, 6, 7, 10, 11 —
+// items 5, 8, 9 exist in GAME_DATA but are disabled). Each active item has
+// its own move-count → score lookup table and its own correct-house rule
+// (verified against determineResponseHouse / determinePhase2Rule in
+// ChorMachayeShorGame.jsx), and items 6/7/10/11 silently swap that rule
+// mid-item. All scoring bands, maxAttempts, and rule logic below are read
+// directly from GAME_DATA.items (lines 40-167) and the rule engine
+// (lines 203-289).
 
 const makeChorScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
 
@@ -1535,7 +1535,7 @@ const makeChorScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & P
 
 ## 1. Overview
 
-${game.title} has **no category structure and no single scoring formula shared across questions** — it is a rule-inference / cognitive-flexibility task with 11 hand-authored items, each with its own correct-house rule and its own move-count → score lookup table. This document is the per-item companion to **Technical Documentation §3-6**, which cover the mechanics generically; here every item's actual rule and scoring table is listed individually, verified line-by-line against \`GAME_DATA.items\` and the rule-engine functions in \`ChorMachayeShorGame.jsx\`.
+${game.title} has **no category structure and no single scoring formula shared across questions** — it is a rule-inference / cognitive-flexibility task. The main-phase test is a **fixed 8-item test**: items 1, 2, 3, 4, 6, 7, 10, and 11 (items 5, 8, and 9 exist in \`GAME_DATA\` but are disabled — see Technical Documentation §3/§11). Each of these 8 items has its own correct-house rule and its own move-count → score lookup table. This document is the per-item companion to **Technical Documentation §3-6**, which cover the mechanics generically; here every item's actual rule and scoring table is listed individually, verified line-by-line against \`GAME_DATA.items\` and the rule-engine functions in \`ChorMachayeShorGame.jsx\`.
 
 ---
 
@@ -1559,8 +1559,6 @@ Fewer moves to reach the target always scores higher. A move count that exhausts
 
 ## 3. Per-Item Rule & Scoring Table
 
-**A numbering note first:** an earlier design spec for this table used its own 1-8 numbering with sub-items ".1"/".2" for the two-phase items. That spec's items 1-4 line up with the real game's items 1-4, but its **5.1/5.2, 6.1/6.2, 7.1/7.2, 8.1/8.2 actually correspond to the real game's items 6, 7, 10, and 11** (confirmed by matching correct-rule text against the response-house data for each — e.g. the spec's "8.1" rule, "blue walls, orange windows, cross opposite the roof," is item 11's exact house data). The real game's **items 5, 8, and 9 were not covered by that spec at all**; their rows below are sourced directly from \`GAME_DATA\` and the rule-engine functions instead, and are marked as such.
-
 ### Item 1 — Red Roof (Two Trials, not phases)
 | | Trial 1 (max 10 moves) | Trial 2 (max 6 moves, only if Trial 1 failed) |
 |---|---|---|
@@ -1569,24 +1567,23 @@ Fewer moves to reach the target always scores higher. A move count that exhausts
 
 \`consecutiveRequired: 3\` for both trials. This is the only item with a hardcoded static house layout (\`houses[0]\` is always the red-roof response house) rather than a per-attempt randomizer function.
 
-### Items 2-11 (single correct-house rule per item/phase)
+### Items 2, 3, 4, 6, 7, 10, 11 (single correct-house rule per item/phase)
 
 | Item | Correct Rule — Phase 1 | Rule Change — Phase 2 (mid-item swap) | Consec. Required | Max Moves | Scoring Bands (moves → score) |
 |---|---|---|---|---|---|
 | 2 | House with exactly **1 window** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
 | 3 | House with exactly **2 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
 | 4 | House with **0 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
-| 5 *(from source)* | Move 1: the **0-window** house (same static rule as item 4). From move 2 on: the house **one position clockwise** from whichever house was last correct — a position rule, not an attribute rule | — (\`maxPhases: 1\` — this is a single self-contained rule, not a phase-1/phase-2 swap) | 3 | 15 | 3-5: 5 · 6-7: 4 · 8-10: 3 · 11-13: 2 · 14-15: 1 — **note the bands differ from items 2-4** despite the same 15-move cap (3-5 here vs. 3-4 there) |
 | 6 | House that is **both** blue-roofed **and** has 4 windows at once (one house always satisfies both) | Collapses to testing only **one** of those two attributes — whichever the child's transition tap indicates (defaults to "any 4-window house" if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
 | 7 | House with **3 windows and a split window** at once | Collapses to **either** "any 3-window house" **or** "any split-window house" (defaults to split-window if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
-| 8 *(from source)* | House with a **slanted roof** (left- or right-slanted — the other three houses are the default equilateral triangle) | Swaps to a **position rule**: the house one position **anticlockwise** from the last-correct house (defaults this way; can resolve to "any slanted house" in the opposite branch) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
-| 9 *(from source)* | The **red-roof** house | Defaults to swapping to "any **small-window** house"; can instead resolve to a **clockwise position rule** in the opposite branch | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
 | 10 | House with **yellow walls, 2 crosses, and a right-slanted roof** all at once | Collapses to testing **one** of those attributes — "any right-slanted roof" or "any house with 2 crosses" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
 | 11 | House with **blue walls, orange windows, and a cross opposite the roof slant** all at once | Collapses to testing **one** of those attributes — "any orange-window house" or "any house with the cross opposite its slant" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
 
+Items 5, 8, and 9 also exist in \`GAME_DATA\` with their own rules and scoring tables, but are disabled and not part of the main-phase test — see Technical Documentation §3.
+
 All rows verified directly against \`determineResponseHouse\` (phase-1 rules, lines 271-288), \`determinePhase2Rule\` (phase-2 swap logic, lines 203-255), and each item's \`scoring\` array in \`GAME_DATA.items\`. The exact branch an item's phase-2 swap resolves to on a given playthrough depends on which attribute the child's own transition tap happened to satisfy — see the source functions directly if building tooling that needs the precise conditional, rather than treating either listed branch as the sole outcome.
 
-Items 6-11's mid-item swap is the same mechanic described narratively in **Technical Documentation §4** ("Items 6-11 — Mid-Item Silent Rule Change") — this table is its per-item specifics, not a different mechanic.
+This mid-item swap is the same mechanic described narratively in **Technical Documentation §4** ("Items 6, 7, 10, 11 — Mid-Item Silent Rule Change") — this table is its per-item specifics, not a different mechanic.
 
 ---
 
@@ -1599,11 +1596,11 @@ Covered in full in **Technical Documentation §7** (\`itemResults\` array, the i
 ## 5. Final Score Calculation
 
 \`\`\`
-Total Score = sum of each active item's score
-Maximum Possible = sum of each active item's own max band
-  (Item 1: 5 + 2 = 7 · Items 2-11: 5 each → 57 total if every item is active)
+Total Score = sum of the 8 active items' scores
+Maximum Possible = 42
+  (Item 1: 5 + 2 = 7 · Items 2, 3, 4, 6, 7, 10, 11: 5 each = 35 · 7 + 35 = 42)
 \`\`\`
-This is **not a fixed number like 25 or 44** on other games — \`getItemMaxScore\` recomputes it from whichever items are currently active via the admin Elements toggle (see **Technical Documentation §11**), so deactivating an item shrinks the displayed maximum, not just the achievable score.
+This isn't hardcoded in the source — \`getItemMaxScore\` sums whichever items are currently active via the admin Elements toggle (see **Technical Documentation §11**) — but for the fixed 8-item main-phase test, 42 is the max.
 
 ---
 
@@ -5152,7 +5149,7 @@ STT errors here use a **user-facing alert** (\`alert(t('game.speechError') + ' /
 
 const makeChorTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
 
-> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a rule-inference and cognitive-flexibility (set-shifting) task, styled as "find the thief's house." \`GAME_DATA\` hardcodes an **11-item bank** (\`TOTAL_QUESTIONS = 11\`), but this is **not a fixed 11-item test** — each item can be independently switched on/off from the admin Elements panel (\`ChorElements.jsx\`, see §11), and at least one item is always guaranteed active. A child's actual run only plays whichever items are currently active, so the item count seen during play depends on that admin configuration and can be fewer than 11. Its mechanics also diverge substantially from this platform's generic fixed-question model — no single question has a single answer; each item requires 3 consecutive correct choices, some items silently swap the rule partway through, and the whole-test stop rule is based on distinct items, not a running per-question counter.
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a rule-inference and cognitive-flexibility (set-shifting) task, styled as "find the thief's house." The main-phase test is a **fixed 8-item test** — items 1, 2, 3, 4, 6, 7, 10, and 11 (items 5, 8, and 9 exist in \`GAME_DATA\` but are switched off via the admin Elements panel — see §11 for the toggle mechanism). Its mechanics diverge substantially from this platform's generic fixed-question model — no single question has a single answer; each item requires 3 consecutive correct choices, some items silently swap the rule partway through, and the whole-test stop rule is based on distinct items, not a running per-question counter.
 
 ---
 
@@ -5176,14 +5173,15 @@ const makeChorTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical 
   "Start Now" activates only after audio completes
   "Replay Audio" button available
        ↓
-[Game Screen] — 11 fixed items, walked in order:
+[Game Screen] — 8 fixed items, walked in order:
   Item 1: TWO TRIALS (not phases) — Trial 1 up to 10 attempts, Trial 2 up
     to 6 attempts, each needs 3 consecutive correct to pass
-  Items 2-5: single phase, 15 max attempts, needs 3 consecutive correct
-  Items 6-11: TWO PHASES per item — pass phase 1 (3 consecutive correct),
-    then the rule silently changes and the child must detect and pass
-    phase 2 (3 consecutive correct again); 18-21 max attempts depending
-    on item
+  Items 2-4: single phase, 15 max attempts, needs 3 consecutive correct
+  Items 6, 7, 10, 11: TWO PHASES per item — pass phase 1 (3 consecutive
+    correct), then the rule silently changes and the child must detect
+    and pass phase 2 (3 consecutive correct again); 18-21 max attempts
+    depending on item
+  (Items 5, 8, 9 exist in GAME_DATA but are disabled — see §3)
   Houses reshuffle position/appearance after every single attempt
   Whole-test stop check runs after every item completes (see §5)
        ↓
@@ -5199,8 +5197,10 @@ const makeChorTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical 
 ## 3. Game Configuration
 
 \`\`\`
-TOTAL_QUESTIONS = 11   (GAME_DATA.items.length)
+TOTAL_QUESTIONS = 11   (GAME_DATA.items.length — the full item bank)
 \`\`\`
+
+Of these, **8 are active in the main-phase test** — items 1, 2, 3, 4, 6, 7, 10, and 11. Items 5, 8, and 9 are switched off via the admin Elements panel (\`ChorElements.jsx\`, see §11) — a deactivated item is skipped, not deleted, so this could change if an admin re-enables one.
 
 There is **no** \`MAX_CONSECUTIVE_WRONG\` counter on a per-question basis and **no** category \`MIN_CORRECT\` threshold anywhere in this game — the generic platform template's language for both does not apply here. Each item is entirely self-contained, hardcoded in \`GAME_DATA.items\` (lines 40–167 of the source), with its own:
 
@@ -5208,8 +5208,8 @@ There is **no** \`MAX_CONSECUTIVE_WRONG\` counter on a per-question basis and **
 |---|---|
 | \`maxAttempts\` / \`maxAttemptsTrial1\` / \`maxAttemptsTrial2\` | Attempt ceiling before the item auto-fails at 0 |
 | \`hasTrials\` | \`true\` only for item 1 (two trials, not phases) |
-| \`maxPhases\` | \`1\` for items 1–5, \`2\` for items 6–11 (mid-item rule change) |
-| \`consecutiveRequired\` | \`3\` (single number for items 1–5, or \`[3, 3]\` per-phase for items 6–11) |
+| \`maxPhases\` | \`1\` for items 1–4, \`2\` for items 6, 7, 10, 11 (mid-item rule change) |
+| \`consecutiveRequired\` | \`3\` (single number for items 1–4, or \`[3, 3]\` per-phase for items 6, 7, 10, 11) |
 | \`scoring\` | Move-count → score lookup table (see §6) |
 | \`houses\` | Base house appearance data (roof type/color, wall color, window count) — randomized per attempt by \`applyItemNDynamic\` functions |
 
@@ -5244,7 +5244,7 @@ Trial 2: up to 6 attempts (only reached if Trial 1 failed)
 \`\`\`
 \`hasTrials: true\` is unique to item 1 — every other item uses phases (or a single phase), not trials. Trial 1 and Trial 2 produce **differently-shaped** \`itemResults\` records — see §7.
 
-### Items 6–11 — Mid-Item Silent Rule Change
+### Items 6, 7, 10, 11 — Mid-Item Silent Rule Change
 \`\`\`
 Phase 1: child must reach 3 consecutive correct on the FIRST rule
   (e.g. "blue roof")
@@ -5303,7 +5303,7 @@ Each item has its own move-count → score lookup table, e.g. item 2:
 \`\`\`
 Score is looked up by how many attempts (moves) it took to reach the consecutive-correct target. Items that exhaust \`maxAttempts\` without reaching the target score **0**. There is no partial credit outside the defined move-count bands.
 
-Total possible score is the sum of every item's maximum achievable score across the 11-item bank (varies per item's own table — not a single fixed number like 25 or 44 on other games; see **Score & Progression Logic** for the per-item breakdown).
+Total possible score for the fixed 8-item main-phase test is **42** (Item 1: 5 + 2 = 7 · Items 2, 3, 4, 6, 7, 10, 11: 5 each = 35 · 7 + 35 = 42 — see **Score & Progression Logic** for the per-item breakdown).
 
 ---
 
@@ -5456,7 +5456,7 @@ See **API & Data Flow** section for full request/response structures.
 | \`screen\` | \`splash \| game \| results\` |
 | \`currentItemIndex\` | Index into \`GAME_DATA.items\` (0–10) |
 | \`currentTrial\` | 1 or 2 — item 1 only |
-| \`currentPhase\` | 1 or 2 — items 6–11 only |
+| \`currentPhase\` | 1 or 2 — items 6, 7, 10, 11 only |
 | \`correctTouchCount\` | Running count toward \`consecutiveRequired\` (3), resets on any wrong tap |
 | \`currentMove\` | Attempt counter within the current item/trial/phase |
 | \`isRuleSelection\` | True during the brief post-phase-change "figure out the new rule" state |
