@@ -9082,8 +9082,12 @@ const renderMarkdown = (text) => {
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g,   '<em>$1</em>')
         .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;">')
+        .replace(/^\|(.+)\|\r?\n\|(.+)\|\r?\n/gm, (match, headerContent, sepContent) => {
+            if (sepContent.replace(/[|\-\s:]/g, '') !== '') return match;
+            const cells = headerContent.split('|').map(c => `<th style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;font-weight:700;background:#f8fafc;text-align:left;">${c.trim()}</th>`).join('');
+            return `<tr>${cells}</tr>\n`;
+        })
         .replace(/^\|(.+)\|$/gm, (match) => {
-            if (match.replace(/[|\-\s:]/g, '') === '') return '';
             const cells = match.slice(1,-1).split('|').map(c => `<td style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;">${c.trim()}</td>`).join('');
             return `<tr>${cells}</tr>`;
         })
