@@ -10372,17 +10372,17 @@ const GameDashboard = ({ game, onSectionClick }) => {
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <span style={{ fontSize: '1.2rem' }}>{sec.icon}</span>
-                                    <span style={{
-                                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-                                        ...(sec.legacy
-                                            ? { background: 'rgba(245,158,11,0.08)', color: '#92400e', border: '1px solid rgba(245,158,11,0.25)' }
-                                            : sec.available
-                                                ? { background: 'rgba(5,150,105,0.08)', color: '#059669', border: '1px solid rgba(5,150,105,0.2)' }
+                                    {(sec.legacy || !sec.available) && (
+                                        <span style={{
+                                            fontSize: '0.6rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                                            ...(sec.legacy
+                                                ? { background: 'rgba(245,158,11,0.08)', color: '#92400e', border: '1px solid rgba(245,158,11,0.25)' }
                                                 : { background: 'rgba(15,23,42,0.04)', color: T.faint, border: `1px solid ${T.border}` }
-                                        ),
-                                    }}>
-                                        {sec.legacy ? 'Archive 2013' : sec.available ? 'Available' : 'Coming Soon'}
-                                    </span>
+                                            ),
+                                        }}>
+                                            {sec.legacy ? 'Archive 2013' : 'Coming Soon'}
+                                        </span>
+                                    )}
                                 </div>
                                 <div style={{ fontSize: '0.84rem', fontWeight: 600, color: isHov ? T.text : T.muted }}>
                                     {sec.label}
