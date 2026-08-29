@@ -3546,7 +3546,7 @@ See **API / Backend Logic** section for full request/response structures.
 **Flow & Stage**
 | State | Purpose |
 |---|---|
-| \`screen\` | \`splash \| game \| score\` |
+| \`screen\` | \`splash \\| game \\| score\` |
 | \`stage\` | \`paragraph \| words \| letters \| paragraph_retry \| story\` |
 | \`selectedParagraphIndex\` | Which of the 2 paragraphs was chosen (reused on retry) |
 | \`wordsSource\` | \`direct \| afterLetters\` — first Word attempt vs. the fixed post-Letters retry |
@@ -3961,7 +3961,7 @@ See **API & Data Flow** section for full request/response structures.
 **Flow & Stage**
 | State | Purpose |
 |---|---|
-| \`screen\` | \`splash \| game \| score\` |
+| \`screen\` | \`splash \\| game \\| score\` |
 | \`stage\` | Current adaptive-tree stage id |
 | \`path\` | Ordered list of completed stages — drives the breadcrumb + results table |
 | \`pendingSubtractionSelection\` | Up to 2 picked subtraction question ids (pick order = Q1/Q2) |
@@ -4332,7 +4332,7 @@ See **API & Data Flow** section for full request/response structures.
 
 | State | Purpose |
 |---|---|
-| \`screen\` | \`splash \| practice \| teaching1 \| teaching2 \| game \| score\` |
+| \`screen\` | \`splash \\| practice \\| teaching1 \\| teaching2 \\| game \\| score\` |
 | \`questionIndex\` | Index into the flat 20-question array (0–19) |
 | \`allScores\` | Array of scored-question result records (the 20 game questions) |
 | \`teachingScores\` | Array of the 2 teaching-question result records |
@@ -4700,7 +4700,7 @@ See **API & Data Flow** section for full request/response structures.
 
 | State | Purpose |
 |---|---|
-| \`screen\` | \`splash \| game \| score\` |
+| \`screen\` | \`splash \\| game \\| score\` |
 | \`currentQuestion\` (1–9) / \`currentAttempt\` (1–2) | Linear progress pointers |
 | \`GAME_DATA\` | The 9-slot question data, built from randomly-sampled server elements |
 | \`allElements\` / \`elementsLoading\` / \`configError\` | Admin image bank / load state / content-shortage error |
@@ -5453,7 +5453,7 @@ See **API & Data Flow** section for full request/response structures.
 
 | State | Purpose |
 |---|---|
-| \`screen\` | \`splash \| game \| results\` |
+| \`screen\` | \`splash \\| game \\| results\` |
 | \`currentItemIndex\` | Index into \`GAME_DATA.items\` (0–10) |
 | \`currentTrial\` | 1 or 2 — item 1 only |
 | \`currentPhase\` | 1 or 2 — items 6, 7, 10, 11 only |
