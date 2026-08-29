@@ -1749,13 +1749,13 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 |---|---|---|---|---|---|---|---|
 | TQ1 | Trial 1 | — | 3 → 2 | — | — | 7 | <img src="/assets/images/chalo_mela_chale/tq1_trial1_grid_reference.png" alt="TQ1 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ1 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq1_trial2_grid_reference.png" alt="TQ1 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
-| TQ2 | Trial 1 | — | 3 → 2 | — | — | 7 | — |
-| TQ2 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | — |
+| TQ2 | Trial 1 | — | 3 → 2 | — | — | 7 | <img src="/assets/images/chalo_mela_chale/tq2_trial1_grid_reference.png" alt="TQ2 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| TQ2 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq2_trial2_grid_reference.png" alt="TQ2 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | Q1  | — | 60s  | 3 → 2 | 4 → 1 | 4+ → 0 | 7 | — |
-| TQ3 | Trial 1 | — | 3 → 2 | — | — | 7 | — |
-| TQ3 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | — |
-| TQ4 | Trial 1 | — | 5 → 2 | — | — | 9 | — |
-| TQ4 | Trial 2 | — | 5 → 1 | — | 0 → 0 | 9 | — |
+| TQ3 | Trial 1 | — | 3 → 2 | — | — | 7 | <img src="/assets/images/chalo_mela_chale/tq3_trial1_grid_reference.png" alt="TQ3 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| TQ3 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq3_trial2_grid_reference.png" alt="TQ3 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| TQ4 | Trial 1 | — | 5 → 2 | — | — | 9 | <img src="/assets/images/chalo_mela_chale/tq4_trial1_grid_reference.png" alt="TQ4 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| TQ4 | Trial 2 | — | 5 → 1 | — | 0 → 0 | 9 | <img src="/assets/images/chalo_mela_chale/tq4_trial2_grid_reference.png" alt="TQ4 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | Q2  | — | 60s  | 3 → 2 | 4 → 1  | 4+ → 0  | 7 | — |
 | Q3  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | — |
 | Q4  | — | 60s  | 2 → 2 | 3 → 1  | 3+ → 0  | 6 | — |
