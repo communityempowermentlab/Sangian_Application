@@ -1573,52 +1573,23 @@ Fewer moves to reach the target always scores higher. A move count that exhausts
 
 **On-screen numbering vs. \`GAME_DATA\` id:** items are walked in \`GAME_DATA\` order, but items 5, 8, and 9 are skipped since they're disabled — so the 5th–8th items a child actually plays ("Question 5" through "Question 8" on screen and on the Results table) are internal ids 6, 7, 10, and 11. The table below uses the **on-screen number** as the primary label, with the \`GAME_DATA\` id alongside it for cross-referencing the source.
 
-| On-Screen # | \`GAME_DATA\` id | Correct Rule — Phase 1 | Rule Change — Phase 2 (mid-item swap) | Consec. Required | Max Moves | Scoring Bands (moves → score) |
-|---|---|---|---|---|---|---|
-| 2 | 2 | House with exactly **1 window** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
-| 3 | 3 | House with exactly **2 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
-| 4 | 4 | House with **0 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
-| 5 | 6 | House that is **both** blue-roofed **and** has 4 windows at once (one house always satisfies both) | Collapses to testing only **one** of those two attributes — whichever the child's transition tap indicates (defaults to "any 4-window house" if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
-| 6 | 7 | House with **3 windows and a split window** at once | Collapses to **either** "any 3-window house" **or** "any split-window house" (defaults to split-window if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
-| 7 | 10 | House with **yellow walls, 2 crosses, and a right-slanted roof** all at once | Collapses to testing **one** of those attributes — "any right-slanted roof" or "any house with 2 crosses" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
-| 8 | 11 | House with **blue walls, orange windows, and a cross opposite the roof slant** all at once | Collapses to testing **one** of those attributes — "any orange-window house" or "any house with the cross opposite its slant" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
+| On-Screen # | \`GAME_DATA\` id | Correct Rule — Phase 1 | Rule Change — Phase 2 (mid-item swap) | Consec. Required | Max Moves | Scoring Bands (moves → score) | Reference |
+|---|---|---|---|---|---|---|---|
+| 2 | 2 | House with exactly **1 window** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 | <img src="/assets/images/chor_machaye_shor/item2_one_window_reference.png" alt="Item 2 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 3 | 3 | House with exactly **2 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 | <img src="/assets/images/chor_machaye_shor/item3_two_windows_reference.png" alt="Item 3 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 4 | 4 | House with **0 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 | <img src="/assets/images/chor_machaye_shor/item4_no_windows_reference.png" alt="Item 4 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 5 | 6 | House that is **both** blue-roofed **and** has 4 windows at once (one house always satisfies both) | Collapses to testing only **one** of those two attributes — whichever the child's transition tap indicates (defaults to "any 4-window house" if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 | <img src="/assets/images/chor_machaye_shor/item5_phase1_reference.png" alt="Item 5 Phase 1 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px;"><img src="/assets/images/chor_machaye_shor/item5_phase2_reference.png" alt="Item 5 Phase 2 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 6 | 7 | House with **3 windows and a split window** at once | Collapses to **either** "any 3-window house" **or** "any split-window house" (defaults to split-window if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 | <img src="/assets/images/chor_machaye_shor/item6_phase1_reference.png" alt="Item 6 Phase 1 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px;"><img src="/assets/images/chor_machaye_shor/item6_phase2_reference.png" alt="Item 6 Phase 2 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 7 | 10 | House with **yellow walls, 2 crosses, and a right-slanted roof** all at once | Collapses to testing **one** of those attributes — "any right-slanted roof" or "any house with 2 crosses" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 | <img src="/assets/images/chor_machaye_shor/item7_phase1_reference.png" alt="Item 7 Phase 1 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px;"><img src="/assets/images/chor_machaye_shor/item7_phase2_reference.png" alt="Item 7 Phase 2 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| 8 | 11 | House with **blue walls, orange windows, and a cross opposite the roof slant** all at once | Collapses to testing **one** of those attributes — "any orange-window house" or "any house with the cross opposite its slant" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 | <img src="/assets/images/chor_machaye_shor/item8_phase1_reference.png" alt="Item 8 Phase 1 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px;"><img src="/assets/images/chor_machaye_shor/item8_phase2_reference.png" alt="Item 8 Phase 2 reference" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+
+For items 5-8, the Reference column shows Phase 1 on top and Phase 2 (after the rule silently changes) below it.
 
 Items 5, 8, and 9 also exist in \`GAME_DATA\` with their own rules and scoring tables, but are disabled and not part of the main-phase test — see Technical Documentation §3.
 
 All rows verified directly against \`determineResponseHouse\` (phase-1 rules, lines 271-288), \`determinePhase2Rule\` (phase-2 swap logic, lines 203-255), and each item's \`scoring\` array in \`GAME_DATA.items\`. The exact branch an item's phase-2 swap resolves to on a given playthrough depends on which attribute the child's own transition tap happened to satisfy — see the source functions directly if building tooling that needs the precise conditional, rather than treating either listed branch as the sole outcome.
 
 This mid-item swap is the same mechanic described narratively in **Technical Documentation §4** ("Items 5-8 — Mid-Item Silent Rule Change") — this table is its per-item specifics, not a different mechanic.
-
-#### Reference Images
-
-**Item 2 — One Window**
-<img src="/assets/images/chor_machaye_shor/item2_one_window_reference.png" alt="Item 2 house layout — the house with exactly 1 window (highlighted) is the correct answer" style="max-width:340px;width:100%;border:1px solid #e5e7eb;border-radius:10px;margin:10px 0;display:block;">
-
-**Item 3 — Two Windows**
-<img src="/assets/images/chor_machaye_shor/item3_two_windows_reference.png" alt="Item 3 house layout — the house with exactly 2 windows is the correct answer" style="max-width:340px;width:100%;border:1px solid #e5e7eb;border-radius:10px;margin:10px 0;display:block;">
-
-**Item 4 — No Windows**
-<img src="/assets/images/chor_machaye_shor/item4_no_windows_reference.png" alt="Item 4 house layout — the house with 0 windows is the correct answer" style="max-width:340px;width:100%;border:1px solid #e5e7eb;border-radius:10px;margin:10px 0;display:block;">
-
-**Item 5 (GAME_DATA id 6) — Blue Roof + 4 Windows**
-| Phase 1 | Phase 2 (rule changed) |
-|---|---|
-| <img src="/assets/images/chor_machaye_shor/item5_phase1_reference.png" alt="Item 5 Phase 1 — blue-roofed house with 4 windows is correct" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> | <img src="/assets/images/chor_machaye_shor/item5_phase2_reference.png" alt="Item 5 Phase 2 — rule collapses to any 4-window house" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> |
-
-**Item 6 (GAME_DATA id 7) — 3 Windows + Split Window**
-| Phase 1 | Phase 2 (rule changed) |
-|---|---|
-| <img src="/assets/images/chor_machaye_shor/item6_phase1_reference.png" alt="Item 6 Phase 1 — house with 3 windows and a split window is correct" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> | <img src="/assets/images/chor_machaye_shor/item6_phase2_reference.png" alt="Item 6 Phase 2 — rule collapses to one of the two attributes" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> |
-
-**Item 7 (GAME_DATA id 10) — Yellow Walls + 2 Crosses + Right-Slant Roof**
-| Phase 1 | Phase 2 (rule changed) |
-|---|---|
-| <img src="/assets/images/chor_machaye_shor/item7_phase1_reference.png" alt="Item 7 Phase 1 — yellow-walled house with 2 crosses and a right-slanted roof is correct" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> | <img src="/assets/images/chor_machaye_shor/item7_phase2_reference.png" alt="Item 7 Phase 2 — rule collapses to one of the three attributes" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> |
-
-**Item 8 (GAME_DATA id 11) — Blue Walls + Orange Windows + Opposite Cross**
-| Phase 1 | Phase 2 (rule changed) |
-|---|---|
-| <img src="/assets/images/chor_machaye_shor/item8_phase1_reference.png" alt="Item 8 Phase 1 — blue-walled house with orange windows and cross opposite the roof slant is correct" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> | <img src="/assets/images/chor_machaye_shor/item8_phase2_reference.png" alt="Item 8 Phase 2 — rule collapses to one of the three attributes" style="max-width:280px;width:100%;border:1px solid #e5e7eb;border-radius:10px;display:block;"> |
 
 ---
 
