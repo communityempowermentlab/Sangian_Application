@@ -5082,7 +5082,7 @@ Out of Coins   — the move count reaches the coin budget before reaching 7-EP
 Up to 2 trials allowed per teaching question.
 Trial 1 succeeds → score 2, trial 2 is skipped entirely.
 Trial 1 fails    → trial 2 auto-starts; trial 2 succeeding scores 1 (max).
-One retake is allowed (retakeCount < 2) across the teaching questions.
+Up to 2 retakes are allowed per teaching question (retakeCount resets to 0 at the start of each new question via initQuestion — it is not a single budget shared across tq1-tq4).
 \`\`\`
 
 ### Timers
@@ -5258,7 +5258,7 @@ See **API & Data Flow** section for full request/response structures.
 | \`questionState\` | Core per-question play state: grid, current path, move count, timer, trial results |
 | \`allScores\` | Array of per-question score entries |
 | \`isDropped\` | Whether the clinical drop-out gate fired after q3 |
-| \`refreshCount\` / \`retakeCount\` | Retry budgets (1 free refresh per scored question, 1 retake across teaching) |
+| \`refreshCount\` / \`retakeCount\` | Retry budgets — both reset to 0 at the start of every question (1 free refresh per scored question, up to 2 retakes per teaching question) |
 | \`collectedCoins\` | Move-budget consumption tracking |
 | \`unlockedPaths\` / \`completedPaths\` / \`activePath\` / \`pathProgress\` / \`isAnimating\` | Sample A/B scripted demo animation state — not game logic |
 | \`elementOverrides\` | Admin question-activation overrides fetched from \`/public/elements\` |
