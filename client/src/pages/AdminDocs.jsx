@@ -1519,6 +1519,123 @@ The score column in \`game_sessions\` always reflects the most recent saved valu
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Chor Machaye Shor Score & Progression Logic ───────────────────────────────
+// This game is NOT a fixed-question test — the generic model doesn't apply at
+// all. Every one of the 11 items has its own move-count → score lookup table,
+// its own correct-house rule (verified against determineResponseHouse /
+// determinePhase2Rule in ChorMachayeShorGame.jsx), and items 6-11 silently
+// swap that rule mid-item. All scoring bands, maxAttempts, and rule logic
+// below are read directly from GAME_DATA.items (lines 40-167) and the rule
+// engine (lines 203-289) — not from an external spec — since the two were
+// found to disagree on item numbering (see the per-item table's note).
+
+const makeChorScoreLogicTemplate = (game) => `# 🏆 ${game.title} — Score & Progression Logic
+
+---
+
+## 1. Overview
+
+${game.title} has **no category structure and no single scoring formula shared across questions** — it is a rule-inference / cognitive-flexibility task with 11 hand-authored items, each with its own correct-house rule and its own move-count → score lookup table. This document is the per-item companion to **Technical Documentation §3-6**, which cover the mechanics generically; here every item's actual rule and scoring table is listed individually, verified line-by-line against \`GAME_DATA.items\` and the rule-engine functions in \`ChorMachayeShorGame.jsx\`.
+
+---
+
+## 2. Score Unit
+
+Score is **not** a binary correct/incorrect per tap. Each item (or, for items 6-11, each phase) is scored once, when the child reaches \`consecutiveRequired\` correct taps in a row, by looking up the **total number of attempts (moves) it took** against that item's own scoring table:
+
+\`\`\`js
+const calculateScore = (itemData, moves, trial = 1) => {
+  const table = itemData.hasTrials ? itemData.scoring[trial === 1 ? 'trial1' : 'trial2'] : itemData.scoring;
+  for (let entry of table) {
+    if (entry.moves && entry.moves === moves) return entry.score;
+    if (entry.minMoves && entry.maxMoves && moves >= entry.minMoves && moves <= entry.maxMoves) return entry.score;
+  }
+  return 0;
+};
+\`\`\`
+Fewer moves to reach the target always scores higher. A move count that exhausts \`maxAttempts\` before the target is reached never reaches \`calculateScore\` at all — \`handleMaxAttempts\` scores that item/phase **0** directly.
+
+---
+
+## 3. Per-Item Rule & Scoring Table
+
+**A numbering note first:** an earlier design spec for this table used its own 1-8 numbering with sub-items ".1"/".2" for the two-phase items. That spec's items 1-4 line up with the real game's items 1-4, but its **5.1/5.2, 6.1/6.2, 7.1/7.2, 8.1/8.2 actually correspond to the real game's items 6, 7, 10, and 11** (confirmed by matching correct-rule text against the response-house data for each — e.g. the spec's "8.1" rule, "blue walls, orange windows, cross opposite the roof," is item 11's exact house data). The real game's **items 5, 8, and 9 were not covered by that spec at all**; their rows below are sourced directly from \`GAME_DATA\` and the rule-engine functions instead, and are marked as such.
+
+### Item 1 — Red Roof (Two Trials, not phases)
+| | Trial 1 (max 10 moves) | Trial 2 (max 6 moves, only if Trial 1 failed) |
+|---|---|---|
+| Correct rule | The red-roof house (the other three are always yellow) | Same rule — Trial 2 re-tests it with a shorter leash |
+| Scoring | 3 moves: 5 · 4-6: 4 · 7-10: 3 · else 0 | 3 moves: 2 · 4-6: 1 · else 0 |
+
+\`consecutiveRequired: 3\` for both trials. This is the only item with a hardcoded static house layout (\`houses[0]\` is always the red-roof response house) rather than a per-attempt randomizer function.
+
+### Items 2-11 (single correct-house rule per item/phase)
+
+| Item | Correct Rule — Phase 1 | Rule Change — Phase 2 (mid-item swap) | Consec. Required | Max Moves | Scoring Bands (moves → score) |
+|---|---|---|---|---|---|
+| 2 | House with exactly **1 window** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
+| 3 | House with exactly **2 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
+| 4 | House with **0 windows** | — (single phase) | 3 | 15 | 3-4: 5 · 5-6: 4 · 7-9: 3 · 10-12: 2 · 13-15: 1 |
+| 5 *(from source)* | Move 1: the **0-window** house (same static rule as item 4). From move 2 on: the house **one position clockwise** from whichever house was last correct — a position rule, not an attribute rule | — (\`maxPhases: 1\` — this is a single self-contained rule, not a phase-1/phase-2 swap) | 3 | 15 | 3-5: 5 · 6-7: 4 · 8-10: 3 · 11-13: 2 · 14-15: 1 — **note the bands differ from items 2-4** despite the same 15-move cap (3-5 here vs. 3-4 there) |
+| 6 | House that is **both** blue-roofed **and** has 4 windows at once (one house always satisfies both) | Collapses to testing only **one** of those two attributes — whichever the child's transition tap indicates (defaults to "any 4-window house" if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
+| 7 | House with **3 windows and a split window** at once | Collapses to **either** "any 3-window house" **or** "any split-window house" (defaults to split-window if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
+| 8 *(from source)* | House with a **slanted roof** (left- or right-slanted — the other three houses are the default equilateral triangle) | Swaps to a **position rule**: the house one position **anticlockwise** from the last-correct house (defaults this way; can resolve to "any slanted house" in the opposite branch) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
+| 9 *(from source)* | The **red-roof** house | Defaults to swapping to "any **small-window** house"; can instead resolve to a **clockwise position rule** in the opposite branch | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
+| 10 | House with **yellow walls, 2 crosses, and a right-slanted roof** all at once | Collapses to testing **one** of those attributes — "any right-slanted roof" or "any house with 2 crosses" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
+| 11 | House with **blue walls, orange windows, and a cross opposite the roof slant** all at once | Collapses to testing **one** of those attributes — "any orange-window house" or "any house with the cross opposite its slant" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
+
+All rows verified directly against \`determineResponseHouse\` (phase-1 rules, lines 271-288), \`determinePhase2Rule\` (phase-2 swap logic, lines 203-255), and each item's \`scoring\` array in \`GAME_DATA.items\`. The exact branch an item's phase-2 swap resolves to on a given playthrough depends on which attribute the child's own transition tap happened to satisfy — see the source functions directly if building tooling that needs the precise conditional, rather than treating either listed branch as the sole outcome.
+
+Items 6-11's mid-item swap is the same mechanic described narratively in **Technical Documentation §4** ("Items 6-11 — Mid-Item Silent Rule Change") — this table is its per-item specifics, not a different mechanic.
+
+---
+
+## 4. Per-Item Score Record
+
+Covered in full in **Technical Documentation §7** (\`itemResults\` array, the item-1-Trial-1 narrower field shape) — not duplicated here to avoid the two docs drifting out of sync.
+
+---
+
+## 5. Final Score Calculation
+
+\`\`\`
+Total Score = sum of each active item's score
+Maximum Possible = sum of each active item's own max band
+  (Item 1: 5 + 2 = 7 · Items 2-11: 5 each → 57 total if every item is active)
+\`\`\`
+This is **not a fixed number like 25 or 44** on other games — \`getItemMaxScore\` recomputes it from whichever items are currently active via the admin Elements toggle (see **Technical Documentation §11**), so deactivating an item shrinks the displayed maximum, not just the achievable score.
+
+---
+
+## 6. Stop Rule ("Drop Test")
+
+\`\`\`
+If the child scores 0 on 2 consecutive DISTINCT ITEMS → stop the test
+\`\`\`
+This is documented and quoted verbatim from \`checkDropCondition\` in **Technical Documentation §5** — deduped by \`itemId\` keeping the max score, checked against the *last two distinct items*, not a running per-question counter. See that section for the exact code.
+
+A separately-worded version of this rule — "...or if the child shows no response" — describes the same underlying mechanism, not a second independent trigger: an item that never reaches \`consecutiveRequired\` before \`maxAttempts\` runs out (i.e., no successful response) is scored 0 by \`handleMaxAttempts\`, which is exactly the "scores 0" condition \`checkDropCondition\` already checks. There is no separate no-response/timeout branch in the source.
+
+---
+
+## 7. Score Persistence
+
+Score is saved to \`game_sessions.score\` on every autosave during play and finalized at game end (\`completed\` / \`dropped\` / \`quit\` — see **Technical Documentation §7, §14**).
+
+---
+
+## 8. What Does NOT Affect Score
+
+- Which specific attribute (blue roof vs. 4 windows, etc.) the child's phase-2 transition tap happened to satisfy — both branches of a given item's phase-2 swap use the same scoring table, only the *finder* logic differs
+- House position/appearance shuffling between attempts — positions and non-rule-relevant attributes (e.g. unrelated window colors) are re-randomized every attempt but never affect what counts as "correct"
+- Time taken (\`timerSeconds\` is recorded for reporting only — no time-based scoring, see Technical Documentation §4)
+- Whether the game was resumed from a saved state
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Chalo Mela Chalen Score & Progression Logic ───────────────────────────────
 // This game IS a genuine fixed-question test — the generic model mostly fits.
 // What's wrong for this game specifically: the stop rule is NOT "3 consecutive
@@ -5096,7 +5213,7 @@ There is **no** \`MAX_CONSECUTIVE_WRONG\` counter on a per-question basis and **
 | \`scoring\` | Move-count → score lookup table (see §6) |
 | \`houses\` | Base house appearance data (roof type/color, wall color, window count) — randomized per attempt by \`applyItemNDynamic\` functions |
 
-Content is **fully hardcoded** — there is no dedicated content-manager component and no \`useTestContent\` hook call anywhere in this file. The only admin lever is a generic per-item active/inactive toggle via the shared Elements panel (\`GET /public/elements?test_id=${game.key}\`) — a source comment explicitly guards against confusing this with content editing: *"GAME_DATA.items must NEVER be filtered/reordered ... Deactivation is purely a navigation-layer skip over the intact array."*
+Content is **fully hardcoded** in this game file itself — there is no \`useTestContent\` hook call anywhere in \`ChorMachayeShorGame.jsx\`. The only admin lever is a per-item active/inactive toggle, read here via \`GET /public/elements?test_id=${game.key}\` and set from a dedicated admin component, \`ChorElements.jsx\` (see §11) — a source comment explicitly guards against confusing this with content editing: *"GAME_DATA.items must NEVER be filtered/reordered ... Deactivation is purely a navigation-layer skip over the intact array."*
 
 ---
 
@@ -5195,15 +5312,18 @@ Total possible score is the sum of every item's maximum achievable score across 
 ### Resume Flow
 \`\`\`
 On game load:
-  GET /api/games/sessions/resume/:childId/${game.key}
+  GET /api/games/sessions/resume/:childId/chor_machaye_shor
 
   If a resumable session is found → show Resume modal:
     [Resume]        → restores itemResults, currentItemIndex, currentTrial,
                        currentPhase, phase2Rule, and all in-progress counters
-    [Start Fresh]    → the old session is explicitly marked dropped via
+    [Start Fresh]    → attempts to mark the old session dropped via
                        POST /games/sessions/:sessionId { status: 'dropped' },
-                       then a new session starts
+                       then resets state and starts a new session regardless
 \`\`\`
+The \`:gameName\` param above is the literal string \`'chor_machaye_shor'\` (the \`GAME_NAME\` constant this file uses for every session-tracking call) — **not** \`${game.key}\`, despite \`${game.key}\` being correct elsewhere. The source is explicit about this split in a comment: *"test_id is 'cognitive_flex_chor' ... deliberately NOT the GAME_NAME constant above, which is only for game-session tracking."* \`${game.key}\` is only correct for the Elements/audio-elements \`test_id\` calls (§11, §12) — the server normalizes \`'chor_machaye_shor'\` → \`'cognitive_flex_chor'\` internally either way (\`gameController.js\`'s \`getResumeSession\`/\`startGameSession\`), so both resolve to the same session rows, but the literal value actually sent over the wire is \`'chor_machaye_shor'\`.
+
+**The \`[Start Fresh]\` "mark dropped" POST does not actually work.** \`gameRoutes.js\` defines no \`POST /sessions/:sessionId\` handler at all — only \`POST /sessions/start\`, \`PUT /sessions/update/:sessionId\`, \`GET /sessions/resume/:childId/:gameName\`, \`/sessions/history\`, \`/sessions/summaries\`, \`/sessions/pending-assessment\`, \`POST /assessments\`, and \`POST /pdfs/upload\` exist under \`/api/games\`. The call at \`ChorMachayeShorGame.jsx\` (the resume modal's "Start Fresh" handler) 404s, is caught by its own \`try/catch\` (\`console.error("Failed to mark session as dropped:", err)\`), and execution continues into \`resetGameState()\`/\`startNewSession\` anyway — so a new session does start, but the old one is silently left in whatever status it already had, not actually marked \`'dropped'\`. See §12 and §16 for the same correction against the API map and technical notes.
 
 ### State Saved to Server
 \`\`\`js
@@ -5240,10 +5360,10 @@ Any tooling or report that assumes every \`itemResults\` entry has the same fiel
 
 ### Pause and Quit
 \`\`\`
-Pause → status = 'paused', pause state saved
-Quit  → status = 'quit', quit_reason saved, screen → Results, PDF generation triggers
+Pause → status = 'paused', pause state saved, navigates back to the home screen
+Quit  → status = 'quit', quit_reason saved, screen → Results
 \`\`\`
-A reason (typed or dictated) is required before either action confirms.
+A reason (typed or dictated) is required before either action confirms. **Quitting does not itself trigger PDF generation** — it only sets \`status: 'quit'\` and switches to the Results screen; PDF generation is fired later, from \`submitAssessment\`, only once the assessor fills out and submits \`SessionAssessmentForm\` there (same trigger as a normal completion — see §9).
 
 ---
 
@@ -5274,8 +5394,9 @@ Upload:
 \`\`\`
 POST /api/games/pdfs/upload   (multipart/form-data)
   pdf:         <blob>, filename "<ChildName>_Chor_Machaye_Shor_SES<sessionId>_<ts>.pdf"
-  child_id, session_id, game_name: '${game.key}'
+  child_id, session_id, game_name: 'chor_machaye_shor'
 \`\`\`
+\`game_name\` is hardcoded as the literal \`'chor_machaye_shor'\` (matching \`GAME_NAME\`) — **not** \`${game.key}\` — see §7 for the same \`GAME_NAME\` vs. \`game.key\` split, which the source comments call out explicitly.
 PDF failures are logged to console only — notably, this happens **inside the same \`submitAssessment\` flow** that alerts the user on other failures, so an assessor can see "Assessment Submitted!" even if the PDF silently failed to generate/upload.
 
 ---
@@ -5303,7 +5424,7 @@ GET /api/public/elements?test_id=${game.key}
   never filtered or reordered; deactivation is purely a navigation-layer
   skip that walks past an inactive item without removing it from the array
 \`\`\`
-There is no dedicated admin content-manager component for this game (unlike \`MelaElements.jsx\` for Chalo Mela Chalen or \`HerPherElements.jsx\` for Her Pher V3) — item toggling goes through the generic Elements admin surface directly.
+**A prior claim in this doc was found and corrected here too**: this section previously asserted there is no dedicated admin content-manager component for this game, unlike \`MelaElements.jsx\`/\`HerPherElements.jsx\`. That's wrong — \`client/src/components/ChorElements.jsx\` **is** exactly that same kind of per-game dedicated component, mounted from \`AdminElements.jsx\` alongside the others (\`{activeTest === 'cognitive_flex_chor' && <ChorElements />}\`), the same pattern as \`BagiyaElements\`, \`RachnaElements\`, \`MelaElements\`, and \`HerPherElements\`. It's just scoped narrower than those — activation toggle only, no name/content editing, no reorder/add/delete (its own header comment explains why: house layouts are re-randomized per attempt, so there's no static "canonical" layout worth exposing a preview/editor for). It calls the *admin*-authenticated \`GET /admin/elements?test_id=cognitive_flex_chor\` and \`PUT /admin/elements/config\` (via \`axiosAdmin\`, \`elementsController.js\`) — distinct from the *public* \`GET /api/public/elements?test_id=...\` the game itself reads from. It also enforces "at least one item must stay active" client-side (the sole remaining active item's toggle is locked) and server-side too, in \`updateElementConfig\`'s \`cognitive_flex_chor\`-specific branch.
 
 ---
 
@@ -5311,16 +5432,18 @@ There is no dedicated admin content-manager component for this game (unlike \`Me
 
 | Action | Method | Endpoint |
 |---|---|---|
-| Resume check | GET | \`/api/games/sessions/resume/:childId/${game.key}\` |
+| Resume check | GET | \`/api/games/sessions/resume/:childId/chor_machaye_shor\` |
 | Start session | POST | \`/api/games/sessions/start\` |
 | Save/update progress (autosave, pause, quit, finalize) | PUT | \`/api/games/sessions/update/:sessionId\` |
-| Mark session dropped (on "Start Fresh" over a resumable session) | POST | \`/api/games/sessions/:sessionId\` |
+| "Mark session dropped" attempt (on "Start Fresh" over a resumable session) | POST | \`/api/games/sessions/:sessionId\` — **no matching route exists** |
 | Submit final assessment | POST | \`/api/games/assessments\` |
 | Upload result PDF | POST | \`/api/games/pdfs/upload\` |
 | Fetch item activation overrides | GET | \`/api/public/elements?test_id=${game.key}\` |
 | Fetch audio overrides | GET | \`/api/public/audio-elements?test_id=${game.key}\` |
 
-Note the **dedicated POST to mark a session explicitly dropped** (\`POST /api/games/sessions/:sessionId\`) when the assessor chooses "Start Fresh" over a resumable prior session — this is a distinct endpoint pattern not seen in the other games reviewed so far, which typically just start a new session without explicitly closing out the old one this way.
+The resume-check row's game-name segment is the literal \`'chor_machaye_shor'\` (\`GAME_NAME\`) — not \`${game.key}\` — see §7 for the source comment that spells out the split. The two \`/api/public/...\` rows above are correctly \`${game.key}\` — that's the Elements panel's \`test_id\`, a genuinely separate identifier from the session-tracking \`GAME_NAME\`.
+
+**The "mark session dropped" POST does not actually work — corrected from a prior version of this doc that presented it as a working, notable endpoint pattern.** \`gameRoutes.js\` registers no \`POST /sessions/:sessionId\` handler under \`/api/games\` — only the other rows in this table, plus \`/sessions/history\`, \`/sessions/summaries\`, and \`/sessions/pending-assessment\`. The client's call 404s and is silently caught (\`console.error\` only, in the resume modal's "Start Fresh" handler) — a new session starts anyway, but the old one is never actually marked \`'dropped'\` by this path. (A *different*, working code path — the auto-drop when a saved item was deactivated mid-resume, in \`resumeGame()\` — does successfully mark a session dropped, but via the ordinary \`PUT /sessions/update/:sessionId\` with \`status: 'dropped'\` in the body, not this POST.)
 
 See **API & Data Flow** section for full request/response structures.
 
@@ -5392,7 +5515,7 @@ A global cleanup effect on unmount force-stops \`window.activeRecognition\` to r
 - Item 1's two \`itemResults\` records (Trial 1, Trial 2) have a **narrower field set** than every other item's record — missing \`phase1Time\`/\`phase2Time\`/\`mistakes\`/\`consecutiveBreaks\`/\`finalRule\`. Any code reading this data uniformly across items needs to handle that.
 - \`checkDropCondition\` **deduplicates by \`itemId\` and keeps the max score** before checking the last two — meaning item 1's better trial result is what counts, not both trials separately.
 - The PDF capture target here is \`#dashboard-container\`, not \`#dashboard-capture-area\` like most other games — worth knowing if writing cross-game tooling that assumes a single consistent element id.
-- This game explicitly marks an abandoned session as \`'dropped'\` via a dedicated POST when the assessor chooses "Start Fresh" over resuming — most other games reviewed so far just start a new session without this extra step.
+- This game *attempts* to mark an abandoned session as \`'dropped'\` via a dedicated POST when the assessor chooses "Start Fresh" over resuming, but that POST targets a route that doesn't exist server-side (\`gameRoutes.js\` has no \`POST /sessions/:sessionId\`) — it 404s and is silently caught, so a new session starts anyway while the old one is left un-marked. See §7/§12 for the full correction.
 
 ---
 
@@ -13269,6 +13392,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ScoreLogicTemplate(selectedGame) :
                                 selectedGame.key === 'rover_mela' ? makeRoverMelaScoreLogicTemplate(selectedGame) :
+                                selectedGame.key === 'cognitive_flex_chor' ? makeChorScoreLogicTemplate(selectedGame) :
                                 makeScoreLogicTemplate(selectedGame)
                             }
                         />
