@@ -9071,6 +9071,13 @@ const fmtDt = (d) => d
     ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
 
+const ESCAPED_PIPE_PLACEHOLDER = '';
+
+const splitTableCells = (content) => content
+    .replace(/\\\|/g, ESCAPED_PIPE_PLACEHOLDER)
+    .split('|')
+    .map(c => c.replace(new RegExp(ESCAPED_PIPE_PLACEHOLDER, 'g'), '|').trim());
+
 const renderMarkdown = (text) => {
     if (!text) return '';
     return text
@@ -9084,11 +9091,11 @@ const renderMarkdown = (text) => {
         .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;">')
         .replace(/^\|(.+)\|\r?\n\|(.+)\|\r?\n/gm, (match, headerContent, sepContent) => {
             if (sepContent.replace(/[|\-\s:]/g, '') !== '') return match;
-            const cells = headerContent.split('|').map(c => `<th style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;font-weight:700;background:#f8fafc;text-align:left;">${c.trim()}</th>`).join('');
+            const cells = splitTableCells(headerContent).map(c => `<th style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;font-weight:700;background:#f8fafc;text-align:left;">${c}</th>`).join('');
             return `<tr>${cells}</tr>\n`;
         })
         .replace(/^\|(.+)\|$/gm, (match) => {
-            const cells = match.slice(1,-1).split('|').map(c => `<td style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;">${c.trim()}</td>`).join('');
+            const cells = splitTableCells(match.slice(1,-1)).map(c => `<td style="padding:9px 12px;border:1px solid #e5e7eb;font-size:0.87rem;">${c}</td>`).join('');
             return `<tr>${cells}</tr>`;
         })
         .replace(/((<tr>.*<\/tr>\n?)+)/g, '<table style="width:100%;border-collapse:collapse;margin:12px 0;border-radius:8px;overflow:hidden;">$1</table>')
