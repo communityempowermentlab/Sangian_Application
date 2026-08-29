@@ -5152,7 +5152,7 @@ STT errors here use a **user-facing alert** (\`alert(t('game.speechError') + ' /
 
 const makeChorTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
 
-> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a rule-inference and cognitive-flexibility (set-shifting) task, styled as "find the thief's house." It is a fixed 11-item test, but its mechanics diverge substantially from this platform's generic fixed-question model — no single question has a single answer; each item requires 3 consecutive correct choices, some items silently swap the rule partway through, and the whole-test stop rule is based on distinct items, not a running per-question counter.
+> **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: a rule-inference and cognitive-flexibility (set-shifting) task, styled as "find the thief's house." \`GAME_DATA\` hardcodes an **11-item bank** (\`TOTAL_QUESTIONS = 11\`), but this is **not a fixed 11-item test** — each item can be independently switched on/off from the admin Elements panel (\`ChorElements.jsx\`, see §11), and at least one item is always guaranteed active. A child's actual run only plays whichever items are currently active, so the item count seen during play depends on that admin configuration and can be fewer than 11. Its mechanics also diverge substantially from this platform's generic fixed-question model — no single question has a single answer; each item requires 3 consecutive correct choices, some items silently swap the rule partway through, and the whole-test stop rule is based on distinct items, not a running per-question counter.
 
 ---
 
