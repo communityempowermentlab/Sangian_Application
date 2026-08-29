@@ -1565,6 +1565,8 @@ Fewer moves to reach the target always scores higher. A move count that exhausts
 | Correct rule | The red-roof house (the other three are always yellow) | Same rule — Trial 2 re-tests it with a shorter leash |
 | Scoring | 3 moves: 5 · 4-6: 4 · 7-10: 3 · else 0 | 3 moves: 2 · 4-6: 1 · else 0 |
 
+<img src="/assets/images/chor_machaye_shor/item1_red_roof_reference.png" alt="Item 1 house layout — red-roof house is the correct answer" style="max-width:340px;width:100%;border:1px solid #e5e7eb;border-radius:10px;margin:10px 0;display:block;">
+
 \`consecutiveRequired: 3\` for both trials. This is the only item with a hardcoded static house layout (\`houses[0]\` is always the red-roof response house) rather than a per-attempt randomizer function.
 
 ### Items 2, 3, 4, 6, 7, 10, 11 (single correct-house rule per item/phase)
@@ -1578,6 +1580,10 @@ Fewer moves to reach the target always scores higher. A move count that exhausts
 | 7 | House with **3 windows and a split window** at once | Collapses to **either** "any 3-window house" **or** "any split-window house" (defaults to split-window if ambiguous) | [3, 3] | 18 | 6-7: 5 · 8-9: 4 · 10-12: 3 · 13-15: 2 · 16-18: 1 |
 | 10 | House with **yellow walls, 2 crosses, and a right-slanted roof** all at once | Collapses to testing **one** of those attributes — "any right-slanted roof" or "any house with 2 crosses" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
 | 11 | House with **blue walls, orange windows, and a cross opposite the roof slant** all at once | Collapses to testing **one** of those attributes — "any orange-window house" or "any house with the cross opposite its slant" depending on the transition tap | [3, 3] | 21 | 6-8: 5 · 9-12: 4 · 13-15: 3 · 16-18: 2 · 19-21: 1 |
+
+**Reference — Item 2 (House with exactly 1 window):**
+
+<img src="/assets/images/chor_machaye_shor/item2_one_window_reference.png" alt="Item 2 house layout — the house with exactly 1 window (highlighted) is the correct answer" style="max-width:340px;width:100%;border:1px solid #e5e7eb;border-radius:10px;margin:10px 0;display:block;">
 
 Items 5, 8, and 9 also exist in \`GAME_DATA\` with their own rules and scoring tables, but are disabled and not part of the main-phase test — see Technical Documentation §3.
 
