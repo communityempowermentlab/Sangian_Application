@@ -1719,7 +1719,7 @@ Example:
 | \`trial\` | Which trial this result came from (relevant for teaching questions, which allow up to 2) |
 | \`timeTaken\` | Seconds elapsed for this question |
 | \`path\` | The actual sequence of grid cells the token traversed |
-| \`failReason\` | \`null\` on success, otherwise which fail condition triggered (Timeout / Hit Weed / Out of Coins) |
+| \`failReason\` | \`null\` on success, otherwise which fail condition triggered (Timeout / Hit Weed / Out of Coins) — note \`Hit Weed\`'s on-screen Results-page text is "Question Ended Due to Illegal Moves", not anything mentioning a hazard cell; see Technical Documentation §4 |
 
 ---
 
@@ -5076,6 +5076,7 @@ Timeout        — the countdown timer reaches 0 before reaching 7-EP
 Hit Weed       — the token steps on a 7-T2 cell (instant fail)
 Out of Coins   — the move count reaches the coin budget before reaching 7-EP
 \`\`\`
+These are the three \`failReason\` values in the source (\`saved_state\`/\`allScores\`) and match what's shown on the Results screen for \`Timeout\` ("Time Out – Destination Not Achieved") and \`Out of Coins\` ("🪙 Out of coins") — **but \`Hit Weed\`'s on-screen text is \`t('game.questionEndedMoves')\`, which reads "Question Ended Due to Illegal Moves"**. It says nothing about a hazard cell and can easily be mistaken for a 4th, distinct fail condition (e.g. repeated invalid taps) when reviewing a Results screen — it is not; it is exactly the same "stepped on the 7-T2 weed cell" case as everywhere else in this doc.
 
 ### Teaching Questions (tq1–tq4)
 \`\`\`
@@ -12180,8 +12181,8 @@ const makeRoverMelaWorkflowFlows = (game) => ({
             technical:'handleCellTap(cell) → validates adjacency → updates path, moveCount, collectedCoins' },
         { type: 'decision', icon: '⚠️', title: 'Hazard, Timeout, or Coins Exhausted?',
             simple:   'Three ways a question can fail: stepping on the danger cell, running out of time, or running out of moves.',
-            detailed: 'Any one of these three conditions ends the question as a failure (score 0) — there is no partial credit for "almost" reaching the end.',
-            technical:'Hit Weed: token steps on a 7-T2 cell\nTimeout: countdown reaches 0\nOut of Coins: moveCount reaches the coin budget before reaching 7-EP',
+            detailed: 'Any one of these three conditions ends the question as a failure (score 0) — there is no partial credit for "almost" reaching the end. Note: the Results screen shows the danger-cell case as "Question Ended Due to Illegal Moves" — it looks like a 4th, separate condition but it is the exact same "stepped on the hazard cell" case.',
+            technical:'Hit Weed: token steps on a 7-T2 cell → displayed on-screen as t("game.questionEndedMoves") = "Question Ended Due to Illegal Moves"\nTimeout: countdown reaches 0 → "Time Out – Destination Not Achieved"\nOut of Coins: moveCount reaches the coin budget before reaching 7-EP → "🪙 Out of coins"',
             branches: [{ label: 'Any triggers → Score 0', color: '#dc2626' }, { label: 'None → Continue toward end point', color: '#10b981' }] },
         { type: 'decision', icon: '🏁', title: 'Reached End Point?',
             simple:   'If the token reaches the end cell (7-EP) before any fail condition, the score depends on HOW efficiently it got there.',
