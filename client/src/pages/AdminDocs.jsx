@@ -5214,7 +5214,7 @@ All audio resolves through \`useTestAudio('${game.key}')\`, with static fallback
 
 ## 11. Content Management (Activation Toggle Only — Not Question Authoring)
 
-Unlike Her Pher V3 (fully dynamic image content), this game's actual content — the 22 grid layouts, cell types, and difficulty configuration — is **entirely hardcoded** in the frontend (\`MATRIX_P1\`, \`MATRIX_TQ1\`...\`MATRIX_Q18\`, \`QUESTION_CONFIG\`). There is no server-fetched item bank and no admin authoring path for maze content at all — \`MelaElements.jsx\` explicitly documents this: *"there's no add/delete/edit-matrix capability anywhere in this feature."*
+This game's actual content — the 22 grid layouts, cell types, and difficulty configuration — is **entirely hardcoded** in the frontend (\`MATRIX_P1\`, \`MATRIX_TQ1\`...\`MATRIX_Q18\`, \`QUESTION_CONFIG\`). There is no server-fetched item bank and no admin authoring path for maze content at all — \`MelaElements.jsx\` explicitly documents this: *"there's no add/delete/edit-matrix capability anywhere in this feature."*
 
 What admin **can** do, via the same generic elements pattern used across the platform:
 \`\`\`
@@ -5282,8 +5282,7 @@ Element-overrides fetch fail  → fully silent (.catch(() => {}))
 Pause/Quit with empty reason  → alert shown, blocked until a reason is entered
 STT unsupported / STT error   → alert shown
 Final assessment submit fail  → visible on-screen message (assessmentSaveMsg),
-                                 NOT a JS alert — different pattern from most
-                                 other games' assessment-failure handling
+                                 NOT a JS alert
 \`\`\`
 
 ---
@@ -5302,7 +5301,7 @@ STT errors here use a **user-facing alert** (\`alert(t('game.speechError') + ' /
 
 - The stop rule is **not** "3 consecutive wrong answers" and **not** a per-category minimum — it's a single all-three-below-threshold check on q1, q2, and q3 specifically, evaluated exactly once, right after q3 completes. Documenting it with the generic platform's stop-rule language would misrepresent this game.
 - q1/q2/q3 are hardcoded into the drop-out check by id — this is a code-level dependency the admin content manager works around by locking those 3 questions permanently active, rather than the game reading a config-driven list.
-- This game's maze content is **not admin-authorable** at all, unlike Her Pher V3's fully dynamic image content — admin control here is limited to activation toggling and a cosmetic subtitle/chips label per question.
+- This game's maze content is **not admin-authorable** at all — admin control here is limited to activation toggling and a cosmetic subtitle/chips label per question.
 - Two entirely scripted, non-interactive demo sequences (Sample A, Sample B) exist purely to teach the mechanic via animation + voice-over before the child ever controls the token themselves.
 - Scoring rewards move efficiency, not just success — reaching the end point exactly at the optimal move count (\`t2\`) scores higher than reaching it within the more generous \`t1\` threshold.
 
@@ -8871,7 +8870,7 @@ will never allow it to be overwritten as 'completed'.
 
 Response: HTTP 200 with message 'Session already finalized — status preserved.'
 \`\`\`
-\`'dropped'\` is a real status for this game — but unlike Lottery Ka Ticket or Her Pher V3 (where it can fire after any question via a repeating check), here it can **only** ever be set immediately after q3, and only once per session.
+\`'dropped'\` is a real status for this game — it can **only** ever be set immediately after q3, and only once per session, via the one-time clinical drop-out gate.
 
 ### Deduplication Logic
 
@@ -9106,7 +9105,7 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 ### Client-Side Resilience
 - Game continues running locally if a save API call fails
 - Session ID is stored in React state for the duration of gameplay
-- A failed assessment submission shows a visible on-screen message (\`assessmentSaveMsg\`) rather than a JS \`alert\` — a different pattern from most other games on this platform, see **Technical Documentation § Error Handling**
+- A failed assessment submission shows a visible on-screen message (\`assessmentSaveMsg\`) rather than a JS \`alert\` — see **Technical Documentation § Error Handling**
 
 ---
 
@@ -9131,7 +9130,7 @@ The full visual API/session/stage-flow diagrams for this game are already built 
 ## 13. Developer Notes
 
 ### Content Model Difference
-Unlike Her Pher V3, this game's maze content is **not** admin-authorable at all — the 22 grids are hardcoded JS constants. A content audit for this game means reading \`ChaloMelaChaleGame.jsx\` directly, not checking an admin content panel.
+This game's maze content is **not** admin-authorable at all — the 22 grids are hardcoded JS constants. A content audit for this game means reading \`ChaloMelaChaleGame.jsx\` directly, not checking an admin content panel.
 
 ### q1/q2/q3 Are Code-Level Dependencies
 The clinical drop-out gate reads \`allScores.find(s => s.id === 'q1')\` etc. directly by hardcoded id — there's no config-driven list of "gate questions." This is why the admin panel permanently locks these three active.
@@ -12146,7 +12145,7 @@ const makeRoverMelaWorkflowFlows = (game) => ({
             technical:'<SessionAssessmentForm /> component renders\nQ1–Q5 required (Q5 needs >=1 checked)\nConfirm modal → submitAssessmentForm()' },
         { type: 'api',      icon: '💾', title: 'Assessment Saved',
             simple:   'The assessor\'s observations are saved to the system.',
-            detailed: 'Assessment data is stored in a separate table linked to the session ID. Unlike most other games, a failed save shows an inline on-screen message rather than a JS alert.',
+            detailed: 'Assessment data is stored in a separate table linked to the session ID. A failed save shows an inline on-screen message rather than a JS alert.',
             technical:'POST /api/games/assessments\nBody: { session_id, child_id, q1_enjoyment, q2_feeling, q3_tiredness, q4_play_again, q5_behaviors[], additional_notes }' },
         { type: 'process',  icon: '📄', title: 'PDF Dashboard Generated',
             simple:   'A PDF summary of the session is automatically created and saved.',
@@ -12255,7 +12254,7 @@ const makeRoverMelaWorkflowFlows = (game) => ({
             technical:`PUT /api/games/sessions/update/:sessionId\nBody: { score, progress_level, status, saved_state: { allScores, screen, questionState, isDropped, refreshCount, retakeCount, collectedCoins, tqTrials, screentime } }\nStatus values: "in_progress" | "paused" | "quit" | "completed" | "dropped"` },
         { type: 'decision', icon: '🛡️', title: 'Terminal Status Guard',
             simple:   'Once a session is ended, it cannot be accidentally marked as completed.',
-            detailed: 'This guard is fully active for this game — "dropped" is real, but unlike other games, it can only ever be set once, immediately after q3.',
+            detailed: 'This guard is fully active for this game — "dropped" is real, and it can only ever be set once, immediately after q3.',
             technical:`if (status==="completed" && (currentStatus==="quit" || currentStatus==="dropped"))\n  return res.status(200).json({ message:"Session already finalized" })`,
             branches: [{ label: 'Terminal → Reject (200, preserved)', color: '#f59e0b' }, { label: 'Valid transition → Update DB', color: '#10b981' }] },
         { type: 'api',      icon: '📋', title: 'Assessment Submission',
@@ -12301,7 +12300,7 @@ const makeRoverMelaWorkflowFlows = (game) => ({
             technical:'game_sessions.status = "quit"\nquit_reason saved\nend_time = NOW()' },
         { type: 'decision', icon: '📏', title: 'Clinical Drop-Out Gate Fired (After Q3 Only)?',
             simple:   'This is the ONLY automatic stop condition — and it can only ever fire once, right after q3.',
-            detailed: 'Unlike other games\' repeating consecutive-wrong checks, this game never re-checks the gate after q4 onward — once past q3 cleanly, the session always runs to completion or a manual quit.',
+            detailed: 'This game never re-checks the gate after q4 onward — once past q3 cleanly, the session always runs to completion or a manual quit.',
             technical:'Evaluated once: score(q1)<2 && score(q2)<2 && score(q3)<2 → isDropped=true\nif isDropped: PUT update: { status: "dropped" }\nelse if all 18 scored done: PUT update: { status: "completed" }',
             branches: [{ label: 'Yes (only possible right after q3) → status=dropped', color: '#dc2626' }, { label: 'No → Continue to q4 and beyond', color: '#10b981' }] },
         { type: 'process',  icon: '🟢', title: 'Status: completed / dropped',
