@@ -2845,6 +2845,173 @@ In the Admin Reports panel, every session record shows the assessment responses 
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Chor Machaye Shor Assessment Behavior — the SessionAssessmentForm itself ──
+// is shared/identical across games (same real bugs found and fixed here as for
+// Rover Mela: Q5 is actually required, and there's a confirmation modal the old
+// generic template never documented). This game's real deviation is in §2 (what's
+// being measured — move-efficiency and rule-detection, not "questions" or
+// "categories") and §7 (no 'dropped' status exists for this game).
+
+const makeChorAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
+
+---
+
+## 1. Overview
+
+This document explains how **${game.title}** measures and records behavioral observations during and after the assessment session. It covers what is tracked, how the assessor records observations, how the data is stored, and how it contributes to the final assessment report.
+
+---
+
+## 2. What Is Being Measured
+
+**${game.title}** is a rule-inference / cognitive-flexibility assessment — it has no fixed "questions" with binary correct/incorrect answers and no category structure. Beyond the per-item scores, the system tracks:
+
+- **Move efficiency** — how many attempts (moves) it took the child to find the correct house 3 times in a row on each of the 8 active items
+- **Rule-detection speed** — on items 5-8, how the child responds right after the rule silently swaps mid-item (phase 1 → phase 2), captured via \`phase1Time\`/\`phase2Time\` and \`consecutiveBreaks\`
+- **Mistakes** — the running mistake count per item (\`currentMistakes\`), separate from the move count itself
+- **Whole-test stop outcome** — whether the child triggered the "2 consecutive zero-scored distinct items" stop rule, itself a meaningful clinical signal (see **Score & Progression Logic**)
+- **Behavioral observations** — assessor-recorded qualitative observations about how the child engaged, captured separately in the form below
+
+---
+
+## 3. Behavioral Assessment Form
+
+After every game session (whether completed or quit), the assessor fills in a structured **Session Details Form** before the assessment is finalized. This form is identical across all SANGIAN games (\`SessionAssessmentForm.jsx\`) — it does not vary with this game's mechanics.
+
+### Assessment Questions
+
+Exact wording shown on screen (\`en.js\` locale strings):
+
+| # | Question | Response Options |
+|---|---|---|
+| Q1 | "Did you enjoy playing the game?" | Yes, a lot / A little / Not much |
+| Q2 | "How did the game feel for you?" | Yes, a lot / A little / Not much |
+| Q3 | "Did you feel tired while playing the game?" | Yes, a lot / A little / Not much |
+| Q4 | "Would you like to play the game again?" | Yes, a lot / A little / Not much |
+
+All 4 questions are **required** — the form cannot be submitted without selecting a response for each.
+
+### Behavioral Observation Checkboxes (Q5)
+
+Labeled "Q5. Observed Behaviours during the session (Multiple selection allowed)". The assessor selects all behaviors observed during the session:
+
+\`\`\`
+☐ Difficulty sustaining attention
+☐ Impulsive or random responding
+☐ Negative reaction to correction
+☐ Hesitation in responding
+☐ High focus or persistence
+☐ Verbalisation of a memory strategy
+☐ Needed frequent reassurance
+☐ Calm and engaged throughout
+\`\`\`
+
+Multiple behaviors can be selected — but **at least one is required**. Leaving all 8 unchecked blocks submission.
+
+### Additional Notes
+
+A free-text field where the assessor can dictate or type any additional qualitative observations not covered by the checkboxes.
+
+**Voice input** is supported — the assessor can use the microphone button to dictate notes directly.
+
+---
+
+## 4. Validation Rules
+
+\`\`\`
+Q1, Q2, Q3, Q4 → Required (must be selected before submission)
+Q5 behaviors   → Required (at least 1 of 8 must be checked)
+Additional notes → Optional (can be empty)
+\`\`\`
+
+If any required field is missing, the form highlights the missing field(s) and blocks submission — this is enforced by the shared \`SessionAssessmentForm.jsx\` component's own validation, not anything this game adds.
+
+---
+
+## 5. Assessment Submission Flow
+
+\`\`\`
+Assessor fills in Q1–Q4 (required)
+Assessor checks at least one behavioral observation (required)
+Assessor optionally adds notes
+Assessor clicks "Submit Assessment"
+       ↓
+Client validates all required fields (Q1–Q5)
+       ↓
+Confirmation modal appears: "Are you sure you want to submit the assessment?"
+  → Cancel: closes modal, form remains editable
+  → Confirm: proceeds
+       ↓
+submitAssessment(): saveToServer('completed' or 'quit') → POST /api/games/assessments
+       ↓
+Data stored in game_assessments table
+       ↓
+alert("Assessment submitted successfully!")
+       ↓
+(1 second later) Dashboard PDF generated off-screen and uploaded — see Technical Documentation §9
+\`\`\`
+
+Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessment()\` actually fires.
+
+**On failure**, this game shows a JS \`alert()\` with the actual server error message (\`"Failed to save assessment. Please try again.\\n\\nDetails: <error>"\`) — unlike some other games that show an inline on-screen message instead.
+
+---
+
+## 6. Database Storage
+
+\`\`\`
+Table: game_assessments
+
+session_id        → Links to the game session
+child_id          → Child who was assessed
+q1_enjoyment      → Q1 response
+q2_feeling        → Q2 response
+q3_tiredness      → Q3 response
+q4_play_again     → Q4 response
+q5_behaviors      → JSON array of selected behavior strings
+additional_notes  → Free text notes (with "[Quit Reason: ...]" appended if the session was quit)
+created_at        → When the assessment was submitted
+\`\`\`
+
+---
+
+## 7. Pending Assessment Detection
+
+If the child completes or quits a game but the assessor does not submit the form before navigating away, the system detects this on the next visit.
+
+\`\`\`
+System checks: sessions with status IN ('completed', 'quit', 'dropped')
+               where NO assessment record exists
+
+If found → Shows a prompt to the assessor to complete the form
+\`\`\`
+
+**This game never actually produces a \`'dropped'\` status** — unlike Chalo Mela Chalen's clinical q1/q2/q3 gate, this game's whole-test stop rule (2 consecutive zero-scored distinct items) still finalizes the session as \`'completed'\`, not \`'dropped'\` (see Technical Documentation §16). So in practice, only \`'completed'\` and \`'quit'\` sessions are ever found pending here for this game.
+
+---
+
+## 8. Assessment in Reports
+
+In the Admin Reports panel, every session record shows the assessment responses alongside the per-item scores. The reports include:
+
+- Q1–Q4 responses
+- Q5 behavioral observations (comma-separated)
+- Additional notes
+- Whether the assessment was submitted or is pending
+
+---
+
+## 9. Assessment Integrity
+
+- The assessment form is **disabled** after submission — responses cannot be changed
+- The session status does not actually change *at* the moment of assessment submission — for this game, \`finalizeItem\`/\`handlePauseAction\` already set it to \`'completed'\`/\`'quit'\` earlier, and \`submitAssessment()\`'s own \`saveToServer\` call just reconfirms the same value
+- Assessment data is linked to the session by \`session_id\` and \`child_id\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 const makeTechDocTemplate = (game) => `# ⚙️ ${game.title} — Technical Documentation
 
 > **Dynamic Technical Documentation** — This document covers the complete technical architecture of **${game.title}**: screen flow, gameplay mechanics, session management, scoring, stop rules, assessment, PDF generation, audio system, and API integration.
@@ -9069,6 +9236,584 @@ and path data, plus whether the session was dropped after q3
 *Last updated — SANGIAN Documentation Center 2026*
 `;
 
+// ─── Chor Machaye Shor API & Data Flow ─────────────────────────────────────────
+// This game does NOT fit the generic model: the resume-check and start-session
+// calls use the literal GAME_NAME string ('chor_machaye_shor'), not game.key
+// ('cognitive_flex_chor') — the server normalizes one into the other before
+// touching the database. saved_state uses itemResults[], not allScores[]. There
+// is no 'dropped' status. And the resume modal's "Start Fresh" POST to mark a
+// session dropped targets a route that doesn't exist server-side — a real,
+// confirmed-in-source dead code path, not a hypothetical edge case. All of this
+// is cross-verified against ChorMachayeShorGame.jsx, gameController.js, and
+// gameRoutes.js directly — see Technical Documentation for the narrative form.
+
+const makeChorApiTemplate = (game) => `# 🔗 ${game.title} — API & Data Flow
+
+---
+
+## 1. Game Overview
+
+### Purpose
+${game.title} is a rule-inference / cognitive-flexibility assessment within the SANGIAN platform. The backend creates and manages every game session, captures per-item move-efficiency results as the child plays through the 8 active items, stores assessor behavioral observations, and generates reports for researchers and administrators.
+
+### What the Backend Does
+- Creates and tracks unique game sessions per child
+- Saves gameplay progress and per-item results (\`itemResults\`, not \`allScores\`) in real time
+- Serves the per-item active/inactive toggle (items 5, 8, 9 are off by default) — not authorable content, since all 11 items are fully hardcoded in \`GAME_DATA\`
+- Applies terminal-status protection to prevent data corruption
+- Stores assessor behavioral observations after each session
+- Serves structured reports to the admin panel
+
+---
+
+## 2. Backend Workflow
+
+### Complete Data Journey
+
+\`\`\`
+Child Logs In (Device)
+       ↓
+Game Loads → Browser checks for saved session; item activation
+             overrides fetched
+       ↓
+Session Created on Server → Database record written
+       ↓
+Child Plays Items 1-8 → Each finished item's result saved
+       ↓
+Whole-Test Stop Check → runs after every item completes; may end
+             the session early (2 consecutive zero-scored distinct items)
+       ↓
+Game Ends (all 8 items done, OR stop rule fired) → Final session
+             status written — always 'completed', never 'dropped'
+       ↓
+Assessor Submits Form → Behavioral data saved
+       ↓
+PDF Generated → Dashboard exported and uploaded
+       ↓
+Admin Views Report → Data read from all three tables
+\`\`\`
+
+For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
+
+---
+
+## 3. API Overview
+
+### Why APIs Are Used
+Every action in the game — starting a session, saving an item result, submitting an assessment — communicates with the server through APIs. This ensures that no data is lost between the browser and the database.
+
+### Base URL
+\`\`\`
+/api/games/    (session, assessment, PDF, report routes)
+/api/public/   (item-activation + audio routes)
+/api/admin/    (admin content-management routes, via ChorElements.jsx)
+\`\`\`
+
+### Authentication
+| Route Type | Method |
+|---|---|
+| Child game routes | Session-based (child must be logged in) |
+| Public content routes | None (public, read-only) |
+| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+
+---
+
+## 4. API Reference List
+
+| API Name | Method | Endpoint | Purpose | Triggered When |
+|---|---|---|---|---|
+| Resume Check | GET | \`/api/games/sessions/resume/:childId/chor_machaye_shor\` | Finds the latest session to resume | On game load |
+| Start Session | POST | \`/api/games/sessions/start\` | Creates a new game session | Child clicks "Start Now" |
+| Update Session | PUT | \`/api/games/sessions/update/:sessionId\` | Updates score, status, saved state | After every item / on game end |
+| "Mark Session Dropped" (Start Fresh) | POST | \`/api/games/sessions/:sessionId\` | **No matching route exists — always 404s, silently caught** | Assessor chooses "Start Fresh" over a resumable session |
+| Submit Assessment | POST | \`/api/games/assessments\` | Saves behavioral assessment form | Assessor confirms submission |
+| Upload PDF | POST | \`/api/games/pdfs/upload\` | Stores dashboard PDF file | Dashboard export |
+| Report Detail | GET | \`/api/games/reports/detail/${game.key}\` | Detailed session list for one game (accepts \`cognitive_flex_chor\` or \`chor_machaye_shor\`) | Admin views game report |
+| Fetch Item Activation | GET | \`/api/public/elements?test_id=${game.key}\` | Loads which of the 11 items are active | On game load |
+| Fetch Audio Overrides | GET | \`/api/public/audio-elements?test_id=${game.key}\` | Loads per-language audio asset overrides | On game load |
+
+**The two identifiers are genuinely different and not interchangeable:** the resume-check and start-session calls use the literal string \`'chor_machaye_shor'\` (the \`GAME_NAME\` constant, for session tracking); the elements/audio and report-detail calls use \`${game.key}\` (\`'cognitive_flex_chor'\`, the Elements panel's \`test_id\`). The server normalizes between them for the session-tracking calls (see §5) — but the literal value actually sent over the wire differs by endpoint.
+
+---
+
+## 5. Backend Logic (Simplified)
+
+### Session Lifecycle
+
+\`\`\`
+A new session is created when the child starts the game.
+
+If an active session already exists for the same child and game,
+the server returns the existing session ID instead of creating a
+duplicate record.
+
+During gameplay, the session is updated after every finished item with:
+  - Current score (running sum of itemResults[].score)
+  - Progress level (itemResults.length)
+  - Saved state (full JSON snapshot — itemResults, currentItemIndex,
+    currentTrial, currentPhase, and all in-progress counters)
+
+When the game ends:
+  - Status → completed (all 8 active items reached, OR the whole-test
+    stop rule fired) / quit (assessor ended it) — there is no
+    'dropped' status for this game
+  - End time is recorded
+  - Saved state is finalized
+\`\`\`
+
+### game_name Normalization on Session Start/Resume
+
+\`\`\`
+Client sends: game_name = "chor_machaye_shor"  (GAME_NAME constant)
+Server (startGameSession / getResumeSession):
+  if (game_name === "chor_machaye_shor") normalizedName = "cognitive_flex_chor"
+  → normalizedName is what's actually INSERTed/queried against
+    game_sessions.game_name, NOT the literal value the client sent
+\`\`\`
+This means the value stored in the database ends up as \`"cognitive_flex_chor"\`, even though the request body and URL both carried \`"chor_machaye_shor"\`. Both values still work for the admin Report Detail endpoint (§4) because \`gameController.js\` special-cases \`gameFilter = ['cognitive_flex_chor', 'chor_machaye_shor']\` for this game specifically.
+
+### Terminal Status Protection
+
+\`\`\`
+Once a session is marked 'quit', the server will never allow it
+to be overwritten as 'completed'.
+
+Response: HTTP 200 with message 'Session already finalized — status preserved.'
+\`\`\`
+The guard code also checks for \`'dropped'\`, but that branch is dead for this game in practice — Chor Machaye Shor's sessions are never actually written with status \`'dropped'\`.
+
+### The "Mark Session Dropped" Call Does Not Work
+
+\`\`\`
+Resume modal → "Start Fresh" over a resumable session:
+  POST /api/games/sessions/:sessionId  { status: 'dropped' }
+  → gameRoutes.js defines NO POST /sessions/:sessionId handler
+  → Request 404s
+  → Caught by the client's own try/catch (console.error only)
+  → resetGameState() / startNewSession() proceed regardless
+\`\`\`
+A new session starts either way, but the old abandoned session is silently left in whatever status it already had — it is never actually marked \`'dropped'\`. This is a genuine dead code path in the client, not a hypothetical.
+
+### Deduplication Logic
+
+\`\`\`
+If the child starts the same game while an 'in_progress'
+session already exists, the server returns:
+  - HTTP 200 (not 201)
+  - The existing sessionId
+  - The existing attempt_no
+\`\`\`
+
+---
+
+## 6. Technical API Details
+
+### Start Game Session
+
+**Endpoint:** \`POST /api/games/sessions/start\`
+
+**Request Body:**
+\`\`\`json
+{
+  "child_id": "C001",
+  "game_name": "chor_machaye_shor",
+  "total_questions": 11
+}
+\`\`\`
+\`total_questions\` is always 11 — the full \`GAME_DATA\` bank size (\`TOTAL_QUESTIONS\` constant) — not the count of currently-active items (8).
+
+**Response — New Session (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session started",
+  "sessionId": 142,
+  "attempt_no": 3
+}
+\`\`\`
+
+---
+
+### Update Game Session
+
+**Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
+
+**Request Body** (real shape — see **Technical Documentation § Session State Management**):
+\`\`\`json
+{
+  "score": 21,
+  "progress_level": 5,
+  "status": "in_progress",
+  "saved_state": {
+    "itemResults": [
+      { "itemId": 1, "itemName": "Item 1: Red Roof (Trial 1)", "score": 5, "moves": 3, "timeTaken": 22, "completed": true, "trial": 1, "retakes": 0 },
+      { "itemId": 2, "itemName": "Item 2: One Window", "score": 4, "moves": 6, "timeTaken": 31, "completed": true, "phase1Time": 31, "phase2Time": 0, "mistakes": 1, "consecutiveBreaks": 0, "finalRule": null, "trial": 1, "retakes": 0 }
+    ],
+    "currentItemIndex": 2,
+    "currentTrial": 1,
+    "currentPhase": 1,
+    "currentMove": 0,
+    "correctTouchCount": 0,
+    "isRuleSelection": false,
+    "phase2Rule": null,
+    "lastCorrectPosition": null,
+    "timerSeconds": 0,
+    "currentAttempts": [],
+    "totalScore": 9,
+    "screen": "game",
+    "screentime": 210,
+    "retakeCount": 0,
+    "itemRetakes": {}
+  }
+}
+\`\`\`
+**This is \`itemResults[]\`, not \`allScores[]\`** — a genuinely different top-level field from most other games on this platform (see Technical Documentation § Session State Management).
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Game session updated"
+}
+\`\`\`
+
+**Supported Status Values (this game):**
+\`\`\`
+in_progress  — Game is actively being played
+paused       — Game is paused (resume popup will show on next visit)
+completed    — All 8 active items reached, OR the whole-test stop rule fired
+quit         — Assessor ended the session early
+(no 'dropped' status is ever written for this game)
+\`\`\`
+
+---
+
+### Submit Assessment
+
+**Endpoint:** \`POST /api/games/assessments\`
+
+**Request Body:**
+\`\`\`json
+{
+  "session_id": 142,
+  "child_id": "C001",
+  "q1_enjoyment": "Yes, a lot",
+  "q2_feeling": "A little",
+  "q3_tiredness": "Not much",
+  "q4_play_again": "Yes, a lot",
+  "q5_behaviors": [
+    "High focus or persistence",
+    "Calm and engaged throughout"
+  ],
+  "additional_notes": "Detected the phase-2 rule swap quickly on items 5 and 7."
+}
+\`\`\`
+\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+---
+
+### Resume Check
+
+**Endpoint:** \`GET /api/games/sessions/resume/:childId/chor_machaye_shor\`
+
+Note the literal \`chor_machaye_shor\` segment — **not** \`${game.key}\`, despite \`${game.key}\` being correct for every \`/api/public/...\` call this same game makes (§4).
+
+**Response (session found):**
+\`\`\`json
+{
+  "success": true,
+  "sessionInfo": {
+    "id": 138,
+    "child_id": "C001",
+    "game_name": "cognitive_flex_chor",
+    "status": "paused",
+    "score": 9,
+    "progress_level": 2,
+    "saved_state": { "itemResults": [ "..." ], "currentItemIndex": 2, "currentPhase": 1 },
+    "attempt_no": 2
+  }
+}
+\`\`\`
+Note \`game_name\` in the stored/returned row is \`"cognitive_flex_chor"\` — the server-normalized value (§5), not the literal \`"chor_machaye_shor"\` the URL itself used.
+
+---
+
+## 7. Database Workflow
+
+### Tables Used
+
+| Table | Purpose |
+|---|---|
+| \`game_sessions\` | Every game attempt — score, status, saved state, timing |
+| \`game_assessments\` | Behavioral observations submitted by the assessor |
+| \`game_dashboard_pdfs\` | PDF files generated at end of session |
+
+### game_sessions Schema
+
+\`\`\`
+id              INT      — Unique session identifier (auto-increment)
+child_id        VARCHAR  — Links to the child who played
+game_name       VARCHAR  — Stored as 'cognitive_flex_chor' (normalized — see §5)
+start_time      DATETIME — When the session began
+end_time        DATETIME — When the session ended (NULL if active)
+score           INT      — Sum of itemResults[].score, out of 42 for the fixed 8-item test
+total_questions INT      — Always 11 (full GAME_DATA bank size, not active-item count)
+progress_level  INT      — Count of items finished so far (itemResults.length)
+status          ENUM     — in_progress / paused / completed / quit (never 'dropped')
+quit_reason     VARCHAR  — Reason for early termination (if any)
+saved_state     JSON     — Full snapshot: itemResults, currentItemIndex, currentTrial,
+                            currentPhase, phase2Rule, and all in-progress counters
+\`\`\`
+
+### Data Flow
+
+\`\`\`
+Session Starts  → Record written: status = 'in_progress'
+       ↓
+Items Finished  → saved_state.itemResults JSON updated with each result
+       ↓
+After Each Item → whole-test stop check runs (2 consecutive zero-scored
+                   distinct items)
+       ↓
+Game Ends Normally → status = 'completed', end_time recorded
+Stop Rule Fired     → status = 'completed' (same status, not 'dropped')
+Game Quit Early     → status = 'quit', quit_reason saved
+       ↓
+Assessment Submitted → Record written in game_assessments table
+       ↓
+PDF Exported         → File path stored in game_dashboard_pdfs
+       ↓
+Admin Views Reports  → Data joined from all three tables
+\`\`\`
+
+---
+
+## 8. Score Calculation
+
+### How Scores Are Stored
+The \`score\` column in \`game_sessions\` holds the sum of each finished item's move-count-based score (\`itemResults[].score\`), out of a maximum of 42 for the fixed 8-item main-phase test (Item 1: 5+2=7 trial scores · Items 2-8: 5 each = 35) — see **Score & Progression Logic** for the full per-item breakdown.
+
+### Report Score Aggregation
+The Reports Detail API (\`GET /reports/detail/${game.key}\` or \`.../chor_machaye_shor\`, both accepted) reads the \`saved_state\` JSON and calculates:
+\`\`\`
+correct_count       = itemResults.filter(r => r.completed).length
+attempted_questions = itemResults.length
+actual_game_time    = sum of all timeTaken values
+total_session_time  = end_time - start_time (in seconds)
+\`\`\`
+
+---
+
+## 9. Assessment Logic
+
+### Behavioral Assessment Questions
+After each session, the assessor completes a structured observation form:
+
+| Question | Type |
+|---|---|
+| Q1 — Did you enjoy playing the game? | Single choice |
+| Q2 — How did the game feel for you? | Single choice |
+| Q3 — Did you feel tired while playing the game? | Single choice |
+| Q4 — Would you like to play the game again? | Single choice |
+| Q5 — Observed behaviours | Multi-select checkboxes (**required**, ≥1) |
+| Additional Notes | Free text, voice-dictation supported |
+
+See **Assessment Behavior** for the full field list and the confirmation-modal step before submission.
+
+### Assessment Storage
+Responses are stored in the \`game_assessments\` table linked to \`session_id\`. The \`q5_behaviors\` field is stored as a JSON array.
+
+### Pending Assessment Detection
+The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. Since this game never actually writes \`'dropped'\`, only \`'completed'\`/\`'quit'\` sessions are ever found pending here in practice.
+
+---
+
+## 10. Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 201 | New session created successfully |
+| 200 | Request successful (or session reused / status preserved) |
+| 400 | Bad Request — required fields missing |
+| 401 | Unauthorized — invalid or missing admin token |
+| 403 | Forbidden — token valid but role is not 'admin' |
+| 404 | Not Found — session ID does not exist, **or the non-existent "mark dropped" route (§5)** |
+| 500 | Internal Server Error — database or processing failure |
+
+### Client-Side Resilience
+- Resume check, progress-save, and element-overrides failures are all silently caught (\`console.error\` only) — gameplay continues with no user-facing feedback
+- PDF generation/upload failures are also silent — the assessor can see "Assessment submitted successfully!" even if the PDF failed
+- Pause/Quit with an empty reason, a missing session id, and unsupported speech-to-text all show a JS \`alert()\`
+
+---
+
+## 11. Security & Validation
+
+### Admin Route Protection
+All report routes require a JWT Bearer token with \`role: admin\`.
+
+**Token Check:**
+\`\`\`
+Authorization: Bearer <JWT_TOKEN>
+
+Validates:
+  ✓ Token is a valid JWT (signed with server secret)
+  ✓ Token is not expired
+  ✓ Token role === 'admin'
+
+Failure responses:
+  401 — No token provided
+  401 — Token expired
+  403 — Role is not admin
+\`\`\`
+
+### Input Validation
+- \`child_id\` + \`game_name\` required for session start
+- \`session_id\` + \`child_id\` required for assessment submission
+- Status transitions enforced server-side (terminal state guard, §5)
+- At least one item must always stay active — enforced both client-side (in \`ChorElements.jsx\`) and server-side (in \`updateElementConfig\`'s \`cognitive_flex_chor\`-specific branch)
+
+---
+
+## 12. Visual Workflow
+
+The full visual API/session/item-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game, which has dedicated tabs for Game Journey, Question Flow, Score & Cutoff, API Flow, and Session States, all generated from this game's real rule-inference logic.
+
+---
+
+## 13. Developer Notes
+
+### GAME_NAME vs. game.key — Two Different Identifiers
+This is the single most important thing to get right when writing tooling against this game: session-tracking calls (resume, start) use the literal \`GAME_NAME\` constant \`'chor_machaye_shor'\`; content calls (elements, audio) use \`${game.key}\` (\`'cognitive_flex_chor'\`). The server normalizes the former into the latter before touching the database (§5) — but requests you send must still use the correct literal per endpoint.
+
+### saved_state Schema Flexibility
+The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
+- \`allScores\` array (standard fixed-question games)
+- \`itemResults\` array (this game)
+- \`questionDetails\` map (games with mid-test assessments)
+
+### Attempt Number Calculation
+Attempt numbers are not stored as a column — they are calculated dynamically at query time by counting sessions for the same \`child_id\` + normalized \`game_name\` ordered by \`start_time\`.
+
+---
+
+## 14. Future Scalability
+
+- **New games**: Follow the same session lifecycle — only \`game_name\` changes, no new tables needed
+- **New item metrics**: \`saved_state\` JSON schema can be extended without database migrations
+- **Reporting expansion**: The Reports Detail API dynamically reads column keys from \`saved_state\`, adapting automatically to any game structure
+- **API versioning**: Base path \`/api/games/\` supports future versioned sub-routes
+
+---
+
+## 15. Data Flow — Stage-by-Stage Breakdown
+
+This section walks through the same session lifecycle as §2 and §5 above, but end-to-end and in narrative order — useful for onboarding or tracing a bug across the full request chain.
+
+### Stage 1 — Game Load (Resume Check + Item Activation Fetch)
+
+\`\`\`
+GET /api/games/sessions/resume/:childId/chor_machaye_shor
+GET /api/public/elements?test_id=${game.key}
+
+Purpose: Check if the child has an unfinished session, and which
+         of the 11 items are currently active (8 by default)
+Result:
+  → Session found (status: paused) → Show "Resume" popup
+  → No session found                → Show Splash screen
+\`\`\`
+
+### Stage 2 — Session Start
+
+When the child clicks "Start Now":
+
+\`\`\`
+POST /api/games/sessions/start
+
+Sends: child_id, game_name: "chor_machaye_shor", total_questions: 11
+Receives: sessionId, attempt_no
+
+Database: New row written in game_sessions
+  game_name = 'cognitive_flex_chor' (normalized, not the literal sent)
+  status = 'in_progress'
+  start_time = NOW()
+  score = 0
+\`\`\`
+
+### Stage 3 — Gameplay (Auto-Save After Each Item)
+
+\`\`\`
+PUT /api/games/sessions/update/:sessionId
+
+Sends:
+  score          → sum of itemResults[].score so far
+  progress_level → itemResults.length
+  status         → 'in_progress'
+  saved_state    → itemResults, currentItemIndex, currentTrial,
+                    currentPhase, phase2Rule, and all in-progress counters
+\`\`\`
+
+### Stage 4 — Pause / Quit
+
+\`\`\`
+Pause:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'paused'
+  Then: navigate to home screen
+
+Quit:
+  PUT /api/games/sessions/update/:sessionId
+  status = 'quit'
+  quit_reason = assessor-entered reason
+  screen → Results (does NOT itself trigger PDF generation)
+\`\`\`
+
+### Stage 5 — Game End (Whole-Test Stop or Natural Completion)
+
+\`\`\`
+After each item finalizes:
+  checkDropCondition(itemResults) → 2 consecutive zero-scored
+  distinct items?
+    Yes → status = 'completed' (this game never writes 'dropped')
+    No, but no more active items remain → status = 'completed'
+    No, and items remain → status = 'in_progress', next item begins
+\`\`\`
+
+### Stage 6 — Behavioral Assessment Submission
+
+\`\`\`
+POST /api/games/assessments
+Sends: session_id, child_id, q1-q4, q5_behaviors (≥1 required), additional_notes
+Database: New row in game_assessments
+\`\`\`
+
+### Stage 7 — PDF Generation and Upload
+
+\`\`\`
+1 second after the assessment POST succeeds:
+Clone #dashboard-container off-screen → html2canvas(scale:1.5) →
+jsPDF → POST /api/games/pdfs/upload
+  game_name: 'chor_machaye_shor' (hardcoded literal, NOT ${game.key})
+Filename: [ChildName]_Chor_Machaye_Shor_SES[sessionId]_[timestamp].pdf
+\`\`\`
+
+### Stage 8 — Admin Report View
+
+\`\`\`
+GET /api/games/reports/detail/${game.key}   (or .../chor_machaye_shor — both accepted)
+
+Server joins game_sessions + children + game_assessments + game_dashboard_pdfs
+Parses saved_state.itemResults JSON to extract per-item move-efficiency
+scores, mistakes, and phase timing
+\`\`\`
+
+---
+
+*Last updated — SANGIAN Documentation Center 2026*
+`;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` } });
@@ -13631,6 +14376,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryApiTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3ApiTemplate(selectedGame) :
                                 selectedGame.key === 'rover_mela' ? makeRoverMelaApiTemplate(selectedGame) :
+                                selectedGame.key === 'cognitive_flex_chor' ? makeChorApiTemplate(selectedGame) :
                                 makeApiTemplate(selectedGame)
                             }
                         />
@@ -13660,6 +14406,7 @@ const AdminDocs = () => {
                                 selectedGame.key === 'number_recall_lottery' ? makeLotteryAssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'working_memory_herpher_v3' ? makeHerPherV3AssessmentTemplate(selectedGame) :
                                 selectedGame.key === 'rover_mela' ? makeRoverMelaAssessmentTemplate(selectedGame) :
+                                selectedGame.key === 'cognitive_flex_chor' ? makeChorAssessmentTemplate(selectedGame) :
                                 makeAssessmentTemplate(selectedGame)
                             }
                         />
