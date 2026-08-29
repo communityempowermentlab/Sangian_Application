@@ -1751,28 +1751,28 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | TQ1 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq1_trial2_grid_reference.png" alt="TQ1 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ2 | Trial 1 | — | 3 → 2 | — | — | 7 | <img src="/assets/images/chalo_mela_chale/tq2_trial1_grid_reference.png" alt="TQ2 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ2 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq2_trial2_grid_reference.png" alt="TQ2 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
-| Q1  | — | 60s  | 3 → 2 | 4 → 1 | 4+ → 0 | 7 | — |
+| Q1  | — | 60s  | 3 → 2 | 4 → 1 | 4+ → 0 | 7 | <img src="/assets/images/chalo_mela_chale/q1_grid_reference.png" alt="Q1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ3 | Trial 1 | — | 3 → 2 | — | — | 7 | <img src="/assets/images/chalo_mela_chale/tq3_trial1_grid_reference.png" alt="TQ3 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ3 | Trial 2 | — | 3 → 1 | — | 0 → 0 | 7 | <img src="/assets/images/chalo_mela_chale/tq3_trial2_grid_reference.png" alt="TQ3 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ4 | Trial 1 | — | 5 → 2 | — | — | 9 | <img src="/assets/images/chalo_mela_chale/tq4_trial1_grid_reference.png" alt="TQ4 Trial 1 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | TQ4 | Trial 2 | — | 5 → 1 | — | 0 → 0 | 9 | <img src="/assets/images/chalo_mela_chale/tq4_trial2_grid_reference.png" alt="TQ4 Trial 2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
-| Q2  | — | 60s  | 3 → 2 | 4 → 1  | 4+ → 0  | 7 | — |
-| Q3  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | — |
-| Q4  | — | 60s  | 2 → 2 | 3 → 1  | 3+ → 0  | 6 | — |
-| Q5  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | — |
-| Q6  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | — |
-| Q7  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | — |
-| Q8  | — | 90s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | — |
-| Q9  | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 | — |
-| Q10 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | — |
-| Q11 | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 | — |
-| Q12 | — | 120s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 | — |
-| Q13 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | — |
-| Q14 | — | 180s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | — |
-| Q15 | — | 180s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 | — |
-| Q16 | — | 180s | 8 → 2 | 9 → 1  | 9+ → 0  | 12 | — |
-| Q17 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 | — |
-| Q18 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 | — |
+| Q2  | — | 60s  | 3 → 2 | 4 → 1  | 4+ → 0  | 7 | <img src="/assets/images/chalo_mela_chale/q2_grid_reference.png" alt="Q2 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q3  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | <img src="/assets/images/chalo_mela_chale/q3_grid_reference.png" alt="Q3 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q4  | — | 60s  | 2 → 2 | 3 → 1  | 3+ → 0  | 6 | <img src="/assets/images/chalo_mela_chale/q4_grid_reference.png" alt="Q4 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q5  | — | 60s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | <img src="/assets/images/chalo_mela_chale/q5_grid_reference.png" alt="Q5 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q6  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | <img src="/assets/images/chalo_mela_chale/q6_grid_reference.png" alt="Q6 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q7  | — | 90s  | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | <img src="/assets/images/chalo_mela_chale/q7_grid_reference.png" alt="Q7 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q8  | — | 90s  | 4 → 2 | 5 → 1  | 5+ → 0  | 8 | <img src="/assets/images/chalo_mela_chale/q8_grid_reference.png" alt="Q8 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q9  | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 | <img src="/assets/images/chalo_mela_chale/q9_grid_reference.png" alt="Q9 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q10 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | <img src="/assets/images/chalo_mela_chale/q10_grid_reference.png" alt="Q10 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q11 | — | 120s | 6 → 2 | 7 → 1  | 7+ → 0  | 10 | <img src="/assets/images/chalo_mela_chale/q11_grid_reference.png" alt="Q11 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q12 | — | 120s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 | <img src="/assets/images/chalo_mela_chale/q12_grid_reference.png" alt="Q12 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q13 | — | 120s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | <img src="/assets/images/chalo_mela_chale/q13_grid_reference.png" alt="Q13 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q14 | — | 180s | 5 → 2 | 6 → 1  | 6+ → 0  | 9 | <img src="/assets/images/chalo_mela_chale/q14_grid_reference.png" alt="Q14 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q15 | — | 180s | 7 → 2 | 8 → 1  | 8+ → 0  | 11 | <img src="/assets/images/chalo_mela_chale/q15_grid_reference.png" alt="Q15 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q16 | — | 180s | 8 → 2 | 9 → 1  | 9+ → 0  | 12 | <img src="/assets/images/chalo_mela_chale/q16_grid_reference.png" alt="Q16 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q17 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 | <img src="/assets/images/chalo_mela_chale/q17_grid_reference.png" alt="Q17 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Q18 | — | 180s | 9 → 2 | 10 → 1 | 10+ → 0 | 13 | <img src="/assets/images/chalo_mela_chale/q18_grid_reference.png" alt="Q18 grid" style="width:90px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 
 "Correct" is the optimal move count — reaching the end point in exactly that many moves scores 2. "Partial" is the more generous threshold — reaching it in that many moves (but not the optimal count) scores 1. "Incorrect" covers everything beyond the partial threshold — including a slow-but-technically-successful finish and running out of coins/hitting the hazard entirely — all scoring 0. Sample A and Sample B are excluded since they're non-interactive and never scored. Maximum possible score across all 22 questions (4 teaching + 18 scored) is confirmed at **44**.
 
