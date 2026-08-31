@@ -1404,13 +1404,13 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | Question | Total Images | Correct Clicks | Score | Category | Reference |
 |---|---|---|---|---|---|
 | Item 0 (Practice) | 6 | — | No Scoring | Tools | <img src="/assets/images/her_pher_v3/item0_reference.png" alt="Item 0 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
-| Item 1 | 7 | 7 | 2 | Fruits | |
+| Item 1 | 7 | 7 | 2 | Fruits | <img src="/assets/images/her_pher_v3/item1_reference.png" alt="Item 1 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 6 | 1 | | |
 | | | < 6 | 0 | | |
-| Item 2 | 8 | 8 | 2 | Sports | |
+| Item 2 | 8 | 8 | 2 | Sports | <img src="/assets/images/her_pher_v3/item2_reference.png" alt="Item 2 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 7 | 1 | | |
 | | | < 7 | 0 | | |
-| Item 3 | 9 | 9 | 3 | Clothes | |
+| Item 3 | 9 | 9 | 3 | Clothes | <img src="/assets/images/her_pher_v3/item3_reference.png" alt="Item 3 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 8 | 2 | | |
 | | | 7 | 1 | | |
 | | | < 7 | 0 | | |
