@@ -1191,8 +1191,8 @@ Every answered question (including the 2 Teaching questions) produces a score re
   "questionNumber": 5,
   "score": 1,
   "timeTaken": 6,
-  "userResponse": [8, 3, 9, 1],
-  "correctAnswer": [8, 3, 9, 1],
+  "userResponse": [10, 2, 5, 8],
+  "correctAnswer": [10, 2, 5, 8],
   "replayCount": 1
 }
 \`\`\`
@@ -1244,6 +1244,8 @@ On the final score screen, the system displays:
 | Total Time | sum of all \`timeTaken\` values |
 | Average Time per Question | total time ÷ questions attempted |
 
+A \`skipped\` value (\`TOTAL_ALL_QUESTIONS - attempted\`, i.e. how many of the 22 were never reached) is also computed on the score screen but never rendered anywhere — likely intended for a dropped-out session's summary but currently dead code, not a documented UI metric.
+
 ---
 
 ## 7. Score and Stop Rule Interaction
@@ -1285,6 +1287,7 @@ PDF report generated
 Score is saved to the server:
 - After every question during active play (\`status: 'in_progress'\`)
 - At game end (\`status: 'completed'\` if all 20 questions were reached, \`'dropped'\` if the consecutive-wrong rule triggered, or \`'quit'\` if the assessor ended it manually)
+- Occasionally overridden to \`'rejected'\` — this is not specific to this game, but a shared platform behavior: if the child fails a live eligibility re-check at the exact moment a \`'completed'\` write is attempted (e.g. deactivated mid-session), the server sets \`'rejected'\` instead and the score is **not** written for that request.
 
 The score column in \`game_sessions\` always reflects the most recent saved value.
 
