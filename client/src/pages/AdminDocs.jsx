@@ -4051,20 +4051,37 @@ A confirmation modal ("Are you sure you want to submit the assessment?") appears
 
 ## 9. PDF Dashboard Generation
 
-Triggered ~1–1.5s after the score screen settles:
+Unlike most other games on this platform, this one generates a PDF from **three** separate trigger points, not one or two — and for a normal (non-quit) session, it genuinely fires **twice by design**, not just as an edge case:
+
 \`\`\`
-1. Locate .ns-main (the score screen's root element)
-2. Deep-clone it into an off-screen wrapper (position:fixed, top:-99999px,
+1. finalizeAssessment() — the ladder reaches ANY terminal level
+   (Division, Subtraction, Number Recognition ×2, or Beginner).
+   Fires setTimeout(generateAndUploadPDF, 1500) inside the .then()
+   of the 'completed' status PUT — i.e. on every natural end of the
+   ladder, regardless of which level was reached, BEFORE the
+   assessment form has been touched at all.
+2. handleQuit() — status: 'quit', same 1500ms delay.
+3. submitAssessmentForm() — after the assessment POST succeeds,
+   same 1500ms delay.
+\`\`\`
+Since the Score screen renders \`SessionAssessmentForm\` unconditionally regardless of how it was reached, and Trigger 1 fires automatically the instant the ladder ends (well before the assessor has even started the form), **every normally-completed session that also gets its assessment submitted ends up with two separate PDF rows** in \`game_dashboard_pdfs\` — one blank-assessment snapshot from Trigger 1, one filled-in snapshot from Trigger 3. A Quit session follows the same "double if the form still gets submitted afterward" pattern seen on other games (Trigger 2, then optionally Trigger 3) — but a completed-normally session doesn't need any such coincidence; it's the default outcome every time.
+
+Each trigger's \`setTimeout\` only accounts for the *outer* 1.5s delay — \`generateAndUploadPDF()\` itself then does its own additional \`await new Promise(r => setTimeout(r, 500))\` "wait for render" before touching the DOM, so the real elapsed time from trigger to capture is closer to ~2s, not ~1.5s.
+
+\`\`\`
+1. Wait ~500ms for the just-rendered score screen to settle
+2. Locate .ns-main (the score screen's root element)
+3. Deep-clone it into an off-screen wrapper (position:fixed, top:-99999px,
    background:#fff) appended to <body> — avoids clipping from .ns-app's
    overflow:hidden + height:100dvh
-3. Strip animations/opacity, force overflow-x/y:visible on any node that
+4. Strip animations/opacity, force overflow-x/y:visible on any node that
    was scrollable, and strip <input> name attributes to avoid React
    radio-group collisions in the clone
-4. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
+5. html2canvas(wrapper, { scale: 1.5, useCORS: true, backgroundColor: '#fff',
    logging: false, windowWidth/windowHeight: wrapper.scrollWidth/scrollHeight })
-5. canvas.toDataURL('image/jpeg', 0.9)
-6. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
-7. pdf.output('blob') → FormData → upload
+6. canvas.toDataURL('image/jpeg', 0.9)
+7. jsPDF('p','mm',[210, canvas.height*210/canvas.width]).addImage(...)
+8. pdf.output('blob') → FormData → upload
 \`\`\`
 Upload:
 \`\`\`
@@ -4074,7 +4091,7 @@ POST /api/games/pdfs/upload   (multipart/form-data)
   session_id:  gameSessionId
   game_name:   '${game.key}'
 \`\`\`
-PDF failures are logged to console only — they never block the score screen or gameplay.
+PDF failures are logged to console only — they never block the score screen or gameplay. \`generateAndUploadPDF()\` also early-returns silently if \`gameSessionId\` is somehow unset, on top of the try/catch around the rest of the function.
 
 ---
 
