@@ -234,14 +234,14 @@ const GAME_INTRO_DEFAULTS = {
     literacy_reading_skill_v2: {
         en: {
             skill:       'Foundational Literacy - Oral Reading Fluency (ASER 2014-style)',
-            objective:   'This test uses an adaptive, ASER 2014-style oral reading assessment to determine the child\'s current reading level. Starting from a paragraph, the child moves up or down a ladder — Letter, Word, Paragraph, Story — based on how fluently they read aloud, until their reading level is identified.',
-            description: 'The child reads letters, words, a paragraph, and a story aloud while the assessor listens and marks accuracy and fluency. The test is adaptive: children who read well move on to harder text, and children who struggle move to easier text, until the assessment settles on their reading level.',
+            objective:   'This test uses an adaptive, ASER 2014-style oral reading assessment to determine the child\'s current reading level. Starting from a paragraph, the child moves up or down a five-rung ladder — Beginner, Letter, Word, Paragraph, Story — based on how fluently they read aloud, until their reading level is identified.',
+            description: 'The child reads letters, words, a paragraph, and a story aloud while the assessor listens and marks accuracy and fluency. The test is adaptive: a child who reads the paragraph fluently moves up to the story, while a child who struggles moves down through words, then letters if needed, landing as low as Beginner if even single letters aren\'t recognized, until the assessment settles on their reading level.',
             guidance:    'Take your time and read out loud, clearly. It\'s okay if some words are tricky — just do your best!',
         },
         hi: {
             skill:       'बुनियादी साक्षरता - मौखिक पठन प्रवाह (ASER 2014 आधारित)',
-            objective:   'यह टेस्ट ASER 2014 पद्धति पर आधारित एक अनुकूली (adaptive) मौखिक पठन आकलन है, जो बच्चे का वर्तमान पठन स्तर पता करता है। बच्चे के पढ़ने के प्रवाह के आधार पर स्तर ऊपर या नीचे बदलता है — अक्षर, शब्द, अनुच्छेद, कहानी — जब तक उसका सही स्तर तय न हो जाए।',
-            description: 'बच्चा अक्षर, शब्द, एक अनुच्छेद और एक कहानी ज़ोर से पढ़ता है, जबकि मूल्यांकनकर्ता ध्यान से सुनकर सटीकता और प्रवाह दर्ज करता है। यह टेस्ट अनुकूली है: अच्छा पढ़ने वाले बच्चे कठिन पाठ की ओर बढ़ते हैं, और जिन्हें कठिनाई होती है वे आसान पाठ की ओर जाते हैं, जब तक उनका पठन स्तर तय नहीं हो जाता।',
+            objective:   'यह टेस्ट ASER 2014 पद्धति पर आधारित एक अनुकूली (adaptive) मौखिक पठन आकलन है, जो बच्चे का वर्तमान पठन स्तर पता करता है। एक अनुच्छेद से शुरू करके, बच्चे के पढ़ने के प्रवाह के आधार पर वह पाँच-सीढ़ी वाली सीढ़ी पर ऊपर या नीचे बढ़ता है — शुरुआती स्तर, अक्षर, शब्द, अनुच्छेद, कहानी — जब तक उसका सही स्तर तय न हो जाए।',
+            description: 'बच्चा अक्षर, शब्द, एक अनुच्छेद और एक कहानी ज़ोर से पढ़ता है, जबकि मूल्यांकनकर्ता ध्यान से सुनकर सटीकता और प्रवाह दर्ज करता है। यह टेस्ट अनुकूली है: अनुच्छेद अच्छी तरह पढ़ने वाला बच्चा कहानी की ओर ऊपर बढ़ता है, जबकि कठिनाई होने पर बच्चा शब्दों की ओर, फिर ज़रूरत पड़ने पर अक्षरों की ओर नीचे जाता है, और अक्षर भी न पहचान पाने पर शुरुआती स्तर तक पहुँच सकता है, जब तक उसका पठन स्तर तय नहीं हो जाता।',
             guidance:    'आराम से और ज़ोर से, साफ़-साफ़ पढ़ो। कोई शब्द मुश्किल लगे तो कोई बात नहीं — बस अपनी पूरी कोशिश करो!',
         },
     },
