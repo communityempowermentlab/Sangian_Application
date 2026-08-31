@@ -7680,9 +7680,9 @@ Every action in the game — starting a session, saving a score, submitting an a
 ### Authentication
 | Route Type | Method |
 |---|---|
-| Child game routes | Session-based (child must be logged in) |
+| Child game routes (session start/update/resume/history/summaries, assessments, PDF upload) | **None, effectively.** \`gameRoutes.js\` routes every one of these through \`authMiddleware\`, but that middleware (\`server/src/middleware/auth.js\`) is an explicit no-op — it verifies no token, no session, nothing, and just calls \`next()\`. \`startGameSession\` does check that the given \`child_id\` still exists and is active (\`checkChildEligibility\`), but that's a data-eligibility check, not caller authentication. |
 | Public content routes | None (public, read-only) |
-| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+| Admin routes (reports overview/detail, assessment-session start) | JWT Bearer token required, via \`requireAdminOrOrgAuth\` (role: admin / staff-with-grant / organization — see §11, not just a literal \`role === 'admin'\` check) |
 
 ---
 
@@ -7725,7 +7725,7 @@ During gameplay, the session is updated with:
   - Saved state (full JSON snapshot of game data)
 
 When the game ends:
-  - Status → completed (all 20 reached) / dropped (3 consecutive wrong) / quit (assessor ended it)
+  - Status → completed (all 20 reached) / dropped (3 consecutive wrong) / quit (assessor ended it) / rejected (child went inactive mid-session — see below)
   - End time is recorded
   - Saved state is finalized
 \`\`\`
@@ -7733,16 +7733,42 @@ When the game ends:
 ### Terminal Status Protection
 
 \`\`\`
-Once a session is marked as 'quit' or 'dropped', the server
-will never allow it to be overwritten as 'completed'.
+TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected']
 
-This is a server-side safety guard against client-side bugs
-that might accidentally send a 'completed' update after the
-session has already been terminated.
+Once a session reaches ANY of these four statuses, no later
+request may move it to a DIFFERENT status — including a stray
+late 'in_progress'/'paused' auto-save resolving after the real
+finishing request (slow network, retry, backgrounded tab).
 
-Response: HTTP 200 with message 'Session already finalized — status preserved.'
+That guard covers status ALONE. score / progress_level /
+saved_state / quit_reason sent in the same request are still
+written normally even when status is locked — the request is
+not rejected wholesale.
+
+Only when a request carries status and nothing else to write
+does the server short-circuit with:
+  HTTP 200, { message: 'Session already finalized — status preserved.' }
+Otherwise a locked-status request still returns the ordinary
+HTTP 200, { message: 'Game session updated' } — with every
+non-status field applied and only status silently dropped.
 \`\`\`
 Unlike the two adaptive-ladder games on this platform, **this guard is fully active for this game** — \`'dropped'\` is a real, frequently-occurring status here (any time the 3-consecutive-wrong rule fires), not a dead status value.
+
+### The Fourth Status: \`'rejected'\`
+
+\`'rejected'\` is not specific to this game, but it is real and reachable here, set entirely server-side inside \`updateGameSession\` and never by the client:
+
+\`\`\`
+On any request that would set status to 'completed':
+  Server re-checks the child's live eligibility (children.status,
+  right now — not what it was when the session started).
+  If that check fails (e.g. the child was deactivated mid-session):
+    UPDATE game_sessions SET status = 'rejected', end_time = NOW()
+    Score/progress_level from this request are NOT written.
+    Response: HTTP 403, { success: false, message: 'This child is
+    no longer active, so the assessment result could not be saved.
+    Please contact the administrator or select another child.' }
+\`\`\`
 
 ### Deduplication Logic
 
@@ -7837,6 +7863,10 @@ paused       — Game is paused (resume popup will show on next visit)
 completed    — All 20 game questions were reached
 dropped      — 3 consecutive wrong answers triggered the stop rule
 quit         — Assessor ended the session early
+rejected     — Server set this itself on a would-be 'completed' request,
+               because the child failed the live eligibility re-check at
+               that moment (e.g. deactivated mid-session) — score is not
+               written; see §5 "The Fourth Status" above
 \`\`\`
 Unlike the platform's two adaptive-ladder games, \`dropped\` is a **real, commonly-hit** status for this game — not a value the backend merely supports generically for other games.
 
@@ -7862,7 +7892,17 @@ Unlike the platform's two adaptive-ladder games, \`dropped\` is a **real, common
   "additional_notes": "Recalled sequences up to 5 digits reliably, struggled beyond that."
 }
 \`\`\`
-\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+**Response (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Assessment submitted successfully",
+  "assessmentId": 87
+}
+\`\`\`
+
+\`q5_behaviors\` must contain at least 1 entry — this is enforced **twice**: the form itself blocks submission with 0 selected (see **Assessment Behavior**), and the server independently re-validates \`session_id\`, \`child_id\`, and a non-empty \`q5_behaviors\` array, returning HTTP 400 on any of them if called directly (e.g. from a script bypassing the UI) rather than silently accepting an incomplete payload.
 
 ---
 
@@ -7918,7 +7958,7 @@ end_time        DATETIME — When the session ended (NULL if active)
 score           INT      — Correct answers count, out of 22 (20 game + 2 teaching)
 total_questions INT      — 22 for this game
 progress_level  INT      — questionIndex + 1
-status          ENUM     — in_progress / completed / quit / paused / dropped
+status          ENUM     — in_progress / completed / quit / paused / dropped / rejected
 quit_reason     VARCHAR  — Reason for early termination (if any)
 saved_state     JSON     — Full snapshot: questionIndex, allScores, teachingScores, timings, consecutiveWrong
 \`\`\`
@@ -7952,6 +7992,8 @@ Questions Answered → saved_state JSON updated with each result
 Game Ends Normally → status = 'completed', end_time recorded
 3 Consecutive Wrong → status = 'dropped'
 Game Quit Early     → status = 'quit', quit_reason saved
+Child Went Inactive Mid-Session → status = 'rejected' (set server-side on
+       the 'completed' attempt; score not written), end_time recorded
        ↓
 Assessment Submitted → Record written in game_assessments table
        ↓
@@ -8013,20 +8055,28 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 
 | Code | Meaning |
 |---|---|
-| 201 | New session created successfully |
+| 201 | New session created successfully, **or** assessment submitted successfully (\`POST /assessments\` also returns 201, with \`assessmentId\`) |
 | 200 | Request successful (or session reused / status preserved) |
-| 400 | Bad Request — required fields missing |
-| 401 | Unauthorized — invalid or missing admin token |
-| 403 | Forbidden — token valid but role is not 'admin' |
-| 404 | Not Found — session ID does not exist |
+| 400 | Bad Request — required fields missing: \`child_id\`/\`game_name\` on session start, or \`session_id\`/\`child_id\`/a non-empty \`q5_behaviors\` on assessment submission (the server re-validates \`q5_behaviors\` independently of the form — see §6 Submit Assessment) |
+| 401 | Unauthorized — only ever from the admin **Report** routes (\`requireAdminOrOrgAuth\`): missing/invalid/expired JWT. Session start/update, assessment, and resume never return this — see §3 Authentication |
+| 403 | Two unrelated causes, neither about a "wrong role" token on this game's own routes: (a) **Report routes** — valid JWT, but the role lacks the \`reports\` grant; (b) **session start/update** — the child failed a live eligibility check (not found, inactive, or wrong org) or the org isn't assigned this test; update's variant also writes \`status = 'rejected'\` (§5) |
+| 404 | Not Found — session ID does not exist, or child_id not found (session start) |
 | 500 | Internal Server Error — database or processing failure |
 
 ### Terminal Status Guard
 \`\`\`
-If a 'completed' update is sent for a session already in
-'quit' or 'dropped' state, the server responds HTTP 200
-with 'Session already finalized — status preserved.'
-No data is changed.
+Covers all FOUR terminal statuses (completed/quit/dropped/rejected),
+not just quit/dropped blocking a later 'completed'. It protects only
+the status field — score/progress_level/saved_state in the same
+request are still written even when status is locked, so "No data
+is changed" overstates it.
+
+Only when a request carries status and has nothing else to write
+does the server short-circuit with:
+  HTTP 200, 'Session already finalized — status preserved.'
+Otherwise a locked-status request still returns the ordinary
+HTTP 200, 'Game session updated' — with every non-status field
+applied and only status silently dropped. See §5 for the full detail.
 \`\`\`
 
 ### Client-Side Resilience
@@ -8040,39 +8090,35 @@ No data is changed.
 ## 11. Security & Validation
 
 ### Admin Route Protection
-All report routes require a JWT Bearer token with \`role: admin\`.
+Of this game's own API surface, only the **Report** routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) require a JWT Bearer token — via \`requireAdminOrOrgAuth\`, not a plain \`role === 'admin'\` check — see §3 Authentication for why the session/assessment/PDF routes carry no such protection despite living under the same \`/api/games/\` prefix.
 
-**Token Check:**
+**Token Check (Report routes only):**
 \`\`\`
 Authorization: Bearer <JWT_TOKEN>
 
 Validates:
   ✓ Token is a valid JWT (signed with server secret)
   ✓ Token is not expired
-  ✓ Token role === 'admin'
+  ✓ Token role is 'admin', OR 'staff' with the 'reports' module
+    grant, OR 'organization' with the 'reports' module grant and
+    a live org_login_sessions row — NOT a literal role==='admin'
+    check; staff/org identities are accepted too
 
 Failure responses:
-  401 — No token provided
-  401 — Token expired
-  403 — Role is not admin
+  401 — No token provided, or token expired/invalid
+  403 — Authenticated identity lacks the 'reports' grant
 \`\`\`
 
 ### Input Validation
 - \`child_id\` + \`game_name\` required for session start
-- \`session_id\` + \`child_id\` required for assessment submission
+- \`session_id\` + \`child_id\` required for assessment submission, and \`q5_behaviors\` must be a non-empty array — the server enforces this even if a caller bypasses the form entirely
 - Status transitions enforced server-side (terminal state guard)
 
 ---
 
 ## 12. Visual Workflow
 
-*Diagrams will be added in a future update.*
-
-**Planned:**
-- Complete session lifecycle diagram
-- API sequence diagram (Client → Server → Database)
-- Score processing pipeline
-- Assessment submission flow
+The full visual API/session/stage-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game.
 
 ---
 
@@ -8190,9 +8236,12 @@ PUT /api/games/sessions/update/:sessionId
   progress_level = last question reached
   end_time = NOW()
   saved_state = final snapshot
+  → server re-checks the child's live eligibility before honoring
+    'completed'; if it fails, it overrides to status: 'rejected'
+    instead and drops the score (see §5 "The Fourth Status")
 \`\`\`
 
-**Terminal status guard**: Once \`quit\` or \`dropped\`, the server will never overwrite to \`completed\`.
+**Terminal status guard**: Once \`quit\`, \`dropped\`, or \`rejected\`, the server will never overwrite the status to \`completed\` (though non-status fields in the same request still write — see §5).
 
 ### Stage 6 — Behavioral Assessment Submission
 
@@ -8212,7 +8261,7 @@ Database: New row in game_assessments linked to session
 
 ### Stage 7 — PDF Generation and Upload
 
-Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+Contrary to what a quick read of §2's data-journey diagram might suggest, this does **not** fire automatically at game end — \`handleAdvance()\`'s game-over branch only PUTs the final status; there is no PDF call in that code path at all. The PDF is generated from exactly two triggers instead: \`handleQuit()\` (on Quit, ~1s after) and \`submitAssessmentForm()\` (~1s after the assessment POST succeeds). Since the Score screen renders the assessment form regardless of how it was reached, a session that was Quit and then still has its assessment submitted fires **both** — two separate PDFs for that one session (\`game_dashboard_pdfs\` rows are plain \`INSERT\`s, never overwritten).
 
 \`\`\`
 1. Score screen (#dashboard-capture-area) is cloned off-screen (forced
@@ -8242,8 +8291,11 @@ GET /api/games/reports/detail/${game.key}
 Server joins data from:
   game_sessions       → score, status, timing, saved_state
   children            → child_name
+  organizations       → organization_name
+  assessors           → assessor_name
   game_assessments    → behavioral observations
-  game_dashboard_pdfs → PDF download link
+  game_dashboard_pdfs → PDF download link (most recent row per
+                          session, per §7's possible-double-PDF case)
 
 Parses saved_state JSON to extract per-question scores from BOTH
 allScores and teachingScores
