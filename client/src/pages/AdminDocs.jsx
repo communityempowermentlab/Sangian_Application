@@ -1414,25 +1414,25 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | | | 8 | 2 | | |
 | | | 7 | 1 | | |
 | | | < 7 | 0 | | |
-| Item 4 | 10 | 10 | 3 | Households | |
+| Item 4 | 10 | 10 | 3 | Households | <img src="/assets/images/her_pher_v3/item4_reference.png" alt="Item 4 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 9 | 2 | | |
 | | | 8 | 1 | | |
 | | | < 8 | 0 | | |
-| Item 5 | 11 | 11 | 3 | Vegetables | |
+| Item 5 | 11 | 11 | 3 | Vegetables | <img src="/assets/images/her_pher_v3/item5_reference.png" alt="Item 5 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 10 | 2 | | |
 | | | 9 | 1 | | |
 | | | < 9 | 0 | | |
-| Item 6 | 12 | 12 | 4 | Kitchen | |
+| Item 6 | 12 | 12 | 4 | Kitchen | <img src="/assets/images/her_pher_v3/item6_reference.png" alt="Item 6 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 11 | 3 | | |
 | | | 10 | 2 | | |
 | | | 9 | 1 | | |
 | | | < 9 | 0 | | |
-| Item 7 | 13 | 13 | 4 | Animals | |
+| Item 7 | 13 | 13 | 4 | Animals | <img src="/assets/images/her_pher_v3/item7_reference.png" alt="Item 7 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 12 | 3 | | |
 | | | 11 | 2 | | |
 | | | 10 | 1 | | |
 | | | < 10 | 0 | | |
-| Item 8 | 14 | 14 | 4 | Transports | |
+| Item 8 | 14 | 14 | 4 | Transports | <img src="/assets/images/her_pher_v3/item8_reference.png" alt="Item 8 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
 | | | 13 | 3 | | |
 | | | 12 | 2 | | |
 | | | 11 | 1 | | |
