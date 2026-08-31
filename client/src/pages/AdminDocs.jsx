@@ -950,14 +950,21 @@ Each stage produces a result object with a different shape depending on its type
 \`\`\`
 Note the Q1 retry does **not overwrite** \`q1.firstAttempt\` — the original wrong attempt and the retry are both preserved as separate fields, and both can appear as separate rows in the results table.
 
-**Division** (\`division\`):
+**Division** (\`division\`) — the top-level object, not a flat attempt record:
 \`\`\`json
-{ "correct": true, "enteredQuotient": 4, "enteredRemainder": 2, "timeTaken": 14 }
+{
+  "questionId": 12,
+  "text": "824 ÷ 6",
+  "expectedQuotient": 137,
+  "expectedRemainder": 2,
+  "firstAttempt": { "enteredQuotient": 137, "enteredRemainder": 2, "correct": true, "timeTaken": 14 },
+  "finalCorrect": true
+}
 \`\`\`
 
-**Number Recognition** (\`numberRecognition99\`, \`numberRecognition9\`):
+**Number Recognition** (\`numberRecognition99\`, \`numberRecognition9\`) — note the field is \`selected\`, not \`marks\`:
 \`\`\`json
-{ "pass": true, "marks": [{ "text": "47", "correct": true }, { "text": "83", "correct": false }], "timeTaken": 26 }
+{ "selected": [{ "text": "47", "correct": true }, { "text": "83", "correct": false }], "correctCount": 4, "pass": true, "timeTaken": 26 }
 \`\`\`
 
 All of these are held in per-category state and included in \`saved_state\` for resume — there is no single \`allScores\` array like fixed-question games use.
@@ -1022,10 +1029,10 @@ Score is saved to the server:
 
 \`\`\`
 PUT /api/games/sessions/update/:sessionId
-{ score: finalScore ?? 0, progress_level: path.length + 1, status, saved_state }
+{ score: finalScore ?? 0, progress_level: path.length + 1, status, quit_reason, saved_state }
 \`\`\`
 
-The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or unset if the ladder hasn't produced a level yet.
+The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or unset if the ladder hasn't produced a level yet. A \`status: 'completed'\` write can also come back as server-set \`'rejected'\` instead — see **API & Data Flow §5** — in which case the score is dropped entirely, not saved.
 
 ---
 
@@ -1087,27 +1094,33 @@ Look up (stage, verdict) in the routing table above:
 \`\`\`
 Routing table returns an END
        ↓
-finalLevel + finalScore are set (LEVELS[finalLevel])
+finalLevel + finalScore are set (LEVELS[finalLevel]), path[] finalized
        ↓
-Game transitions to Score Screen
+Game transitions to Score Screen — this is synchronous: the
+Assessment Form is already visible here, BEFORE the status
+update below has even been sent, let alone resolved
        ↓
-Session updated with status = 'completed'
+Session update PUT fires: status = 'completed' (or server-set
+'rejected' if a live child-eligibility re-check fails — score
+dropped in that case, see API & Data Flow §5)
        ↓
-path[] (every stage traversed) is saved alongside the result
+On success, the FIRST PDF is scheduled automatically (1.5s later)
+— before the assessor has touched the assessment form
        ↓
-Assessment form appears for assessor to complete
+Assessor completes and submits the assessment form
        ↓
-PDF report generated
+SECOND PDF generated — a normally-completed session ends up with
+two rows in game_dashboard_pdfs, not one (see Workflow Diagram)
 \`\`\`
 
-There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually.
+There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually, or (rarely, server-set) \`'rejected'\`.
 
 ---
 
 ## 13. Impact on Reports
 
 In the admin Reports section, a completed session shows:
-- \`status = 'completed'\`
+- \`status = 'completed'\` (or \`'rejected'\`, with no score, if the eligibility re-check failed at finalization — see §12)
 - \`finalLevel\` and \`score\` = \`LEVELS[finalLevel]\` (0–4)
 - \`progress_level\` = \`path.length + 1\` — how many stages were traversed, not "questions answered out of a fixed total"
 
@@ -1130,6 +1143,7 @@ Like the reading assessment on this platform, **${game.title}** is derived from 
 | Ladder reaches an END via the routing table | \`completed\` | System automatic |
 | Assessor ends early | \`quit\` | Assessor manual |
 | Resume → abandoned | \`paused\` | Assessor decision |
+| Ladder reaches an END, but the child fails a live eligibility re-check at that moment | \`rejected\` (score dropped) | System automatic, server-side only |
 
 ---
 
@@ -7019,14 +7033,13 @@ Session Created on Server → Database record written
        ↓
 Child Solves Subtraction/Division / Assessor Marks Tiles → Stage result saved
        ↓
-Ladder Reaches an End → Final session status written
-       ↓
-Assessor Submits Form → Behavioral data saved
-       ↓
-PDF Generated → Dashboard exported and uploaded
-       ↓
-Admin Views Report → Data read from all three tables
+Ladder Reaches an End → Final session status written → 1st PDF generated
+       ↓                                                automatically, in the background
+Assessor Submits Form → Behavioral data saved         → 2nd PDF generated
+       ↓                                                automatically
+Admin Views Report → Data read from all three tables (most recent PDF row wins)
 \`\`\`
+A normally-completed session generates **two** PDF rows, not one — see §15 Stage 7.
 
 For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
 
@@ -7047,9 +7060,10 @@ Every action in the game — starting a session, saving a stage result, submitti
 ### Authentication
 | Route Type | Method |
 |---|---|
-| Child game routes | Session-based (child must be logged in) |
+| Child game routes (session start/update/resume/history/summaries, pending-assessment, assessments, PDF upload) | **None, effectively.** Every one of these routes sits behind \`authMiddleware\` (\`server/src/middleware/auth.js\`), which is an explicit no-op — it checks no token and no session, and just calls \`next()\`. |
 | Public content routes | None (public, read-only) |
-| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+| Admin report routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) | JWT Bearer token via \`requireAdminOrOrgAuth('reports')\` — role \`admin\`, OR \`staff\` with the \`reports\` module grant, OR \`organization\` with the grant + a live session — **not** a literal \`role === 'admin'\` check (see §11) |
+| Admin content-management routes (Category/Question Config) | JWT Bearer token via \`adminAuth\` — role \`admin\` OR \`staff\` (organization tokens are rejected here) |
 
 ---
 
@@ -7102,17 +7116,42 @@ When the ladder ends:
 ### Terminal Status Protection
 
 \`\`\`
-Once a session is marked as 'quit' or 'dropped', the server
-will never allow it to be overwritten as 'completed'.
+TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected']
 
-This is a server-side safety guard against client-side bugs
-that might accidentally send a 'completed' update after the
-session has already been terminated. The guard is shared
-backend logic across all games — this particular game just
-never produces a 'dropped' status itself.
+Once a session's status is any of these four, a later request can
+never change it to a DIFFERENT status — not just "completed after
+quit/dropped" as a narrower guard might suggest. This particular
+game only ever sets 'completed' or 'quit' itself; 'dropped' never
+occurs here (no stop-rule exists in this game's ladder) and
+'rejected' is set server-side, never by this game's own client
+code (see below).
 
-Response: HTTP 200 with message 'Session already finalized — status preserved.'
+The guard covers the status field ALONE — score, progress_level,
+and saved_state in the same request are still written even when
+the status change itself is dropped.
+
+Response: HTTP 200 'Session already finalized — status preserved.'
+  — only when status was the ONLY field left to write after the
+    guard dropped it
+Response: HTTP 200 'Game session updated' — if other fields still
+  had data to save, with just the status change silently ignored
 \`\`\`
+
+This exact guard was added because of a real bug in **this game**: the source comment on \`updateGameSession\` (server/src/controllers/gameController.js) explains it was written because completed Ankganit V3 sessions were intermittently showing as still "In Progress" — a slower in-flight \`saveToServer('in_progress')\` progress-sync request could resolve *after* the final \`status: 'completed'\` request and silently clobber it back.
+
+### The Fourth Status: \`'rejected'\`
+
+Set entirely server-side inside \`updateGameSession\`, never by this game's own client code. When a \`status: 'completed'\` request comes in, the server re-checks the child's live eligibility (still active, correct organization) right before writing. If that check fails:
+
+\`\`\`
+UPDATE game_sessions SET status = 'rejected', end_time = NOW() WHERE id = ?
+→ score/progress_level from the request are dropped, never written
+→ HTTP 403: "This child is no longer active, so the assessment
+  result could not be saved. Please contact the administrator or
+  select another child."
+\`\`\`
+
+The child's score screen has already rendered locally by this point (\`finalizeAssessment\` sets \`screen: 'score'\` before the PUT even resolves) — the assessor sees a normal-looking result, but the session is silently rejected server-side and excluded from reports.
 
 ### Deduplication Logic
 
@@ -7167,15 +7206,16 @@ This prevents ghost sessions from accumulating in reports.
 
 **Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
 
-**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**):
+**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**; also carries \`quit_reason\`, sent as \`null\` outside a quit):
 \`\`\`json
 {
   "score": 3,
   "progress_level": 4,
   "status": "in_progress",
+  "quit_reason": null,
   "saved_state": {
     "stage": "division_q1",
-    "path": ["subtraction_select", "subtraction_q1", "subtraction_q2", "division_select"],
+    "path": ["subtraction_pair_select", "subtraction_q1", "subtraction_q2", "division_select"],
     "subtraction": {
       "q1": { "firstAttempt": { "correct": true, "timeTaken": 9, "enteredAnswer": 31 }, "finalCorrect": true },
       "q2": { "firstAttempt": { "correct": true, "timeTaken": 7, "enteredAnswer": 18 }, "finalCorrect": true },
@@ -7208,6 +7248,8 @@ in_progress  — Ladder is actively being played
 paused       — Session paused (resume popup will show on next visit)
 completed    — Ladder reached an END point in the routing table
 quit         — Assessor ended the session early
+rejected     — Server-set only, on a would-be 'completed' write that
+               fails a live child-eligibility re-check (see §5)
 \`\`\`
 \`dropped\` is a status value the backend supports generically for other games, but this game never sets it — every FAIL branch routes to either another stage or a defined final level, never an undefined "drop."
 
@@ -7252,7 +7294,7 @@ quit         — Assessor ended the session early
     "status": "paused",
     "score": null,
     "progress_level": 3,
-    "saved_state": { "stage": "number_recognition_99", "path": ["subtraction_select","subtraction_q1","subtraction_q2"], "...": "..." },
+    "saved_state": { "stage": "number_recognition_99_select", "path": ["subtraction_pair_select","subtraction_q1","subtraction_q2"], "...": "..." },
     "attempt_no": 2
   }
 }
@@ -7290,7 +7332,7 @@ start_time      DATETIME — When the session began
 end_time        DATETIME — When the session ended (NULL if active)
 score           INT      — LEVELS[finalLevel], 0–4 (NULL until the ladder ends)
 progress_level  INT      — path.length + 1 — stages traversed so far
-status          ENUM     — in_progress / paused / completed / quit (no 'dropped' for this game)
+status          ENUM     — in_progress / paused / completed / quit / rejected (no 'dropped' for this game — see §5)
 quit_reason     VARCHAR  — Reason for early termination (if any)
 saved_state     JSON     — Full snapshot: stage, path, per-category results, timings
 \`\`\`
@@ -7300,7 +7342,7 @@ saved_state     JSON     — Full snapshot: stage, path, per-category results, t
 \`\`\`json
 {
   "stage": "division_q1",
-  "path": ["subtraction_select", "subtraction_q1", "subtraction_q2", "division_select"],
+  "path": ["subtraction_pair_select", "subtraction_q1", "subtraction_q2", "division_select"],
   "subtraction": { "q1": { "...": "..." }, "q2": { "...": "..." }, "bothCorrect": true },
   "division": null,
   "numberRecognition99": null,
@@ -7322,13 +7364,18 @@ Session Starts  → Record written: status = 'in_progress'
 Stages Traversed → saved_state JSON updated after each stage transition
        ↓
 Ladder Reaches an END → status = 'completed', end_time recorded, finalLevel/finalScore set
-Game Quit Early        → status = 'quit', quit_reason saved
+                       → 1st PDF row written automatically (1.5s later), before
+                         the assessment form is even touched
+Game Quit Early        → status = 'quit', quit_reason saved (this path also still
+                          reaches the assessment form → same 2nd-PDF trigger below)
        ↓
 Assessment Submitted → Record written in game_assessments table
        ↓
-PDF Exported         → File path stored in game_dashboard_pdfs
+PDF Exported         → 2nd PDF row written automatically — a normally-completed
+                        session ends up with 2 rows in game_dashboard_pdfs, not 1
        ↓
-Admin Views Reports  → Data joined from all three session-related tables
+Admin Views Reports  → Data joined from all three session-related tables (most
+                        recent PDF row per session wins)
 \`\`\`
 
 ---
@@ -7376,17 +7423,23 @@ The backend detects sessions where \`status IN ('completed', 'quit')\` but no co
 | 201 | New session created successfully |
 | 200 | Request successful (or session reused / status preserved) |
 | 400 | Bad Request — required fields missing |
-| 401 | Unauthorized — invalid or missing admin token |
-| 403 | Forbidden — token valid but role is not 'admin' |
+| 401 | Unauthorized — only from the admin **Report** routes (\`requireAdminOrOrgAuth\`) or the Category/Question Config routes (\`adminAuth\`): missing/invalid/expired JWT. Session start/update, assessment, resume, history, summaries, and PDF upload never return this — see §3 Authentication |
+| 403 | Two unrelated causes: (a) **Report routes** — valid JWT, but the role lacks the \`reports\` grant; (b) **session update to \`completed\`** — the child failed a live eligibility re-check, and the session is written as \`status: 'rejected'\` instead (see §5) |
 | 404 | Not Found — session ID does not exist |
 | 500 | Internal Server Error — database or processing failure |
 
 ### Terminal Status Guard
 \`\`\`
-If a 'completed' update is sent for a session already in
-'quit' or 'dropped' state, the server responds HTTP 200
-with 'Session already finalized — status preserved.'
-No data is changed.
+Covers all FOUR terminal statuses (completed/quit/dropped/rejected),
+not just 'quit'/'dropped' blocking 'completed'. If a status update
+is sent for a session already in any of the four, and the new
+status differs from the current one, the status field alone is
+dropped — other fields in the same request (score, progress_level,
+saved_state) still write. The response is HTTP 200 'Session already
+finalized — status preserved.' only if status was the sole field
+sent; otherwise it's the normal 200 'Game session updated', with
+the status change silently ignored. See §5 for the real bug this
+guard was added to fix, specific to this game.
 \`\`\`
 
 ### Client-Side Resilience
@@ -7399,21 +7452,26 @@ No data is changed.
 ## 11. Security & Validation
 
 ### Admin Route Protection
-All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+Of this game's own admin-facing routes, the **Report** routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) go through \`requireAdminOrOrgAuth('reports')\`, and the **Category/Question Config** routes go through \`adminAuth\` — neither is a plain \`role === 'admin'\` check (see §3 Authentication).
 
 **Token Check:**
 \`\`\`
 Authorization: Bearer <JWT_TOKEN>
 
-Validates:
-  ✓ Token is a valid JWT (signed with server secret)
-  ✓ Token is not expired
-  ✓ Token role === 'admin'
+Report routes (requireAdminOrOrgAuth('reports')) validate:
+  ✓ Token is a valid JWT, not expired
+  ✓ Token role is 'admin', OR 'staff' with the 'reports' module
+    grant, OR 'organization' with the grant + a live
+    org_login_sessions row — NOT a literal role === 'admin' check
+
+Category/Question Config routes (adminAuth) validate:
+  ✓ Token is a valid JWT, not expired
+  ✓ Token role is 'admin' OR 'staff' (organization tokens rejected)
 
 Failure responses:
-  401 — No token provided
-  401 — Token expired
-  403 — Role is not admin
+  401 — No token provided / token expired / invalid token
+  403 — Report routes: authenticated identity lacks the 'reports' grant
+  403 — Config routes: role is neither 'admin' nor 'staff'
 \`\`\`
 
 ### Input Validation
@@ -7432,15 +7490,14 @@ The full visual API/session/stage-flow diagrams for this game are already built 
 ## 13. Developer Notes
 
 ### Game Name Normalization
-Several games have legacy name aliases that are normalized server-side:
+\`startGameSession\`/\`getResumeSession\` normalize exactly 2 legacy aliases server-side:
 
 \`\`\`
 'Chalo Mela Chale' / 'chalo_mela_chale' → 'rover_mela'
 'chor_machaye_shor'                      → 'cognitive_flex_chor'
-'reading_skill'                          → 'literacy_reading_skill'
-'Ankganit'                               → 'numeracy_number_skill'
 \`\`\`
-Note this last alias maps the bare "Ankganit" name to \`numeracy_number_skill\` (V0), not \`numeracy_number_skill_v3\` — worth double-checking if this alias is ever hit for V3 traffic, since it would silently misattribute sessions to the wrong game version.
+
+A separate, unrelated \`'Ankganit' → 'numeracy_number_skill'\` alias (alongside \`'reading_skill' → 'literacy_reading_skill'\`) exists only inside \`getGameSummaries\`'s SQL \`CASE\` statement — the query that powers the "Last Played"/"Total Sessions" cards on the Test Hub. It is **not** part of the session start/resume normalization above, and it does not touch \`numeracy_number_skill_v3\` at all: the \`CASE\` has no branch matching \`'numeracy_number_skill_v3'\`, so V3 sessions fall through its \`ELSE game_name\` and pass through completely unchanged. So despite the similar-looking name, this alias cannot misattribute a V3 session to V0 — it only affects how the V0 game's own old literal \`game_name\` values ('numeracy_number_skill' and 'Ankganit') get grouped together for that one summary query.
 
 ### saved_state Schema Flexibility
 The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
@@ -7563,7 +7620,9 @@ PUT /api/games/sessions/update/:sessionId
   saved_state = final snapshot, including path[] and finalLevel
 \`\`\`
 
-**Terminal status guard**: Once \`quit\`, the server will never overwrite to \`completed\`. This game never produces a \`'dropped'\` status.
+**Terminal status guard**: covers all four terminal statuses (completed/quit/dropped/rejected), and protects only the \`status\` field itself — see §5/§10 above. This game itself never produces a \`'dropped'\` status.
+
+**Also fires here, automatically**: reaching this END point schedules this session's FIRST PDF generation (\`setTimeout(generateAndUploadPDF, 1500)\`, in \`finalizeAssessment\`'s \`.then()\`) — before the assessor has even opened the assessment form below. See Stage 7.
 
 ### Stage 6 — Behavioral Assessment Submission
 
@@ -7581,14 +7640,17 @@ Sends:
 Database: New row in game_assessments linked to session
 \`\`\`
 
-### Stage 7 — PDF Generation and Upload
+### Stage 7 — PDF Generation and Upload (fires TWICE per normal session)
 
-Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+This game calls \`generateAndUploadPDF()\` from three separate trigger points — \`finalizeAssessment\` (Stage 5, ladder end), \`handleQuit\`, and \`submitAssessmentForm\` (Stage 6) — each its own \`setTimeout(generateAndUploadPDF, 1500)\`. A normally-completed session hits **two** of these (Stage 5 then Stage 6), producing two separate rows in \`game_dashboard_pdfs\` for the one session — a plain \`INSERT\` each time, never an overwrite. \`getReportDetail\` picks the most recent via \`ORDER BY id DESC LIMIT 1\`, so only the second (post-assessment) PDF is ever shown in Reports, but the first row still exists in the table.
+
+Each trigger runs the same generation steps:
 
 \`\`\`
 1. Score screen (.ns-main) is cloned off-screen to avoid clipping from
    .ns-app's overflow:hidden + height:100dvh, then rendered to a
-   canvas (html2canvas, scale 1.5)
+   canvas (html2canvas, scale 1.5) — after its own internal
+   500ms "wait for render" delay
 2. Canvas is converted to a JPEG image
 3. Image is embedded in an A4 PDF (jsPDF)
 4. PDF blob is uploaded:
@@ -7598,7 +7660,7 @@ POST /api/games/pdfs/upload
   Database: New row in game_dashboard_pdfs with file path
 \`\`\`
 
-PDF filename format:
+PDF filename format (identical pattern for both rows — only the timestamp differs):
 \`\`\`
 [ChildName]_AnkganitV3_SES[sessionId]_[timestamp].pdf
 \`\`\`
@@ -13035,7 +13097,7 @@ const makeAnkganitV3WorkflowFlows = (game) => ({
         { type: 'process',  icon: '➖', title: 'Subtraction Stage Begins',
             simple:   'The assessor picks 2 of 8 subtraction problems; the child solves them one at a time.',
             detailed: 'The ladder always starts with Subtraction. Pick order matters — the first problem picked becomes Q1, the second becomes Q2.',
-            technical:'setStage("subtraction_select") → assessor picks pendingSubtractionSelection[0..1] → setStage("subtraction_q1") → numpad entry' },
+            technical:'setStage("subtraction_pair_select") → assessor picks pendingSubtractionSelection[0..1] → setStage("subtraction_q1") → numpad entry' },
         { type: 'process',  icon: '🪜', title: 'Adaptive Ladder Runs',
             simple:   'Depending on how the child answers, the test moves to easier or harder stages until a numeracy level is found.',
             detailed: 'See "Stage Flow" for the full pass/fail routing between Subtraction (with its conditional Q1 retry), Division, and the two Number Recognition levels.',
@@ -13071,7 +13133,7 @@ const makeAnkganitV3WorkflowFlows = (game) => ({
         { type: 'decision', icon: '📝', title: 'Stage Type?',
             simple:   'Subtraction and Division use an on-screen numpad; Number Recognition uses tile marking.',
             detailed: 'Numpad stages present digit buttons for the child\'s answer (Division needs two fields: quotient and remainder). Tile-marking stages present a bank of numbers to select and mark.',
-            technical:'stage in ["subtraction_q1","subtraction_q2","subtraction_q1_retry","division_q1"] → numpad UI\nstage in ["number_recognition_99","number_recognition_9"] → tile-marking UI',
+            technical:'stage in ["subtraction_q1","subtraction_q2","subtraction_q1_retry","division_q1"] → numpad UI\nstage in ["number_recognition_99_select","number_recognition_9_select"] → tile-marking UI',
             branches: [{ label: 'Subtraction/Division → Numpad', color: '#0891b2' }, { label: 'Number Recognition → Tile Marking', color: '#8b5cf6' }] },
         { type: 'process',  icon: '🔢', title: 'Numpad Entry',
             simple:   'The child (or assessor on their behalf) types the answer using on-screen digit buttons.',
@@ -13112,7 +13174,7 @@ const makeAnkganitV3WorkflowFlows = (game) => ({
         { type: 'process',  icon: '🧵', title: 'Path Breadcrumb Built',
             simple:   'A trail of every stage the child actually went through is recorded, including the Q1 retry if it fired.',
             detailed: 'This trail drives both the breadcrumb display and the per-stage results table on the score screen.',
-            technical:'path = [...] e.g. ["subtraction_select","subtraction_q1","subtraction_q2","subtraction_q1_retry","division_select","division_q1"]' },
+            technical:'path = [...] e.g. ["subtraction_pair_select","subtraction_q1","subtraction_q2","subtraction_q1_retry","division_select","division_q1"]' },
         { type: 'process',  icon: '📋', title: 'Score Metrics Generated',
             simple:   'The score screen shows the numeracy level, a score dial, and per-stage timing.',
             detailed: 'Duration and per-stage timing are computed from each stage\'s recorded qTimer value at the time it was completed.',
