@@ -4706,22 +4706,22 @@ Any correct-click count not listed for that question scores 0 (e.g. question 9 w
 | Item 1 | 7 | 7 | 2 | Fruits |
 | | | 6 | 1 | |
 | | | < 6 | 0 | |
-| Item 2 | 8 | 8 | 2 | Vegetables |
+| Item 2 | 8 | 8 | 2 | Sports |
 | | | 7 | 1 | |
 | | | < 7 | 0 | |
-| Item 3 | 9 | 9 | 3 | Sports |
+| Item 3 | 9 | 9 | 3 | Clothes |
 | | | 8 | 2 | |
 | | | 7 | 1 | |
 | | | < 7 | 0 | |
-| Item 4 | 10 | 10 | 3 | Cloth |
+| Item 4 | 10 | 10 | 3 | Households |
 | | | 9 | 2 | |
 | | | 8 | 1 | |
 | | | < 8 | 0 | |
-| Item 5 | 11 | 11 | 3 | Kitchen |
+| Item 5 | 11 | 11 | 3 | Villages |
 | | | 10 | 2 | |
 | | | 9 | 1 | |
 | | | < 9 | 0 | |
-| Item 6 | 12 | 12 | 4 | Household |
+| Item 6 | 12 | 12 | 4 | Kitchen |
 | | | 11 | 3 | |
 | | | 10 | 2 | |
 | | | 9 | 1 | |
@@ -4731,13 +4731,13 @@ Any correct-click count not listed for that question scores 0 (e.g. question 9 w
 | | | 11 | 2 | |
 | | | 10 | 1 | |
 | | | < 10 | 0 | |
-| Item 8 | 14 | 14 | 4 | Transport |
+| Item 8 | 14 | 14 | 4 | Transports |
 | | | 13 | 3 | |
 | | | 12 | 2 | |
 | | | 11 | 1 | |
 | | | < 11 | 0 | |
 
-**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). The category names reflect the currently-configured image theme per category in the admin Elements panel (see §11 Content Management) — these are operational labels, not hardcoded constants in the game source itself.
+**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). Category names come from \`HERPHER_V3_CATEGORIES\` in \`AdminElements.jsx\` (see §11 Content Management) — they're the admin-facing label for each \`itemN\` slot, not a hardcoded game constant, so they can drift from this table if that list is ever edited; this table reflects its current values.
 
 A \`getPerformanceInterpretation\` helper exists in the source (bucketing ≥20 Excellent / ≥15 Good / ≥10 Average / else Needs Improvement) but does not appear to be rendered anywhere on the actual score screen — likely vestigial, worth flagging rather than assuming it's live-documented UI behavior.
 
@@ -4752,9 +4752,15 @@ On game load:
 
   If a paused/in-progress session is found → show Resume modal:
     [Resume]      → restores currentQuestion, currentAttempt, scoreHistory,
-                     allScores, timers, consecutiveZeros, gameData from saved_state
+                     totalScore, totalTime, pauses, gameData, and — only if
+                     saved_state.imageLayout exists — the in-progress
+                     attempt's imageLayout/clickedImages/responses/
+                     selectedOrder/questionTime too
     [Start Fresh] → discard it, start a new session
 \`\`\`
+Two things resumeGame() does **not** restore, despite what a quick read of the platform's generic template might suggest:
+- **The session timer does not resume — it resets to 0.** \`resumeGame()\` explicitly calls \`setTimerSeconds(0)\` (with an inline comment: "so a previous quit/completed session does not carry its timerSeconds... into the resumed session"). Since \`screentime\`/\`timerSeconds\` in \`saved_state\` is always overwritten wholesale on the next save (§9, §Assessment) with only \`timerSecondsRef.current\` — the count since this resume — a session that is paused and resumed one or more times ends up with a final recorded \`screentime\` that reflects only time since the *last* resume, undercounting genuine total time spent. \`totalTime\` (the separate sum-of-per-question-times stat) IS correctly restored — it's specifically the live session clock that isn't.
+- **\`consecutiveZeros\` is never saved to \`saved_state\` at all**, by any of the three save call sites (\`saveToServer\`, \`completeGame\`, \`submitAssessment\`) — so there is nothing to restore, and \`resumeGame()\` leaves it at its \`useState(0)\` default every time. Practically: if a child racks up 1 or 2 consecutive zero-scored questions and the assessor pauses and resumes the session, the streak silently resets to 0 — the §5 stop rule effectively cannot fire on a streak that spans a pause boundary, only on one that happens entirely within a single continuous play session.
 
 ### State Saved to Server
 \`\`\`js
@@ -4925,6 +4931,8 @@ Config: lang: STT_LANG_MAP[language] || 'en-US'
 - Scoring is **not** simply "did you click all N images correctly" — the \`SCORING_RULES\` table means a specific correct-click count can score 0 if it's not one of the table's listed thresholds for that question.
 - \`getPerformanceInterpretation\` exists in source but does not appear to be wired into the visible score screen — likely dead/unused code, not a documented UI feature.
 - A resumed session replays with the **same** \`gameData\` (image set) it started with, since that's persisted in \`saved_state\` — it does not re-randomize on resume.
+- **Resuming resets the session timer, not just its display.** \`timerSeconds\`/\`screentime\` is explicitly zeroed in \`resumeGame()\` and every later save writes only the count since that resume — so a session paused and resumed one or more times reports less total screentime than the child actually spent, not the true cumulative figure. See §7 Resume Flow.
+- **The 3-consecutive-zero stop rule cannot span a pause.** \`consecutiveZeros\` is never written into \`saved_state\` by any save path, so it always comes back as 0 on resume — a streak of 1 or 2 zero-scored questions is silently forgotten the moment the session is paused and resumed. See §5 and §7.
 
 ---
 
