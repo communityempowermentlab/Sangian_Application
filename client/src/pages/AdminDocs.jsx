@@ -206,8 +206,8 @@ const GAME_INTRO_DEFAULTS = {
     numeracy_number_skill_v3: {
         en: {
             skill:       'Foundational Numeracy - Adaptive Arithmetic Assessment (ASER 2014-style)',
-            objective:   'This test uses an adaptive, ASER 2014-style arithmetic assessment to determine the child\'s numeracy level. Starting with two-digit subtraction, the child moves up to division or down to number recognition based on their performance, until their numeracy level is identified.',
-            description: 'The child solves subtraction and division problems, or identifies numbers, depending on how they perform at each stage. The test is adaptive, following the ASER 2014 arithmetic ladder methodology: children who solve subtraction correctly move on to harder division problems, while children who struggle move to simpler number-recognition tasks, until the assessment settles on their numeracy level.',
+            objective:   'This test uses an adaptive, ASER 2014-style arithmetic assessment to determine the child\'s numeracy level. Starting from two-digit subtraction, the child moves up or down a five-rung ladder — Beginner, Number Recognition (1–9), Number Recognition (10–99), Subtraction, Division — based on their performance, until their numeracy level is identified.',
+            description: 'The child solves subtraction and division problems, or identifies numbers, depending on how they perform at each stage. The test is adaptive, following the ASER 2014 arithmetic ladder methodology: children who solve both subtraction questions correctly move up to a division problem, while children who struggle move down through number recognition — first 10–99, then 1–9 if needed — landing as low as Beginner if even single-digit numbers aren\'t recognized, until the assessment settles on their numeracy level.',
             guidance:    'Take your time and think carefully about each problem. It\'s okay if some questions are tricky — just do your best!',
         },
         hi: {
