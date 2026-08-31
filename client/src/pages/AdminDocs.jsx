@@ -695,16 +695,17 @@ Each stage produces a result object with a different shape depending on its type
 \`\`\`json
 {
   "pass": true,
-  "ssrAnswers": ["no", "no", "no"],
+  "ssrAnswers": { "0": "no", "1": "no", "2": "no" },
   "timeTaken": 42
 }
 \`\`\`
+Note \`ssrAnswers\` is a plain **object** keyed by question index (\`midTestAnswers\` in the source — \`useState({})\`), not a JSON array. Scoring reads it via \`Object.values(ssrAnswers)\`, not array methods directly.
 
 | Field | Description |
 |---|---|
 | \`text\` / \`correct\` | The tile's text and whether it was marked correct |
 | \`pass\` | The stage's overall PASS/FAIL verdict |
-| \`ssrAnswers\` | The 3 fluency Yes/No answers, in question order |
+| \`ssrAnswers\` | The 3 fluency Yes/No answers, keyed by question index (\`{"0":..,"1":..,"2":..}\`) |
 | \`timeTaken\` | Seconds spent on that stage (from \`qTimer\`) |
 
 All of these are held in per-stage state (\`selectedWords\`, \`paragraphResult\`, etc.) and included in \`saved_state\` for resume — there is no single \`allScores\` array like fixed-question games use.
@@ -770,10 +771,10 @@ Score is saved to the server:
 
 \`\`\`
 PUT /api/games/sessions/update/:sessionId
-{ score: finalScore ?? 0, progress_level: path.length + 1, status, saved_state }
+{ score: finalScore ?? 0, progress_level: path.length + 1, status, quit_reason, saved_state }
 \`\`\`
 
-The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or \`0\` if the ladder hasn't produced a level yet.
+The \`game_sessions.score\` column always reflects the most recently saved \`finalScore\` (0–4), or \`0\` if the ladder hasn't produced a level yet — unless a \`status: 'completed'\` write comes back as server-set \`'rejected'\` instead (see **API & Data Flow §5**). If that happens on the *first* completed write (ladder end), the score is never saved at all. If it happens on the *second* completed write this game's own \`submitAssessmentForm()\` sends (see §12 below), the earlier score is left in place untouched — only the \`status\` column flips.
 
 ---
 
@@ -815,7 +816,7 @@ If stage is Words or Letters (tile-marking):
   verdict = correctCount >= 4 ? PASS : FAIL
 
 If stage is Paragraph, Paragraph Retry, or Story (fluency):
-  verdict = ssrAnswers.every(a => a === "no") ? PASS : FAIL
+  verdict = Object.values(ssrAnswers).filter(a => a === "yes").length === 0 ? PASS : FAIL
 
 Look up (stage, verdict) in the routing table above:
   → either setStage(nextStage)
@@ -829,27 +830,40 @@ Look up (stage, verdict) in the routing table above:
 \`\`\`
 Routing table returns an END
        ↓
-finalLevel + finalScore are set (LEVELS[finalLevel])
+finalLevel + finalScore are set (LEVELS[finalLevel]), path[] finalized
        ↓
-Game transitions to Score Screen
+Game transitions to Score Screen — this is synchronous: the Assessment
+Form is already visible here, BEFORE the status update below has even
+been sent, let alone resolved
        ↓
-Session updated with status = 'completed'
+Session update PUT fires: status = 'completed' (or server-set
+'rejected' if a live child-eligibility re-check fails — score never
+saved in that case)
        ↓
-path[] (every stage traversed) is saved alongside the result
+On success, the FIRST PDF is scheduled automatically (1.5s later) —
+before the assessor has touched the assessment form
        ↓
-Assessment form appears for assessor to complete
+Assessor completes and submits the assessment form — this game's own
+submitAssessmentForm() RE-SENDS status:'completed' (or 'quit') on a
+second PUT. Because it resends the SAME status already saved, the
+Terminal Status Guard doesn't block it — and since it's 'completed'
+again, the server re-runs the live eligibility check a SECOND time.
+An already-completed session can be silently flipped to 'rejected'
+here too, though this time the earlier score/saved_state are left in
+place — only status changes.
        ↓
-PDF report generated
+SECOND PDF generated (1s later) — a normally-completed session ends
+up with two rows in game_dashboard_pdfs, not one
 \`\`\`
 
-There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually.
+There is no \`'dropped'\` status in this game — a session is always either still \`'in_progress'\`/\`'paused'\`, or \`'completed'\` once the ladder reaches an END, or \`'quit'\` if the assessor ends it manually, or (rarely, server-set) \`'rejected'\`.
 
 ---
 
 ## 13. Impact on Reports
 
 In the admin Reports section, a completed session shows:
-- \`status = 'completed'\`
+- \`status = 'completed'\` (or \`'rejected'\` — with no score if rejected at ladder-end, or the earlier score preserved if rejected later at assessment-submit — see §12)
 - \`finalLevel\` (Beginner / Letter / Word / Paragraph / Story) and \`score\` = \`LEVELS[finalLevel]\` (0–4)
 - \`progress_level\` = \`path.length + 1\` — how many stages were traversed, not "questions answered out of a fixed total" (there is no fixed total here)
 
@@ -872,6 +886,7 @@ Any change to these thresholds would be a change to the underlying assessment in
 | Ladder reaches an END via the routing table | \`completed\` | System automatic |
 | Assessor ends early | \`quit\` | Assessor manual |
 | Resume → abandoned | \`paused\` | Assessor decision |
+| Ladder reaches an END (or the assessment form is submitted), but the child fails a live eligibility re-check at that moment | \`rejected\` | System automatic, server-side only |
 
 ---
 
@@ -2053,9 +2068,11 @@ Every question has an info icon the assessor can tap for a worked example, so tw
 
 | Question | "No" example | "Yes" example |
 |---|---|---|
-| String of words vs. sentences | Reads naturally as a sentence — *"राम स्कूल जाता है।"* | Reads each word separately — *"राम... स्कूल... जाता... है..."* |
+| String of words vs. sentences | Reads each word separately — *"राम... स्कूल... जाता... है..."* | Reads naturally as a sentence — *"राम स्कूल जाता है।"* |
 | Haltingly / frequent stops | Reads continuously and smoothly, with normal pauses | Frequent pauses or long stops mid-sentence |
 | More than 3 mistakes | 0–3 mistakes while reading | More than 3 mistakes while reading |
+
+**Inconsistency worth flagging**: the hint data for the *first* question (\`PARAGRAPH_ASSESSMENT_HINTS[0]\` / \`STORY_ASSESSMENT_HINTS[0]\` in the source) pairs "reads each word separately" with a recommended tap of **"No"**, and "reads naturally as a sentence" with **"Yes"** — the table above reflects that real pairing. This reads as inverted relative to the question's own literal wording ("Did the child read it like a string of words, rather than sentences?" — word-by-word reading would literally answer "Yes" to that). The other two questions' hints (haltingly/mistakes) are internally consistent with their own wording; only this first one isn't. Worth a deliberate look at the source data, since following this hint as written would push a genuinely disfluent (word-by-word) reading toward a PASS verdict instead of a FAIL.
 
 This questionnaire is deliberately **separate** from the Session Details Form below — it is completed once per read-aloud stage (up to 3 times in a full climb: Paragraph, Paragraph Retry, Story), while the Session Details Form is completed exactly once, at the very end of the whole session.
 
@@ -2136,12 +2153,18 @@ POST /api/games/assessments
        ↓
 Data stored in game_assessments table
        ↓
+Session status is RE-SENT to the server (status: "completed", or
+"quit" if a quit reason was set) — same value already saved at
+ladder-end/quit, so this does not change anything on its own
+       ↓
 Dashboard PDF auto-generated and uploaded
        ↓
 "Retest" and "Home" buttons appear
 \`\`\`
 
 Note the confirmation step: validation passing does **not** submit immediately — the assessor must confirm a second time in a modal dialog before \`submitAssessmentForm()\` actually fires.
+
+**A subtle consequence of the re-sent status**: because the resent value equals the status already on the session, the server's terminal-status guard doesn't block it — and because it's "completed", the server re-runs its live child-eligibility check a second time. If the child became ineligible in the window between ladder-completion and this submission, an already-\`completed\` session can be silently flipped to \`rejected\` right here, even though its score was saved successfully moments earlier (see **Score & Progression Logic §12** and **API & Data Flow §5**). This risk does not apply to a quit session, which resends \`status:"quit"\`, not \`"completed"\`.
 
 ---
 
@@ -6404,14 +6427,15 @@ Session Created on Server → Database record written
        ↓
 Child Reads Aloud / Assessor Marks Tiles → Stage result saved after each stage
        ↓
-Ladder Reaches an End → Final session status written
+Ladder Reaches an End → Final session status written → 1st PDF generated
+       ↓                                                automatically, in the background
+Assessor Submits Form → Behavioral data saved,        → 2nd PDF generated
+                          status RE-SENT (can flip       automatically
+                          completed→rejected, see §5)
        ↓
-Assessor Submits Form → Behavioral data saved
-       ↓
-PDF Generated → Dashboard exported and uploaded
-       ↓
-Admin Views Report → Data read from all three tables
+Admin Views Report → Data read from all three tables (most recent PDF row wins)
 \`\`\`
+A normally-completed session generates **two** PDF rows, not one — see §15 Stage 7.
 
 For the full step-by-step walkthrough of what happens at each of these points — with exact request/response payloads — see **§15 Data Flow — Stage-by-Stage Breakdown** below.
 
@@ -6432,9 +6456,10 @@ Every action in the game — starting a session, saving a stage result, submitti
 ### Authentication
 | Route Type | Method |
 |---|---|
-| Child game routes | Session-based (child must be logged in) |
+| Child game routes (session start/update/resume/history/summaries, pending-assessment, assessments, PDF upload) | **None, effectively.** Every one of these routes sits behind \`authMiddleware\` (\`server/src/middleware/auth.js\`), which is an explicit no-op — it checks no token and no session, and just calls \`next()\`. |
 | Public content routes | None (public, read-only) |
-| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+| Admin report routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) | JWT Bearer token via \`requireAdminOrOrgAuth('reports')\` — role \`admin\`, OR \`staff\` with the \`reports\` module grant, OR \`organization\` with the grant + a live session — **not** a literal \`role === 'admin'\` check (see §11) |
+| Admin content-management routes (Elements editor — \`/api/admin/elements/*\`) | JWT Bearer token via \`adminAuth\` — role \`admin\` OR \`staff\` (organization tokens are rejected here) |
 
 ---
 
@@ -6487,17 +6512,42 @@ When the ladder ends:
 ### Terminal Status Protection
 
 \`\`\`
-Once a session is marked as 'quit' or 'dropped', the server
-will never allow it to be overwritten as 'completed'.
+TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected']
 
-This is a server-side safety guard against client-side bugs
-that might accidentally send a 'completed' update after the
-session has already been terminated. The guard is shared
-backend logic across all games — this particular game just
-never produces a 'dropped' status itself.
+Once a session's status is any of these four, a later request can
+never change it to a DIFFERENT status — not just "completed after
+quit/dropped" as a narrower guard might suggest. This particular
+game only ever sets 'completed' or 'quit' itself; 'dropped' never
+occurs here (no stop-rule exists in this game's ladder) and
+'rejected' is set server-side, never by this game's own client
+code (see below).
 
-Response: HTTP 200 with message 'Session already finalized — status preserved.'
+The guard covers the status field ALONE — score, progress_level,
+and saved_state in the same request are still written even when
+the status change itself is dropped. Re-sending the SAME status
+(which this game's own submitAssessmentForm() does — see §6 Stage 6
+below) is not a "change", so it is never blocked by this guard.
+
+Response: HTTP 200 'Session already finalized — status preserved.'
+  — only when status was the ONLY field left to write after the
+    guard dropped it
+Response: HTTP 200 'Game session updated' — if other fields still
+  had data to save, with just the status change silently ignored
 \`\`\`
+
+### The Fourth Status: \`'rejected'\`
+
+Set entirely server-side inside \`updateGameSession\`, never by this game's own client code. When a \`status: 'completed'\` request comes in, the server re-checks the child's live eligibility (still active, correct organization) right before writing. If that check fails:
+
+\`\`\`
+UPDATE game_sessions SET status = 'rejected', end_time = NOW() WHERE id = ?
+→ score/progress_level from the request are dropped, never written
+→ HTTP 403: "This child is no longer active, so the assessment
+  result could not be saved. Please contact the administrator or
+  select another child."
+\`\`\`
+
+Unusually for this game, there are actually **two** separate moments this can fire: once when \`finalizeAssessment()\` first writes \`status: 'completed'\` at ladder-end, and again when \`submitAssessmentForm()\` independently re-sends \`status: 'completed'\` after the behavioral form is submitted (see §6 Stage 6) — the second write re-triggers the same eligibility check because it isn't blocked by the terminal-status guard above. In that second scenario, the score already saved by the first write is left untouched; only \`status\` changes.
 
 ### Deduplication Logic
 
@@ -6554,12 +6604,13 @@ Note: \`total_questions\` is a fixed value (5) for this game — it does not cor
 
 **Endpoint:** \`PUT /api/games/sessions/update/:sessionId\`
 
-**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**):
+**Request Body** (real \`buildSavedState\` shape — see **Technical Documentation**; also carries \`quit_reason\`, sent as \`null\` outside a quit):
 \`\`\`json
 {
   "score": 3,
   "progress_level": 4,
   "status": "in_progress",
+  "quit_reason": null,
   "saved_state": {
     "stage": "story",
     "selectedParagraphIndex": 0,
@@ -6567,7 +6618,7 @@ Note: \`total_questions\` is a fixed value (5) for this game — it does not cor
     "selectedWords": [{ "text": "घर", "correct": true }],
     "selectedWordsRetry": [],
     "selectedLetters": [],
-    "paragraphResult": { "pass": true, "ssrAnswers": ["no","no","no"], "timeTaken": 38 },
+    "paragraphResult": { "pass": true, "ssrAnswers": { "0": "no", "1": "no", "2": "no" }, "timeTaken": 38 },
     "paragraphRetryResult": null,
     "storyResult": null,
     "path": ["paragraph"],
@@ -6580,6 +6631,7 @@ Note: \`total_questions\` is a fixed value (5) for this game — it does not cor
   }
 }
 \`\`\`
+Note \`ssrAnswers\` is a plain object keyed by question index (\`midTestAnswers\` in the source), not a JSON array — see **Score & Progression Logic §4**.
 
 **Response:**
 \`\`\`json
@@ -6595,6 +6647,10 @@ in_progress  — Ladder is actively being played
 paused       — Session paused (resume popup will show on next visit)
 completed    — Ladder reached an END point in the routing table
 quit         — Assessor ended the session early
+rejected     — Server-set only, on a would-be 'completed' write that
+               fails a live child-eligibility re-check (see §5) —
+               this game can trigger it at TWO separate moments,
+               ladder-end AND assessment-submit (see §6 Stage 6)
 \`\`\`
 \`dropped\` is a status value the backend supports generically for other games, but this game never sets it — every FAIL branch routes to either another stage or a defined final level, never an undefined "drop."
 
@@ -6676,7 +6732,7 @@ end_time        DATETIME — When the session ended (NULL if active)
 score           INT      — LEVELS[finalLevel], 0–4 (NULL until the ladder ends)
 total_questions INT      — Fixed at 5 for this game (not a real question count)
 progress_level  INT      — path.length + 1 — stages traversed so far
-status          ENUM     — in_progress / paused / completed / quit (no 'dropped' for this game)
+status          ENUM     — in_progress / paused / completed / quit / rejected (no 'dropped' for this game — see §5)
 quit_reason     VARCHAR  — Reason for early termination (if any)
 saved_state     JSON     — Full snapshot: stage, path, per-stage results, timings
 \`\`\`
@@ -6691,7 +6747,7 @@ saved_state     JSON     — Full snapshot: stage, path, per-stage results, timi
   "selectedWords": [{ "text": "घर", "correct": true }],
   "selectedWordsRetry": [],
   "selectedLetters": [],
-  "paragraphResult": { "pass": true, "ssrAnswers": ["no","no","no"], "timeTaken": 38 },
+  "paragraphResult": { "pass": true, "ssrAnswers": { "0": "no", "1": "no", "2": "no" }, "timeTaken": 38 },
   "storyResult": null,
   "path": ["paragraph"],
   "finalLevel": null,
@@ -6711,13 +6767,22 @@ Session Starts  → Record written: status = 'in_progress'
 Stages Traversed → saved_state JSON updated after each stage transition
        ↓
 Ladder Reaches an END → status = 'completed', end_time recorded, finalLevel/finalScore set
-Game Quit Early        → status = 'quit', quit_reason saved
+                       → 1st PDF row written automatically (1.5s later), before
+                         the assessment form is even touched
+Game Quit Early        → status = 'quit', quit_reason saved (this path also still
+                          reaches the assessment form → same 2nd-PDF trigger below)
        ↓
-Assessment Submitted → Record written in game_assessments table
+Assessment Submitted → Record written in game_assessments table; session status
+                        is ALSO re-sent (same value) — can re-trigger the
+                        eligibility check and flip an already-completed session
+                        to 'rejected' (see §5)
        ↓
-PDF Exported         → File path stored in game_dashboard_pdfs
+PDF Exported         → 2nd PDF row written automatically (1s later) — a normally-
+                        completed session ends up with 2 rows in
+                        game_dashboard_pdfs, not 1
        ↓
-Admin Views Reports  → Data joined from all three tables
+Admin Views Reports  → Data joined from all three tables (most recent PDF row
+                        per session wins)
 \`\`\`
 
 ---
@@ -6765,17 +6830,25 @@ The backend detects sessions where \`status IN ('completed', 'quit')\` but no co
 | 201 | New session created successfully |
 | 200 | Request successful (or session reused / status preserved) |
 | 400 | Bad Request — required fields missing |
-| 401 | Unauthorized — invalid or missing admin token |
-| 403 | Forbidden — token valid but role is not 'admin' |
+| 401 | Unauthorized — only from the admin **Report** routes (\`requireAdminOrOrgAuth\`) or the Elements content-management routes (\`adminAuth\`): missing/invalid/expired JWT. Session start/update, assessment, resume, history, summaries, and PDF upload never return this — see §3 Authentication |
+| 403 | Two unrelated causes: (a) **Report routes** — valid JWT, but the role lacks the \`reports\` grant; (b) **session update to \`completed\`** — the child failed a live eligibility re-check, and the session is written as \`status: 'rejected'\` instead (see §5) |
 | 404 | Not Found — session ID does not exist |
 | 500 | Internal Server Error — database or processing failure |
 
 ### Terminal Status Guard
 \`\`\`
-If a 'completed' update is sent for a session already in
-'quit' or 'dropped' state, the server responds HTTP 200
-with 'Session already finalized — status preserved.'
-No data is changed.
+Covers all FOUR terminal statuses (completed/quit/dropped/rejected),
+not just 'quit'/'dropped' blocking 'completed'. If a status update
+is sent for a session already in any of the four, and the new
+status differs from the current one, the status field alone is
+dropped — other fields in the same request (score, progress_level,
+saved_state) still write. The response is HTTP 200 'Session already
+finalized — status preserved.' only if status was the sole field
+sent; otherwise it's the normal 200 'Game session updated', with
+the status change silently ignored. This game's own
+submitAssessmentForm() deliberately re-sends the SAME status
+already saved — see §6 Stage 6 — which this guard does not
+consider a "change" and therefore does not block.
 \`\`\`
 
 ### Client-Side Resilience
@@ -6788,21 +6861,26 @@ No data is changed.
 ## 11. Security & Validation
 
 ### Admin Route Protection
-All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+Of this game's own admin-facing routes, the **Report** routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) go through \`requireAdminOrOrgAuth('reports')\`, and the **Elements content-management** routes go through \`adminAuth\` — neither is a plain \`role === 'admin'\` check (see §3 Authentication).
 
 **Token Check:**
 \`\`\`
 Authorization: Bearer <JWT_TOKEN>
 
-Validates:
-  ✓ Token is a valid JWT (signed with server secret)
-  ✓ Token is not expired
-  ✓ Token role === 'admin'
+Report routes (requireAdminOrOrgAuth('reports')) validate:
+  ✓ Token is a valid JWT, not expired
+  ✓ Token role is 'admin', OR 'staff' with the 'reports' module
+    grant, OR 'organization' with the grant + a live
+    org_login_sessions row — NOT a literal role === 'admin' check
+
+Elements content-management routes (adminAuth) validate:
+  ✓ Token is a valid JWT, not expired
+  ✓ Token role is 'admin' OR 'staff' (organization tokens rejected)
 
 Failure responses:
-  401 — No token provided
-  401 — Token expired
-  403 — Role is not admin
+  401 — No token provided / token expired / invalid token
+  403 — Report routes: authenticated identity lacks the 'reports' grant
+  403 — Elements routes: role is neither 'admin' nor 'staff'
 \`\`\`
 
 ### Input Validation
@@ -6821,14 +6899,14 @@ The full visual API/session/stage-flow diagrams for this game are already built 
 ## 13. Developer Notes
 
 ### Game Name Normalization
-Several games have legacy name aliases that are normalized server-side:
+\`startGameSession\`/\`getResumeSession\` normalize exactly 2 legacy aliases server-side:
 
 \`\`\`
 'Chalo Mela Chale' / 'chalo_mela_chale' → 'rover_mela'
 'chor_machaye_shor'                      → 'cognitive_flex_chor'
-'reading_skill'                          → 'literacy_reading_skill'
-'Ankganit'                               → 'numeracy_number_skill'
 \`\`\`
+
+A separate, unrelated \`'reading_skill' → 'literacy_reading_skill'\` alias (alongside \`'Ankganit' → 'numeracy_number_skill'\`) exists only inside \`getGameSummaries\`'s SQL \`CASE\` statement — the query that powers the "Last Played"/"Total Sessions" cards on the Test Hub — and it's for the *original* \`literacy_reading_skill\` (V0/V1) game, not this one. \`literacy_reading_skill_v2\` has its own separate \`CASE\` branch (self-mapping, plus a \`'Padh ke batao - Version 2'\` display-name alias) and is never touched by the V0 alias. So this alias is irrelevant to this game's own session start/resume, and irrelevant to its Test Hub summary grouping too.
 
 ### saved_state Schema Flexibility
 The JSON schema of \`saved_state\` varies by game. The Reports Detail API handles multiple formats:
@@ -6945,7 +7023,9 @@ PUT /api/games/sessions/update/:sessionId
   saved_state = final snapshot, including path[] and finalLevel
 \`\`\`
 
-**Terminal status guard**: Once \`quit\`, the server will never overwrite to \`completed\`. This game never produces a \`'dropped'\` status — every stage's FAIL branch routes to either another stage or a defined final level.
+**Terminal status guard**: covers all four terminal statuses (completed/quit/dropped/rejected), and protects only the \`status\` field itself — see §5/§10 above. This game itself never produces a \`'dropped'\` status.
+
+**Also fires here, automatically**: reaching this END point schedules this session's FIRST PDF generation (\`setTimeout(generateAndUploadPDF, 1500)\`, in \`finalizeAssessment\`'s \`.then()\`) — before the assessor has even opened the assessment form below. See Stage 7.
 
 ### Stage 6 — Behavioral Assessment Submission
 
@@ -6961,12 +7041,23 @@ Sends:
   additional_notes
 
 Database: New row in game_assessments linked to session
+
+ALSO: PUT /sessions/update { status: quitReason?"quit":"completed",
+  score, progress_level, saved_state } — this game's own
+  submitAssessmentForm() re-sends the session status here, same
+  value as before. The Terminal Status Guard doesn't block a
+  same-value resend, so when it's "completed" the server re-runs
+  the live child-eligibility check a SECOND time — an already-
+  completed session can be silently flipped to "rejected" at this
+  step (score from the earlier write is left in place; only status
+  changes). See §5.
 \`\`\`
 
-### Stage 7 — PDF Generation and Upload
+### Stage 7 — PDF Generation and Upload (fires TWICE per normal session)
 
-Immediately after assessment submission (or game end), the system generates a PDF of the score dashboard:
+This game calls \`generateAndUploadPDF()\` from three separate trigger points — \`finalizeAssessment\` (Stage 5, ladder end), \`handleQuit\`, and \`submitAssessmentForm\` (Stage 6) — each its own \`setTimeout(generateAndUploadPDF, ...)\`. A normal session hits **two** of these: Stage 5 (or Quit) fires the first PDF the instant the score screen appears (1500ms delay), and submitting the assessment form fires a second, separate PDF afterward (1000ms delay — notably shorter than the other two).
 
+Each trigger runs the same generation steps:
 \`\`\`
 1. Score screen (#dashboard-capture-area) is cloned off-screen to avoid
    clipping from the game shell's backdrop-filter, then rendered to a
@@ -6977,10 +7068,12 @@ Immediately after assessment submission (or game end), the system generates a PD
 
 POST /api/games/pdfs/upload
   Sends: PDF file, child_id, session_id, game_name
-  Database: New row in game_dashboard_pdfs with file path
+  Database: New row in game_dashboard_pdfs with file path — a plain
+  INSERT, never an overwrite; a normally-completed session ends up
+  with 2 rows, and Reports shows only the most recent one
 \`\`\`
 
-PDF filename format:
+PDF filename format (identical pattern for both rows — only the timestamp differs):
 \`\`\`
 [ChildName]_ReadingSkillV2_SES[sessionId]_[timestamp].pdf
 \`\`\`
@@ -10825,7 +10918,7 @@ const AUDIO_CATALOG = {
     ],
     literacy_reading_skill_v2: [
         { group: 'Splash & Instruction', groupIcon: '🎵', items: [
-            { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers reading test instructions. "Start Now" button is disabled until this audio finishes.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion.' },
+            { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers Padh ke Batao\'s instructions before the assessment starts (splash.wav, referenced via getAudioUrl(\'splash\', ...) at the <audio> tag on the Splash screen). "Start Now" stays disabled and dimmed until this audio finishes playing.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion (onEnded → audioFinished = true). onError also sets audioFinished = true as a fail-safe, so a broken/missing file never permanently locks the button. "Replay" resets currentTime to 0 and re-plays. This is the only audio file anywhere in this game — Paragraph, Words, Letters, and Story are all silent: the child reads aloud, the assessor listens and marks/answers, no audio cues play during gameplay.' },
         ]},
     ],
     triangle_rachna: [
