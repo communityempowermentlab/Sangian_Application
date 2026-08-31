@@ -3389,8 +3389,13 @@ const makeReadingV2TechDocTemplate = (game) => `# ⚙️ ${game.title} — Techn
   Path breadcrumb — every stage actually traversed, including retries
   Per-stage results table (pass/fail, marked words/letters or
   paragraph/story detail, duration)
-  SessionAssessmentForm (must be submitted to finalize)
-  PDF snapshot auto-generated and uploaded on submit
+  SessionAssessmentForm renders immediately — the session is already
+  written as status:'completed' (or 'quit') the instant the ladder
+  ends, independently of this form; submitting it is a SEPARATE status
+  write plus the behavioral record
+  PDF snapshot auto-generated and uploaded TWICE per normal session —
+  once the instant the ladder ends/Quit fires, again after the
+  assessment form is submitted (see §9)
 \`\`\`
 
 There is no on-screen instructional text — the assessor's and child's
@@ -3540,11 +3545,12 @@ PUT /api/games/sessions/update/:sessionId
 {
   score: finalScore ?? 0,
   progress_level: path.length + 1,
-  status: 'in_progress' | 'paused' | 'quit',
+  status: 'in_progress' | 'paused' | 'quit' | 'completed',
   quit_reason: <text or null>,
   saved_state: { ...as above... }
 }
 \`\`\`
+\`finalizeAssessment\` sends \`status: 'completed'\` (with \`progress_level\` computed as \`pathArg.length\` — numerically identical to \`path.length + 1\` since \`pathArg\` already has the final stage appended). Assessment-form submission (§8) sends a *second*, separate status write over this same endpoint.
 
 ### Pause and Quit
 \`\`\`
@@ -3562,8 +3568,8 @@ A reason — typed or dictated — is required before either action confirms.
 After the score screen appears, \`SessionAssessmentForm\` renders:
 \`\`\`
 4 required observation questions (radio buttons — required)
-1 behavioral checklist (8 checkboxes — optional)
-1 additional notes field with voice-dictation support
+1 behavioral checklist (8 checkboxes — required, at least 1 must be checked)
+1 additional notes field with voice-dictation support (optional)
 \`\`\`
 Submission calls:
 \`\`\`
@@ -3578,8 +3584,17 @@ any required question is empty.
 
 ## 9. PDF Dashboard Generation
 
-Triggered ~1–1.5s after the score screen settles (after finalize, after
-Quit, or after the final assessment submits):
+Fires from three separate call sites — \`finalizeAssessment\` (1500ms
+delay), \`handleQuit\` (1500ms delay), and \`submitAssessmentForm\`
+(1000ms delay) — each its own independent \`setTimeout(generateAndUploadPDF, ...)\`.
+A normal session hits **two** of these: finalize (or Quit) fires the
+first PDF the instant the score screen appears, and submitting the
+assessment form fires a second, separate PDF afterward. Each is a
+plain \`INSERT\` into \`game_dashboard_pdfs\`, never an overwrite — a
+normally-completed session ends up with 2 PDF rows, not 1; Reports
+shows only the most recent one.
+
+Each trigger runs the same generation steps:
 \`\`\`
 1. Locate #dashboard-capture-area (the score screen's root <div>)
 2. Clone it into an off-screen wrapper (position:fixed, top:-99999px,
@@ -3636,10 +3651,10 @@ configured yet.
 | \`words_bank\` | array | \`WORDS_BANK\` | Words stage tile pool |
 | \`paragraphs\` | array | \`PARAGRAPHS\` | The 2 paragraph choices |
 | \`story\` | text | \`STORY_TEXT\` | The single story |
-| \`paragraph_questions\` | array | — | The 3 fluency Yes/No questions (paragraph) |
-| \`story_questions\` | array | — | The 3 fluency Yes/No questions (story) |
-| \`paragraph_hints\` | hints | — | ⓘ worked examples behind each paragraph question |
-| \`story_hints\` | hints | — | ⓘ worked examples behind each story question |
+| \`paragraph_questions\` | array | \`PARAGRAPH_ASSESSMENT_QUESTIONS\` | The 3 fluency Yes/No questions (paragraph) |
+| \`story_questions\` | array | \`STORY_ASSESSMENT_QUESTIONS\` | The 3 fluency Yes/No questions (story) |
+| \`paragraph_hints\` | hints | \`PARAGRAPH_ASSESSMENT_HINTS\` | ⓘ worked examples behind each paragraph question |
+| \`story_hints\` | hints | \`STORY_ASSESSMENT_HINTS\` | ⓘ worked examples behind each story question |
 
 \`\`\`
 Player side (useTestContent('${game.key}')):
