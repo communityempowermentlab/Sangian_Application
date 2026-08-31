@@ -4446,7 +4446,7 @@ POST /api/games/pdfs/upload   (multipart/form-data)
   pdf:         <blob>, filename "<ChildName>_Lottery_Ka_Ticket_SES<sessionId>_<ts>.pdf"
   child_id, session_id, game_name: '${game.key}'
 \`\`\`
-Triggered ~1s after quit, and ~1s after the final assessment submits. PDF failures are logged to console only.
+Triggered ~1s after quit, and ~1s after the final assessment submits. Because the Score screen renders \`SessionAssessmentForm\` unconditionally regardless of how it was reached, both triggers can fire for the **same** session: a quit session that the assessor still completes the assessment form for generates a PDF at quit time, then a second one when the form is submitted — two rows in \`game_dashboard_pdfs\` for one session (each upload is a plain \`INSERT\`, never an overwrite). PDF failures are logged to console only.
 
 ---
 
