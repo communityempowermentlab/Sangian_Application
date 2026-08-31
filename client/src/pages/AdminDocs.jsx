@@ -1401,42 +1401,42 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 
 ### Detailed Scoring Table
 
-| Question | Total Images | Correct Clicks | Score | Category |
-|---|---|---|---|---|
-| Item 0 (Practice) | 6 | — | No Scoring | Tools |
-| Item 1 | 7 | 7 | 2 | Fruits |
-| | | 6 | 1 | |
-| | | < 6 | 0 | |
-| Item 2 | 8 | 8 | 2 | Sports |
-| | | 7 | 1 | |
-| | | < 7 | 0 | |
-| Item 3 | 9 | 9 | 3 | Clothes |
-| | | 8 | 2 | |
-| | | 7 | 1 | |
-| | | < 7 | 0 | |
-| Item 4 | 10 | 10 | 3 | Households |
-| | | 9 | 2 | |
-| | | 8 | 1 | |
-| | | < 8 | 0 | |
-| Item 5 | 11 | 11 | 3 | Vegetables |
-| | | 10 | 2 | |
-| | | 9 | 1 | |
-| | | < 9 | 0 | |
-| Item 6 | 12 | 12 | 4 | Kitchen |
-| | | 11 | 3 | |
-| | | 10 | 2 | |
-| | | 9 | 1 | |
-| | | < 9 | 0 | |
-| Item 7 | 13 | 13 | 4 | Animals |
-| | | 12 | 3 | |
-| | | 11 | 2 | |
-| | | 10 | 1 | |
-| | | < 10 | 0 | |
-| Item 8 | 14 | 14 | 4 | Transports |
-| | | 13 | 3 | |
-| | | 12 | 2 | |
-| | | 11 | 1 | |
-| | | < 11 | 0 | |
+| Question | Total Images | Correct Clicks | Score | Category | Reference |
+|---|---|---|---|---|---|
+| Item 0 (Practice) | 6 | — | No Scoring | Tools | <img src="/assets/images/her_pher_v3/item0_reference.png" alt="Item 0 reference" style="width:280px;border:1px solid #e5e7eb;border-radius:6px;display:block;"> |
+| Item 1 | 7 | 7 | 2 | Fruits | |
+| | | 6 | 1 | | |
+| | | < 6 | 0 | | |
+| Item 2 | 8 | 8 | 2 | Sports | |
+| | | 7 | 1 | | |
+| | | < 7 | 0 | | |
+| Item 3 | 9 | 9 | 3 | Clothes | |
+| | | 8 | 2 | | |
+| | | 7 | 1 | | |
+| | | < 7 | 0 | | |
+| Item 4 | 10 | 10 | 3 | Households | |
+| | | 9 | 2 | | |
+| | | 8 | 1 | | |
+| | | < 8 | 0 | | |
+| Item 5 | 11 | 11 | 3 | Vegetables | |
+| | | 10 | 2 | | |
+| | | 9 | 1 | | |
+| | | < 9 | 0 | | |
+| Item 6 | 12 | 12 | 4 | Kitchen | |
+| | | 11 | 3 | | |
+| | | 10 | 2 | | |
+| | | 9 | 1 | | |
+| | | < 9 | 0 | | |
+| Item 7 | 13 | 13 | 4 | Animals | |
+| | | 12 | 3 | | |
+| | | 11 | 2 | | |
+| | | 10 | 1 | | |
+| | | < 10 | 0 | | |
+| Item 8 | 14 | 14 | 4 | Transports | |
+| | | 13 | 3 | | |
+| | | 12 | 2 | | |
+| | | 11 | 1 | | |
+| | | < 11 | 0 | | |
 
 **Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). Category names are verified against the actual uploaded images (see the live Screenshots & Manual library), not just the admin panel's \`HERPHER_V3_CATEGORIES\` label text — that list is a cosmetic hint only and has already drifted from real content once (it labels Item 5 "Villages"; the images actually uploaded there are vegetables).
 
