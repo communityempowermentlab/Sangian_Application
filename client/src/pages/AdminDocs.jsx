@@ -8324,9 +8324,9 @@ Every action in the game — starting a session, saving a score, submitting an a
 ### Authentication
 | Route Type | Method |
 |---|---|
-| Child game routes | Session-based (child must be logged in) |
+| Child game routes (session start/update/resume, assessments, PDF upload) | **None, effectively.** \`gameRoutes.js\` routes every one of these through \`authMiddleware\`, but that middleware (\`server/src/middleware/auth.js\`) is an explicit no-op — it verifies no token, no session, nothing, and just calls \`next()\`. \`startGameSession\` does check that the given \`child_id\` still exists and is active (\`checkChildEligibility\`), but that's a data-eligibility check, not caller authentication. |
 | Public content routes | None (public, read-only) |
-| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+| Admin routes (reports, assessment-session start) | JWT Bearer token required, via \`requireAdminOrOrgAuth\` (role: admin / staff-with-grant / organization) |
 
 ---
 
@@ -8367,7 +8367,8 @@ During gameplay, the session is updated with:
 
 When the game ends:
   - Status → completed (all 8 scored questions reached) / dropped
-    (3 consecutive zero-score questions) / quit (assessor ended it)
+    (3 consecutive zero-score questions) / quit (assessor ended it) /
+    rejected (child went inactive mid-session — see below)
   - End time is recorded
   - Saved state is finalized
 \`\`\`
@@ -8375,12 +8376,42 @@ When the game ends:
 ### Terminal Status Protection
 
 \`\`\`
-Once a session is marked as 'quit' or 'dropped', the server
-will never allow it to be overwritten as 'completed'.
+TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected']
 
-Response: HTTP 200 with message 'Session already finalized — status preserved.'
+Once a session reaches ANY of these four statuses, no later
+request may move it to a DIFFERENT status — including a stray
+late 'in_progress'/'paused' auto-save resolving after the real
+finishing request (slow network, retry, backgrounded tab).
+
+That guard covers status ALONE. score / progress_level /
+saved_state / quit_reason sent in the same request are still
+written normally even when status is locked — the request is
+not rejected wholesale.
+
+Only when a request carries status and nothing else to write
+does the server short-circuit with:
+  HTTP 200, { message: 'Session already finalized — status preserved.' }
+Otherwise a locked-status request still returns the ordinary
+HTTP 200, { message: 'Game session updated' } — with every
+non-status field applied and only status silently dropped.
 \`\`\`
 \`'dropped'\` is a real, commonly-hit status for this game — not a value the backend merely supports generically for other games.
+
+### The Fourth Status: \`'rejected'\`
+
+\`'rejected'\` is not specific to this game, but it is real and reachable here, set entirely server-side inside \`updateGameSession\` and never by the client:
+
+\`\`\`
+On any request that would set status to 'completed':
+  Server re-checks the child's live eligibility (children.status,
+  right now — not what it was when the session started).
+  If that check fails (e.g. the child was deactivated mid-session):
+    UPDATE game_sessions SET status = 'rejected', end_time = NOW()
+    Score/progress_level from this request are NOT written.
+    Response: HTTP 403, { success: false, message: 'This child is
+    no longer active, so the assessment result could not be saved.
+    Please contact the administrator or select another child.' }
+\`\`\`
 
 ### Deduplication Logic
 
@@ -8454,7 +8485,6 @@ The client groups these by \`asset_type\` (\`item0\`–\`item8\`) and randomly s
     "currentAttempt": 1,
     "totalScore": 8,
     "totalTime": 62,
-    "consecutiveZeros": 0,
     "allScores": [
       { "qId": 2, "score": 2, "timeTaken": 11, "correctCount": 7, "category": "item1" },
       { "qId": 3, "score": 2, "timeTaken": 13, "correctCount": 8, "category": "item2" }
@@ -8464,6 +8494,7 @@ The client groups these by \`asset_type\` (\`item0\`–\`item8\`) and randomly s
   }
 }
 \`\`\`
+Note what's **not** in that payload: \`consecutiveZeros\` is never sent to the server at all — \`saveToServer()\`, \`completeGame()\`, and \`submitAssessment()\` all omit it from every request they build. It exists only as in-memory React state (\`useState(0)\`), reset to 0 on every resume — see **Technical Documentation § Resume Flow** for what that means for the stop rule.
 
 **Supported Status Values (this game):**
 \`\`\`
@@ -8472,6 +8503,10 @@ paused       — Game is paused (resume popup will show on next visit)
 completed    — All 8 scored questions were reached
 dropped      — 3 consecutive zero-score questions triggered the stop rule
 quit         — Assessor ended the session early
+rejected     — Server set this itself on a would-be 'completed' request,
+               because the child failed the live eligibility re-check at
+               that moment (e.g. deactivated mid-session) — score is not
+               written; see §5 "The Fourth Status" above
 \`\`\`
 
 ---
@@ -8496,7 +8531,17 @@ quit         — Assessor ended the session early
   "additional_notes": "Tracked up to 10-image sets reliably, lost track beyond that."
 }
 \`\`\`
-\`q5_behaviors\` must contain at least 1 entry — the form blocks submission with 0 selected (see **Assessment Behavior**).
+
+**Response (HTTP 201):**
+\`\`\`json
+{
+  "success": true,
+  "message": "Assessment submitted successfully",
+  "assessmentId": 87
+}
+\`\`\`
+
+\`q5_behaviors\` must contain at least 1 entry — this is enforced **twice**: the form itself blocks submission with 0 selected (see **Assessment Behavior**), and the server independently re-validates \`session_id\`, \`child_id\`, and a non-empty \`q5_behaviors\` array, returning HTTP 400 on any of them if called directly (e.g. from a script bypassing the UI) rather than silently accepting an incomplete payload.
 
 ---
 
@@ -8515,7 +8560,7 @@ quit         — Assessor ended the session early
     "status": "paused",
     "score": 6,
     "progress_level": 2,
-    "saved_state": { "currentQuestion": 3, "gameData": { "...": "..." }, "consecutiveZeros": 0 },
+    "saved_state": { "currentQuestion": 3, "gameData": { "...": "..." } },
     "attempt_no": 2
   }
 }
@@ -8545,10 +8590,14 @@ end_time        DATETIME — When the session ended (NULL if active)
 score           INT      — Sum of SCORING_RULES lookups, out of 25
 total_questions INT      — 8 for this game
 progress_level  INT      — allScores.length
-status          ENUM     — in_progress / paused / completed / quit / dropped
+status          ENUM     — in_progress / paused / completed / quit / dropped / rejected
 quit_reason     VARCHAR  — Reason for early termination (if any)
 saved_state     JSON     — Full snapshot: currentQuestion, currentAttempt,
-                            allScores, gameData, timings, consecutiveZeros
+                            scoreHistory, totalScore, totalTime, pauses,
+                            clickedImages, responses, selectedOrder,
+                            questionTime, imageLayout, gameData, screentime,
+                            timerSeconds, allScores — NOT consecutiveZeros,
+                            which is never persisted at all
 \`\`\`
 
 ### Data Flow
@@ -8561,6 +8610,8 @@ Questions Answered → saved_state JSON updated with each result
 Game Ends Normally → status = 'completed', end_time recorded
 3 Consecutive Zero Scores → status = 'dropped'
 Game Quit Early     → status = 'quit', quit_reason saved
+Child Went Inactive Mid-Session → status = 'rejected' (set server-side on
+       the 'completed' attempt; score not written), end_time recorded
        ↓
 Assessment Submitted → Record written in game_assessments table
        ↓
@@ -8613,12 +8664,12 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 
 | Code | Meaning |
 |---|---|
-| 201 | New session created successfully |
+| 201 | New session created successfully, **or** assessment submitted successfully (\`POST /assessments\` also returns 201, with \`assessmentId\`) |
 | 200 | Request successful (or session reused / status preserved) |
-| 400 | Bad Request — required fields missing |
-| 401 | Unauthorized — invalid or missing admin token |
-| 403 | Forbidden — token valid but role is not 'admin' |
-| 404 | Not Found — session ID does not exist |
+| 400 | Bad Request — required fields missing: \`child_id\`/\`game_name\` on session start, or \`session_id\`/\`child_id\`/a non-empty \`q5_behaviors\` on assessment submission (the server re-validates \`q5_behaviors\` independently of the form — see §6 Submit Assessment) |
+| 401 | Unauthorized — only ever from the **Report Detail** route (\`requireAdminOrOrgAuth\`): missing/invalid/expired JWT. Session start/update, assessment, and resume never return this — see §3 Authentication |
+| 403 | Two unrelated causes, neither about a "wrong role" token on this game's own routes: (a) **Report Detail** — valid JWT, but the role lacks the \`reports\` grant; (b) **session start/update** — the child failed a live eligibility check (not found, inactive, or wrong org) or the org isn't assigned this test; update's variant also writes \`status = 'rejected'\` (§5) |
+| 404 | Not Found — session ID does not exist, or child_id not found (session start) |
 | 500 | Internal Server Error — database or processing failure |
 
 ### Client-Side Resilience
@@ -8631,11 +8682,11 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 ## 11. Security & Validation
 
 ### Admin Route Protection
-All report and content-management routes require a JWT Bearer token with \`role: admin\`.
+Of this game's own API surface, only **Report Detail** (\`GET /reports/detail/:gameName\`) requires a JWT Bearer token (via \`requireAdminOrOrgAuth\`, role admin/staff-with-grant/organization) — see §3 Authentication for why the session/assessment/PDF routes carry no such protection despite superficially living under the same \`/api/games/\` prefix.
 
 ### Input Validation
 - \`child_id\` + \`game_name\` required for session start
-- \`session_id\` + \`child_id\` required for assessment submission
+- \`session_id\` + \`child_id\` required for assessment submission, and \`q5_behaviors\` must be a non-empty array — the server enforces this even if a caller bypasses the form entirely
 - Status transitions enforced server-side (terminal state guard)
 - Image category counts enforced server-side in \`herPherV3.js\` (\`HERPHER_V3_IMAGE_COUNTS\`), mirroring the client-side check
 
@@ -8643,7 +8694,7 @@ All report and content-management routes require a JWT Bearer token with \`role:
 
 ## 12. Visual Workflow
 
-*Diagrams will be added in a future update.*
+The full visual API/session/stage-flow diagrams for this game are already built — see the **Workflow Diagram** section for this game.
 
 ---
 
@@ -8720,6 +8771,9 @@ PUT /api/games/sessions/update/:sessionId
            'dropped' (3 consecutive zero-score questions)
   score = final sum of SCORING_RULES lookups
   end_time = NOW()
+  → server re-checks the child's live eligibility before honoring
+    'completed'; if it fails, it overrides to status: 'rejected'
+    instead and drops the score (see §5 "The Fourth Status")
 \`\`\`
 
 ### Stage 6 — Behavioral Assessment Submission
@@ -8737,15 +8791,21 @@ Clone #dashboard-capture-area off-screen → html2canvas(scale:1.5) →
 jsPDF(A4) → POST /api/games/pdfs/upload
 Filename: [ChildName]_Her_Pher_SES[sessionId]_[timestamp].pdf
 \`\`\`
+Only fires from two call sites — \`handleQuit()\` (on Quit) and \`submitAssessment()\` (after the assessment form posts) — never automatically on reaching the Score screen itself. Usually that means exactly one PDF per session. But the Score screen renders \`SessionAssessmentForm\` unconditionally, regardless of how it was reached — so a session that was Quit and then still has its assessment form submitted afterward triggers \`generateAndUploadPDF()\` twice, producing two rows in \`game_dashboard_pdfs\` for that one session (\`uploadDashboardPdf\` always \`INSERT\`s, never overwrites).
 
 ### Stage 8 — Admin Report View
 
 \`\`\`
 GET /api/games/reports/detail/${game.key}
 
-Server joins game_sessions + children + game_assessments + game_dashboard_pdfs
+Server joins game_sessions + children + organizations + assessors +
+game_assessments + game_dashboard_pdfs
 Parses saved_state JSON to extract per-question point scores (not binary
 correct/incorrect) and the image-level match/miss breakdown
+
+If a session has two game_dashboard_pdfs rows (per §7's Quit-then-
+submit case), the join always picks the most recent one
+(ORDER BY id DESC LIMIT 1)
 \`\`\`
 
 ---
