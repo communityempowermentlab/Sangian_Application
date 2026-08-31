@@ -10712,6 +10712,7 @@ const AUDIO_FOLDERS = {
     working_memory_herpher_v2: 'her_pher_v2',
     working_memory_herpher_v3: 'her_pher_v3',
     numeracy_number_skill:  'number_skill',
+    numeracy_number_skill_v3: 'number_skill_v3',
     literacy_reading_skill: 'reading_skill',
     literacy_reading_skill_v2: 'reading_skill_v2',
     cognitive_flex_chor:    'chor_machaye_shor',
@@ -10733,6 +10734,11 @@ const AUDIO_CATALOG = {
     numeracy_number_skill: [
         { group: 'Splash & Instruction', groupIcon: '🎵', items: [
             { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers gameplay instructions before the assessment starts. "Start Now" button is disabled until this audio finishes — ensuring the child hears instructions before beginning.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion. Replay available via "Replay Audio" button.' },
+        ]},
+    ],
+    numeracy_number_skill_v3: [
+        { group: 'Splash & Instruction', groupIcon: '🎵', items: [
+            { file: 'splash.wav', label: 'Splash Screen Audio', type: 'instruction', objective: 'Delivers Ankganit\'s instructions before the assessment starts (splash.wav, referenced via getAudioUrl(\'splash\', ...) at the <audio> tag on the Splash screen). "Start Now" stays disabled and dimmed until this audio finishes playing.', trigger: 'Automatically on Splash screen load', screen: 'Splash Screen', behavior: 'Sequential lock — gates gameplay start until audio completion. "Replay Audio" restarts the narration from the beginning (resets currentTime to 0 and re-plays). This is the only audio file anywhere in this game — Subtraction, Division, and both Number Recognition stages are entirely silent, tap/keypad-only.' },
         ]},
     ],
     literacy_reading_skill: [
