@@ -1407,22 +1407,22 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | Item 1 | 7 | 7 | 2 | Fruits |
 | | | 6 | 1 | |
 | | | < 6 | 0 | |
-| Item 2 | 8 | 8 | 2 | Vegetables |
+| Item 2 | 8 | 8 | 2 | Sports |
 | | | 7 | 1 | |
 | | | < 7 | 0 | |
-| Item 3 | 9 | 9 | 3 | Sports |
+| Item 3 | 9 | 9 | 3 | Clothes |
 | | | 8 | 2 | |
 | | | 7 | 1 | |
 | | | < 7 | 0 | |
-| Item 4 | 10 | 10 | 3 | Cloth |
+| Item 4 | 10 | 10 | 3 | Households |
 | | | 9 | 2 | |
 | | | 8 | 1 | |
 | | | < 8 | 0 | |
-| Item 5 | 11 | 11 | 3 | Kitchen |
+| Item 5 | 11 | 11 | 3 | Vegetables |
 | | | 10 | 2 | |
 | | | 9 | 1 | |
 | | | < 9 | 0 | |
-| Item 6 | 12 | 12 | 4 | Household |
+| Item 6 | 12 | 12 | 4 | Kitchen |
 | | | 11 | 3 | |
 | | | 10 | 2 | |
 | | | 9 | 1 | |
@@ -1432,13 +1432,13 @@ This is updated after every question and saved to the \`game_sessions.score\` co
 | | | 11 | 2 | |
 | | | 10 | 1 | |
 | | | < 10 | 0 | |
-| Item 8 | 14 | 14 | 4 | Transport |
+| Item 8 | 14 | 14 | 4 | Transports |
 | | | 13 | 3 | |
 | | | 12 | 2 | |
 | | | 11 | 1 | |
 | | | < 11 | 0 | |
 
-**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored)
+**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). Category names are verified against the actual uploaded images (see the live Screenshots & Manual library), not just the admin panel's \`HERPHER_V3_CATEGORIES\` label text — that list is a cosmetic hint only and has already drifted from real content once (it labels Item 5 "Villages"; the images actually uploaded there are vegetables).
 
 **Question structure:**
 - **Practice (Item 0)** — always Score = 0 / not scored, regardless of performance
@@ -4717,7 +4717,7 @@ Any correct-click count not listed for that question scores 0 (e.g. question 9 w
 | | | 9 | 2 | |
 | | | 8 | 1 | |
 | | | < 8 | 0 | |
-| Item 5 | 11 | 11 | 3 | Villages |
+| Item 5 | 11 | 11 | 3 | Vegetables |
 | | | 10 | 2 | |
 | | | 9 | 1 | |
 | | | < 9 | 0 | |
@@ -4737,7 +4737,7 @@ Any correct-click count not listed for that question scores 0 (e.g. question 9 w
 | | | 11 | 1 | |
 | | | < 11 | 0 | |
 
-**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). Category names come from \`HERPHER_V3_CATEGORIES\` in \`AdminElements.jsx\` (see §11 Content Management) — they're the admin-facing label for each \`itemN\` slot, not a hardcoded game constant, so they can drift from this table if that list is ever edited; this table reflects its current values.
+**Maximum Possible Score: 25 points** (Practice/Item 0 is excluded — it is never scored). Category names here are verified against the actual uploaded images (via the live Screenshots & Manual library), not just the admin-facing label text in \`HERPHER_V3_CATEGORIES\` (\`AdminElements.jsx\`, see §11 Content Management) — that list is only a cosmetic hint shown while managing counts, not enforced content, and it has already drifted once: it currently labels Item 5 "Villages", but the images actually uploaded to that slot are vegetables. Trust this table's names, not that admin-panel label, if the two ever disagree again.
 
 A \`getPerformanceInterpretation\` helper exists in the source (bucketing ≥20 Excellent / ≥15 Good / ≥10 Average / else Needs Improvement) but does not appear to be rendered anywhere on the actual score screen — likely vestigial, worth flagging rather than assuming it's live-documented UI behavior.
 
