@@ -2890,7 +2890,9 @@ In the Admin Reports panel, every session record shows the assessment responses 
 // Rover Mela: Q5 is actually required, and there's a confirmation modal the old
 // generic template never documented). This game's real deviation is in §2 (what's
 // being measured — move-efficiency and rule-detection, not "questions" or
-// "categories") and §7 (no 'dropped' status exists for this game).
+// "categories") and §7 (the whole-test stop rule finalizes as 'completed',
+// not 'dropped' — but 'dropped' is still real here via resumeGame()'s
+// separate auto-drop path, see Technical Documentation §7/§16).
 
 const makeChorAssessmentTemplate = (game) => `# 🧪 ${game.title} — Assessment Behavior
 
@@ -3026,7 +3028,7 @@ System checks: sessions with status IN ('completed', 'quit', 'dropped')
 If found → Shows a prompt to the assessor to complete the form
 \`\`\`
 
-**This game never actually produces a \`'dropped'\` status** — unlike Chalo Mela Chalen's clinical q1/q2/q3 gate, this game's whole-test stop rule (2 consecutive zero-scored distinct items) still finalizes the session as \`'completed'\`, not \`'dropped'\` (see Technical Documentation §16). So in practice, only \`'completed'\` and \`'quit'\` sessions are ever found pending here for this game.
+This game's whole-test stop rule (2 consecutive zero-scored distinct items) still finalizes the session as \`'completed'\`, not \`'dropped'\` — unlike Chalo Mela Chalen's clinical q1/q2/q3 gate (see Technical Documentation §16). But \`'dropped'\` genuinely can happen here through a separate path: \`resumeGame()\`'s auto-drop, which fires when the assessor resumes into a session whose saved item — and every item after it — has since been deactivated by an admin (see Technical Documentation §7). That call lands the child on the Results screen with the assessment form still open, so a \`'dropped'\` session can legitimately show up here as pending too, right alongside \`'completed'\` and \`'quit'\` ones. (A 4th terminal status, \`'rejected'\`, is set server-side on a failed live child-eligibility re-check — see **Score & Progression Logic §7** — but it's excluded from this specific query, same as it is for every other game.)
 
 ---
 
