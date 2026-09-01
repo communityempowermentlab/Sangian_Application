@@ -1655,7 +1655,7 @@ A separately-worded version of this rule — "...or if the child shows no respon
 
 ## 7. Score Persistence
 
-Score is saved to \`game_sessions.score\` on every autosave during play and finalized at game end (\`completed\` / \`dropped\` / \`quit\` — see **Technical Documentation §7, §14**).
+Score is saved to \`game_sessions.score\` on every autosave during play and finalized at game end. The whole-test stop rule (§6) always finalizes as \`completed\`, never \`dropped\` — the only path that actually writes \`'dropped'\` for this game is \`resumeGame()\`'s auto-drop, fired when every item from a resumed session's saved position onward has since been deactivated by an admin (see **Technical Documentation §7, §16**). \`'quit'\` covers an assessor-ended session. Occasionally overridden to \`'rejected'\` — not specific to this game, but a shared platform behavior: if the child fails a live eligibility re-check at the exact moment a \`'completed'\` write is attempted, the server sets \`'rejected'\` instead and the score is **not** written for that request.
 
 ---
 
