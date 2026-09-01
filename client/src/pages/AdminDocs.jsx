@@ -9612,8 +9612,11 @@ the join always picks the most recent one (ORDER BY id DESC LIMIT 1)
 // calls use the literal GAME_NAME string ('chor_machaye_shor'), not game.key
 // ('cognitive_flex_chor') — the server normalizes one into the other before
 // touching the database. saved_state uses itemResults[], not allScores[]. There
-// is no 'dropped' status. And the resume modal's "Start Fresh" POST to mark a
-// session dropped targets a route that doesn't exist server-side — a real,
+// is a working 'dropped' path too, but not via the whole-test stop rule (that
+// always finalizes as 'completed') — it's resumeGame()'s separate auto-drop,
+// fired when a resumed session's saved item and everything after it have been
+// deactivated. The resume modal's "Start Fresh" POST to mark a session dropped,
+// by contrast, targets a route that doesn't exist server-side — a real,
 // confirmed-in-source dead code path, not a hypothetical edge case. All of this
 // is cross-verified against ChorMachayeShorGame.jsx, gameController.js, and
 // gameRoutes.js directly — see Technical Documentation for the narrative form.
@@ -9655,7 +9658,9 @@ Whole-Test Stop Check → runs after every item completes; may end
              the session early (2 consecutive zero-scored distinct items)
        ↓
 Game Ends (all 8 items done, OR stop rule fired) → Final session
-             status written — always 'completed', never 'dropped'
+             status written from this path is always 'completed',
+             never 'dropped' (see §5 for the game's one real 'dropped'
+             path, which is unrelated to this stop rule)
        ↓
 Assessor Submits Form → Behavioral data saved
        ↓
@@ -9683,9 +9688,10 @@ Every action in the game — starting a session, saving an item result, submitti
 ### Authentication
 | Route Type | Method |
 |---|---|
-| Child game routes | Session-based (child must be logged in) |
+| Child game routes (session start/update/resume/history/summaries, pending-assessment, assessments, PDF upload) | **None, effectively.** Every one of these routes sits behind \`authMiddleware\` (\`server/src/middleware/auth.js\`), which is an explicit no-op — it checks no token and no session, and just calls \`next()\`. |
 | Public content routes | None (public, read-only) |
-| Admin routes (reports, content management) | JWT Bearer token required (role: admin) |
+| Admin report routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) | JWT Bearer token via \`requireAdminOrOrgAuth('reports')\` — role \`admin\`, OR \`staff\` with the \`reports\` module grant, OR \`organization\` with the grant + a live session — **not** a literal \`role === 'admin'\` check (see §11) |
+| Admin content-management routes (\`ChorElements.jsx\` — \`/api/admin/elements/*\`) | JWT Bearer token via \`adminAuth\` — role \`admin\` OR \`staff\` (organization tokens are rejected here) |
 
 ---
 
@@ -9726,8 +9732,9 @@ During gameplay, the session is updated after every finished item with:
 
 When the game ends:
   - Status → completed (all 8 active items reached, OR the whole-test
-    stop rule fired) / quit (assessor ended it) — there is no
-    'dropped' status for this game
+    stop rule fired) / quit (assessor ended it) / dropped (a separate
+    path — resumeGame()'s auto-drop, see below) / rejected (server-set,
+    only on a failed live child-eligibility re-check at a 'completed' write)
   - End time is recorded
   - Saved state is finalized
 \`\`\`
@@ -9746,12 +9753,17 @@ This means the value stored in the database ends up as \`"cognitive_flex_chor"\`
 ### Terminal Status Protection
 
 \`\`\`
-Once a session is marked 'quit', the server will never allow it
-to be overwritten as 'completed'.
+TERMINAL_STATUSES = ['completed', 'quit', 'dropped', 'rejected']
 
-Response: HTTP 200 with message 'Session already finalized — status preserved.'
+Once a session's status is any of these four, a later request that
+sends a DIFFERENT status has that status write silently dropped —
+score/progress_level/saved_state/quit_reason in the same request
+still apply exactly as sent. Only if there is nothing else left to
+write does the server respond without touching the row.
+
+Response (nothing else to write): HTTP 200 'Session already finalized — status preserved.'
 \`\`\`
-The guard code also checks for \`'dropped'\`, but that branch is dead for this game in practice — Chor Machaye Shor's sessions are never actually written with status \`'dropped'\`.
+The \`'dropped'\` branch of this guard is **not** dead for this game — \`resumeGame()\`'s auto-drop (see §6, §9) genuinely writes \`status: 'dropped'\` via this same \`PUT /sessions/update/:sessionId\` endpoint, so a later stray \`'in_progress'\` autosave against that session would be exactly what this guard is protecting against.
 
 ### The "Mark Session Dropped" Call Does Not Work
 
@@ -9854,7 +9866,11 @@ in_progress  — Game is actively being played
 paused       — Game is paused (resume popup will show on next visit)
 completed    — All 8 active items reached, OR the whole-test stop rule fired
 quit         — Assessor ended the session early
-(no 'dropped' status is ever written for this game)
+dropped      — resumeGame()'s auto-drop only (saved item and everything after
+               it deactivated by an admin mid-pause) — the whole-test stop
+               rule itself never writes this status, it writes 'completed'
+rejected     — Server-set only, when a 'completed' write fails a live
+               child-eligibility re-check; the score is not saved
 \`\`\`
 
 ---
@@ -9930,7 +9946,9 @@ end_time        DATETIME — When the session ended (NULL if active)
 score           INT      — Sum of itemResults[].score, out of 42 for the fixed 8-item test
 total_questions INT      — Always 11 (full GAME_DATA bank size, not active-item count)
 progress_level  INT      — Count of items finished so far (itemResults.length)
-status          ENUM     — in_progress / paused / completed / quit (never 'dropped')
+status          ENUM     — in_progress / paused / completed / quit / dropped / rejected
+                            (dropped only from resumeGame()'s auto-drop, not
+                            the whole-test stop rule — see §5)
 quit_reason     VARCHAR  — Reason for early termination (if any)
 saved_state     JSON     — Full snapshot: itemResults, currentItemIndex, currentTrial,
                             currentPhase, phase2Rule, and all in-progress counters
@@ -9995,7 +10013,7 @@ See **Assessment Behavior** for the full field list and the confirmation-modal s
 Responses are stored in the \`game_assessments\` table linked to \`session_id\`. The \`q5_behaviors\` field is stored as a JSON array.
 
 ### Pending Assessment Detection
-The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. Since this game never actually writes \`'dropped'\`, only \`'completed'\`/\`'quit'\` sessions are ever found pending here in practice.
+The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\` but no corresponding record exists in \`game_assessments\`. \`'dropped'\` legitimately belongs in this check here too — \`resumeGame()\`'s auto-drop path (§5, §6) writes it through the same \`PUT /sessions/update/:sessionId\` endpoint, so a dropped session with no assessment yet is a real case this query is meant to catch, not a dead branch.
 
 ---
 
@@ -10008,8 +10026,8 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 | 201 | New session created successfully |
 | 200 | Request successful (or session reused / status preserved) |
 | 400 | Bad Request — required fields missing |
-| 401 | Unauthorized — invalid or missing admin token |
-| 403 | Forbidden — token valid but role is not 'admin' |
+| 401 | Unauthorized — only from the admin Report routes (\`requireAdminOrOrgAuth\`) or the Elements content-management routes (\`adminAuth\`): missing/invalid/expired JWT. Session start/update, assessment, resume, history, summaries, and PDF upload never return this — see §3 Authentication |
+| 403 | Two unrelated causes: (a) **Report routes** — valid JWT, but the role/org lacks the \`reports\` grant; (b) **session update to \`completed\`** — the child failed a live eligibility re-check, so the session is written as \`status: 'rejected'\` instead (see §5) and this response is returned in place of a normal 200 |
 | 404 | Not Found — session ID does not exist, **or the non-existent "mark dropped" route (§5)** |
 | 500 | Internal Server Error — database or processing failure |
 
@@ -10023,7 +10041,7 @@ The backend detects sessions where \`status IN ('completed', 'quit', 'dropped')\
 ## 11. Security & Validation
 
 ### Admin Route Protection
-All report routes require a JWT Bearer token with \`role: admin\`.
+Report routes (\`GET /reports/overview\`, \`GET /reports/detail/:gameName\`) require a JWT Bearer token via \`requireAdminOrOrgAuth('reports')\` — role \`admin\`, OR \`staff\` with the \`reports\` module grant, OR \`organization\` with that grant. Elements content-management routes (\`ChorElements.jsx\`'s calls to \`/api/admin/elements/*\`) instead go through \`adminAuth\`, which accepts role \`admin\` or \`staff\` only (organization tokens are rejected there). Neither is a literal \`role === 'admin'\`-only check.
 
 **Token Check:**
 \`\`\`
@@ -10032,12 +10050,12 @@ Authorization: Bearer <JWT_TOKEN>
 Validates:
   ✓ Token is a valid JWT (signed with server secret)
   ✓ Token is not expired
-  ✓ Token role === 'admin'
+  ✓ Role/grant matches the specific middleware guarding that route (see above)
 
 Failure responses:
   401 — No token provided
   401 — Token expired
-  403 — Role is not admin
+  403 — Role/grant does not satisfy the route's guard
 \`\`\`
 
 ### Input Validation
@@ -10147,7 +10165,9 @@ Quit:
 After each item finalizes:
   checkDropCondition(itemResults) → 2 consecutive zero-scored
   distinct items?
-    Yes → status = 'completed' (this game never writes 'dropped')
+    Yes → status = 'completed' (checkDropCondition itself never writes
+          'dropped' — that value's only source is the separate
+          resumeGame() auto-drop path, see §5)
     No, but no more active items remain → status = 'completed'
     No, and items remain → status = 'in_progress', next item begins
 \`\`\`
