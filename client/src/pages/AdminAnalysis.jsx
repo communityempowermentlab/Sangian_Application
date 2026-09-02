@@ -973,12 +973,12 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
         />
         <KpiCard
           icon="👦"
-          label="Participants Assessed"
+          label="Assessed Participants"
           value={fmt(kpis.uniqueChildren)}
           color="#0891b2"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Participants Assessed",
+            name: "Assessed Participants",
             definition: "Total number of distinct children who started at least one test.",
             formula: "Count of distinct child IDs",
             eligibility: ["Child has at least one session matching the selected filters"]
