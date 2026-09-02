@@ -762,12 +762,12 @@ function DonutChart({ segments = [], size = 110, centerLabel, centerSub }) {
   );
 }
 
-function Legend({ items = [] }) {
+function Legend({ items = [], shape = 'dot' }) {
   return (
     <div className="ana-legend">
       {items.map((it, i) => (
         <div key={i} className="ana-legend-item">
-          <span className="ana-legend-dot" style={{ background: it.color }} />
+          <span className={`ana-legend-dot${shape === 'rect' ? ' ana-legend-dot--rect' : ''}`} style={{ background: it.color }} />
           <span className="ana-legend-text">{it.label}</span>
           {it.value != null && <strong>{fmt(it.value)}</strong>}
         </div>
@@ -791,6 +791,211 @@ function HBar({ label, value, maxValue, color, badge, labelWidth, title }) {
         {fmt(value)}
         {badge && <span className="ana-hbar-badge">{badge}</span>}
       </div>
+    </div>
+  );
+}
+
+// Canonical status order/colors for the "Assessments by Test" stacked bar and
+// its legend — same statuses STATUS_CHIP_OPTIONS already filters by, so the
+// chart's colors match the filter chips and the Assessment Status donut
+// elsewhere on this page. Any status not in this list (should never happen
+// given the game_sessions.status enum, but a session touched by future game
+// logic shouldn't silently vanish from the bar) falls into a gray "Other"
+// segment appended at render time.
+const TEST_STATUS_ORDER = STATUS_CHIP_OPTIONS;
+const OTHER_STATUS_COLOR = '#94a3b8';
+
+// Rule-based read of one status segment against the rest of that test's
+// data — same spirit (and thresholds, where they overlap) as buildInsights()
+// in analysisController.js: computed from the numbers actually in front of
+// the reader, not a black box. Returns 0-2 short lines, each tagged with a
+// severity so the tooltip can border/color them consistently with the
+// app's existing status palette (good=green, warning=amber, critical=red,
+// info=neutral) rather than inventing a new meaning for those colors.
+function getStatusInsights({ segment, segments, total, completionRate, platformCompletionRate }) {
+  const insights = [];
+  const quitCount    = segments.find(s => s.key === 'quit')?.count || 0;
+  const droppedCount = segments.find(s => s.key === 'dropped')?.count || 0;
+  const dropOffCount = quitCount + droppedCount;
+  const dropOffPct   = total > 0 ? Math.round((dropOffCount / total) * 100) : 0;
+
+  if (segment.key === 'completed' && completionRate != null && platformCompletionRate != null) {
+    const delta = completionRate - platformCompletionRate;
+    if (delta >= 10) insights.push({ severity: 'good', text: `Strong completion — ${delta} pts above the platform average of ${platformCompletionRate}%.` });
+    else if (delta <= -10) insights.push({ severity: 'warning', text: `Below-average completion — ${Math.abs(delta)} pts under the platform average of ${platformCompletionRate}%.` });
+  }
+
+  if (segment.key === 'quit' || segment.key === 'dropped') {
+    if (dropOffPct >= 30) insights.push({ severity: 'critical', text: `High drop-off — ${dropOffPct}% of sessions for this test didn't finish.` });
+    else if (dropOffPct >= 15) insights.push({ severity: 'warning', text: `Moderate drop-off — ${dropOffPct}% of sessions for this test didn't finish.` });
+
+    if (quitCount > 0 && droppedCount > 0) {
+      const ratio = quitCount / droppedCount;
+      if (ratio >= 2) insights.push({ severity: 'info', text: `Most non-completions are quits, not drops — ${fmt(quitCount)} quit vs ${fmt(droppedCount)} dropped.` });
+      else if (ratio <= 0.5) insights.push({ severity: 'info', text: `Most non-completions are drops, not quits — ${fmt(droppedCount)} dropped vs ${fmt(quitCount)} quit.` });
+    }
+  }
+
+  if (segment.key === 'paused' || segment.key === 'in_progress') {
+    const pct = total > 0 ? Math.round((segment.count / total) * 100) : 0;
+    if (pct >= 15) insights.push({ severity: 'info', text: `${pct}% of sessions are still ${segment.label.toLowerCase()} — not yet a completion or a drop-off.` });
+  }
+
+  return insights.slice(0, 2);
+}
+
+// Rich hover/focus card for one status segment: names the test and the
+// hovered status, shows every status side by side for context (not just the
+// one under the pointer), states this test's completion rate against the
+// platform average, and surfaces up to two rule-based insights. Positioned
+// by the parent via `style` (horizontally clamped to the track so it never
+// overflows the card) and `flip` (renders below the bar instead of above
+// when the row is too close to the top of the viewport).
+function TestStatusTooltip({ gameTitle, segment, segments, total, completionRate, platformCompletionRate, style, flip }) {
+  const insights = getStatusInsights({ segment, segments, total, completionRate, platformCompletionRate });
+  const dropOffCount = (segments.find(s => s.key === 'quit')?.count || 0) + (segments.find(s => s.key === 'dropped')?.count || 0);
+  const dropOffPct = total > 0 ? Math.round((dropOffCount / total) * 100) : 0;
+  const completionDelta = completionRate != null && platformCompletionRate != null ? completionRate - platformCompletionRate : null;
+
+  return (
+    <div className={`ana-shbar-tooltip${flip ? ' flip' : ''}`} style={style}>
+      <div className="ana-shbtt-head">
+        <span className="ana-shbtt-dot" style={{ background: segment.color }} />
+        <strong>{gameTitle}</strong> <span className="ana-shbtt-sep">·</span> {segment.label}
+      </div>
+      <div className="ana-shbtt-hero">
+        <strong>{fmt(segment.count)}</strong> participants
+        <span className="ana-shbtt-pct">{fmt(total > 0 ? (segment.count / total) * 100 : 0, 1)}%</span>
+      </div>
+
+      <div className="ana-shbtt-divider" />
+      <div className="ana-shbtt-caption">All statuses · {fmt(total)} total</div>
+      <div className="ana-shbtt-rows">
+        {segments.map(s => (
+          <div key={s.key} className={`ana-shbtt-row${s.key === segment.key ? ' active' : ''}`}>
+            <span className="ana-shbtt-dot" style={{ background: s.color }} />
+            <span className="ana-shbtt-label">{s.label}</span>
+            <span className="ana-shbtt-count">{fmt(s.count)}</span>
+            <span className="ana-shbtt-pct2">{fmt(total > 0 ? (s.count / total) * 100 : 0, 1)}%</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="ana-shbtt-divider" />
+      <div className="ana-shbtt-stats">
+        <div>
+          <span className="ana-shbtt-statlabel">Completion rate</span>
+          <span className="ana-shbtt-statval">
+            {fmt(completionRate)}%
+            {completionDelta != null && completionDelta !== 0 && (
+              <span className={completionDelta > 0 ? 'up' : 'down'}>
+                {completionDelta > 0 ? '▲' : '▼'} {Math.abs(completionDelta)}pt vs avg
+              </span>
+            )}
+          </span>
+        </div>
+        <div>
+          <span className="ana-shbtt-statlabel">Drop-off / quit rate</span>
+          <span className="ana-shbtt-statval">{dropOffPct}%</span>
+        </div>
+      </div>
+
+      {insights.length > 0 && (
+        <div className="ana-shbtt-insights">
+          {insights.map((ins, i) => (
+            <div key={i} className={`ana-shbtt-insight ${ins.severity}`}>{ins.text}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// One test's sessions broken down by status — a single stacked horizontal
+// bar with a per-segment hover/focus tooltip, plus a total count at the
+// end. Segments are separated by a 2px surface gap (not a border) so
+// touching colors stay visually distinct. The tooltip is positioned by
+// measuring the hovered segment against the track (horizontal clamp) and
+// the viewport (vertical flip), so it never overflows the card or hides
+// behind the page edge no matter which test/segment is hovered.
+function TestStatusStackedBar({ label, gameTitle, statusCounts = {}, total = 0, completionRate, platformCompletionRate, labelWidth, title }) {
+  const [hoveredKey, setHoveredKey] = React.useState(null);
+  const [tooltipPos, setTooltipPos] = React.useState({ left: 0, flip: false });
+  const rowRef = React.useRef(null);
+  const segRefs = React.useRef({});
+
+  const known = TEST_STATUS_ORDER
+    .map(s => ({ key: s.key, label: s.label, color: s.color, count: statusCounts[s.key] || 0 }))
+    .filter(s => s.count > 0);
+  const knownTotal = known.reduce((sum, s) => sum + s.count, 0);
+  const otherCount = Math.max(total - knownTotal, 0);
+  const segments = otherCount > 0
+    ? [...known, { key: 'other', label: 'Other', color: OTHER_STATUS_COLOR, count: otherCount }]
+    : known;
+
+  // The tooltip is rendered as a sibling of the track (inside the row),
+  // never as a child of a segment — the track has overflow:hidden to keep
+  // the stacked-bar look, and a tooltip nested inside a clipped segment
+  // would itself get clipped. Position is computed relative to the row, so
+  // it escapes that clip while still tracking the hovered segment.
+  const TOOLTIP_WIDTH = 300;
+  const showTooltip = (key) => {
+    setHoveredKey(key);
+    const rowEl = rowRef.current;
+    const segEl = segRefs.current[key];
+    if (!rowEl || !segEl) return;
+    const rowRect = rowEl.getBoundingClientRect();
+    const segRect = segEl.getBoundingClientRect();
+    let left = (segRect.left - rowRect.left) + segRect.width / 2 - TOOLTIP_WIDTH / 2;
+    left = Math.max(4, Math.min(left, rowRect.width - TOOLTIP_WIDTH - 4));
+    const flip = segRect.top < 280; // near the top of the viewport — render below instead of above
+    setTooltipPos({ left, flip });
+  };
+  const hideTooltip = () => setHoveredKey(null);
+  const hoveredSeg = segments.find(s => s.key === hoveredKey);
+
+  return (
+    <div className="ana-hbar-row ana-shbar-row" ref={rowRef}>
+      <div className="ana-hbar-label" style={labelWidth ? { flex: `0 0 ${labelWidth}px` } : undefined}>
+        {label}
+        {title && <span className="ana-hbar-hint" title={title}>ⓘ</span>}
+      </div>
+      <div className="ana-shbar-track">
+        {segments.length === 0
+          ? <div className="ana-shbar-empty" />
+          : segments.map(seg => {
+            const pct = total > 0 ? (seg.count / total) * 100 : 0;
+            return (
+              <div
+                key={seg.key}
+                ref={el => { segRefs.current[seg.key] = el; }}
+                className={`ana-shbar-seg${hoveredKey === seg.key ? ' hovered' : ''}`}
+                style={{ width: `${pct}%`, background: seg.color }}
+                tabIndex={0}
+                role="img"
+                aria-label={`${seg.label}: ${fmt(seg.count)} (${fmt(pct, 1)}%)`}
+                onMouseEnter={() => showTooltip(seg.key)}
+                onMouseLeave={hideTooltip}
+                onFocus={() => showTooltip(seg.key)}
+                onBlur={hideTooltip}
+              />
+            );
+          })
+        }
+      </div>
+      <div className="ana-hbar-val">{fmt(total)}</div>
+      {hoveredSeg && (
+        <TestStatusTooltip
+          gameTitle={gameTitle}
+          segment={hoveredSeg}
+          segments={segments}
+          total={total}
+          completionRate={completionRate}
+          platformCompletionRate={platformCompletionRate}
+          flip={tooltipPos.flip}
+          style={{ left: tooltipPos.left, width: TOOLTIP_WIDTH }}
+        />
+      )}
     </div>
   );
 }
@@ -905,7 +1110,25 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
 
   const statusSegs = statusDist.map(r => ({ label: r.status?.replace('_', ' '), color: STATUS_COLORS[r.status] || '#94a3b8', value: Number(r.count) }));
   const genderSegs = genderDist.map(r => ({ label: GENDER_LABELS[r.gender] || r.gender || 'Unknown', color: GENDER_COLORS[r.gender] || '#94a3b8', value: Number(r.children) }));
-  const maxSessions = Math.max(...byGame.map(g => Number(g.sessions) || 0), 1);
+
+  // Aggregate status totals across every test currently shown — powers the
+  // "Assessments by Test" legend and its one-line summary strip, so the
+  // reader gets platform-wide completion/drop-off/quit rates without having
+  // to sum the per-test bars themselves.
+  const testStatusTotals = {};
+  let testStatusGrandTotal = 0;
+  byGame.forEach(g => {
+    testStatusGrandTotal += Number(g.sessions) || 0;
+    Object.entries(g.statusCounts || {}).forEach(([k, v]) => {
+      testStatusTotals[k] = (testStatusTotals[k] || 0) + Number(v);
+    });
+  });
+  const testStatusLegend = TEST_STATUS_ORDER
+    .filter(s => testStatusTotals[s.key] > 0)
+    .map(s => ({ label: s.label, color: s.color, value: testStatusTotals[s.key] }));
+  const testStatusKnownTotal = Object.values(testStatusTotals).reduce((a, b) => a + b, 0);
+  const testStatusOtherCount = testStatusGrandTotal - testStatusKnownTotal;
+  if (testStatusOtherCount > 0) testStatusLegend.push({ label: 'Other', color: OTHER_STATUS_COLOR, value: testStatusOtherCount });
 
   // Settings → Test Configuration → Test Visibility drag-and-drop order —
   // `catalog` is already sorted that way by the parent (orderedCatalog), so
@@ -918,7 +1141,8 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
     sessions:   g => Number(g.sessions) || 0,
     children:   g => Number(g.children) || 0,
     completed:  g => Number(g.completed) || 0,
-    dropped:    g => Number(g.dropped) || 0,
+    quit:       g => Number(g.statusCounts?.quit) || 0,
+    dropped:    g => Number(g.statusCounts?.dropped) || 0,
     completion: g => Number(g.completionRate) || 0,
     avgScore:   g => Number(g.avgScore) || 0,
     avgTime:    g => Number(g.avgDurationMins) || 0,
@@ -1007,28 +1231,41 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Assessments by Test",
-            definition: "Number of test sessions started for each game.",
-            formula: "Count of test sessions grouped by test",
+            definition: "Every test's sessions broken down by status (Completed, Quit, Dropped, In Progress, Paused) so completion, drop-off, and quit rates are visible per test, not just a single total.",
+            formula: "Count of test sessions grouped by test and status",
             eligibility: ["Matches all selected filters"]
           }}
         >
-          <div className="ana-hbar-list">
-            {byGame.length === 0
-              ? <div className="ana-chart-empty">No test data for selected filters</div>
-              : byGameOrdered.map(g => {
-                const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
-                return (
-                  <HBar key={g.gameKey}
-                    label={<span>{meta.icon || ''} {g.title || g.gameKey}</span>}
-                    value={Number(g.sessions)}
-                    maxValue={maxSessions}
-                    color={g.color || '#4f46e5'}
-                    badge={`${g.completionRate ?? 0}%`}
-                  />
-                );
-              })
-            }
-          </div>
+          {byGame.length === 0
+            ? <div className="ana-chart-empty">No test data for selected filters</div>
+            : <div className="ana-shbar-block">
+                <div className="ana-shbar-summary">
+                  <strong>{fmt(testStatusGrandTotal)}</strong> assessments across {fmt(byGame.length)} tests —{' '}
+                  {testStatusLegend.map((s, i) => (
+                    <span key={s.label}>
+                      {i > 0 && ', '}
+                      <strong style={{ color: s.color }}>{fmt(testStatusGrandTotal ? Math.round((s.value / testStatusGrandTotal) * 100) : 0)}%</strong> {s.label.toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+                <div className="ana-hbar-list">
+                  {byGameOrdered.map(g => {
+                    const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
+                    return (
+                      <TestStatusStackedBar key={g.gameKey}
+                        label={<span>{meta.icon || ''} {g.title || g.gameKey}</span>}
+                        gameTitle={`${meta.icon || ''} ${g.title || g.gameKey}`.trim()}
+                        statusCounts={g.statusCounts}
+                        total={Number(g.sessions)}
+                        completionRate={g.completionRate}
+                        platformCompletionRate={kpis.completionRate}
+                      />
+                    );
+                  })}
+                </div>
+                <Legend items={testStatusLegend} shape="rect" />
+              </div>
+          }
         </Card>
 
         <div className="ana-col-gap">
@@ -1073,7 +1310,9 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
                 <SortTh label="Sessions"  sortId="sessions" />
                 <SortTh label="Children"  sortId="children" />
                 <SortTh label="Completed" sortId="completed" />
+                <SortTh label="Quit"      sortId="quit" />
                 <SortTh label="Dropped"   sortId="dropped" />
+                <th>Other</th>
                 <SortTh label="Compl.%"   sortId="completion" />
                 <SortTh label="Avg Score" sortId="avgScore" />
                 <SortTh label="Avg Time"  sortId="avgTime" />
@@ -1082,20 +1321,25 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             <tbody>
               {sortedByGame.map(g => {
                 const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
+                const quit = Number(g.statusCounts?.quit) || 0;
+                const dropped = Number(g.statusCounts?.dropped) || 0;
+                const other = Math.max((Number(g.sessions) || 0) - (Number(g.completed) || 0) - quit - dropped, 0);
                 return (
                   <tr key={g.gameKey}>
                     <td><span className="ana-game-chip" style={{ background: `${meta.color || g.color || '#4f46e5'}1a`, color: meta.color || g.color }}>{meta.icon} {meta.title || g.gameKey}</span></td>
                     <td>{fmt(g.sessions)}</td>
                     <td>{fmt(g.children)}</td>
                     <td>{fmt(g.completed)}</td>
-                    <td>{fmt(g.dropped)}</td>
+                    <td title="Sessions ended by the child quitting mid-test">{fmt(quit)}</td>
+                    <td title="Sessions dropped (e.g. an admin deactivated the saved item)">{fmt(dropped)}</td>
+                    <td title="In Progress, Paused, or any other non-terminal status">{other > 0 ? fmt(other) : '—'}</td>
                     <td><span className="ana-pct-bar" style={{ '--p': `${g.completionRate || 0}%` }}>{g.completionRate ?? 0}%</span></td>
                     <td>{fmt(g.avgScore, 1)}</td>
                     <td>{g.avgDurationMins ? `${fmt(g.avgDurationMins, 1)} min` : '—'}</td>
                   </tr>
                 );
               })}
-              {sortedByGame.length === 0 && <tr><td colSpan="8" className="ana-table-empty">No sessions recorded for selected filters</td></tr>}
+              {sortedByGame.length === 0 && <tr><td colSpan="10" className="ana-table-empty">No sessions recorded for selected filters</td></tr>}
             </tbody>
           </table>
         </div>

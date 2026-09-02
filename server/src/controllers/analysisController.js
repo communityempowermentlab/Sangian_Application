@@ -455,6 +455,20 @@ exports.getOverview = async (req, res) => {
       ORDER BY sessions DESC
     `, allParams);
 
+    // Per-game status breakdown — powers the "Assessments by Test" stacked
+    // bar (completed/quit/dropped/... per test), separate from the combined
+    // quit+dropped `dropped` column above so each status is distinguishable.
+    const [byGameStatusRows] = await pool.query(`
+      SELECT gs.game_name AS gameKey, gs.status, COUNT(*) AS count
+      FROM game_sessions gs ${CHILD_JOIN} ${where}
+      GROUP BY gs.game_name, gs.status
+    `, allParams);
+    const statusCountsByGame = {};
+    byGameStatusRows.forEach(r => {
+      if (!statusCountsByGame[r.gameKey]) statusCountsByGame[r.gameKey] = {};
+      statusCountsByGame[r.gameKey][r.status] = Number(r.count);
+    });
+
     // Daily trend — scoped to filter range or last 30 days
     const trendClauses = [...allClauses, 'gs.start_time IS NOT NULL'];
     const trendParams  = [...allParams];
@@ -491,6 +505,7 @@ exports.getOverview = async (req, res) => {
       ...row,
       ...(GAME_META[row.gameKey] || {}),
       completionRate: row.sessions > 0 ? Math.round((row.completed / row.sessions) * 100) : 0,
+      statusCounts: statusCountsByGame[row.gameKey] || {},
     }));
 
     if (!req.orgScope.isSuperAdmin) {
