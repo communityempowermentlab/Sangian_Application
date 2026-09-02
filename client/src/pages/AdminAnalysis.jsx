@@ -829,6 +829,130 @@ function SkeletonCard() {
   return <div className="ana-skeleton-card"><div className="ana-skeleton-pulse" /></div>;
 }
 
+// ── Registered Participants Panel ──────────────────────────
+// Every registered child (not just ones who've played a test), filtered by
+// gender/age/group/name-search only — date/status/attempt/game filters
+// don't apply since registration isn't a session-level event (same
+// rationale as getOverviewV2's "Registered Children" KPI).
+
+function RegisteredParticipantsPanel({ filters, groupOptions, showKpiInfoIcon }) {
+  const PAGE_SIZE = 50;
+  const [rows,        setRows]        = React.useState([]);
+  const [total,       setTotal]       = React.useState(0);
+  const [page,        setPage]        = React.useState(0);
+  const [loading,     setLoading]     = React.useState(false);
+  const [hasMore,     setHasMore]     = React.useState(true);
+  const [sortKey,     setSortKey]     = React.useState('createdAt');
+  const [sortDir,     setSortDir]     = React.useState('desc');
+
+  React.useEffect(() => { setPage(0); }, [filters, sortKey, sortDir]);
+
+  React.useEffect(() => {
+    if (!filters) return;
+    let isMounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await axiosAdmin.get('/analysis/registered-participants', {
+          params: { ...buildApiParams(filters), limit: PAGE_SIZE, offset: page * PAGE_SIZE, sortKey, sortDir }
+        });
+        if (!isMounted) return;
+        const newRows = data.participants || [];
+        setTotal(data.total || 0);
+        setHasMore(newRows.length === PAGE_SIZE);
+        setRows(prev => page === 0 ? newRows : [...prev, ...newRows]);
+      } catch (err) {
+        console.error('Error fetching registered participants:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [filters, page, sortKey, sortDir]);
+
+  function handleSort(key) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('desc'); }
+  }
+
+  function SortTh({ label, sortId }) {
+    const active = sortKey === sortId;
+    return (
+      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleSort(sortId)}>
+        {label}
+        <span className="ana-sort-icon">{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+      </th>
+    );
+  }
+
+  return (
+    <div className="ana-content">
+      <div className="ana-kpi-row">
+        <KpiCard
+          icon="👥"
+          label="Registered Participants"
+          value={fmt(total)}
+          sub={groupOptions.length ? undefined : 'all registered children'}
+          color="#0891b2"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Registered Participants",
+            definition: "Every child registered on the platform, regardless of whether they've started a test.",
+            formula: "Count of children matching the selected demographic filters",
+            eligibility: ["Excludes Individual Users' own child profile", "Matches Sex, Age and Group filters — Date/Assessment Status/Visit don't apply since registration isn't a session event"]
+          }}
+        />
+      </div>
+
+      <Card title={`All Registered Participants${rows.length ? ` (${fmt(rows.length)} of ${fmt(total)} loaded)` : ''}`} noPad>
+        <div className="ana-table-wrap">
+          <table className="ana-table ana-table-bordered">
+            <thead><tr>
+              <th>#</th>
+              <SortTh label="Child ID" sortId="childId" />
+              <SortTh label="Name" sortId="name" />
+              <SortTh label="Age" sortId="age" />
+              <SortTh label="Gender" sortId="gender" />
+              <th>Group</th>
+              <th>Organization</th>
+              <SortTh label="Registered On" sortId="createdAt" />
+              <SortTh label="Sessions" sortId="totalSessions" />
+              <th>Completed</th>
+              <SortTh label="Last Activity" sortId="lastActivity" />
+              <th>Status</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((p, i) => (
+                <tr key={`${p.child_id}-${i}`}>
+                  <td><span className="ana-rank">{i + 1}</span></td>
+                  <td><code>{p.child_id}</code></td>
+                  <td>{p.name || '—'}</td>
+                  <td>{p.age ?? '—'}</td>
+                  <td>{GENDER_LABELS[p.gender] || p.gender || '—'}</td>
+                  <td>{p.group_names || '—'}</td>
+                  <td>{p.org_name || '—'}</td>
+                  <td>{formatDate(p.created_at)}</td>
+                  <td>{fmt(p.total_sessions)}</td>
+                  <td>{fmt(p.completed_sessions)}</td>
+                  <td>{formatDate(p.last_activity)}</td>
+                  <td>{p.status || '—'}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && !loading && <tr><td colSpan="11" className="ana-table-empty">No registered participants match the selected filters</td></tr>}
+              {loading && <tr><td colSpan="11" className="ana-table-empty">Loading...</td></tr>}
+            </tbody>
+          </table>
+          {hasMore && !loading && rows.length > 0 && (
+            <div style={{ textAlign: 'center', padding: '15px' }} data-pdf-ignore="true">
+              <button className="ana-btn" onClick={() => setPage(p => p + 1)}>Load More</button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 // ── Overview Panel ────────────────────────────────────────
 
 function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelExportEnabled = true, showKpiInfoIcon }) {
@@ -996,89 +1120,6 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             definition: "Percentage of started sessions that were successfully completed.",
             formula: "(Completed Sessions ÷ Total Sessions) × 100",
             eligibility: ["Matches all selected filters"]
-          }}
-        />
-        <KpiCard 
-          icon="📊" 
-          label="Avg Score"       
-          value={fmt(kpis.avgScore, 1)} 
-          sub="across all tests" 
-          color="#7c3aed"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Average Score",
-            definition: "Average absolute score achieved across all completed tests.",
-            formula: "Total Score Achieved ÷ Number of Completed Sessions",
-            eligibility: ["Only COMPLETED sessions are included"]
-          }}
-        />
-        <KpiCard
-          icon="⏱️"
-          label="Avg Duration"
-          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'}
-          color="#f59e0b"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Average Duration",
-            definition: "Average active time taken to complete a test session.",
-            formula: "Sum of timerSeconds of completed tests ÷ Number of completed tests",
-            eligibility: ["Only COMPLETED sessions are included"]
-          }}
-        />
-        <KpiCard
-          icon="🎯"
-          label="Mean Score"
-          value={fmt(kpis.meanScoreAll, 1)}
-          sub="across all tests"
-          color="#14b8a6"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Mean Score",
-            definition: "Mean absolute score achieved, averaged across every test in the study — incomplete sessions count as 0.",
-            formula: "Sum of Scores of ALL Sessions ÷ Total Number of Sessions",
-            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters (Date, Age, Gender, Group)"]
-          }}
-        />
-        <KpiCard
-          icon="⏳"
-          label="Mean Assessment Duration"
-          value={kpis.meanDurationAllMins ? `${fmt(kpis.meanDurationAllMins, 1)} min` : '—'}
-          sub="across all tests"
-          color="#0ea5e9"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Mean Assessment Duration",
-            definition: "Mean active time taken per test, averaged across every test in the study — incomplete sessions count as 0.",
-            formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
-            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters (Date, Age, Gender, Group)"]
-          }}
-        />
-        <KpiCard
-          icon="📐"
-          label="Median Score"
-          value={fmt(kpis.medianScore, 1)}
-          sub="middle value, across all tests"
-          color="#a855f7"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Median Score",
-            definition: "The middle score when every completed test's score is sorted from lowest to highest — less skewed by outliers than the mean.",
-            formula: "Middle value of sorted scores (average of the two middle values if the count is even)",
-            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters (Date, Age, Gender, Group)"]
-          }}
-        />
-        <KpiCard
-          icon="📏"
-          label="SD of Score"
-          value={fmt(kpis.sdScore, 1)}
-          sub="spread of scores, across all tests"
-          color="#f43f5e"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Standard Deviation of Score",
-            definition: "How much individual scores typically vary from the average — a low value means scores cluster tightly around the mean, a high value means they're spread out.",
-            formula: "Population standard deviation of all recorded scores: √(Σ(score − mean)² ÷ N)",
-            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters (Date, Age, Gender, Group)"]
           }}
         />
       </div>
@@ -1412,89 +1453,6 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             definition: "Percentage of started sessions that were successfully completed.",
             formula: "(Completed Sessions ÷ Total Sessions) × 100",
             eligibility: ["Matches all selected filters"]
-          }}
-        />
-        <KpiCard 
-          icon="📊" 
-          label="Avg Score"       
-          value={fmt(kpis.avgScore, 1)} 
-          sub={`${kpis.avgScorePct ?? 0}% of max (${data.meta?.maxScore})`} 
-          color="#7c3aed" 
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Average Score",
-            definition: `Average score achieved by children on ${gameMeta.title}.`,
-            formula: "Total Score Achieved ÷ Number of Completed Sessions",
-            eligibility: ["Only COMPLETED sessions are included"]
-          }}
-        />
-        <KpiCard
-          icon="⏱️"
-          label="Avg Duration"
-          value={kpis.avgDurationMins ? `${fmt(kpis.avgDurationMins, 1)} min` : '—'}
-          color="#f59e0b"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Average Duration",
-            definition: "Average active time taken to complete this game.",
-            formula: "Sum of timerSeconds of completed tests ÷ Number of completed tests",
-            eligibility: ["Only COMPLETED sessions are included"]
-          }}
-        />
-        <KpiCard
-          icon="🎯"
-          label="Mean Score"
-          value={fmt(kpis.meanScoreAll, 1)}
-          sub="across all tests"
-          color="#14b8a6"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Mean Score",
-            definition: `Mean score achieved by children on ${gameMeta.title}, averaged across every test — incomplete sessions count as 0.`,
-            formula: "Sum of Scores of ALL Sessions ÷ Total Number of Sessions",
-            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters"]
-          }}
-        />
-        <KpiCard
-          icon="⏳"
-          label="Mean Assessment Duration"
-          value={kpis.meanDurationAllMins ? `${fmt(kpis.meanDurationAllMins, 1)} min` : '—'}
-          sub="across all tests"
-          color="#0ea5e9"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Mean Assessment Duration",
-            definition: `Mean active time taken per test of ${gameMeta.title}, averaged across every test — incomplete sessions count as 0.`,
-            formula: "Sum of Durations of ALL Sessions ÷ Total Number of Sessions",
-            eligibility: ["ALL sessions are included, not just completed ones", "Matches all selected filters"]
-          }}
-        />
-        <KpiCard
-          icon="📐"
-          label="Median Score"
-          value={fmt(kpis.medianScore, 1)}
-          sub="middle value, across all tests"
-          color="#a855f7"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Median Score",
-            definition: `The middle score when every completed ${gameMeta.title} session's score is sorted from lowest to highest — less skewed by outliers than the mean.`,
-            formula: "Middle value of sorted scores (average of the two middle values if the count is even)",
-            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters"]
-          }}
-        />
-        <KpiCard
-          icon="📏"
-          label="SD of Score"
-          value={fmt(kpis.sdScore, 1)}
-          sub="spread of scores, across all tests"
-          color="#f43f5e"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Standard Deviation of Score",
-            definition: `How much individual scores on ${gameMeta.title} typically vary from the average — a low value means scores cluster tightly around the mean, a high value means they're spread out.`,
-            formula: "Population standard deviation of all recorded scores: √(Σ(score − mean)² ÷ N)",
-            eligibility: ["Only sessions with a recorded score are included", "Matches all selected filters"]
           }}
         />
       </div>
@@ -2241,7 +2199,9 @@ export default function AdminAnalysis() {
     setError(null);
     try {
       const params = buildApiParams(filters);
-      if (activeTab === 'overall') {
+      if (activeTab === 'registered-participants') {
+        // RegisteredParticipantsPanel fetches its own paginated data — nothing to load here.
+      } else if (activeTab === 'overall') {
         const { data } = await axiosAdmin.get('/analysis/overview', { params });
         setOverviewData(data);
       } else if (activeTab === 'overall-v2') {
@@ -2353,6 +2313,17 @@ export default function AdminAnalysis() {
         {/* Left Tab Panel */}
         <aside className="ana-left-panel">
           <button
+            className={`ana-tab-item${activeTab === 'registered-participants' ? ' active' : ''}`}
+            onClick={() => handleTabChange('registered-participants')}
+          >
+            <span className="ana-tab-icon">👥</span>
+            <div className="ana-tab-text">
+              <div className="ana-tab-name">Registered Participants</div>
+              <div className="ana-tab-sub">All Registered</div>
+            </div>
+          </button>
+
+          <button
             className={`ana-tab-item${activeTab === 'overall' ? ' active' : ''}`}
             onClick={() => handleTabChange('overall')}
           >
@@ -2397,19 +2368,21 @@ export default function AdminAnalysis() {
 
           <div className="ana-panel-header">
             <h2 className="ana-panel-title">
-              {activeTab === 'overall'
+              {activeTab === 'registered-participants'
+                ? 'Registered Participants'
+                : activeTab === 'overall'
                 ? 'Study Overview'
                 : activeTab === 'overall-v2'
                 ? 'Overall V2 — Executive Analytics'
                 : <>{activeGame?.icon} {activeGame?.title} Analytics</>
               }
             </h2>
-            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeGame && activeGame.tag && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeTab !== 'registered-participants' && activeGame && activeGame.tag && (
               <span className="ana-panel-tag" style={{ background: `${activeGame.color}1a`, color: activeGame.color }}>
                 {activeGame.tag}
               </span>
             )}
-            {activeTab !== 'overall' && activeTab !== 'overall-v2' && gameData[activeTab]?.meta?.maxScore != null && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeTab !== 'registered-participants' && gameData[activeTab]?.meta?.maxScore != null && (
               <span className="ana-panel-tag" style={{ background: '#f1f5f9', color: '#64748b' }}>
                 Max Score: <strong>{gameData[activeTab].meta.maxScore}</strong>
               </span>
@@ -2440,7 +2413,9 @@ export default function AdminAnalysis() {
             </div>
           )}
 
-          {activeTab === 'overall'
+          {activeTab === 'registered-participants'
+            ? <RegisteredParticipantsPanel filters={filters} groupOptions={groupOptions} showKpiInfoIcon={showKpiInfoIcon} />
+            : activeTab === 'overall'
             ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} showKpiInfoIcon={showKpiInfoIcon} />
             : activeTab === 'overall-v2'
             ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} catalog={orderedCatalog} />
