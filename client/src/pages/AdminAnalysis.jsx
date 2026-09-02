@@ -829,130 +829,6 @@ function SkeletonCard() {
   return <div className="ana-skeleton-card"><div className="ana-skeleton-pulse" /></div>;
 }
 
-// ── Registered Participants Panel ──────────────────────────
-// Every registered child (not just ones who've played a test), filtered by
-// gender/age/group/name-search only — date/status/attempt/game filters
-// don't apply since registration isn't a session-level event (same
-// rationale as getOverviewV2's "Registered Children" KPI).
-
-function RegisteredParticipantsPanel({ filters, groupOptions, showKpiInfoIcon }) {
-  const PAGE_SIZE = 50;
-  const [rows,        setRows]        = React.useState([]);
-  const [total,       setTotal]       = React.useState(0);
-  const [page,        setPage]        = React.useState(0);
-  const [loading,     setLoading]     = React.useState(false);
-  const [hasMore,     setHasMore]     = React.useState(true);
-  const [sortKey,     setSortKey]     = React.useState('createdAt');
-  const [sortDir,     setSortDir]     = React.useState('desc');
-
-  React.useEffect(() => { setPage(0); }, [filters, sortKey, sortDir]);
-
-  React.useEffect(() => {
-    if (!filters) return;
-    let isMounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const { data } = await axiosAdmin.get('/analysis/registered-participants', {
-          params: { ...buildApiParams(filters), limit: PAGE_SIZE, offset: page * PAGE_SIZE, sortKey, sortDir }
-        });
-        if (!isMounted) return;
-        const newRows = data.participants || [];
-        setTotal(data.total || 0);
-        setHasMore(newRows.length === PAGE_SIZE);
-        setRows(prev => page === 0 ? newRows : [...prev, ...newRows]);
-      } catch (err) {
-        console.error('Error fetching registered participants:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    })();
-    return () => { isMounted = false; };
-  }, [filters, page, sortKey, sortDir]);
-
-  function handleSort(key) {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('desc'); }
-  }
-
-  function SortTh({ label, sortId }) {
-    const active = sortKey === sortId;
-    return (
-      <th className={`ana-th-sort${active ? ' active' : ''}`} onClick={() => handleSort(sortId)}>
-        {label}
-        <span className="ana-sort-icon">{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
-      </th>
-    );
-  }
-
-  return (
-    <div className="ana-content">
-      <div className="ana-kpi-row">
-        <KpiCard
-          icon="👥"
-          label="Registered Participants"
-          value={fmt(total)}
-          sub={groupOptions.length ? undefined : 'all registered children'}
-          color="#0891b2"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Registered Participants",
-            definition: "Every child registered on the platform, regardless of whether they've started a test.",
-            formula: "Count of children matching the selected demographic filters",
-            eligibility: ["Excludes Individual Users' own child profile", "Matches Sex, Age and Group filters — Date/Assessment Status/Visit don't apply since registration isn't a session event"]
-          }}
-        />
-      </div>
-
-      <Card title={`All Registered Participants${rows.length ? ` (${fmt(rows.length)} of ${fmt(total)} loaded)` : ''}`} noPad>
-        <div className="ana-table-wrap">
-          <table className="ana-table ana-table-bordered">
-            <thead><tr>
-              <th>#</th>
-              <SortTh label="Child ID" sortId="childId" />
-              <SortTh label="Name" sortId="name" />
-              <SortTh label="Age" sortId="age" />
-              <SortTh label="Gender" sortId="gender" />
-              <th>Group</th>
-              <th>Organization</th>
-              <SortTh label="Registered On" sortId="createdAt" />
-              <SortTh label="Sessions" sortId="totalSessions" />
-              <th>Completed</th>
-              <SortTh label="Last Activity" sortId="lastActivity" />
-              <th>Status</th>
-            </tr></thead>
-            <tbody>
-              {rows.map((p, i) => (
-                <tr key={`${p.child_id}-${i}`}>
-                  <td><span className="ana-rank">{i + 1}</span></td>
-                  <td><code>{p.child_id}</code></td>
-                  <td>{p.name || '—'}</td>
-                  <td>{p.age ?? '—'}</td>
-                  <td>{GENDER_LABELS[p.gender] || p.gender || '—'}</td>
-                  <td>{p.group_names || '—'}</td>
-                  <td>{p.org_name || '—'}</td>
-                  <td>{formatDate(p.created_at)}</td>
-                  <td>{fmt(p.total_sessions)}</td>
-                  <td>{fmt(p.completed_sessions)}</td>
-                  <td>{formatDate(p.last_activity)}</td>
-                  <td>{p.status || '—'}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && !loading && <tr><td colSpan="11" className="ana-table-empty">No registered participants match the selected filters</td></tr>}
-              {loading && <tr><td colSpan="11" className="ana-table-empty">Loading...</td></tr>}
-            </tbody>
-          </table>
-          {hasMore && !loading && rows.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '15px' }} data-pdf-ignore="true">
-              <button className="ana-btn" onClick={() => setPage(p => p + 1)}>Load More</button>
-            </div>
-          )}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
 // ── Overview Panel ────────────────────────────────────────
 
 function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelExportEnabled = true, showKpiInfoIcon }) {
@@ -1082,8 +958,21 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
   return (
     <div className="ana-content">
       <div className="ana-kpi-row">
-        <KpiCard 
-          icon="🎮" 
+        <KpiCard
+          icon="👥"
+          label="Registered Participants"
+          value={fmt(kpis.totalRegisteredParticipants)}
+          color="#0891b2"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Registered Participants",
+            definition: "Every child registered on the platform, regardless of whether they've started a test.",
+            formula: "Count of children matching the selected demographic filters",
+            eligibility: ["Excludes Individual Users' own child profile", "Matches Sex, Age and Group filters — Date/Assessment Status/Visit don't apply since registration isn't a session event"]
+          }}
+        />
+        <KpiCard
+          icon="🎮"
           label="Total Assessments"
           value={fmt(kpis.totalSessions)}
           color="#4f46e5"
@@ -2199,9 +2088,7 @@ export default function AdminAnalysis() {
     setError(null);
     try {
       const params = buildApiParams(filters);
-      if (activeTab === 'registered-participants') {
-        // RegisteredParticipantsPanel fetches its own paginated data — nothing to load here.
-      } else if (activeTab === 'overall') {
+      if (activeTab === 'overall') {
         const { data } = await axiosAdmin.get('/analysis/overview', { params });
         setOverviewData(data);
       } else if (activeTab === 'overall-v2') {
@@ -2313,17 +2200,6 @@ export default function AdminAnalysis() {
         {/* Left Tab Panel */}
         <aside className="ana-left-panel">
           <button
-            className={`ana-tab-item${activeTab === 'registered-participants' ? ' active' : ''}`}
-            onClick={() => handleTabChange('registered-participants')}
-          >
-            <span className="ana-tab-icon">👥</span>
-            <div className="ana-tab-text">
-              <div className="ana-tab-name">Registered Participants</div>
-              <div className="ana-tab-sub">All Registered</div>
-            </div>
-          </button>
-
-          <button
             className={`ana-tab-item${activeTab === 'overall' ? ' active' : ''}`}
             onClick={() => handleTabChange('overall')}
           >
@@ -2368,21 +2244,19 @@ export default function AdminAnalysis() {
 
           <div className="ana-panel-header">
             <h2 className="ana-panel-title">
-              {activeTab === 'registered-participants'
-                ? 'Registered Participants'
-                : activeTab === 'overall'
+              {activeTab === 'overall'
                 ? 'Study Overview'
                 : activeTab === 'overall-v2'
                 ? 'Overall V2 — Executive Analytics'
                 : <>{activeGame?.icon} {activeGame?.title} Analytics</>
               }
             </h2>
-            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeTab !== 'registered-participants' && activeGame && activeGame.tag && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeGame && activeGame.tag && (
               <span className="ana-panel-tag" style={{ background: `${activeGame.color}1a`, color: activeGame.color }}>
                 {activeGame.tag}
               </span>
             )}
-            {activeTab !== 'overall' && activeTab !== 'overall-v2' && activeTab !== 'registered-participants' && gameData[activeTab]?.meta?.maxScore != null && (
+            {activeTab !== 'overall' && activeTab !== 'overall-v2' && gameData[activeTab]?.meta?.maxScore != null && (
               <span className="ana-panel-tag" style={{ background: '#f1f5f9', color: '#64748b' }}>
                 Max Score: <strong>{gameData[activeTab].meta.maxScore}</strong>
               </span>
@@ -2413,9 +2287,7 @@ export default function AdminAnalysis() {
             </div>
           )}
 
-          {activeTab === 'registered-participants'
-            ? <RegisteredParticipantsPanel filters={filters} groupOptions={groupOptions} showKpiInfoIcon={showKpiInfoIcon} />
-            : activeTab === 'overall'
+          {activeTab === 'overall'
             ? <OverviewPanel data={overviewData} loading={loading} filters={filters} catalog={orderedCatalog} excelExportEnabled={excelExportEnabled} showKpiInfoIcon={showKpiInfoIcon} />
             : activeTab === 'overall-v2'
             ? <OverviewV2Panel data={overviewV2Data} loading={loading} showKpiInfoIcon={showKpiInfoIcon} catalog={orderedCatalog} />

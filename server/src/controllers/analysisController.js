@@ -389,9 +389,26 @@ exports.getOverview = async (req, res) => {
       }
     }
 
-    const { allClauses, allParams, noGenderClauses, noGenderParams } = parseFilters(req);
+    const f = parseFilters(req);
+    const { allClauses, allParams, noGenderClauses, noGenderParams } = f;
     const where        = toWhere(allClauses);
     const noGenderWhere = toWhere(noGenderClauses);
+
+    // Registered Participants — every registered child (not just ones who've
+    // played a test), filtered by the demographic filters only (gender, age,
+    // group, org scope, name/ID search) — date/status/attempt/game filters
+    // describe session activity, not registration, so they don't apply here
+    // (same rationale as getOverviewV2's "Registered Children" KPI below).
+    const childSearchClauses = [], childSearchParams = [];
+    if (req.query.childId && req.query.childId.trim()) {
+      const cid = req.query.childId.trim();
+      childSearchClauses.push('(c.child_id = ? OR c.name LIKE ?)');
+      childSearchParams.push(cid, `%${cid}%`);
+    }
+    const childOnlyClauses = [...f.orgClausesC, ...f.individualClausesC, ...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
+    const childOnlyParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams];
+    const [[regRow]] = await pool.query(`SELECT COUNT(*) AS total FROM children c ${toWhere(childOnlyClauses)}`, childOnlyParams);
+    const totalRegisteredParticipants = Number(regRow.total) || 0;
 
     // Platform KPIs
     const [[kpis]] = await pool.query(`
@@ -486,6 +503,7 @@ exports.getOverview = async (req, res) => {
     res.json({
       kpis: {
         ...kpis,
+        totalRegisteredParticipants,
         completionRate:      Number(kpis.completionRate)      || 0,
         meanScoreAll:        Number(kpis.meanScoreAll)         || 0,
         meanDurationAllMins: Number(kpis.meanDurationAllMins)  || 0,
@@ -1176,80 +1194,6 @@ const SCORE_COL_TO_GAME = {
   score_reading_v2: 'literacy_reading_skill_v2',
   score_chor: 'cognitive_flex_chor',
   score_rachna: 'triangle_rachna',
-};
-
-// ==========================================
-// REGISTERED PARTICIPANTS — every registered child (not just ones who've
-// played a test), filtered by the demographic filters only (gender, age,
-// group, org scope, name/ID search) — same filter set already used for
-// getOverviewV2's `totalRegisteredChildren` KPI. Deliberately ignores
-// startDate/endDate/status/attempt/gameKey — those describe session
-// activity, not registration, so they don't apply here (see parseFilters'
-// comment on childOnlyClauses for the same rationale).
-// ==========================================
-exports.getRegisteredParticipants = async (req, res) => {
-  try {
-    const f = parseFilters(req);
-
-    const childSearchClauses = [], childSearchParams = [];
-    if (req.query.childId && req.query.childId.trim()) {
-      const cid = req.query.childId.trim();
-      childSearchClauses.push('(c.child_id = ? OR c.name LIKE ?)');
-      childSearchParams.push(cid, `%${cid}%`);
-    }
-
-    const childOnlyClauses = [...f.orgClausesC, ...f.individualClausesC, ...f.genderClauses, ...f.ageClauses, ...childSearchClauses, ...f.groupClauses];
-    const childOnlyParams  = [...f.orgParamsC, ...f.genderParams, ...childSearchParams, ...f.groupParams];
-    const where = toWhere(childOnlyClauses);
-
-    const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM children c ${where}`, childOnlyParams);
-
-    const limit  = Math.min(parseInt(req.query.limit, 10) || 50, 500);
-    const offset = parseInt(req.query.offset, 10) || 0;
-    const sortKey = req.query.sortKey || 'createdAt';
-    const sortDir = req.query.sortDir === 'asc' ? 'ASC' : 'DESC';
-    const SORT_MAP = {
-      childId:       'c.child_id',
-      name:          'c.name',
-      age:           'age',
-      gender:        'c.gender',
-      createdAt:     'c.created_at',
-      totalSessions: 'total_sessions',
-      lastActivity:  'last_activity',
-    };
-    const orderByCol = SORT_MAP[sortKey] || 'c.created_at';
-
-    const [rows] = await pool.query(`
-      SELECT c.child_id, c.name, c.gender, c.status,
-             TIMESTAMPDIFF(YEAR, c.dob, CURDATE())        AS age,
-             DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i')  AS created_at,
-             o.org_name,
-             (SELECT GROUP_CONCAT(cg.name ORDER BY cg.name SEPARATOR ', ')
-              FROM child_group_members cgm JOIN child_groups cg ON cg.id = cgm.group_id
-              WHERE cgm.children_id = c.id)                AS group_names,
-             COALESCE(agg.total_sessions, 0)               AS total_sessions,
-             COALESCE(agg.completed_sessions, 0)           AS completed_sessions,
-             DATE_FORMAT(agg.last_activity, '%Y-%m-%d %H:%i') AS last_activity
-      FROM children c
-      LEFT JOIN organizations o ON c.org_id = o.id
-      LEFT JOIN (
-        SELECT child_id,
-               COUNT(*)                                     AS total_sessions,
-               CAST(SUM(status = 'completed') AS UNSIGNED)  AS completed_sessions,
-               MAX(created_at)                              AS last_activity
-        FROM game_sessions
-        GROUP BY child_id
-      ) agg ON agg.child_id = c.child_id
-      ${where}
-      ORDER BY ${orderByCol} ${sortDir}
-      LIMIT ? OFFSET ?
-    `, [...childOnlyParams, limit, offset]);
-
-    res.json({ participants: rows, total: Number(total) || 0 });
-  } catch (err) {
-    console.error('Registered participants error:', err);
-    res.status(500).json({ error: 'Failed to load registered participants' });
-  }
 };
 
 exports.getTopChildren = async (req, res) => {
