@@ -1224,70 +1224,68 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
         />
       </div>
 
+      <Card
+        title="Assessments by Test"
+        showKpiInfoIcon={showKpiInfoIcon}
+        info={{
+          name: "Assessments by Test",
+          definition: "Every test's sessions broken down by status (Completed, Quit, Dropped, In Progress, Paused) so completion, drop-off, and quit rates are visible per test, not just a single total.",
+          formula: "Count of test sessions grouped by test and status",
+          eligibility: ["Matches all selected filters"]
+        }}
+      >
+        {byGame.length === 0
+          ? <div className="ana-chart-empty">No test data for selected filters</div>
+          : <div className="ana-shbar-block">
+              <div className="ana-shbar-summary">
+                <strong>{fmt(testStatusGrandTotal)}</strong> assessments across {fmt(byGame.length)} tests —{' '}
+                {testStatusLegend.map((s, i) => (
+                  <span key={s.label}>
+                    {i > 0 && ', '}
+                    <strong style={{ color: s.color }}>{fmt(testStatusGrandTotal ? Math.round((s.value / testStatusGrandTotal) * 100) : 0)}%</strong> {s.label.toLowerCase()}
+                  </span>
+                ))}
+              </div>
+              <div className="ana-hbar-list ana-hbar-list--wide">
+                {byGameOrdered.map(g => {
+                  const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
+                  return (
+                    <TestStatusStackedBar key={g.gameKey}
+                      label={<span>{meta.icon || ''} {g.title || g.gameKey}</span>}
+                      gameTitle={`${meta.icon || ''} ${g.title || g.gameKey}`.trim()}
+                      labelWidth={170}
+                      statusCounts={g.statusCounts}
+                      total={Number(g.sessions)}
+                      completionRate={g.completionRate}
+                      platformCompletionRate={kpis.completionRate}
+                    />
+                  );
+                })}
+              </div>
+              <Legend items={testStatusLegend} shape="rect" />
+            </div>
+        }
+      </Card>
+
       <div className="ana-grid-2">
-        <Card
-          title="Assessments by Test"
-          stretch
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Assessments by Test",
-            definition: "Every test's sessions broken down by status (Completed, Quit, Dropped, In Progress, Paused) so completion, drop-off, and quit rates are visible per test, not just a single total.",
-            formula: "Count of test sessions grouped by test and status",
-            eligibility: ["Matches all selected filters"]
-          }}
-        >
-          {byGame.length === 0
-            ? <div className="ana-chart-empty">No test data for selected filters</div>
-            : <div className="ana-shbar-block">
-                <div className="ana-shbar-summary">
-                  <strong>{fmt(testStatusGrandTotal)}</strong> assessments across {fmt(byGame.length)} tests —{' '}
-                  {testStatusLegend.map((s, i) => (
-                    <span key={s.label}>
-                      {i > 0 && ', '}
-                      <strong style={{ color: s.color }}>{fmt(testStatusGrandTotal ? Math.round((s.value / testStatusGrandTotal) * 100) : 0)}%</strong> {s.label.toLowerCase()}
-                    </span>
-                  ))}
-                </div>
-                <div className="ana-hbar-list">
-                  {byGameOrdered.map(g => {
-                    const meta = GAME_CATALOG.find(c => c.key === g.gameKey) || {};
-                    return (
-                      <TestStatusStackedBar key={g.gameKey}
-                        label={<span>{meta.icon || ''} {g.title || g.gameKey}</span>}
-                        gameTitle={`${meta.icon || ''} ${g.title || g.gameKey}`.trim()}
-                        statusCounts={g.statusCounts}
-                        total={Number(g.sessions)}
-                        completionRate={g.completionRate}
-                        platformCompletionRate={kpis.completionRate}
-                      />
-                    );
-                  })}
-                </div>
-                <Legend items={testStatusLegend} shape="rect" />
+        <Card title="Assessment Status">
+          {statusSegs.length === 0
+            ? <div className="ana-card-body"><div className="ana-chart-empty">No status data</div></div>
+            : <div className="ana-donut-row">
+                <DonutChart segments={statusSegs} size={100} centerLabel={fmt(kpis.totalSessions)} centerSub="total" />
+                <Legend items={statusSegs} />
               </div>
           }
         </Card>
-
-        <div className="ana-col-gap">
-          <Card title="Assessment Status">
-            {statusSegs.length === 0
-              ? <div className="ana-card-body"><div className="ana-chart-empty">No status data</div></div>
-              : <div className="ana-donut-row">
-                  <DonutChart segments={statusSegs} size={100} centerLabel={fmt(kpis.totalSessions)} centerSub="total" />
-                  <Legend items={statusSegs} />
-                </div>
-            }
-          </Card>
-          <Card title="Participant Sex wise Distribution">
-            {genderSegs.length === 0
-              ? <div className="ana-card-body"><div className="ana-chart-empty">No gender data</div></div>
-              : <div className="ana-donut-row">
-                  <DonutChart segments={genderSegs} size={100} centerLabel={fmt(kpis.uniqueChildren)} centerSub="children" />
-                  <Legend items={genderSegs} />
-                </div>
-            }
-          </Card>
-        </div>
+        <Card title="Participant Sex wise Distribution">
+          {genderSegs.length === 0
+            ? <div className="ana-card-body"><div className="ana-chart-empty">No gender data</div></div>
+            : <div className="ana-donut-row">
+                <DonutChart segments={genderSegs} size={100} centerLabel={fmt(kpis.uniqueChildren)} centerSub="children" />
+                <Legend items={genderSegs} />
+              </div>
+          }
+        </Card>
       </div>
 
       <Card title="Participant Assessment Progress">

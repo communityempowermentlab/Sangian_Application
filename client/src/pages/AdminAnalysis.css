@@ -552,13 +552,19 @@
 .ana-legend-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-transform: capitalize; }
 
 /* ── Stacked status bar ("Assessments by Test") ──────────────── */
-.ana-shbar-block { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+.ana-shbar-block { display: flex; flex-direction: column; gap: 12px; padding-bottom: 14px; }
 .ana-shbar-summary {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--muted, #64748b);
-  padding: 0 16px;
+  padding: 0 20px;
   line-height: 1.6;
 }
+/* Full-width card layout — taller bars and roomier spacing than the old
+   half-width card, since there's now the whole row to work with. */
+.ana-hbar-list--wide { gap: 12px; padding: 14px 20px 16px; }
+.ana-hbar-list--wide .ana-shbar-track { height: 20px; border-radius: 5px; }
+.ana-hbar-list--wide .ana-hbar-label { font-size: 13px; }
+.ana-hbar-list--wide .ana-hbar-val { font-size: 13px; }
 .ana-shbar-summary strong { color: var(--text, #0f172a); font-weight: 700; }
 .ana-shbar-track {
   flex: 1;
@@ -636,7 +642,7 @@
 .ana-shbtt-insight.critical { border-color: #ef4444; color: #fecaca; }
 .ana-shbtt-insight.info     { border-color: #4f46e5; color: #c7d2fe; }
 
-.ana-shbar-block .ana-legend { flex-direction: row; flex-wrap: wrap; gap: 6px 16px; padding: 0 16px; }
+.ana-shbar-block .ana-legend { flex-direction: row; flex-wrap: wrap; gap: 6px 16px; padding: 0 20px; }
 .ana-shbar-block .ana-legend-item { overflow: visible; }
 .ana-shbar-block .ana-legend-text { overflow: visible; white-space: nowrap; flex: none; }
 
