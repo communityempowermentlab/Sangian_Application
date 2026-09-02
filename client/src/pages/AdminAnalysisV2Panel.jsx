@@ -393,23 +393,6 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
             ]
           }}
         />
-        <KpiCard
-          icon="🔁"
-          label="Repeat Tests"       
-          value={fmt(kpis.totalRepeatAssessments)} 
-          sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalRepeatAssessments / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
-          color="#8b5cf6" 
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Repeat Tests",
-            definition: "Number of tests played by children who had already played that specific test before.",
-            formula: "Count of test sessions where attemptNo >= 2",
-            eligibility: [
-              "Child matches the selected Date Range",
-              "Child matches selected Age, Gender, and Group filters"
-            ]
-          }}
-        />
       </div>
 
       <div className="ana-grid-2">
