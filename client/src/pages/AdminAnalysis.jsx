@@ -972,20 +972,7 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
           }}
         />
         <KpiCard
-          icon="🎮"
-          label="Total Assessments"
-          value={fmt(kpis.totalSessions)}
-          color="#4f46e5"
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Total Assessments",
-            definition: "Total number of test sessions started by eligible children.",
-            formula: "Count of all test sessions",
-            eligibility: ["Matches all selected filters (Date, Age, Gender, Group)"]
-          }}
-        />
-        <KpiCard 
-          icon="👦" 
+          icon="👦"
           label="Participants Assessed"
           value={fmt(kpis.uniqueChildren)}
           color="#0891b2"
@@ -997,18 +984,18 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             eligibility: ["Child has at least one session matching the selected filters"]
           }}
         />
-        <KpiCard 
-          icon="✅" 
-          label="Completion Rate" 
-          value={`${fmt(kpis.completionRate)}%`} 
-          sub={`${fmt(kpis.completedSessions)} completed`} 
+        <KpiCard
+          icon="✅"
+          label="Completion Rate"
+          value={`${fmt(kpis.completionRate)}%`}
+          sub={`${fmt(kpis.completedSessions)} of ${fmt(kpis.totalSessions)} assessments completed`}
           color="#22c55e"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Completion Rate",
-            definition: "Percentage of started sessions that were successfully completed.",
-            formula: "(Completed Sessions ÷ Total Sessions) × 100",
-            eligibility: ["Matches all selected filters"]
+            definition: "Percentage of started sessions that were successfully completed. The total assessment count (started sessions) is shown alongside the completed count.",
+            formula: "(Completed Sessions ÷ Total Sessions) × 100 — Total Sessions is the Total Assessments count",
+            eligibility: ["Matches all selected filters (Date, Age, Gender, Group)"]
           }}
         />
       </div>
