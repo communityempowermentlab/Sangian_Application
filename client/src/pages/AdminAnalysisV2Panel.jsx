@@ -360,44 +360,41 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
             }
           }}
         />
-        <KpiCard 
-          icon="🎮" 
-          label="Tests Conducted"          
-          value={fmt(kpis.totalTestsConducted)} 
-          color="#4f46e5"
+        <KpiCard
+          icon="👦"
+          label="Assessed Participants"
+          value={fmt(kpis.uniqueChildren)}
+          color="#0891b2"
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
-            name: "Tests Conducted",
-            definition: "Total number of test sessions started by eligible children.",
-            formula: "Count of all test sessions (irrespective of completion status)",
-            dataSource: "Database: `sangian` | Table: `test_sessions`",
-            filtersApplied: ["Date Range", "Age", "Gender", "Group ID"],
-            inclusionCriteria: ["All started sessions within date range"],
-            exclusionCriteria: ["Deleted or anomalous sessions"],
-            dateRange: "Based on dashboard date picker selection",
-            example: "If 10 children started 2 sessions each today, Total = 20.",
-            eligibility: ["Matches all selected filters"]
-          }}
-        />
-        <KpiCard 
-          icon="✅" 
-          label="Tests Completed"    
-          value={fmt(kpis.totalAssessmentsCompleted)} 
-          sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalAssessmentsCompleted / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
-          color="#22c55e" 
-          showKpiInfoIcon={showKpiInfoIcon}
-          info={{
-            name: "Tests Completed",
-            definition: "Total number of test sessions that were successfully finished by the child.",
-            formula: "Count of test sessions where status is 'completed'",
+            name: "Assessed Participants",
+            definition: "Total number of distinct children who started at least one test.",
+            formula: "Count of distinct child IDs",
             eligibility: [
               "Child matches the selected Date Range",
               "Child matches selected Age, Gender, and Group filters"
             ]
           }}
         />
-        <KpiCard 
-          icon="🔁" 
+        <KpiCard
+          icon="✅"
+          label="Completion Rate"
+          value={kpis.totalTestsConducted ? `${Math.round((kpis.totalAssessmentsCompleted / kpis.totalTestsConducted) * 100)}%` : '0%'}
+          sub={`${fmt(kpis.totalAssessmentsCompleted)} of ${fmt(kpis.totalTestsConducted)} assessments completed`}
+          color="#22c55e"
+          showKpiInfoIcon={showKpiInfoIcon}
+          info={{
+            name: "Completion Rate",
+            definition: "Percentage of started sessions that were successfully completed. The total assessment count (started sessions) is shown alongside the completed count.",
+            formula: "(Completed Sessions ÷ Total Sessions) × 100 — Total Sessions is the Tests Conducted count",
+            eligibility: [
+              "Child matches the selected Date Range",
+              "Child matches selected Age, Gender, and Group filters"
+            ]
+          }}
+        />
+        <KpiCard
+          icon="🔁"
           label="Repeat Tests"       
           value={fmt(kpis.totalRepeatAssessments)} 
           sub={kpis.totalTestsConducted ? `${Math.round((kpis.totalRepeatAssessments / kpis.totalTestsConducted) * 100)}% of tests` : undefined}
