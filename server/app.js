@@ -21,6 +21,7 @@ const { adminRouter: headerConfigAdminRoutes, publicRouter: headerConfigPublicRo
 const { adminRouter: orgTypeAdminRoutes, publicRouter: orgTypePublicRoutes } = require('./src/routes/orgTypeRoutes');
 const { adminRouter: responseMatchingAdminRoutes, publicRouter: responseMatchingPublicRoutes } = require('./src/routes/responseMatchingRoutes');
 const { adminRouter: analysisSettingsAdminRoutes } = require('./src/routes/analysisSettingsRoutes');
+const { adminRouter: scoreBinSettingsAdminRoutes } = require('./src/routes/scoreBinSettingsRoutes');
 const { adminRouter: testGroupsAdminRoutes } = require('./src/routes/testGroupsRoutes');
 const { adminRouter: individualTestAccessAdminRoutes, publicRouter: individualTestAccessPublicRoutes } = require('./src/routes/individualTestAccessRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
@@ -155,6 +156,7 @@ app.use('/api/public/header-config', headerConfigPublicRoutes);
 app.use('/api/admin/response-matching-config', responseMatchingAdminRoutes);
 app.use('/api/public/response-matching-config', responseMatchingPublicRoutes);
 app.use('/api/admin/analysis-settings', analysisSettingsAdminRoutes);
+app.use('/api/admin/score-bin-settings', scoreBinSettingsAdminRoutes);
 app.use('/api/admin/test-groups', testGroupsAdminRoutes);
 app.use('/api/contact',         contactRoutes);
 app.use('/api/tickets',         ticketRoutes);

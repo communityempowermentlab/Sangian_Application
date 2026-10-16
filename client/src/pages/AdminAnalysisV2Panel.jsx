@@ -571,7 +571,7 @@ export default function OverviewV2Panel({ data, loading, showKpiInfoIcon, catalo
               <TestSortTh label="Avg Score" sortId="avgScorePct" />
               <TestSortTh label="Max" sortId="maxScoreAchieved" />
               <TestSortTh label="Min" sortId="minScoreAchieved" />
-              <th title="Share of scores in each 0–100% band, relative to that test's own max">Score Distribution</th>
+              <th title="Number of attempts in each raw-score bin (bin width set in Settings → Score Distribution, where configurable)">Score Distribution</th>
               <TestSortTh label="Compl.%" sortId="completionPct" />
               <TestSortTh label="Drop-off%" sortId="dropOffPct" />
               <TestSortTh label="Avg Time" sortId="avgDurationMins" />

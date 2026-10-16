@@ -9,7 +9,7 @@ const CATEGORY_COLORS = {
     'Academic Test':   { bg: '#fae8ff', text: '#a21caf' },
 };
 
-const ToggleSwitch = ({ checked, onClick, disabled }) => (
+export const ToggleSwitch = ({ checked, onClick, disabled }) => (
     <button
         onClick={onClick}
         disabled={disabled}

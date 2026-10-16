@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { normalizeGameName } = require('../utils/gameNameAliases');
 const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
+const scoreBinSettings = require('../services/scoreBinSettingsService');
 
 const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao - V0', tag: 'Literacy',         color: '#059669', maxScore: 22 },
@@ -135,11 +136,16 @@ const CUSTOM_SCORE_BUCKETS = {
   ],
 };
 
-// Resolves a game's score-distribution buckets — its CUSTOM_SCORE_BUCKETS
+// Resolves a game's score-distribution buckets — the admin's bin width from
+// Settings → Score Distribution if one is saved, else its CUSTOM_SCORE_BUCKETS
 // entry if one exists, else 5 equal-width buckets over its maxScore — and
-// attaches the display label each bucket should use.
-function buildBucketDefs(gameKey, maxScore) {
-  const customBuckets = CUSTOM_SCORE_BUCKETS[gameKey];
+// attaches the display label each bucket should use. Pass useSetting=false to
+// get the built-in default buckets (Settings' "Default" preview).
+function buildBucketDefs(gameKey, maxScore, useSetting = true) {
+  const binSetting    = useSetting ? scoreBinSettings.getGameSetting(gameKey) : null;
+  const customBuckets = binSetting
+    ? scoreBinSettings.buildWidthBuckets(maxScore, binSetting.binWidth, binSetting.separateZero)
+    : CUSTOM_SCORE_BUCKETS[gameKey];
   const bucketSize    = Math.ceil(maxScore / 5);
   const raw = customBuckets || Array.from({ length: 5 }, (_, i) => ({
     lo: i * bucketSize,
@@ -647,7 +653,7 @@ exports.getGameAnalytics = async (req, res) => {
     `, params);
     kpis.medianScore = medianRow.medianScore != null ? Number(medianRow.medianScore) : null;
 
-    // Score distribution — 5 equal buckets. Not restricted to completed
+    // Score distribution — buckets from buildBucketDefs. Not restricted to completed
     // sessions: in games like Padh ke Batao, completion implies a near-perfect
     // score and the real ability spread lives in dropped/quit sessions'
     // partial scores. In-progress/paused sessions are excluded (their score is
@@ -1625,10 +1631,11 @@ exports.getOverviewV2 = async (req, res) => {
       };
     });
 
-    // Games with CUSTOM_SCORE_BUCKETS get their raw-score buckets here too,
-    // overriding the generic percentage buckets above — same buckets as that
-    // game's own Analysis page, so both views agree.
-    for (const gameKey of Object.keys(CUSTOM_SCORE_BUCKETS)) {
+    // Games with CUSTOM_SCORE_BUCKETS or an admin-set bin width get their
+    // raw-score buckets here too, overriding the generic percentage buckets
+    // above — same buckets as that game's own Analysis page, so both views agree.
+    const rawBucketGames = new Set([...Object.keys(CUSTOM_SCORE_BUCKETS), ...scoreBinSettings.CONFIGURABLE_GAMES]);
+    for (const gameKey of rawBucketGames) {
       const entry = testAnalysis.find(t => t.gameKey === gameKey);
       const meta  = GAME_META[gameKey];
       if (!entry || !meta) continue;
@@ -1755,3 +1762,8 @@ exports.getOverviewV2 = async (req, res) => {
     res.status(500).json({ error: 'Failed to load Overall V2 analytics' });
   }
 };
+
+// Shared with scoreBinSettingsController (Settings → Score Distribution), so its
+// preview shows exactly the buckets the Analysis dashboards will use.
+exports.GAME_META = GAME_META;
+exports.buildBucketDefs = buildBucketDefs;

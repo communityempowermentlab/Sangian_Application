@@ -7,6 +7,7 @@ import { useCrashAnalytics } from '../contexts/CrashAnalyticsContext';
 import { getAdminLogoUrl } from '../services/photoUtils';
 import AdminLanguageSettingsTab from './AdminLanguageSettingsTab';
 import AdminTestConfigTab from './AdminTestConfigTab';
+import AdminScoreDistributionTab from './AdminScoreDistributionTab';
 import AdminNotificationsTab from './AdminNotificationsTab';
 // Terms & Conditions, Privacy Policy, Help & Support, and Organization
 // Types moved here from the standalone Meta page (AdminMeta.jsx) — that
@@ -27,6 +28,7 @@ const SETTINGS_MENU = [
     { key: 'admin_profile',     icon: '👤', label: 'Update Profile',       color: '#059669', available: true  },
     { key: 'languages',         icon: '🌐', label: 'Languages',            color: '#0ea5e9', available: true  },
     { key: 'test_config',       icon: '🧪', label: 'Test Configuration',   color: '#dc2626', available: true  },
+    { key: 'score_distribution', icon: '📶', label: 'Score Distribution',  color: '#4f46e5', available: true  },
     { key: 'terms',             icon: '📄', label: 'Terms & Conditions',   color: '#4f46e5', available: true  },
     { key: 'privacy',           icon: '🔒', label: 'Privacy Policy',       color: '#4f46e5', available: true  },
     { key: 'help_support',      icon: '🎫', label: 'Help & Support',       color: '#7c3aed', available: true  },
@@ -2158,6 +2160,7 @@ const CONTENT_MAP = {
     admin_profile:     <AdminProfileTab />,
     languages:         <AdminLanguageSettingsTab />,
     test_config:       <AdminTestConfigTab />,
+    score_distribution: <AdminScoreDistributionTab />,
     notifications:     <AdminNotificationsTab />,
     terms:             <CmsEditor pageKey="terms" />,
     privacy:           <CmsEditor pageKey="privacy" />,

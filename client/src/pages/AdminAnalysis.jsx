@@ -1589,9 +1589,9 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
           showKpiInfoIcon={showKpiInfoIcon}
           info={{
             name: "Score Distribution",
-            definition: "Count of sessions falling into different percentage score buckets.",
-            formula: "Grouped by buckets (e.g. 90-100%, 80-89%)",
-            eligibility: ["Only COMPLETED sessions are included"]
+            definition: "Count of sessions falling into each raw-score bin.",
+            formula: "Grouped by score bins (bin width set in Settings → Score Distribution, else the test's default bins)",
+            eligibility: ["Completed, dropped and quit sessions with a score (in-progress/paused excluded unless filtered by status)"]
           }}
         >
           <div className="ana-hbar-list">
