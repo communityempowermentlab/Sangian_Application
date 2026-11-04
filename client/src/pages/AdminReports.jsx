@@ -12,6 +12,17 @@ import { isOrgSession, isStaffSession, getAssignedTests } from '../utils/staffPe
 // permission to call /admin/organizations at all).
 const isAdminSession = !isOrgSession() && !isStaffSession();
 
+// Assessment Visit chips — same options/labels as the Analysis page's
+// filter (AdminAnalysis.jsx ATTEMPT_CHIP_OPTIONS); sent as ?attempt=1,2,6+.
+const VISIT_OPTIONS = [
+    { key: '1',  label: 'Baseline (Visit 1)' },
+    { key: '2',  label: 'Retest (Visit 2)' },
+    { key: '3',  label: '3rd Attempt' },
+    { key: '4',  label: '4th Attempt' },
+    { key: '5',  label: '5th Attempt' },
+    { key: '6+', label: '6th+ Attempt' },
+];
+
 const statusBadge = (status) => {
     const map = {
         completed: { label: 'Completed', bg: '#d1fae5', color: '#065f46' },
@@ -85,6 +96,29 @@ const AdminReports = () => {
     const [groupOptions, setGroupOptions] = useState([]);
     const groupParam = searchParams.get('group') || '';
     const selectedGroupIds = groupParam ? groupParam.split(',') : [];
+
+    // Assessment Visit filter — multi-select, kept in the URL like Group
+    const visitParam = searchParams.get('attempt') || '';
+    const selectedVisits = visitParam ? visitParam.split(',') : [];
+
+    const toggleVisitFilter = useCallback((key) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            const current = (next.get('attempt') || '').split(',').filter(Boolean);
+            const updated = current.includes(key) ? current.filter(x => x !== key) : [...current, key];
+            if (updated.length) next.set('attempt', updated.join(','));
+            else next.delete('attempt');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const clearVisitFilter = useCallback(() => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.delete('attempt');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
 
     useEffect(() => {
         axiosAdmin.get('/admin/child-groups')
@@ -171,12 +205,13 @@ const AdminReports = () => {
     const [hpDataModal, setHpDataModal] = useState({ show: false, rowData: null });
 
     // ── Fetch overview on mount ────────────────────────────────────────────────
-    const fetchOverview = useCallback(async (groupIds, orgId) => {
+    const fetchOverview = useCallback(async (groupIds, orgId, visits) => {
         setLoadingOv(true);
         try {
             const params = {};
             if (groupIds && groupIds.length) params.groupId = groupIds.join(',');
             if (orgId) params.organization_id = orgId;
+            if (visits && visits.length) params.attempt = visits.join(',');
             const res = await axiosAdmin.get('/games/reports/overview', { params });
             setOverview(res.data.data || []);
         } catch (e) {
@@ -186,7 +221,7 @@ const AdminReports = () => {
         }
     }, []);
 
-    useEffect(() => { fetchOverview(selectedGroupIds, orgParam); }, [fetchOverview, groupParam, orgParam]);
+    useEffect(() => { fetchOverview(selectedGroupIds, orgParam, selectedVisits); }, [fetchOverview, groupParam, orgParam, visitParam]); // eslint-disable-line
 
     // ── Apply a game selection (or null) to the local view state ──────────────
     // This is the ONLY place that writes activeGame/detail, and it's driven purely
@@ -194,7 +229,7 @@ const AdminReports = () => {
     // directly from click handlers. That keeps the URL as the single source of
     // truth and avoids a race between local state and router state landing in
     // different render ticks.
-    const showGame = useCallback(async (game, groupIds, orgId) => {
+    const showGame = useCallback(async (game, groupIds, orgId, visits) => {
         setActiveGame(game);
         setFilterStatus(null);
         if (!game) {
@@ -209,6 +244,7 @@ const AdminReports = () => {
             const params = {};
             if (groupIds && groupIds.length) params.groupId = groupIds.join(',');
             if (orgId) params.organization_id = orgId;
+            if (visits && visits.length) params.attempt = visits.join(',');
             const res = await axiosAdmin.get(`/games/reports/detail/${game.key}`, { params });
             setDetail({ columns: res.data.columns || [], data: res.data.data || [] });
         } catch (e) {
@@ -244,7 +280,7 @@ const AdminReports = () => {
     useEffect(() => {
         const gameKey = searchParams.get('game');
         const game = gameKey ? GAME_CATALOG.find(g => g.key === gameKey) : null;
-        showGame(game || null, selectedGroupIds, orgParam);
+        showGame(game || null, selectedGroupIds, orgParam, selectedVisits);
     }, [searchParams, showGame]); // eslint-disable-line
 
     // ── Merge overview DB data with catalog ───────────────────────────────────
@@ -304,7 +340,7 @@ const AdminReports = () => {
         logReportDownload({
             module: 'reports', menuName: 'Reports', pageName: activeGame?.title || activeGame?.key,
             reportName: `${activeGame?.title || activeGame?.key} Report`, reportType: activeGame?.key, format: 'CSV',
-            filters: { status: filterStatus, groupIds: selectedGroupIds, sortField, sortDir },
+            filters: { status: filterStatus, groupIds: selectedGroupIds, visits: selectedVisits, sortField, sortDir },
         });
     };
 
@@ -380,6 +416,25 @@ const AdminReports = () => {
             </div>
         );
     };
+
+    const VisitFilterBar = () => (
+        <div style={S.groupFilterWrap}>
+            <span style={S.groupFilterLabel}>Assessment Visit</span>
+            <button style={S.groupChip(selectedVisits.length === 0)} onClick={clearVisitFilter}>
+                All Visits
+            </button>
+            <span style={S.groupFilterSep} />
+            {VISIT_OPTIONS.map(v => (
+                <button
+                    key={v.key}
+                    style={S.groupChip(selectedVisits.includes(v.key))}
+                    onClick={() => toggleVisitFilter(v.key)}
+                >
+                    {v.label}
+                </button>
+            ))}
+        </div>
+    );
 
     const CompanyFilterBar = () => {
         if (!isAdminSession || orgOptions.length === 0) return null;
@@ -528,6 +583,7 @@ const AdminReports = () => {
                 </div>
 
                 <GroupFilterBar />
+                <VisitFilterBar />
                 <CompanyFilterBar />
 
                 <div style={S.topBar}>
@@ -1180,6 +1236,7 @@ const AdminReports = () => {
             <div style={S.pageSub}>Click a test card to view detailed attempt data.</div>
 
             <GroupFilterBar />
+            <VisitFilterBar />
             <CompanyFilterBar />
 
             {loadingOv ? (

@@ -495,6 +495,17 @@ exports.getGameHistory = async (req, res) => {
     }
 };
 
+// Assessment Visit filter (Reports) — same chips as the Analysis page
+// ('1' Baseline, '2' Retest, '3'..'5', '6+'), matched against the per-child,
+// per-test attempt number. Returns null when no filter is set.
+const parseVisitFilter = (attempt) => {
+    const list = attempt ? String(attempt).split(',').filter(Boolean) : [];
+    if (!list.length) return null;
+    const exact = new Set(list.filter(a => a !== '6+').map(Number).filter(n => Number.isInteger(n) && n > 0));
+    const plus = list.includes('6+');
+    return (n) => exact.has(n) || (plus && n >= 6);
+};
+
 // ─── REPORT: Overview KPIs for all games ──────────────────────────────────────
 // Average Game Time and Average Screen Time are computed here in JS (rather than a SQL
 // AVG(JSON_EXTRACT(...))) so they use the exact same per-session figures as the "Duration"
@@ -505,8 +516,9 @@ exports.getGameHistory = async (req, res) => {
 //     falling back to timerSeconds for games that don't save a dedicated screentime field)
 exports.getReportOverview = async (req, res) => {
     try {
-        const { groupId, organization_id } = req.query;
+        const { groupId, organization_id, attempt } = req.query;
         const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
+        const visitMatches = parseVisitFilter(attempt);
 
         let queryStr = `
             SELECT gs.game_name, gs.child_id, gs.status, gs.score, gs.saved_state
@@ -547,12 +559,21 @@ exports.getReportOverview = async (req, res) => {
         if (conditions.length > 0) {
             queryStr += ` WHERE ${conditions.join(' AND ')}`;
         }
+        // Chronological so per-child attempt numbers line up with the
+        // "Attempt" column getReportDetail computes (same ordering).
+        queryStr += ' ORDER BY gs.start_time ASC, gs.id ASC';
 
         const [sessions] = await pool.query(queryStr, queryParams);
 
         const buckets = {};
+        const attemptCounter = {};
         for (const row of sessions) {
             const gameName = normalizeGameName(row.game_name);
+            if (visitMatches) {
+                const k = `${gameName}|${row.child_id}`;
+                attemptCounter[k] = (attemptCounter[k] || 0) + 1;
+                if (!visitMatches(attemptCounter[k])) continue;
+            }
             if (!buckets[gameName]) {
                 buckets[gameName] = {
                     game_name: gameName,
@@ -622,8 +643,9 @@ exports.getReportOverview = async (req, res) => {
 exports.getReportDetail = async (req, res) => {
     try {
         const { gameName } = req.params;
-        const { child_id, groupId, organization_id } = req.query;
+        const { child_id, groupId, organization_id, attempt } = req.query;
         const groupIds = groupId ? groupId.split(',').filter(Boolean) : [];
+        const visitMatches = parseVisitFilter(attempt);
 
         let gameFilter = [gameName];
         if (['rover_mela', 'chalo_mela_chale', 'Chalo Mela Chale'].includes(gameName)) {
@@ -723,7 +745,7 @@ exports.getReportDetail = async (req, res) => {
             queryParams.push(req.orgScope.orgId);
         }
 
-        queryStr += ' ORDER BY gs.start_time ASC';
+        queryStr += ' ORDER BY gs.start_time ASC, gs.id ASC';
 
         const [rows] = await pool.query(queryStr, queryParams);
 
@@ -744,7 +766,7 @@ exports.getReportDetail = async (req, res) => {
         // Calculate per-child attempt numbers
         const childAttemptCounts = {};
         const allUniqueKeys = new Set();
-        const enriched = rows.map((row) => {
+        let enriched = rows.map((row) => {
             const cid = row.child_id;
             childAttemptCounts[cid] = (childAttemptCounts[cid] || 0) + 1;
             const currentAttempt = childAttemptCounts[cid];
@@ -1011,6 +1033,12 @@ exports.getReportDetail = async (req, res) => {
                 pdf_url: row.pdf_url || null,
             };
         });
+
+        // Assessment Visit filter — applied after numbering so the kept
+        // rows still show their true attempt number (e.g. Retest = #2).
+        if (visitMatches) {
+            enriched = enriched.filter(r => visitMatches(r.child_attempt_no));
+        }
 
         // Re-sort to DESC for report listing
         enriched.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
