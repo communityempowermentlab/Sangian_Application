@@ -10,6 +10,8 @@ import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './NumberRecallGame.css';
 
 // ─── Game Name ─────────────────────────────────────────────────
@@ -444,6 +446,27 @@ const NumberRecallGame = () => {
 
   // ── Child data + resume check ──────────────────────────────
   useEffect(() => {
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data — no server calls.
+    const regen = getRegenPayload();
+    if (regen) {
+      const saved = regen.session.saved_state || {};
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id); gameSessionIdRef.current = regen.session.id;
+      setAttemptNo(regen.session.attempt_no || 1);
+      setQuestionIndex(saved.questionIndex || 0); questionIndexRef.current = saved.questionIndex || 0;
+      setAllScores(saved.allScores || []); allScoresRef.current = saved.allScores || [];
+      setTeachingScores(saved.teachingScores || []); teachingScoresRef.current = saved.teachingScores || [];
+      setTimerSeconds(saved.timerSeconds || 0); timerSecondsRef.current = saved.timerSeconds || 0;
+      setPauses(saved.pauses || []); pausesRef.current = saved.pauses || [];
+      setConsecutiveWrong(saved.consecutiveWrong || 0); consecutiveWrongRef.current = saved.consecutiveWrong || 0;
+      setQuitReason(regen.session.status === 'quit' ? (regen.session.quit_reason || '') : '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setScreen('score');
+      setIsCheckingSession(false);
+      return;
+    }
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) { navigate('/login'); return; }
     const parsed = JSON.parse(dataStr);
@@ -753,6 +776,11 @@ const NumberRecallGame = () => {
     setRecordingTarget(target);
   };
 
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = generateAndUploadPDF;
+  });
+
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
     try {
@@ -784,11 +812,9 @@ const NumberRecallGame = () => {
         }).catch(e => console.error('Screentime refresh error', e));
       }
 
-      // Wait for DOM to render then capture
-      setTimeout(() => {
-        generateAndUploadPDF();
-      }, 1000);
-      
+      // Save the report PDF before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(generateAndUploadPDF);
+
       alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
@@ -860,6 +886,7 @@ const NumberRecallGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_Lottery_Ka_Ticket_SES${gameSessionId}_${ts}.pdf`); return; }
       formData.append('pdf', pdfBlob, `${childNameSafe}_Lottery_Ka_Ticket_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);

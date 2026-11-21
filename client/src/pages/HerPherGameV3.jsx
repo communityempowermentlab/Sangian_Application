@@ -16,6 +16,8 @@ import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './HerPherGameV3.css';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -331,12 +333,46 @@ const HerPherGameV3 = () => {
 
   // ──── Init: load child from localStorage ────────────────────────────────────
   useEffect(() => {
-    const raw = localStorage.getItem('currentChild');
-    if (!raw) { navigate('/login'); return; }
-    const child = JSON.parse(raw);
-    setChildData(child);
-    checkResume(child.child_id);
-    fetchActivity(child.child_id);
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data. The score history is
+    // reconstructed from saved allScores (a click is correct when it is the
+    // first click on that image — same rule as handleImageClick). Elements are
+    // still loaded below (read-only GET) so the result images render.
+    const regen = getRegenPayload();
+    if (regen) {
+      const saved = regen.session.saved_state || {};
+      const history = (saved.allScores || []).map(s => {
+        const sel = s.selectedImages || [];
+        const seen = new Set();
+        const responses = sel.map(id => (seen.has(id) ? 0 : (seen.add(id), 1)));
+        return {
+          question: s.qId, attempt: 2, isSample: false,
+          selected: sel, responses, correctCount: s.correctCount, score: s.score, time: s.timeTaken,
+          category: s.category, expectedImages: s.expectedImages || [], matchedImages: s.matchedImages || [],
+          incorrectSelections: s.incorrectSelections || [], missedImages: s.missedImages || [],
+        };
+      });
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id); gameSessionIdRef.current = regen.session.id;
+      setAttemptNo(regen.session.attempt_no || 1);
+      setScoreHistory(history); scoreHistoryRef.current = history;
+      setTotalScore(regen.session.score || 0); totalScoreRef.current = regen.session.score || 0;
+      finalAllScoresRef.current = saved.allScores || [];
+      const secs = saved.screentime ?? saved.timerSeconds ?? 0;
+      setTimerSeconds(secs); timerSecondsRef.current = secs;
+      setQuitReason(regen.session.status === 'quit' ? (regen.session.quit_reason || '') : '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setScreen('score');
+      setIsCheckingSession(false);
+    } else {
+      const raw = localStorage.getItem('currentChild');
+      if (!raw) { navigate('/login'); return; }
+      const child = JSON.parse(raw);
+      setChildData(child);
+      checkResume(child.child_id);
+      fetchActivity(child.child_id);
+    }
     const loadElements = async () => {
       try {
         const res = await axios.get(`${API_URL}/public/elements?test_id=working_memory_herpher_v3`);
@@ -898,6 +934,11 @@ const HerPherGameV3 = () => {
   };
 
   // ──── Assessment submit ──────────────────────────────────────────────────────
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = generateAndUploadPDF;
+  });
+
   const submitAssessment = async () => {
     // Stop the timer SYNCHRONOUSLY before any await so the frozen display value
     // is exactly what we save — the timer would otherwise keep running through
@@ -932,7 +973,8 @@ const HerPherGameV3 = () => {
       }
 
       setAssessmentSubmitted(true);
-      await generateAndUploadPDF();
+      // Save the report PDF before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(generateAndUploadPDF);
       alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error(e);
@@ -1003,6 +1045,7 @@ const HerPherGameV3 = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_Her_Pher_SES${gameSessionIdRef.current}_${ts}.pdf`); return; }
       formData.append('pdf', pdfBlob, `${childNameSafe}_Her_Pher_SES${gameSessionIdRef.current}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionIdRef.current);

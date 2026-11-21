@@ -9,6 +9,8 @@ import { useTestContent } from '../hooks/useTestContent';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './ReadingSkillGameV2.css';
 
 const CONFIG = {
@@ -187,6 +189,40 @@ const ReadingSkillGameV2 = () => {
   }, []);
 
   useEffect(() => {
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data — no server calls.
+    const regen = getRegenPayload();
+    if (regen) {
+      const saved = regen.session.saved_state || {};
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id);
+      setAttemptNo(regen.session.attempt_no || 1);
+      setStage(saved.stage || 'paragraph');
+      setSelectedParagraphIndex(saved.selectedParagraphIndex ?? null);
+      setWordsSource(saved.wordsSource || 'direct');
+      setSelectedWords(saved.selectedWords || []);
+      setSelectedWordsRetry(saved.selectedWordsRetry || []);
+      setSelectedLetters(saved.selectedLetters || []);
+      setWordsTimeTaken(saved.wordsTimeTaken ?? null);
+      setWordsRetryTimeTaken(saved.wordsRetryTimeTaken ?? null);
+      setLettersTimeTaken(saved.lettersTimeTaken ?? null);
+      setParagraphResult(saved.paragraphResult || null);
+      setParagraphRetryResult(saved.paragraphRetryResult || null);
+      setStoryResult(saved.storyResult || null);
+      setPath(saved.path || []);
+      setFinalLevel(saved.finalLevel || null);
+      setFinalScore(saved.finalScore ?? null);
+      setFinalGameTime(saved.finalGameTime ?? null);
+      setTimerSeconds(saved.timerSeconds || 0);
+      setQTimer(saved.qTimer || 0);
+      setPauses(saved.pauses || []);
+      setQuitReason(regen.session.quit_reason || '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setScreen('score');
+      setIsCheckingSession(false);
+      return;
+    }
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) {
       navigate('/login');
@@ -518,6 +554,7 @@ const ReadingSkillGameV2 = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_ReadingSkillV2_SES${gameSessionId}_${ts}.pdf`); return; }
       formData.append('pdf', pdfBlob, `${childNameSafe}_ReadingSkillV2_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
@@ -700,6 +737,11 @@ const ReadingSkillGameV2 = () => {
     }
   };
 
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = generateAndUploadPDF;
+  });
+
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
     try {
@@ -726,7 +768,8 @@ const ReadingSkillGameV2 = () => {
       }
 
       setAssessmentSubmitted(true);
-      setTimeout(generateAndUploadPDF, 1000);
+      // Save the report PDF before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(generateAndUploadPDF);
     } catch(e) {
       console.error(e);
       alert(t('common.failedToSave'));

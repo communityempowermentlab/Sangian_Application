@@ -8,6 +8,8 @@ import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './ChaloMelaChaleGame.css';
 const GAME_NAME = 'rover_mela';
 const TOTAL_QUESTIONS = 18;
@@ -541,6 +543,33 @@ const ChaloMelaChaleGame = () => {
   useEffect(() => {
     if (sessionCheckRef.current) return;
     sessionCheckRef.current = true;
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data — no server calls.
+    const regen = getRegenPayload();
+    if (regen) {
+      const ss = regen.session.saved_state || {};
+      pdfGeneratedRef.current = true; // capture is triggered by the regen script, not the auto-PDF effect
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id);
+      setAttemptNo(regen.session.attempt_no || 1);
+      if (ss.allScores) setAllScores(ss.allScores);
+      if (ss.unlockedPaths) setUnlockedPaths(ss.unlockedPaths);
+      if (ss.completedPaths) setCompletedPaths(ss.completedPaths);
+      if (ss.refreshCount !== undefined) setRefreshCount(ss.refreshCount);
+      if (ss.retakeCount !== undefined) setRetakeCount(ss.retakeCount);
+      if (ss.questionState) setQuestionState({ ...ss.questionState, gameStarted: false });
+      setIsDropped(!!ss.isDropped || regen.session.status === 'dropped');
+      if (ss.collectedCoins !== undefined) setCollectedCoins(ss.collectedCoins);
+      if (ss.tqTrials) tqTrialsRef.current = ss.tqTrials;
+      if (ss.screentime) { timerSecondsRef.current = ss.screentime; setTimerSeconds(ss.screentime); }
+      setQuitReason(regen.session.status === 'quit' ? (regen.session.quit_reason || '') : '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setAssessmentSaveMsg('✅ Assessment saved successfully!');
+      setScreen('results');
+      setIsCheckingSession(false);
+      return;
+    }
     const data = localStorage.getItem('currentChild');
     if (data) {
       const parsed = JSON.parse(data);
@@ -1211,6 +1240,11 @@ const ChaloMelaChaleGame = () => {
     if (isSuccess) playSoundEffect(resolveAudio('success', 'success.wav')); else playSoundEffect(resolveAudio('failure', 'failure.wav'));
   };
 
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = generateAndUploadPDF;
+  });
+
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
     try {
@@ -1236,7 +1270,8 @@ const ChaloMelaChaleGame = () => {
       setAssessmentSaveMsg('✅ Assessment saved successfully!');
       // Regenerate PDF now that assessment answers are filled — overrides the earlier blank-form PDF
       pdfGeneratedRef.current = false;
-      setTimeout(() => generateAndUploadPDF(), 1000);
+      // Save the report PDF before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(generateAndUploadPDF);
     } catch (e) {
       console.error(e);
       const serverMsg = e.response?.data?.message;
@@ -1315,6 +1350,7 @@ const ChaloMelaChaleGame = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_Chalo_Mela_Chalen_SES${gameSessionId}_${ts}.pdf`); return; }
       formData.append('pdf', pdfBlob, `${childNameSafe}_Chalo_Mela_Chalen_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);

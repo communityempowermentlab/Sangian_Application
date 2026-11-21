@@ -179,7 +179,14 @@ const SessionAssessmentForm = ({
       )}
       <div className="shared-final-actions">
         {assessmentSubmitted ? (
-          children
+          // While the post-feedback report PDF is still being captured and
+          // uploaded (game keeps isAssessmentSubmitting true until then),
+          // Home/Retest can't be tapped — leaving the screen early used to
+          // cancel the PDF silently. pointer-events is inherited, so this
+          // reaches the buttons even through display:contents.
+          <div style={{ display: 'contents', pointerEvents: isAssessmentSubmitting ? 'none' : undefined }} aria-busy={isAssessmentSubmitting || undefined}>
+            {children}
+          </div>
         ) : (
           <button
             onClick={handleValidationAndSubmit}
@@ -190,6 +197,12 @@ const SessionAssessmentForm = ({
           </button>
         )}
       </div>
+      {assessmentSubmitted && isAssessmentSubmitting && (
+        // Shown while the report PDF is saved; data-html2canvas-ignore keeps it out of the PDF itself.
+        <div data-html2canvas-ignore="true" style={{ textAlign: 'center', marginTop: -8, paddingBottom: 12, color: '#64748b', fontSize: '0.88rem', fontWeight: 600 }}>
+          ⏳ {t('game.saving')}
+        </div>
+      )}
 
       {showConfirm && ReactDOM.createPortal(
         <div style={{

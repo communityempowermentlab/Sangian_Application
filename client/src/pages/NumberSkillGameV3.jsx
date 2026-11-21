@@ -12,6 +12,8 @@ import { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
 import { unlockAudioContext } from '../utils/audioUnlock';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './NumberSkillGame.css';
 import './NumberSkillGameV3.css';
 
@@ -191,6 +193,33 @@ const NumberSkillGameV3 = () => {
   }, []);
 
   useEffect(() => {
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data — no server calls.
+    const regen = getRegenPayload();
+    if (regen) {
+      const saved = regen.session.saved_state || {};
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id);
+      setAttemptNo(regen.session.attempt_no || 1);
+      setStage(saved.stage || 'subtraction_pair_select');
+      setPath(saved.path || []);
+      setSubtraction(saved.subtraction || { q1: null, q2: null, bothCorrect: null });
+      setDivision(saved.division || null);
+      setNumberRecognition99(saved.numberRecognition99 || null);
+      setNumberRecognition9(saved.numberRecognition9 || null);
+      setFinalLevel(saved.finalLevel || null);
+      setFinalScore(saved.finalScore ?? null);
+      setFinalGameTime(saved.finalGameTime ?? null);
+      setTimerSeconds(saved.timerSeconds || 0);
+      setQTimer(saved.qTimer || 0);
+      setPauses(saved.pauses || []);
+      setQuitReason(regen.session.quit_reason || '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setScreen('score');
+      setIsCheckingSession(false);
+      return;
+    }
     const dataStr = localStorage.getItem('currentChild');
     if (!dataStr) {
       navigate('/login');
@@ -719,6 +748,7 @@ const NumberSkillGameV3 = () => {
       const formData = new FormData();
       const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
       const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+      if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_AnkganitV3_SES${gameSessionId}_${ts}.pdf`); return; }
       formData.append('pdf', pdfBlob, `${childNameSafe}_AnkganitV3_SES${gameSessionId}_${ts}.pdf`);
       formData.append('child_id', childData?.child_id);
       formData.append('session_id', gameSessionId);
@@ -731,6 +761,11 @@ const NumberSkillGameV3 = () => {
       if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
     }
   };
+
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = generateAndUploadPDF;
+  });
 
   const submitAssessmentForm = async () => {
     setIsAssessmentSubmitting(true);
@@ -753,8 +788,9 @@ const NumberSkillGameV3 = () => {
       }
 
       setAssessmentSubmitted(true);
+      // Save the report PDF before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(generateAndUploadPDF);
       alert(t('game.assessmentSubmitted'));
-      setTimeout(generateAndUploadPDF, 1500);
     } catch(e) {
       console.error(e);
       alert(t('common.failedToSave'));

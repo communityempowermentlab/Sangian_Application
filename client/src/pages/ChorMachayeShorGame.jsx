@@ -8,6 +8,8 @@ import { useTestAudio } from '../hooks/useTestAudio';
 import SessionAssessmentForm from '../components/SessionAssessmentForm';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
+import { getRegenPayload, regenAssessmentState, deliverRegenPdf } from '../utils/pdfRegen';
+import { captureReportAfterRender } from '../utils/reportPdf';
 import './ChorMachayeShorGame.css';
 
 const formatTime = (sec) => {
@@ -518,6 +520,26 @@ const ChorMachayeShorGame = () => {
 
   // Load User
   useEffect(() => {
+    // PDF regeneration build only (always null in normal builds): rebuild the
+    // submitted results screen from injected session data — no server calls.
+    const regen = getRegenPayload();
+    if (regen) {
+      const ss = regen.session.saved_state || {};
+      setChildData(regen.child);
+      setGameSessionId(regen.session.id);
+      setAttemptNo(regen.session.attempt_no || 1);
+      setItemResults(ss.itemResults || []);
+      setTimerSeconds(ss.timerSeconds || 0);
+      setSessionTimerSec(ss.screentime || 0);
+      sessionTimerSecRef.current = ss.screentime || 0;
+      itemRetakesRef.current = ss.itemRetakes || {};
+      setTotalScore(ss.totalScore ?? regen.session.score ?? 0);
+      setQuitReason(regen.session.status === 'quit' ? (regen.session.quit_reason || '') : '');
+      setAssessment(regenAssessmentState(regen.assessment));
+      setAssessmentSubmitted(true);
+      setScreen('results');
+      return;
+    }
     const data = localStorage.getItem('currentChild');
     if (data) {
       const parsed = JSON.parse(data);
@@ -1330,6 +1352,100 @@ const ChorMachayeShorGame = () => {
     }
   };
 
+  // Dashboard PDF capture + upload (moved verbatim out of submitAssessment's
+  // setTimeout so the PDF regeneration build can call it too).
+  const captureDashboardPdf = async (config = {}) => {
+    let wrapper = null;
+    try {
+      const element = document.getElementById('dashboard-container');
+      if (element) {
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
+
+        // Clone content into a clean wrapper directly on document.body so it has
+        // NO .chor-app / .chor-body-shell ancestors — .chor-app has backdrop-filter
+        // plus height:100%+overflow:hidden chained to a 100dvh ancestor, which
+        // clips the dashboard content (score circle + breakdown table) out of the
+        // capture and leaves only the header and assessment form visible in the PDF.
+        const originalNodes = element.querySelectorAll('*');
+        const clone = element.cloneNode(true);
+        const cloneNodes = clone.querySelectorAll('*');
+
+        // Kill all CSS animations BEFORE appending to DOM, same reason as
+        // ChaloMelaChaleGame's PDF capture: mid-animation opacity:0 renders blank.
+        // Also neutralize any scrollable inner region (e.g. .chor-table-wrapper's
+        // overflow-x:auto) — html2canvas paints scrollable content as currently
+        // scrolled, so a wide table stays clipped even once the outer container
+        // is unconstrained.
+        clone.style.animation = 'none';
+        clone.style.opacity = '1';
+        cloneNodes.forEach((node, i) => {
+          node.style.animation = 'none';
+          node.style.transition = 'none';
+          node.style.opacity = '';
+          const cs = window.getComputedStyle(originalNodes[i]);
+          if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
+          if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
+        });
+
+        wrapper = document.createElement('div');
+        wrapper.style.cssText = [
+          'position:fixed', 'top:-99999px', 'left:0',
+          // Use a generous fixed desktop-class width rather than the live
+          // element's scrollWidth: on a narrower assessor device/window,
+          // .chor-app's `width:100%` + overflow:hidden would inherit
+          // that same narrow width, forcing the CSS-grid stat row and
+          // wide table to clip instead of laying out naturally.
+          'width:' + Math.max(element.scrollWidth, 1400) + 'px',
+          'background:#ffffff', 'padding:20px',
+          'z-index:-9999', 'pointer-events:none',
+        ].join(';');
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(wrapper, {
+          scale: 1.5,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          windowWidth: wrapper.scrollWidth,
+          windowHeight: wrapper.scrollHeight,
+          logging: false
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+
+        const pdfWidth = 210;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+        const pdfBlob = pdf.output('blob');
+
+        const formData = new FormData();
+        const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+        const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
+        if (getRegenPayload()) { await deliverRegenPdf(pdfBlob, `${childNameSafe}_Chor_Machaye_Shor_SES${gameSessionId}_${ts}.pdf`); return; }
+        formData.append('pdf', pdfBlob, `${childNameSafe}_Chor_Machaye_Shor_SES${gameSessionId}_${ts}.pdf`);
+        formData.append('child_id', childData.child_id);
+        formData.append('session_id', gameSessionId);
+        formData.append('game_name', 'chor_machaye_shor');
+
+        await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
+        console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
+      }
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+    }
+  };
+
+  // PDF regeneration build only: let the regen script trigger the capture.
+  useEffect(() => {
+    if (getRegenPayload()) window.__SANGIAN_REGEN_CAPTURE__ = () => captureDashboardPdf();
+  });
+
   const submitAssessment = async () => {
     clearInterval(sessionTimerRef.current);
     if (!gameSessionId) {
@@ -1358,94 +1474,9 @@ const ChorMachayeShorGame = () => {
         additional_notes: (assessment.notes || '') + (quitReason ? `\n[Quit Reason: ${quitReason}]` : ''),
       }, config);
 
-      // Generate PDF Dashboard
-      setTimeout(async () => {
-        let wrapper = null;
-        try {
-          const element = document.getElementById('dashboard-container');
-          if (element) {
-            const html2canvas = (await import('html2canvas')).default;
-            const { jsPDF } = await import('jspdf');
-
-            // Clone content into a clean wrapper directly on document.body so it has
-            // NO .chor-app / .chor-body-shell ancestors — .chor-app has backdrop-filter
-            // plus height:100%+overflow:hidden chained to a 100dvh ancestor, which
-            // clips the dashboard content (score circle + breakdown table) out of the
-            // capture and leaves only the header and assessment form visible in the PDF.
-            const originalNodes = element.querySelectorAll('*');
-            const clone = element.cloneNode(true);
-            const cloneNodes = clone.querySelectorAll('*');
-
-            // Kill all CSS animations BEFORE appending to DOM, same reason as
-            // ChaloMelaChaleGame's PDF capture: mid-animation opacity:0 renders blank.
-            // Also neutralize any scrollable inner region (e.g. .chor-table-wrapper's
-            // overflow-x:auto) — html2canvas paints scrollable content as currently
-            // scrolled, so a wide table stays clipped even once the outer container
-            // is unconstrained.
-            clone.style.animation = 'none';
-            clone.style.opacity = '1';
-            cloneNodes.forEach((node, i) => {
-              node.style.animation = 'none';
-              node.style.transition = 'none';
-              node.style.opacity = '';
-              const cs = window.getComputedStyle(originalNodes[i]);
-              if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') node.style.overflowX = 'visible';
-              if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') node.style.overflowY = 'visible';
-            });
-
-            wrapper = document.createElement('div');
-            wrapper.style.cssText = [
-              'position:fixed', 'top:-99999px', 'left:0',
-              // Use a generous fixed desktop-class width rather than the live
-              // element's scrollWidth: on a narrower assessor device/window,
-              // .chor-app's `width:100%` + overflow:hidden would inherit
-              // that same narrow width, forcing the CSS-grid stat row and
-              // wide table to clip instead of laying out naturally.
-              'width:' + Math.max(element.scrollWidth, 1400) + 'px',
-              'background:#ffffff', 'padding:20px',
-              'z-index:-9999', 'pointer-events:none',
-            ].join(';');
-            wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
-            await new Promise(r => setTimeout(r, 100));
-
-            const canvas = await html2canvas(wrapper, {
-              scale: 1.5,
-              useCORS: true,
-              backgroundColor: '#ffffff',
-              windowWidth: wrapper.scrollWidth,
-              windowHeight: wrapper.scrollHeight,
-              logging: false
-            });
-            const imgData = canvas.toDataURL('image/jpeg', 0.9);
-
-            const pdfWidth = 210;
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-            const pdfBlob = pdf.output('blob');
-
-            const formData = new FormData();
-            const childNameSafe = (childData?.name || childData?.child_id || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
-            const ts = new Date().toISOString().replace(/[:.T-]/g, '').slice(0, 14);
-            formData.append('pdf', pdfBlob, `${childNameSafe}_Chor_Machaye_Shor_SES${gameSessionId}_${ts}.pdf`);
-            formData.append('child_id', childData.child_id);
-            formData.append('session_id', gameSessionId);
-            formData.append('game_name', 'chor_machaye_shor');
-
-            await axios.post(`${API_URL}/games/pdfs/upload`, formData, config);
-            console.log("Dashboard PDF successfully uploaded for session:", gameSessionId);
-          }
-        } catch (err) {
-          console.error("PDF generation failed:", err);
-        } finally {
-          if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-        }
-      }, 1000);
-
       setAssessmentSubmitted(true);
+      // Generate PDF Dashboard — saved before Home/Retest are released (see utils/reportPdf.js).
+      await captureReportAfterRender(() => captureDashboardPdf(config));
       alert(t('game.assessmentSubmitted'));
     } catch (e) {
       console.error('Assessment submission error:', e);

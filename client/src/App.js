@@ -41,6 +41,7 @@ import AdminElements from './pages/AdminElements';
 import AdminMultilingual from './pages/AdminMultilingual';
 import ChaloMelaChaleGame from './pages/ChaloMelaChaleGame';
 import ChorMachayeShorGame from './pages/ChorMachayeShorGame';
+import { REGEN_ENABLED } from './utils/pdfRegen';
 import AdminAssessorsList from './pages/AdminAssessorsList';
 import AdminAssessorAdd from './pages/AdminAssessorAdd';
 import AdminAssessorDetail from './pages/AdminAssessorDetail';
@@ -276,6 +277,18 @@ function App() {
                                 <Route path="/individual/account" element={<IndividualAccount />} />
                             </Route>
                         </Route>
+
+                        {/* ── PDF regeneration routes — only exist in a REACT_APP_PDF_REGEN=true build (see utils/pdfRegen.js) ── */}
+                        {REGEN_ENABLED && (
+                            <>
+                                <Route path="/__regen/number_skill_v3"   element={<NumberSkillGameV3 />} />
+                                <Route path="/__regen/reading_skill_v2"  element={<ReadingSkillGameV2 />} />
+                                <Route path="/__regen/number_recall"     element={<NumberRecallGame />} />
+                                <Route path="/__regen/her_pher_v3"       element={<HerPherGameV3 />} />
+                                <Route path="/__regen/chalo_mela_chale"  element={<ChaloMelaChaleGame />} />
+                                <Route path="/__regen/chor_machaye_shor" element={<ChorMachayeShorGame />} />
+                            </>
+                        )}
 
                         {/* ── Protected Game Routes (child must be logged in, test must be enabled) ── */}
                         <Route element={<RequireChildAuth />}>
