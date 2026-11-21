@@ -44,6 +44,8 @@ export const getTeachingTotal = (qs) => [1, 2, 3, 4].reduce(
 // (items 5, 8, 9 are deactivated, so 6 -> 5, 7 -> 6, 10 -> 7, 11 -> 8). Keep in
 // sync with server/src/utils/chorConfig.js (CHOR_DISPLAY_NUMBER).
 const CHOR_DISPLAY_NUMBER = { 1: 1, 2: 2, 3: 3, 4: 4, 6: 5, 7: 6, 10: 7, 11: 8 };
+// Max points with items 5, 8, 9 deactivated (server: chorConfig.js CHOR_MAX_SCORE).
+export const CHOR_MAX_SCORE = 42;
 
 export const chorColLabel = (c) => {
     if (c === 'q1t1') return 'Item 1 (T1)';
@@ -202,7 +204,11 @@ export const generateReportData = (activeGame, detail) => {
             r.status,
             r.correct_count ?? 0,
             r.total_questions ?? 0,
-            `${r.correct_count ?? 0} / ${r.total_questions ?? 0}`,
+            // Chor: Final Score is the points score out of the max (e.g. 23 / 42);
+            // Total Correct / Total Questions above already give the item count.
+            isChorCSV
+                ? (r.score != null ? `${r.score} / ${CHOR_MAX_SCORE}` : '—')
+                : `${r.correct_count ?? 0} / ${r.total_questions ?? 0}`,
             r.actual_game_time ? Math.round(r.actual_game_time) : '—'
         ];
         

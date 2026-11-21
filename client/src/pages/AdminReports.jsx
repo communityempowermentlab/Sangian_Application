@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
-import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal, chorColLabel } from '../utils/reportExportUtils';
+import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal, chorColLabel, CHOR_MAX_SCORE } from '../utils/reportExportUtils';
 import { logReportDownload } from '../utils/logActivity';
 import { isOrgSession, isStaffSession, getAssignedTests } from '../utils/staffPermissions';
 
@@ -831,7 +831,7 @@ const AdminReports = () => {
                                                 {row.screentime != null ? fmtSecs(row.screentime) : '—'}
                                             </td>
                                             <td style={{ ...S.tdCenter, fontWeight: 700, color: '#065f46' }}>
-                                                {row.score != null ? row.score : '—'}
+                                                {row.score != null ? (isChor ? `${row.score} / ${CHOR_MAX_SCORE}` : row.score) : '—'}
                                             </td>
 
                                             {activeGame?.key === 'auditory_dhyan' ? (
@@ -1029,8 +1029,8 @@ const AdminReports = () => {
                                                             ? renderNumeracyV3Summary(row)
                                                             : (
                                                             <>
-                                                               <div style={{ color: '#059669', marginBottom: '2px' }}>Corr: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
-                                                               <div style={{ color: '#64748b' }}>Att: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
+                                                               <div style={{ color: '#059669', marginBottom: '2px' }}>{isChor ? 'Items correct' : 'Corr'}: {row.correct_count ?? 0} / {row.total_questions ?? '—'}</div>
+                                                               <div style={{ color: '#64748b' }}>{isChor ? 'Attempted' : 'Att'}: {row.attempted_questions ?? '—'} / {row.total_questions ?? '—'}</div>
                                                             </>
                                                         )
                                                 }
