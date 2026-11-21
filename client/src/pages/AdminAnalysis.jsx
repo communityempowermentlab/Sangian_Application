@@ -1405,8 +1405,8 @@ function OverviewPanel({ data, loading, filters, catalog = GAME_CATALOG, excelEx
             </tbody>
           </table>
           {hasMoreChildren && !loadingChildren && childrenData.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '15px' }} data-pdf-ignore="true">
-              <button className="ana-btn" onClick={() => setChildrenPage(p => p + 1)}>Load More</button>
+            <div className="ana-load-more-row" data-pdf-ignore="true">
+              <button className="ana-load-more" onClick={() => setChildrenPage(p => p + 1)}>Load More <span className="ana-load-more-icon" aria-hidden="true">↓</span></button>
             </div>
           )}
         </div>
@@ -2110,8 +2110,8 @@ function GamePanel({ gameMeta, gameKey, data, loading, filters, showKpiInfoIcon,
             </tbody>
           </table>
           {hasMoreSessions && !loadingSessions && sessions.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '15px' }}>
-              <button className="ana-btn" onClick={() => setSessionsPage(p => p + 1)}>Load More</button>
+            <div className="ana-load-more-row" data-pdf-ignore="true">
+              <button className="ana-load-more" onClick={() => setSessionsPage(p => p + 1)}>Load More <span className="ana-load-more-icon" aria-hidden="true">↓</span></button>
             </div>
           )}
         </div>
