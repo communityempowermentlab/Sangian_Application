@@ -20,7 +20,8 @@ const GAME_MAX_SCORES = {
   numeracy_number_skill: 26, numeracy_number_skill_v2: 30, literacy_reading_skill: 22,
   literacy_reading_skill_v2: 4, // ASER adaptive flow: ordinal reading level 0-4 (Beginner..Story), not a point score
   numeracy_number_skill_v3: 4, // ASER adaptive flow: ordinal level 0-4 (Beginner..Division), not a point score
-  cognitive_flex_chor: 57, triangle_rachna: 48,
+  cognitive_flex_chor: 42, // items 5, 8, 9 deactivated — keep in sync with analysisController GAME_META
+  triangle_rachna: 48,
 };
 
 // Game key → per-game average-score field / sort key returned by /analysis/top-children

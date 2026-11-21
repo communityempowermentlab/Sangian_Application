@@ -2,6 +2,7 @@ const { pool } = require('../config/db');
 const { normalizeGameName } = require('../utils/gameNameAliases');
 const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 const scoreBinSettings = require('../services/scoreBinSettingsService');
+const { CHOR_MAX_SCORE, TOTAL_QUESTIONS_SQL, EXCLUDE_LEGACY_CHOR_SQL, CHOR_DISPLAY_NUMBER } = require('../utils/chorConfig');
 
 const GAME_META = {
   literacy_reading_skill:   { title: 'Padh ke Batao - V0', tag: 'Literacy',         color: '#059669', maxScore: 22 },
@@ -18,7 +19,8 @@ const GAME_META = {
   auditory_dhyan:           { title: 'Dhyan Kahan Hai',    tag: 'Listening Focus',  color: '#8b5cf6', maxScore: 33 },
   triangle_rachna:          { title: 'Rachna',              tag: 'Spatial Reasoning',color: '#ef4444', maxScore: 48 },
   rover_mela:               { title: 'Chalo Mela Chalen',  tag: 'Spatial Planning', color: '#10b981', maxScore: 44 },
-  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: 57 },
+  // 42, not 57: items 5, 8 and 9 are deactivated — see utils/chorConfig.js.
+  cognitive_flex_chor:      { title: 'Chor Machaye Shor',  tag: 'Rule Switching',   color: '#dc2626', maxScore: CHOR_MAX_SCORE },
 };
 
 // Score-distribution buckets for games whose scoring rubric doesn't map cleanly
@@ -105,12 +107,13 @@ const CUSTOM_SCORE_BUCKETS = {
     { lo: 25, hi: 34 },
     { lo: 35, hi: null }, // open-ended — catches any score at/above the max (44)
   ],
+  // Previous 57-max bands (0 / 1-17 / 18-28 / 29-42 / 43+) scaled by 42/57.
   cognitive_flex_chor: [
     { lo: 0,  hi: 0 },
-    { lo: 1,  hi: 17 },
-    { lo: 18, hi: 28 },
-    { lo: 29, hi: 42 },
-    { lo: 43, hi: null }, // open-ended — catches any score at/above the max (57)
+    { lo: 1,  hi: 12 },
+    { lo: 13, hi: 20 },
+    { lo: 21, hi: 30 },
+    { lo: 31, hi: null }, // open-ended — catches any score at/above the max (42)
   ],
   atlantis_bagiya: [
     { lo: 0,  hi: 0 },
@@ -235,6 +238,10 @@ function parseFilters(req) {
   // modules, for Super Admin or any Organization alike. Unconditional, not
   // tied to org scope or any filter param, unlike orgClauses above.
   const individualClauses = ['gs.individual_id IS NULL'];
+  // Chor sessions played before items 5, 8, 9 were deactivated (max 57) are
+  // left out of all analysis so every stat is on the current 42-point test.
+  // Not a filter option — Reports/CSV still list them. See utils/chorConfig.js.
+  const legacyClauses = [EXCLUDE_LEGACY_CHOR_SQL];
   const individualClausesC = ['c.individual_id IS NULL'];
 
   // Date clauses (on gs.created_at)
@@ -319,15 +326,15 @@ function parseFilters(req) {
     groupParams.push(groupIds);
   }
 
-  const allClauses     = [...orgClauses, ...individualClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const allClauses     = [...orgClauses, ...individualClauses, ...legacyClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
   const allParams      = [...orgParams,                        ...dateParams,  ...genderParams,  ...statusParams,                ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For gender distribution: skip gender filter so all genders are visible
-  const noGenderClauses = [...orgClauses, ...individualClauses, ...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noGenderClauses = [...orgClauses, ...individualClauses, ...legacyClauses, ...dateClauses, ...statusClauses, ...ageClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
   const noGenderParams  = [...orgParams,                        ...dateParams,  ...statusParams,                 ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   // For age-group distribution: skip age filter so all bands are visible
-  const noAgeClauses = [...orgClauses, ...individualClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
+  const noAgeClauses = [...orgClauses, ...individualClauses, ...legacyClauses, ...dateClauses, ...genderClauses, ...statusClauses, ...childClauses, ...gameClauses, ...groupClauses, ...attemptClauses];
   const noAgeParams  = [...orgParams,                        ...dateParams,  ...genderParams,  ...statusParams,  ...childParams,  ...gameParams,  ...groupParams,  ...attemptParams];
 
   const needsChildJoin = genders.length > 0 || ageGroups.length > 0 || !!childId?.trim();
@@ -336,7 +343,7 @@ function parseFilters(req) {
     allClauses, allParams, noGenderClauses, noGenderParams, noAgeClauses, noAgeParams, needsChildJoin,
     // Raw pieces — used by getOverviewV2 to compose custom clause sets (e.g. children-only
     // queries with no date scoping, or a shifted date range for period-over-period trend).
-    orgClauses, orgParams, orgClausesC, orgParamsC, individualClauses, individualClausesC,
+    orgClauses, orgParams, orgClausesC, orgParamsC, individualClauses, individualClausesC, legacyClauses,
     dateClauses, dateParams, genderClauses, genderParams, statusClauses, statusParams, ageClauses, childClauses, childParams,
     gameClauses, gameParams, groupClauses, groupParams, attemptClauses, attemptParams,
     cGameIntersectionClauses, cGameIntersectionParams
@@ -963,6 +970,13 @@ exports.getGameAnalytics = async (req, res) => {
         GROUP BY jt.itemId, jt.trial
         ORDER BY avgScore DESC
       `, params);
+      // Show the item number the child saw in the game ("Item 6: ..." -> "Item 5: ..."),
+      // since items 5, 8, 9 are skipped. Category keys keep the original id.
+      catRows.forEach(r => {
+        const itemId = parseInt(String(r.category), 10);
+        const shown = CHOR_DISPLAY_NUMBER[itemId];
+        if (shown && r.catName) r.catName = r.catName.replace(/^Item \d+:/, `Item ${shown}:`);
+      });
       categoryBreakdown = rankAndTier(catRows);
     } else if (gameKey === 'number_recall_lottery_v2') {
       // This gameKey's saved_state has TWO different historical shapes —
@@ -1045,7 +1059,7 @@ exports.getGameAnalytics = async (req, res) => {
     // Recent 20 sessions
     const [recentSessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName,
-             gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
+             gs.score, ${TOTAL_QUESTIONS_SQL}, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
              COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec
@@ -1118,7 +1132,7 @@ exports.getGameSessions = async (req, res) => {
     const [sessions] = await pool.query(`
       SELECT gs.id, gs.child_id, c.name AS childName, c.gender,
              TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) AS age,
-             gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
+             gs.score, ${TOTAL_QUESTIONS_SQL}, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
              COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec,
@@ -1157,7 +1171,7 @@ exports.getChildrenSessions = async (req, res) => {
       SELECT gs.child_id, c.name AS childName, c.gender,
              TIMESTAMPDIFF(YEAR, c.dob, CURDATE()) AS age,
              gs.game_name AS gameKey,
-             gs.score, gs.total_questions, gs.progress_level, gs.status, gs.quit_reason,
+             gs.score, ${TOTAL_QUESTIONS_SQL}, gs.progress_level, gs.status, gs.quit_reason,
              DATE_FORMAT(gs.start_time, '%Y-%m-%d %H:%i') AS start_time,
              DATE_FORMAT(gs.end_time,   '%Y-%m-%d %H:%i') AS end_time,
              COALESCE(CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.timerSeconds')) ELSE NULL END, CASE WHEN JSON_VALID(gs.saved_state) THEN JSON_UNQUOTE(JSON_EXTRACT(gs.saved_state, '$.screentime')) ELSE NULL END, TIMESTAMPDIFF(SECOND, gs.start_time, gs.end_time)) AS durationSec,
@@ -1582,7 +1596,7 @@ exports.getOverviewV2 = async (req, res) => {
       const prevEnd   = new Date(`${req.query.startDate}T00:00:00`); prevEnd.setDate(prevEnd.getDate() - 1);
       const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - (days - 1));
       const iso = (d) => d.toISOString().slice(0, 10);
-      const prevClauses = ['gs.created_at >= ?', 'gs.created_at <= ?', ...f.orgClauses, ...f.genderClauses, ...f.statusClauses, ...f.ageClauses, ...f.childClauses, ...f.gameClauses, ...f.groupClauses, ...f.attemptClauses];
+      const prevClauses = ['gs.created_at >= ?', 'gs.created_at <= ?', ...f.orgClauses, ...f.legacyClauses, ...f.genderClauses, ...f.statusClauses, ...f.ageClauses, ...f.childClauses, ...f.gameClauses, ...f.groupClauses, ...f.attemptClauses];
       const prevParams  = [iso(prevStart), `${iso(prevEnd)} 23:59:59`, ...f.orgParams, ...f.genderParams, ...f.statusParams, ...f.childParams, ...f.gameParams, ...f.groupParams, ...f.attemptParams];
       const [[prevKpis]] = await pool.query(`
         SELECT COUNT(*) AS sessions,

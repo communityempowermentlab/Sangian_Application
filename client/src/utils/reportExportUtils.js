@@ -40,11 +40,20 @@ export const getTeachingTotal = (qs) => [1, 2, 3, 4].reduce(
     0
 );
 
+// Chor Machaye Shor: original item id -> the number the child sees in the game
+// (items 5, 8, 9 are deactivated, so 6 -> 5, 7 -> 6, 10 -> 7, 11 -> 8). Keep in
+// sync with server/src/utils/chorConfig.js (CHOR_DISPLAY_NUMBER).
+const CHOR_DISPLAY_NUMBER = { 1: 1, 2: 2, 3: 3, 4: 4, 6: 5, 7: 6, 10: 7, 11: 8 };
+
 export const chorColLabel = (c) => {
     if (c === 'q1t1') return 'Item 1 (T1)';
     if (c === 'q1t2') return 'Item 1 (T2)';
     const m = c.match(/^q(\d+)$/);
-    if (m) return `Item ${m[1]}`;
+    if (m) {
+        const shown = CHOR_DISPLAY_NUMBER[m[1]];
+        // Retired items only show up for sessions recorded before they were deactivated.
+        return shown ? `Item ${shown}` : `Old Item ${m[1]}`;
+    }
     return c.toUpperCase();
 };
 

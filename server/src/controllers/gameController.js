@@ -3,6 +3,7 @@ const requestIp = require('request-ip');
 const { parseUserAgent, normalizeIp } = require('../utils/parseUserAgent');
 const { checkChildEligibility } = require('../utils/validateAssessorChild');
 const { normalizeGameName } = require('../utils/gameNameAliases');
+const { isChorGame, CHOR_TOTAL_QUESTIONS, CHOR_RETIRED_ITEM_IDS } = require('../utils/chorConfig');
 const { isGameAssignedToOrg, getOrgAssignedTests } = require('../utils/assignedTestsGuard');
 const individualTestAccessService = require('../services/individualTestAccessService');
 
@@ -996,7 +997,8 @@ exports.getReportDetail = async (req, res) => {
                     : numeracyV3
                         ? ['subtraction', 'recognition99', 'recognition9'].reduce((sum, k) => sum + (numeracyV3.numeracy_stages[k]?.total ?? 0), 0)
                         : (chorItems.length > 0) ? chorItems.length : scores.length,
-                total_questions: row.total_questions,
+                // Chor saves a fixed 11; report the active-item count instead (utils/chorConfig.js).
+                total_questions: isChorGame(gameName) ? CHOR_TOTAL_QUESTIONS : row.total_questions,
                 ...readingV2,
                 ...numeracyV3,
                 status: row.status,
@@ -1053,7 +1055,12 @@ exports.getReportDetail = async (req, res) => {
                 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18',
             ];
         } else if (['cognitive_flex_chor', 'chor_machaye_shor'].includes(gameName)) {
-            sortedQIds = ['q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11'];
+            // Active items in the order the child plays them; retired items 5, 8, 9
+            // only appear when a legacy session in this result set has them.
+            sortedQIds = [
+                'q1t1', 'q1t2', 'q2', 'q3', 'q4', 'q6', 'q7', 'q10', 'q11',
+                ...CHOR_RETIRED_ITEM_IDS.map(id => `q${id}`).filter(k => allUniqueKeys.has(k)),
+            ];
         } else if (['number_recall_lottery', 'number_recall_lottery_v2'].includes(gameName)) {
             sortedQIds = ['qteaching1', 'qteaching2', ...Array.from({ length: 20 }, (_, i) => `q${i + 1}`)];
         } else {

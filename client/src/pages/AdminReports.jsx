@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosAdmin from '../services/axiosAdmin';
 import { API_URL } from '../services/api';
-import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal } from '../utils/reportExportUtils';
+import { generateReportData, GAME_CATALOG, getRoverBudget, getTeachingTotal, chorColLabel } from '../utils/reportExportUtils';
 import { logReportDownload } from '../utils/logActivity';
 import { isOrgSession, isStaffSession, getAssignedTests } from '../utils/staffPermissions';
 
@@ -64,14 +64,6 @@ const fmtSecs = (v) => {
     return `${Math.floor(s / 60)}m ${(s % 60).toString().padStart(2, '0')}s`;
 };
 
-// ─── ChorMachayeShor column label helper ──────────────────────────────────────
-const chorColLabel = (c) => {
-    if (c === 'q1t1') return 'Item 1 (T1)';
-    if (c === 'q1t2') return 'Item 1 (T2)';
-    const m = c.match(/^q(\d+)$/);
-    if (m) return `Item ${m[1]}`;
-    return c.toUpperCase();
-};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AdminReports = () => {

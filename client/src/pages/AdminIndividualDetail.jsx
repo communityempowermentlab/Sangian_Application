@@ -38,7 +38,7 @@ const GAME_MAX_SCORES = {
     working_memory_herpher: 25, working_memory_herpher_v2: 16, working_memory_herpher_v3: 25,
     numeracy_number_skill: 26, numeracy_number_skill_v2: 30,
     literacy_reading_skill: 22, literacy_reading_skill_v2: 4, numeracy_number_skill_v3: 4,
-    cognitive_flex_chor: 57, chor_machaye_shor: 57, triangle_rachna: 48,
+    cognitive_flex_chor: 42, chor_machaye_shor: 42, triangle_rachna: 48, // Chor: items 5, 8, 9 deactivated
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;

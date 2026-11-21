@@ -102,8 +102,9 @@ const ChorElements = () => {
       <p className="elements-desc">
         Activate or deactivate individual items — deactivated ones are skipped during
         gameplay. The item set itself is fixed (no add/delete/reorder). At least one
-        item must always remain active. Score display stays fixed at /57 and question
-        count at /11 regardless of what's active.
+        item must always remain active. The in-game results screen adjusts its max score
+        and accuracy to the active items, but the admin reports and analysis use a fixed
+        max of 42 (items 5, 8 and 9 off) — update those if you change which items are active.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {ITEMS.map(({ key, label }) => {
