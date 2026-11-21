@@ -1,6 +1,18 @@
 import React, { useState, useId } from 'react';
 import ReactDOM from 'react-dom';
 
+// Read-only answer shown after submit (and in the report PDF): every option is
+// listed with the chosen one(s) marked. Markers are drawn with CSS instead of
+// native inputs so html2canvas renders them exactly as on screen.
+const ReadOnlyOption = ({ type, selected, label, itemClass }) => (
+  <div className={`${itemClass} shared-readonly-item${selected ? ' is-selected' : ''}`}>
+    <span className={`shared-readonly-mark ${type}${selected ? ' is-selected' : ''}`} aria-hidden="true">
+      {selected && <span className={type === 'checkbox' ? 'shared-readonly-tick' : 'shared-readonly-dot'} />}
+    </span>
+    <span>{label}</span>
+  </div>
+);
+
 const SessionAssessmentForm = ({
   assessment,
   setAssessment,
@@ -72,9 +84,16 @@ const SessionAssessmentForm = ({
             {q.label} {!assessmentSubmitted && <span className="required-star">*</span>}
           </label>
           {assessmentSubmitted ? (
-            <div style={{ marginTop: 8, fontWeight: 500, color: '#334155' }}>
-              {ANSWER_OPTIONS.find(o => o.val === assessment[q.key])?.str || assessment[q.key]}
-            </div>
+            <>
+              <div className="shared-radio-group shared-readonly">
+                {ANSWER_OPTIONS.map(opt => (
+                  <ReadOnlyOption key={opt.val} type="radio" selected={assessment[q.key] === opt.val} label={opt.str} itemClass="shared-radio-item" />
+                ))}
+              </div>
+              {assessment[q.key] && !ANSWER_OPTIONS.some(o => o.val === assessment[q.key]) && (
+                <div className="shared-readonly-other">{assessment[q.key]}</div>
+              )}
+            </>
           ) : (
             <>
               <div className="shared-radio-group">
@@ -108,17 +127,16 @@ const SessionAssessmentForm = ({
           {t('game.q5Label')} {!assessmentSubmitted && <span className="required-star">*</span>}
         </label>
         {assessmentSubmitted ? (
-          <div style={{ marginTop: 8, fontWeight: 500, color: '#334155' }}>
-            {assessment.behaviors.length > 0
-              ? (
-                <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {assessment.behaviors.map(b => (
-                    <li key={b}>{BEHAVIOR_OPTIONS.find(o => o.val === b)?.str || b}</li>
-                  ))}
-                </ul>
-              )
-              : 'None'}
-          </div>
+          <>
+            <div className="shared-checkbox-grid shared-readonly">
+              {BEHAVIOR_OPTIONS.map(bhv => (
+                <ReadOnlyOption key={bhv.val} type="checkbox" selected={assessment.behaviors.includes(bhv.val)} label={bhv.str} itemClass="shared-checkbox-item" />
+              ))}
+            </div>
+            {assessment.behaviors.filter(b => !BEHAVIOR_OPTIONS.some(o => o.val === b)).map(b => (
+              <div key={b} className="shared-readonly-other">{b}</div>
+            ))}
+          </>
         ) : (
           <>
             <div className="shared-checkbox-grid">

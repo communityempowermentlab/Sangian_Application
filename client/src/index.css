@@ -1216,6 +1216,40 @@ body {
   cursor: pointer;
 }
 
+/* Submitted (read-only) assessment: all options shown, chosen one(s) marked.
+   Drawn with plain boxes/borders so the report PDF (html2canvas) matches. */
+.shared-readonly .shared-readonly-item { cursor: default; }
+.shared-readonly .shared-readonly-item.is-selected { color: #1e293b; font-weight: 600; }
+.shared-readonly-mark {
+  position: relative;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 1.5px solid #94a3b8;
+  background: #fff;
+}
+.shared-readonly-mark.radio { border-radius: 50%; }
+.shared-readonly-mark.checkbox { border-radius: 4px; }
+.shared-readonly-mark.is-selected { border-color: #334155; }
+.shared-readonly-mark.checkbox.is-selected { background: #334155; }
+.shared-readonly-dot {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #1e293b;
+}
+.shared-readonly-tick {
+  position: absolute;
+  top: 1px; left: 5px;
+  width: 5px; height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.shared-readonly-other { margin-top: 6px; font-weight: 500; color: #334155; }
+
 .shared-mic-btn {
   background: #eff6ff;
   color: #2563eb;
